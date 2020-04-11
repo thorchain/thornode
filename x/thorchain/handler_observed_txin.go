@@ -11,25 +11,28 @@ import (
 
 // ObservedTxInHandler to handle MsgObservedTxIn
 type ObservedTxInHandler struct {
-	keeper                Keeper
-	versionedTxOutStore   VersionedTxOutStore
-	validatorMgr          VersionedValidatorManager
-	versionedVaultManager VersionedVaultManager
-	versionedGasMgr       VersionedGasManager
+	keeper                   Keeper
+	versionedTxOutStore      VersionedTxOutStore
+	validatorMgr             VersionedValidatorManager
+	versionedVaultManager    VersionedVaultManager
+	versionedGasMgr          VersionedGasManager
+	versionedObserverManager VersionedObserverManager
 }
 
 // NewObservedTxInHandler create a new instance of ObservedTxInHandler
 func NewObservedTxInHandler(keeper Keeper,
+	versionedObserverManager VersionedObserverManager,
 	versionedTxOutStore VersionedTxOutStore,
 	validatorMgr VersionedValidatorManager,
 	versionedVaultManager VersionedVaultManager,
 	versionedGasMgr VersionedGasManager) ObservedTxInHandler {
 	return ObservedTxInHandler{
-		keeper:                keeper,
-		versionedTxOutStore:   versionedTxOutStore,
-		validatorMgr:          validatorMgr,
-		versionedVaultManager: versionedVaultManager,
-		versionedGasMgr:       versionedGasMgr,
+		keeper:                   keeper,
+		versionedTxOutStore:      versionedTxOutStore,
+		validatorMgr:             validatorMgr,
+		versionedVaultManager:    versionedVaultManager,
+		versionedGasMgr:          versionedGasMgr,
+		versionedObserverManager: versionedObserverManager,
 	}
 }
 
@@ -111,7 +114,12 @@ func (h ObservedTxInHandler) handleV1(ctx sdk.Context, version semver.Version, m
 		ctx.Logger().Error("fail to get txout store", "error", err)
 		return errBadVersion.Result()
 	}
-	handler := NewHandler(h.keeper, h.versionedTxOutStore, h.validatorMgr, h.versionedVaultManager, h.versionedGasMgr)
+	obMgr, err := h.versionedObserverManager.GetObserverManager(ctx, version)
+	if err != nil {
+		ctx.Logger().Error("fail to get observer manager", "error", err)
+		return errBadVersion.Result()
+	}
+	handler := NewHandler(h.keeper, h.versionedTxOutStore, h.validatorMgr, h.versionedVaultManager, h.versionedObserverManager, h.versionedGasMgr)
 
 	for _, tx := range msg.Txs {
 
@@ -131,9 +139,7 @@ func (h ObservedTxInHandler) handleV1(ctx sdk.Context, version semver.Version, m
 			if voter.Height == ctx.BlockHeight() {
 				// we've already process the transaction, but we should still
 				// update the observing addresses
-				if err := h.keeper.AddObservingAddresses(ctx, msg.GetSigners()); err != nil {
-					ctx.Logger().Error("fail to add observing address", "error", err)
-				}
+				obMgr.AppendObserver(tx.Tx.Chain, msg.GetSigners())
 			}
 			continue
 		}
@@ -213,9 +219,7 @@ func (h ObservedTxInHandler) handleV1(ctx sdk.Context, version semver.Version, m
 
 		// add addresses to observing addresses. This is used to detect
 		// active/inactive observing node accounts
-		if err := h.keeper.AddObservingAddresses(ctx, txIn.Signers); err != nil {
-			return sdk.ErrInternal(err.Error()).Result()
-		}
+		obMgr.AppendObserver(tx.Tx.Chain, txIn.Signers)
 
 		result := handler(ctx, m)
 		if !result.IsOK() {

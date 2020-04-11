@@ -72,6 +72,8 @@ func (om *ObserverMgr) List() []sdk.AccAddress {
 }
 
 // EndBlock emit the observers
-func (om *ObserverMgr) EndBlock(ctx sdk.Context, keeper Keeper) error {
-	return keeper.AddObservingAddresses(ctx, om.List())
+func (om *ObserverMgr) EndBlock(ctx sdk.Context, keeper Keeper) {
+	if err := keeper.AddObservingAddresses(ctx, om.List()); err != nil {
+		ctx.Logger().Error("fail to append observers", "error", err)
+	}
 }

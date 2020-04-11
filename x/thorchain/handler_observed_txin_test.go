@@ -50,7 +50,8 @@ func (s *HandlerObservedTxInSuite) TestValidate(c *C) {
 
 	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(w.versionedTxOutStore)
 	versionedGasMgr := NewDummyVersionedGasMgr()
-	handler := NewObservedTxInHandler(keeper, w.versionedTxOutStore, w.validatorMgr, versionedVaultMgrDummy, versionedGasMgr)
+	versionedObMgr := NewDummyVersionedObserverMgr()
+	handler := NewObservedTxInHandler(keeper, versionedObMgr, w.versionedTxOutStore, w.validatorMgr, versionedVaultMgrDummy, versionedGasMgr)
 
 	// happy path
 	ver := constants.SWVersion
@@ -253,7 +254,8 @@ func (s *HandlerObservedTxInSuite) TestHandle(c *C) {
 	c.Assert(err, IsNil)
 	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(versionedTxOutStore)
 	versionedGasMgr := NewVersionedGasMgr()
-	handler := NewObservedTxInHandler(keeper, versionedTxOutStore, w.validatorMgr, versionedVaultMgrDummy, versionedGasMgr)
+	versionedObMgr := NewDummyVersionedObserverMgr()
+	handler := NewObservedTxInHandler(keeper, versionedObMgr, versionedTxOutStore, w.validatorMgr, versionedVaultMgrDummy, versionedGasMgr)
 
 	c.Assert(err, IsNil)
 	msg := NewMsgObservedTxIn(txs, keeper.nas[0].NodeAddress)
@@ -322,7 +324,8 @@ func (s *HandlerObservedTxInSuite) TestMigrateMemo(c *C) {
 	c.Assert(err, IsNil)
 	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(versionedTxOutStore)
 	versionedGasMgr := NewVersionedGasMgr()
-	handler := NewObservedTxInHandler(keeper, versionedTxOutStore, w.validatorMgr, versionedVaultMgrDummy, versionedGasMgr)
+	versionedObMgr := NewDummyVersionedObserverMgr()
+	handler := NewObservedTxInHandler(keeper, versionedObMgr, versionedTxOutStore, w.validatorMgr, versionedVaultMgrDummy, versionedGasMgr)
 
 	c.Assert(err, IsNil)
 	msg := NewMsgObservedTxIn(txs, keeper.nas[0].NodeAddress)

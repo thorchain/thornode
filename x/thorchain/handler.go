@@ -61,8 +61,9 @@ func NewHandler(keeper Keeper,
 	versionedTxOutStore VersionedTxOutStore,
 	validatorMgr VersionedValidatorManager,
 	versionedVaultManager VersionedVaultManager,
+	versionedObserverManager VersionedObserverManager,
 	versionedGasMgr VersionedGasManager) sdk.Handler {
-	handlerMap := getHandlerMapping(keeper, versionedTxOutStore, validatorMgr, versionedVaultManager, versionedGasMgr)
+	handlerMap := getHandlerMapping(keeper, versionedTxOutStore, validatorMgr, versionedVaultManager, versionedObserverManager, versionedGasMgr)
 
 	return func(ctx sdk.Context, msg sdk.Msg) sdk.Result {
 		version := keeper.GetLowestActiveVersion(ctx)
@@ -83,6 +84,7 @@ func getHandlerMapping(keeper Keeper,
 	versionedTxOutStore VersionedTxOutStore,
 	validatorMgr VersionedValidatorManager,
 	versionedVaultManager VersionedVaultManager,
+	versionedObserverManager VersionedObserverManager,
 	versionedGasMgr VersionedGasManager) map[string]MsgHandler {
 	// New arch handlers
 	m := make(map[string]MsgHandler)
@@ -95,8 +97,8 @@ func getHandlerMapping(keeper Keeper,
 	m[MsgReserveContributor{}.Type()] = NewReserveContributorHandler(keeper)
 	m[MsgSetVersion{}.Type()] = NewVersionHandler(keeper)
 	m[MsgBond{}.Type()] = NewBondHandler(keeper)
-	m[MsgObservedTxIn{}.Type()] = NewObservedTxInHandler(keeper, versionedTxOutStore, validatorMgr, versionedVaultManager, versionedGasMgr)
-	m[MsgObservedTxOut{}.Type()] = NewObservedTxOutHandler(keeper, versionedTxOutStore, validatorMgr, versionedVaultManager, versionedGasMgr)
+	m[MsgObservedTxIn{}.Type()] = NewObservedTxInHandler(keeper, versionedObserverManager, versionedTxOutStore, validatorMgr, versionedVaultManager, versionedGasMgr)
+	m[MsgObservedTxOut{}.Type()] = NewObservedTxOutHandler(keeper, versionedObserverManager, versionedTxOutStore, validatorMgr, versionedVaultManager, versionedGasMgr)
 	m[MsgLeave{}.Type()] = NewLeaveHandler(keeper, validatorMgr, versionedTxOutStore)
 	m[MsgAdd{}.Type()] = NewAddHandler(keeper)
 	m[MsgSetUnStake{}.Type()] = NewUnstakeHandler(keeper, versionedTxOutStore)

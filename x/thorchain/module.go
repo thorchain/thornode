@@ -71,13 +71,14 @@ func (AppModuleBasic) GetTxCmd(cdc *codec.Codec) *cobra.Command {
 
 type AppModule struct {
 	AppModuleBasic
-	keeper                Keeper
-	coinKeeper            bank.Keeper
-	supplyKeeper          supply.Keeper
-	txOutStore            VersionedTxOutStore
-	validatorMgr          VersionedValidatorManager
-	versionedVaultManager VersionedVaultManager
-	versionedGasManager   VersionedGasManager
+	keeper                   Keeper
+	coinKeeper               bank.Keeper
+	supplyKeeper             supply.Keeper
+	txOutStore               VersionedTxOutStore
+	validatorMgr             VersionedValidatorManager
+	versionedVaultManager    VersionedVaultManager
+	versionedGasManager      VersionedGasManager
+	versionedObserverManager VersionedObserverManager
 }
 
 // NewAppModule creates a new AppModule Object
@@ -86,14 +87,15 @@ func NewAppModule(k Keeper, bankKeeper bank.Keeper, supplyKeeper supply.Keeper) 
 	versionedVaultMgr := NewVersionedVaultMgr(versionedTxOutStore)
 
 	return AppModule{
-		AppModuleBasic:        AppModuleBasic{},
-		keeper:                k,
-		coinKeeper:            bankKeeper,
-		supplyKeeper:          supplyKeeper,
-		txOutStore:            versionedTxOutStore,
-		validatorMgr:          NewVersionedValidatorMgr(k, versionedTxOutStore, versionedVaultMgr),
-		versionedVaultManager: versionedVaultMgr,
-		versionedGasManager:   NewVersionedGasMgr(),
+		AppModuleBasic:           AppModuleBasic{},
+		keeper:                   k,
+		coinKeeper:               bankKeeper,
+		supplyKeeper:             supplyKeeper,
+		txOutStore:               versionedTxOutStore,
+		validatorMgr:             NewVersionedValidatorMgr(k, versionedTxOutStore, versionedVaultMgr),
+		versionedVaultManager:    versionedVaultMgr,
+		versionedGasManager:      NewVersionedGasMgr(),
+		versionedObserverManager: NewVersionedObserverMgr(),
 	}
 }
 
@@ -108,7 +110,7 @@ func (am AppModule) Route() string {
 }
 
 func (am AppModule) NewHandler() sdk.Handler {
-	return NewHandler(am.keeper, am.txOutStore, am.validatorMgr, am.versionedVaultManager, am.versionedGasManager)
+	return NewHandler(am.keeper, am.txOutStore, am.validatorMgr, am.versionedVaultManager, am.versionedObserverManager, am.versionedGasManager)
 }
 
 func (am AppModule) QuerierRoute() string {
