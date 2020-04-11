@@ -38,8 +38,10 @@ func NewQuerier(keeper Keeper, validatorMgr VersionedValidatorManager) sdk.Queri
 			return queryKeysign(ctx, path[1:], req, keeper)
 		case q.QueryKeygensPubkey.Key:
 			return queryKeygen(ctx, path[1:], req, keeper)
-		case q.QueryCompleteEvents.Key:
-			return queryCompleteEvents(ctx, path[1:], req, keeper)
+		case q.QueryCompEvents.Key:
+			return queryCompEvents(ctx, path[1:], req, keeper)
+		case q.QueryCompEventsByChain.Key:
+			return queryCompEvents(ctx, path[1:], req, keeper)
 		case q.QueryEventsByTxHash.Key:
 			return queryEventsByTxHash(ctx, path[1:], req, keeper)
 		case q.QueryHeights.Key:
@@ -705,12 +707,22 @@ func queryEventsByTxHash(ctx sdk.Context, path []string, req abci.RequestQuery, 
 	return res, nil
 }
 
-func queryCompleteEvents(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
+func queryCompEvents(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
 	id, err := strconv.ParseInt(path[0], 10, 64)
 	if err != nil {
 		ctx.Logger().Error("fail to discover id number", "error", err)
 		return nil, sdk.ErrInternal("fail to discover id number")
 	}
+
+	chain := common.EmptyChain
+	if len(path[1]) > 0 {
+		chain, err = common.NewChain(path[1])
+		if err != nil {
+			ctx.Logger().Error("fail to discover chain name", "error", err)
+			return nil, sdk.ErrInternal("fail to discover chain name")
+		}
+	}
+
 	u, err := getURLFromData(req.Data)
 	if err != nil {
 		ctx.Logger().Error(err.Error())
@@ -723,6 +735,9 @@ func queryCompleteEvents(ctx sdk.Context, path []string, req abci.RequestQuery, 
 		event, _ := keeper.GetEvent(ctx, i)
 		if all {
 			events = append(events, event)
+			continue
+		}
+		if !chain.IsEmpty() && !event.Chain.Equals(chain) {
 			continue
 		}
 		if event.Empty() {
