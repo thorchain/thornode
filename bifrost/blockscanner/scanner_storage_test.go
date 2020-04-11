@@ -9,7 +9,7 @@ type BlockScannerStorageSuite struct{}
 var _ = Suite(&BlockScannerStorageSuite{})
 
 func (s *BlockScannerStorageSuite) TestScannerSetup(c *C) {
-	scanner, err := NewBlockScannerStorage("test")
+	scanner, err := NewBlockScannerStorage("/tmp/scanner_storage")
 	c.Assert(err, IsNil)
 	c.Assert(scanner, NotNil)
 
