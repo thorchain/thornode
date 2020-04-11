@@ -42,7 +42,7 @@ func NewClient(cfg config.ChainConfiguration) (*Client, error) {
 	}
 
 	return &Client{
-		logger: log.Logger.With().Str("module", "btcClient").Logger(),
+		logger: log.Logger.With().Str("module", "bitcoin").Logger(),
 		cfg:    cfg,
 		chain:  cfg.ChainID,
 		client: client,
@@ -50,14 +50,14 @@ func NewClient(cfg config.ChainConfiguration) (*Client, error) {
 }
 
 // FetchTxs retrieves txs for a block height
-func (c *Client) FetchTxs(height int64) (*types.TxIn, error) {
+func (c *Client) FetchTxs(height int64) (types.TxIn, error) {
 	block, err := c.getBlock(height)
 	if err != nil {
-		return &types.TxIn{}, errors.Wrap(err, "fail to get block")
+		return types.TxIn{}, errors.Wrap(err, "fail to get block")
 	}
 	txs, err := c.extractTxs(block)
 	if err != nil {
-		return &types.TxIn{}, errors.Wrap(err, "fail to extract txs from block")
+		return types.TxIn{}, errors.Wrap(err, "fail to extract txs from block")
 	}
 	return txs, nil
 }
@@ -72,8 +72,8 @@ func (c *Client) getBlock(height int64) (*btcjson.GetBlockVerboseResult, error) 
 }
 
 // extractTxs extracts txs from a block to type TxIn
-func (c *Client) extractTxs(block *btcjson.GetBlockVerboseResult) (*types.TxIn, error) {
-	txIn := &types.TxIn{
+func (c *Client) extractTxs(block *btcjson.GetBlockVerboseResult) (types.TxIn, error) {
+	txIn := types.TxIn{
 		BlockHeight: strconv.FormatInt(block.Height, 10),
 		Chain:       c.chain,
 	}
@@ -84,15 +84,15 @@ func (c *Client) extractTxs(block *btcjson.GetBlockVerboseResult) (*types.TxIn, 
 		}
 		sender, err := c.getSender(&tx)
 		if err != nil {
-			return &types.TxIn{}, errors.Wrap(err, "fail to get sender from tx")
+			return types.TxIn{}, errors.Wrap(err, "fail to get sender from tx")
 		}
 		memo, err := c.getMemo(&tx)
 		if err != nil {
-			return &types.TxIn{}, errors.Wrap(err, "fail to get memo from tx")
+			return types.TxIn{}, errors.Wrap(err, "fail to get memo from tx")
 		}
 		gas, err := c.getGas(&tx)
 		if err != nil {
-			return &types.TxIn{}, errors.Wrap(err, "fail to get gas from tx")
+			return types.TxIn{}, errors.Wrap(err, "fail to get gas from tx")
 		}
 		amount := uint64(tx.Vout[0].Value * common.One)
 		txItems = append(txItems, types.TxInItem{
