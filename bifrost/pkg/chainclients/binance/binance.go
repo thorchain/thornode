@@ -24,9 +24,10 @@ import (
 	"github.com/rs/zerolog/log"
 	tssp "gitlab.com/thorchain/tss/go-tss/tss"
 
+	"gitlab.com/thorchain/thornode/bifrost/blockscanner"
 	"gitlab.com/thorchain/thornode/bifrost/config"
 	"gitlab.com/thorchain/thornode/bifrost/metrics"
-	pubkeymanager "gitlab.com/thorchain/thornode/bifrost/pubkeymanager"
+	"gitlab.com/thorchain/thornode/bifrost/pubkeymanager"
 	"gitlab.com/thorchain/thornode/bifrost/thorclient"
 	stypes "gitlab.com/thorchain/thornode/bifrost/thorclient/types"
 	"gitlab.com/thorchain/thornode/bifrost/tss"
@@ -45,8 +46,9 @@ type Binance struct {
 	tssKeyManager   keys.KeyManager
 	localKeyManager *keyManager
 	thorchainBridge *thorclient.ThorchainBridge
-	storage         *BinanceBlockScannerStorage
-	blockScanner    *BinanceBlockScanner
+	storage         *blockscanner.BlockScannerStorage
+	blockScanner    *blockscanner.BlockScanner
+	bnbScanner      *BinanceBlockScanner
 }
 
 // NewBinance create new instance of binance client
@@ -95,11 +97,12 @@ func NewBinance(thorKeys *thorclient.Keys, cfg config.ChainConfiguration, server
 	}, nil
 }
 
-func (b *Binance) initBlockScanner(pubkeyMgr pubkeymanager.PubKeyValidator, m *metrics.Metrics) error {
+func (b *Binance) initBlockScanner(m *metrics.Metrics) error {
 	b.checkIsTestNet()
 
 	var err error
-	b.storage, err = NewBinanceBlockScannerStorage(b.cfg.BlockScanner.DBPath)
+	path := fmt.Sprintf("%s/%s", b.cfg.BlockScanner.DBPath, b.cfg.BlockScanner.ChainID)
+	b.storage, err = blockscanner.NewBlockScannerStorage(path)
 	if err != nil {
 		return pkerrors.Wrap(err, "fail to create scan storage")
 	}
@@ -119,15 +122,22 @@ func (b *Binance) initBlockScanner(pubkeyMgr pubkeymanager.PubKeyValidator, m *m
 	} else {
 		startBlockHeight = b.cfg.BlockScanner.StartBlockHeight
 	}
-	b.blockScanner, err = NewBinanceBlockScanner(b.cfg.BlockScanner, startBlockHeight, b.storage, b.isTestNet, pubkeyMgr, m)
+
+	b.bnbScanner, err = NewBinanceBlockScanner(b.cfg.BlockScanner, startBlockHeight, b.storage, b.isTestNet, m)
 	if err != nil {
 		return pkerrors.Wrap(err, "fail to create block scanner")
 	}
+
+	b.blockScanner, err = blockscanner.NewBlockScanner(b.cfg.BlockScanner, startBlockHeight, b.storage, m, b.bnbScanner)
+	if err != nil {
+		return pkerrors.Wrap(err, "fail to create block scanner")
+	}
+
 	return nil
 }
 
 func (b *Binance) Start(globalTxsQueue chan stypes.TxIn, pubkeyMgr pubkeymanager.PubKeyValidator, m *metrics.Metrics) error {
-	err := b.initBlockScanner(pubkeyMgr, m)
+	err := b.initBlockScanner(m)
 	if err != nil {
 		b.logger.Error().Err(err).Msg("fail to init block scanner")
 		return err
@@ -137,7 +147,7 @@ func (b *Binance) Start(globalTxsQueue chan stypes.TxIn, pubkeyMgr pubkeymanager
 }
 
 func (b *Binance) Stop() error {
-	return b.blockScanner.Stop()
+	return nil
 }
 
 // IsTestNet determinate whether we are running on test net by checking the status
@@ -294,8 +304,8 @@ func (b *Binance) GetGasFee(count uint64) common.Gas {
 	// TODO: remove GetGasFee entirely
 	coins := make(common.Coins, count)
 	gasInfo := []sdk.Uint{
-		sdk.NewUint(b.blockScanner.singleFee),
-		sdk.NewUint(b.blockScanner.multiFee),
+		sdk.NewUint(b.bnbScanner.singleFee),
+		sdk.NewUint(b.bnbScanner.multiFee),
 	}
 	return common.CalcGasPrice(common.Tx{Coins: coins}, common.BNBAsset, gasInfo)
 }

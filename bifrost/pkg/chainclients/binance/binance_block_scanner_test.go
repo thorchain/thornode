@@ -1,7 +1,6 @@
 package binance
 
 import (
-	"crypto/tls"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -64,20 +63,19 @@ func getStdTx(f, t string, coins []types.Coin, memo string) (tx.StdTx, error) {
 
 func (s *BlockScannerTestSuite) TestNewBlockScanner(c *C) {
 	c.Skip("skip")
-	pv := &MockPoolAddressValidator{}
-	bs, err := NewBinanceBlockScanner(getConfigForTest(""), 0, blockscanner.NewMockScannerStorage(), true, pv, s.m)
+	bs, err := NewBinanceBlockScanner(getConfigForTest(""), 0, blockscanner.NewMockScannerStorage(), true, s.m)
 	c.Assert(err, NotNil)
 	c.Assert(bs, IsNil)
-	bs, err = NewBinanceBlockScanner(getConfigForTest("127.0.0.1"), 0, blockscanner.NewMockScannerStorage(), true, nil, s.m)
+	bs, err = NewBinanceBlockScanner(getConfigForTest("127.0.0.1"), 0, blockscanner.NewMockScannerStorage(), true, s.m)
 	c.Assert(err, NotNil)
 	c.Assert(bs, IsNil)
-	bs, err = NewBinanceBlockScanner(getConfigForTest("127.0.0.1"), 0, nil, true, pv, s.m)
+	bs, err = NewBinanceBlockScanner(getConfigForTest("127.0.0.1"), 0, nil, true, s.m)
 	c.Assert(err, NotNil)
 	c.Assert(bs, IsNil)
-	bs, err = NewBinanceBlockScanner(getConfigForTest("127.0.0.1"), 0, blockscanner.NewMockScannerStorage(), true, nil, s.m)
+	bs, err = NewBinanceBlockScanner(getConfigForTest("127.0.0.1"), 0, blockscanner.NewMockScannerStorage(), true, s.m)
 	c.Assert(err, NotNil)
 	c.Assert(bs, IsNil)
-	bs, err = NewBinanceBlockScanner(getConfigForTest("127.0.0.1"), 0, blockscanner.NewMockScannerStorage(), true, pv, s.m)
+	bs, err = NewBinanceBlockScanner(getConfigForTest("127.0.0.1"), 0, blockscanner.NewMockScannerStorage(), true, s.m)
 	c.Assert(err, IsNil)
 	c.Assert(bs, NotNil)
 }
@@ -223,23 +221,9 @@ func (s *BlockScannerTestSuite) TestSearchTxInABlockFromServer(c *C) {
 	})
 	server := httptest.NewTLSServer(h)
 	defer server.Close()
-	pv := &MockPoolAddressValidator{}
-	bs, err := NewBinanceBlockScanner(getConfigForTest(server.URL), 0, blockscanner.NewMockScannerStorage(), true, pv, s.m)
+	bs, err := NewBinanceBlockScanner(getConfigForTest(server.URL), 0, blockscanner.NewMockScannerStorage(), true, s.m)
 	c.Assert(err, IsNil)
 	c.Assert(bs, NotNil)
-	trSkipVerify := &http.Transport{
-		MaxIdleConnsPerHost: 10,
-		TLSClientConfig: &tls.Config{
-			MaxVersion:         tls.VersionTLS11,
-			InsecureSkipVerify: true,
-		},
-	}
-	bs.commonBlockScanner.GetHttpClient().Transport = trSkipVerify
-	bs.Start(make(chan stypes.TxIn))
-	// stop
-	time.Sleep(time.Second * 5)
-	err = bs.Stop()
-	c.Assert(err, IsNil)
 }
 
 func (s *BlockScannerTestSuite) TestGetTxHash(c *C) {
@@ -258,8 +242,7 @@ func (s *BlockScannerTestSuite) TestFromTxToTxIn(c *C) {
 		err := json.Unmarshal([]byte(input), &query)
 		c.Check(err, IsNil)
 		c.Check(query.Result.Txs, NotNil)
-		pv := NewMockPoolAddressValidator()
-		bs, err := NewBinanceBlockScanner(getConfigForTest("127.0.0.1"), 0, blockscanner.NewMockScannerStorage(), true, pv, s.m)
+		bs, err := NewBinanceBlockScanner(getConfigForTest("127.0.0.1"), 0, blockscanner.NewMockScannerStorage(), true, s.m)
 		c.Assert(err, IsNil)
 		c.Assert(bs, NotNil)
 		c.Log(input)
@@ -304,13 +287,11 @@ func (s *BlockScannerTestSuite) TestFromTxToTxIn(c *C) {
 
 func (s *BlockScannerTestSuite) TestFromStdTx(c *C) {
 	c.Skip("skip")
-	poolAddrValidator := NewMockPoolAddressValidator()
 	bs, err := NewBinanceBlockScanner(
 		getConfigForTest("127.0.0.1"),
 		0,
 		blockscanner.NewMockScannerStorage(),
 		true,
-		poolAddrValidator,
 		s.m,
 	)
 	c.Assert(err, IsNil)
@@ -394,8 +375,10 @@ func (s *BlockScannerTestSuite) TestUpdateGasFees(c *C) {
 
 	// test against mock server
 	b := BinanceBlockScanner{
-		rpcHost: "http://" + server.Listener.Addr().String(),
-		http:    &http.Client{},
+		cfg: config.BlockScannerConfiguration{
+			RPCHost: "http://" + server.Listener.Addr().String(),
+		},
+		http: &http.Client{},
 	}
 	c.Assert(b.updateFees(10), IsNil)
 	c.Check(b.singleFee, Equals, uint64(37500))

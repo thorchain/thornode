@@ -22,7 +22,6 @@ import (
 	"gitlab.com/thorchain/thornode/bifrost/config"
 	"gitlab.com/thorchain/thornode/bifrost/metrics"
 	"gitlab.com/thorchain/thornode/bifrost/pkg/chainclients"
-	"gitlab.com/thorchain/thornode/bifrost/pkg/chainclients/binance"
 	pubkeymanager "gitlab.com/thorchain/thornode/bifrost/pubkeymanager"
 	"gitlab.com/thorchain/thornode/bifrost/thorclient"
 	stypes "gitlab.com/thorchain/thornode/bifrost/thorclient/types"
@@ -366,7 +365,7 @@ func (s *SignSuite) TestProcess(c *C) {
 			},
 		},
 	}
-	blockScan, err := NewThorchainBlockScan(cfg.BlockScanner, s.storage, s.bridge, s.m, binance.NewMockPoolAddressValidator())
+	blockScan, err := NewThorchainBlockScan(cfg.BlockScanner, s.storage, s.bridge, s.m, pubkeymanager.NewMockPoolAddressValidator())
 	c.Assert(err, IsNil)
 	sign := &Signer{
 		logger:                log.With().Str("module", "signer").Logger(),
@@ -378,7 +377,7 @@ func (s *SignSuite) TestProcess(c *C) {
 		m:                     s.m,
 		storage:               s.storage,
 		errCounter:            s.m.GetCounterVec(metrics.SignerError),
-		pubkeyMgr:             binance.NewMockPoolAddressValidator(),
+		pubkeyMgr:             pubkeymanager.NewMockPoolAddressValidator(),
 		thorchainBridge:       s.bridge,
 	}
 	c.Assert(sign, NotNil)

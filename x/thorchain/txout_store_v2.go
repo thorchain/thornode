@@ -142,8 +142,22 @@ func (tos *TxOutStorageV2) prepareTxOutItem(ctx sdk.Context, toi *TxOutItem) (bo
 		return false, nil
 	}
 
-	// Deduct TransactionFee from TOI and add to Reserve
 	transactionFee := tos.constAccessor.GetInt64Value(constants.TransactionFee)
+	if toi.MaxGas.IsEmpty() {
+		gasAsset := toi.Chain.GetGasAsset()
+		pool, err := tos.keeper.GetPool(ctx, gasAsset)
+		if err != nil {
+			return false, fmt.Errorf("failed to get gas asset pool: %w", err)
+		}
+
+		// max gas amount is the transaction fee divided by two, in asset amount
+		maxAmt := pool.RuneValueInAsset(sdk.NewUint(uint64(transactionFee / 2)))
+		toi.MaxGas = common.Gas{
+			common.NewCoin(gasAsset, maxAmt),
+		}
+	}
+
+	// Deduct TransactionFee from TOI and add to Reserve
 	memo, _ := ParseMemo(toi.Memo) // ignore err
 	if err == nil && !memo.IsType(txYggdrasilFund) && !memo.IsType(txYggdrasilReturn) && !memo.IsType(txMigrate) && !memo.IsType(txRagnarok) {
 		var runeFee sdk.Uint

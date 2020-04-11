@@ -1,4 +1,4 @@
-package binance
+package pubkeymanager
 
 import (
 	"fmt"

@@ -7,7 +7,3 @@ import (
 )
 
 func TestPackage(t *testing.T) { TestingT(t) }
-
-type TypesSuite struct{}
-
-var _ = Suite(&TypesSuite{})

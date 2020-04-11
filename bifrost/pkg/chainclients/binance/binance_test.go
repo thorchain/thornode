@@ -237,7 +237,7 @@ func (s *BinancechainSuite) TestGetGasFee(c *C) {
 	}, nil, b)
 	c.Assert(err2, IsNil)
 	c.Assert(b2, NotNil)
-	b2.blockScanner = &BinanceBlockScanner{
+	b2.bnbScanner = &BinanceBlockScanner{
 		singleFee: 37500,
 		multiFee:  30000,
 	}
