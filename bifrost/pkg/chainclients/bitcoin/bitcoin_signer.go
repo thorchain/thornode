@@ -143,6 +143,9 @@ func (c *Client) SignTx(tx stypes.TxOutItem, height int64) ([]byte, error) {
 	// balance to ourselves
 	// add output to pay the balance back ourselves
 	balance := int64(total) - redeemTxOut.Value - int64(gasCoin.Amount.Uint64())
+	if balance < 0 {
+		return nil, errors.New("not enough balance to pay customer")
+	}
 	redeemTx.AddTxOut(wire.NewTxOut(balance, sourceScript))
 	for idx := range redeemTx.TxIn {
 		sigHashes := txscript.NewTxSigHashes(redeemTx)

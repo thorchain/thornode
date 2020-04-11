@@ -1,0 +1,12 @@
+{
+  "version": 200100,
+  "protocolversion": 70002,
+  "blocks": 1697215,
+  "timeoffset": 0,
+  "connections": 83,
+  "proxy": "",
+  "difficulty": 16777216,
+  "testnet": true,
+  "relayfee": 0.00001,
+  "errors": ""
+}
