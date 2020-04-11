@@ -124,8 +124,15 @@ func (am AppModule) NewQuerierHandler() sdk.Querier {
 func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 	ctx.Logger().Debug("Begin Block", "height", req.Header.Height)
 
-	am.keeper.ClearObservingAddresses(ctx)
 	version := am.keeper.GetLowestActiveVersion(ctx)
+	am.keeper.ClearObservingAddresses(ctx)
+	obMgr, err := am.versionedObserverManager.GetObserverManager(ctx, version)
+	if err != nil {
+		ctx.Logger().Error(fmt.Sprintf("observer manager that compatible with version :%s is not available", version))
+		return
+	}
+	obMgr.BeginBlock()
+
 	gasMgr, err := am.versionedGasManager.GetGasManager(ctx, version)
 	if err != nil {
 		ctx.Logger().Error(fmt.Sprintf("gas manager that compatible with version :%s is not available", version))
@@ -196,6 +203,12 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 			}
 		}
 	}
+	obMgr, err := am.versionedObserverManager.GetObserverManager(ctx, version)
+	if err != nil {
+		ctx.Logger().Error(fmt.Sprintf("observer manager that compatible with version :%s is not available", version))
+		return nil
+	}
+	obMgr.EndBlock(ctx, am.keeper)
 	gasMgr, err := am.versionedGasManager.GetGasManager(ctx, version)
 	if err != nil {
 		ctx.Logger().Error(fmt.Sprintf("gas manager that compatible with version :%s is not available", version))
