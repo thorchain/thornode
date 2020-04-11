@@ -737,11 +737,26 @@ func queryCompEvents(ctx sdk.Context, path []string, req abci.RequestQuery, keep
 			events = append(events, event)
 			continue
 		}
-		if !chain.IsEmpty() && !event.Chain.Equals(chain) {
+
+		// discover the chain event
+		// if no out txs, use intx chain
+		// if out txs, use first non-rune chain, else use rune chain
+		evtChain := event.InTx.Chain
+		if len(event.OutTxs) > 0 {
+			evtChain = common.RuneAsset().Chain
+			for _, outTx := range event.OutTxs {
+				if !evtChain.Equals(outTx.Chain) {
+					evtChain = outTx.Chain
+					break
+				}
+			}
+		}
+
+		if !chain.IsEmpty() && !evtChain.Equals(chain) {
 			continue
 		}
 		if event.Empty() {
-			break
+			continue
 		}
 		if len(es) == 0 {
 			if event.Status == EventPending {
