@@ -456,7 +456,7 @@ func (vm *validatorMgrV1) ragnarokReserve(ctx sdk.Context, nth int64) error {
 
 		// refund contribution
 		txOutItem := &TxOutItem{
-			Chain:     common.BNBChain,
+			Chain:     common.RuneAsset().Chain,
 			ToAddress: contrib.Address,
 			InHash:    common.BlankTxID,
 			Coin:      common.NewCoin(common.RuneAsset(), amt),
@@ -513,7 +513,7 @@ func (vm *validatorMgrV1) ragnarokBond(ctx sdk.Context, nth int64) error {
 
 		// refund bond
 		txOutItem := &TxOutItem{
-			Chain:     common.BNBChain,
+			Chain:     common.RuneAsset().Chain,
 			ToAddress: na.BondAddress,
 			InHash:    common.BlankTxID,
 			Coin:      common.NewCoin(common.RuneAsset(), amt),

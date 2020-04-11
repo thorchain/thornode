@@ -291,10 +291,6 @@ func queryPoolAddresses(ctx sdk.Context, path []string, req abci.RequestQuery, k
 			return nil, sdk.ErrInternal("fail to get chains")
 		}
 
-		if len(chains) == 0 {
-			chains = common.Chains{common.BNBChain}
-		}
-
 		for _, chain := range chains {
 			vaultAddress, err := vault.PubKey.GetAddress(chain)
 			if err != nil {
@@ -750,10 +746,8 @@ func queryCompleteEvents(ctx sdk.Context, path []string, req abci.RequestQuery, 
 }
 
 func queryHeights(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
-	var chain common.Chain
-	if path[0] == "" {
-		chain = common.BNBChain
-	} else {
+	chain := common.BNBChain
+	if len(path[0]) > 0 {
 		var err error
 		chain, err = common.NewChain(path[0])
 		if err != nil {
