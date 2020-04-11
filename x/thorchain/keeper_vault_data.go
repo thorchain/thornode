@@ -228,7 +228,7 @@ func getTotalActiveNodeWithBond(ctx sdk.Context, k Keeper) (int64, error) {
 }
 
 // substractGas to subsidise the pool with RUNE for the gas they have spent
-func subtractGas(ctx sdk.Context, keeper Keeper, reserve sdk.Uint, gas common.Gas, gasManager GasManager) (sdk.Uint, common.Gas, error) {
+func subtractGas(ctx sdk.Context, keeper Keeper, val sdk.Uint, gas common.Gas, gasManager GasManager) (sdk.Uint, common.Gas, error) {
 	for i, coin := range gas {
 		// if the coin is zero amount, don't need to do anything
 		if coin.Amount.IsZero() {
@@ -242,11 +242,11 @@ func subtractGas(ctx sdk.Context, keeper Keeper, reserve sdk.Uint, gas common.Ga
 
 		runeGas := pool.AssetValueInRune(coin.Amount) // Convert to Rune (gas will never be RUNE)
 		// If Rune owed now exceeds the Total Reserve, return it all
-		if runeGas.GT(reserve) {
-			runeGas = reserve
+		if runeGas.GT(val) {
+			runeGas = val
 		}
 		gas[i].Amount = common.SafeSub(gas[i].Amount, pool.RuneValueInAsset(runeGas))
-		reserve = common.SafeSub(reserve, runeGas)       // Deduct from the Reserve.
+		val = common.SafeSub(val, runeGas)               // Deduct from the Reserve.
 		pool.BalanceRune = pool.BalanceRune.Add(runeGas) // Add to the pool
 
 		if err := keeper.SetPool(ctx, pool); err != nil {
@@ -256,7 +256,7 @@ func subtractGas(ctx sdk.Context, keeper Keeper, reserve sdk.Uint, gas common.Ga
 		gasManager.AddRune(coin.Asset, runeGas) // Declare for the event
 	}
 
-	return reserve, gas, nil
+	return val, gas, nil
 }
 
 // Pays out Rewards
