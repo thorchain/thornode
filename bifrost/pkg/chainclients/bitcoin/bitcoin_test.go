@@ -5,13 +5,23 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
+	"strconv"
 	"testing"
+	"time"
 
+	ctypes "github.com/binance-chain/go-sdk/common/types"
 	"github.com/btcsuite/btcd/btcjson"
+	"github.com/cosmos/cosmos-sdk/client/keys"
+	cKeys "github.com/cosmos/cosmos-sdk/crypto/keys"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"gitlab.com/thorchain/thornode/bifrost/config"
-	"gitlab.com/thorchain/thornode/common"
 	. "gopkg.in/check.v1"
+
+	"gitlab.com/thorchain/thornode/bifrost/config"
+	"gitlab.com/thorchain/thornode/bifrost/thorclient"
+	"gitlab.com/thorchain/thornode/common"
+	types2 "gitlab.com/thorchain/thornode/x/thorchain/types"
 )
 
 func TestPackage(t *testing.T) { TestingT(t) }
@@ -35,6 +45,26 @@ func (s *BitcoinSuite) SetUpSuite(c *C) {
 		DisableTLS:  true,
 		HTTPostMode: true,
 	}
+	ns := strconv.Itoa(time.Now().Nanosecond())
+	types2.SetupConfigForTest()
+	ctypes.Network = ctypes.TestNetwork
+	c.Assert(os.Setenv("NET", "testnet"), IsNil)
+
+	thordir := filepath.Join(os.TempDir(), ns, ".thorcli")
+	cfg := config.ClientConfiguration{
+		ChainID:         "thorchain",
+		ChainHost:       "localhost",
+		SignerName:      "bob",
+		SignerPasswd:    "password",
+		ChainHomeFolder: thordir,
+	}
+
+	kb, err := keys.NewKeyBaseFromDir(thordir)
+	c.Assert(err, IsNil)
+	_, _, err = kb.CreateMnemonic(cfg.SignerName, cKeys.English, cfg.SignerPasswd, cKeys.Secp256k1)
+	c.Assert(err, IsNil)
+	thorKeys, err := thorclient.NewKeys(cfg.ChainHomeFolder, cfg.SignerName, cfg.SignerPasswd)
+	c.Assert(err, IsNil)
 	s.server = httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		r := struct {
 			Method string `json:"method"`
@@ -51,8 +81,7 @@ func (s *BitcoinSuite) SetUpSuite(c *C) {
 	}))
 
 	s.cfg.ChainHost = s.server.Listener.Addr().String()
-	var err error
-	s.client, err = NewClient(s.cfg)
+	s.client, err = NewClient(thorKeys, s.cfg, nil)
 	c.Assert(err, IsNil)
 	c.Assert(s.client, NotNil)
 }

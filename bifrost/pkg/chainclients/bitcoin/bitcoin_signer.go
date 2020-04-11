@@ -40,6 +40,7 @@ func (c *Client) getChainCfg() *chaincfg.Params {
 }
 
 func (c *Client) getAllUnspentUtxo() ([]string, error) {
+	// TODO how we going to do this?
 	return nil, nil
 }
 
@@ -61,6 +62,7 @@ func (c *Client) getLastOutput(inputTxId, sourceAddr string) (btcjson.Vout, erro
 	}
 	return btcjson.Vout{}, errors.New("not found")
 }
+
 func getGasCoin(tx stypes.TxOutItem) common.Coin {
 	return tx.MaxGas.ToCoins().GetCoin(common.BTCAsset)
 }
@@ -142,7 +144,6 @@ func (c *Client) SignTx(tx stypes.TxOutItem, height int64) ([]byte, error) {
 	// add output to pay the balance back ourselves
 	balance := int64(total) - redeemTxOut.Value - int64(gasCoin.Amount.Uint64())
 	redeemTx.AddTxOut(wire.NewTxOut(balance, sourceScript))
-
 	for idx := range redeemTx.TxIn {
 		sigHashes := txscript.NewTxSigHashes(redeemTx)
 
