@@ -5,16 +5,28 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/btcsuite/btcd/btcec"
 	"github.com/btcsuite/btcd/btcjson"
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/txscript"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
+	"github.com/tendermint/tendermint/crypto"
+	"github.com/tendermint/tendermint/crypto/secp256k1"
 
 	stypes "gitlab.com/thorchain/thornode/bifrost/thorclient/types"
 	"gitlab.com/thorchain/thornode/common"
 )
+
+func getBTCPrivateKey(key crypto.PrivKey) (*btcec.PrivateKey, error) {
+	priKey, ok := key.(secp256k1.PrivKeySecp256k1)
+	if !ok {
+		return nil, errors.New("invalid private key type")
+	}
+	privateKey, _ := btcec.PrivKeyFromBytes(btcec.S256(), priKey[:])
+	return privateKey, nil
+}
 
 func (c *Client) getChainCfg() *chaincfg.Params {
 	cn := common.GetCurrentChainNetwork()
@@ -26,6 +38,7 @@ func (c *Client) getChainCfg() *chaincfg.Params {
 	}
 	return nil
 }
+
 func (c *Client) getAllUnspentUtxo() ([]string, error) {
 	return nil, nil
 }
@@ -121,7 +134,7 @@ func (c *Client) SignTx(tx stypes.TxOutItem, height int64) ([]byte, error) {
 	for idx := range redeemTx.TxIn {
 		sigHashes := txscript.NewTxSigHashes(redeemTx)
 
-		witness, err := txscript.WitnessSignature(redeemTx, sigHashes, idx, int64(individualAmounts[idx]), sourceScript, txscript.SigHashAll, privateKey, true)
+		witness, err := txscript.WitnessSignature(redeemTx, sigHashes, idx, int64(individualAmounts[idx]), sourceScript, txscript.SigHashAll, c.privateKey, true)
 		if err != nil {
 			return nil, fmt.Errorf("fail to get witness: %w", err)
 		}

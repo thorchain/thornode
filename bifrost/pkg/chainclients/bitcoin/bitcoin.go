@@ -51,14 +51,23 @@ func NewClient(thorKeys *thorclient.Keys, cfg config.ChainConfiguration, server 
 	if err != nil {
 		return nil, fmt.Errorf("fail to create tss signer: %w", err)
 	}
+	thorPrivateKey, err := thorKeys.GetPrivateKey()
+	if err != nil {
+		return nil, fmt.Errorf("fail to get thor private key")
+	}
 
-	btcec.PrivKeyFromBytes(btcec.S256())
+	btcPrivateKey, err := getBTCPrivateKey(thorPrivateKey)
+	if err != nil {
+		return nil, fmt.Errorf("fail to get private key for BTC chain: %w", err)
+	}
+
 	return &Client{
 		logger:        log.Logger.With().Str("module", "btcClient").Logger(),
 		cfg:           cfg,
 		chain:         cfg.ChainID,
 		client:        client,
 		tssKeyManager: tssKm,
+		privateKey:    btcPrivateKey,
 	}, nil
 }
 
