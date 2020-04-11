@@ -165,6 +165,7 @@ func (s *BitcoinSignerSuite) TestSignTx(c *C) {
 	c.Assert(err, NotNil)
 	c.Assert(result, IsNil)
 }
+
 func (s *BitcoinSignerSuite) TestBroadcastTx(c *C) {
 	txOutItem := stypes.TxOutItem{
 		Chain:       common.BNBChain,

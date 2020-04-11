@@ -44,7 +44,6 @@ func NewClient(thorKeys *thorclient.Keys, cfg config.ChainConfiguration, server 
 		DisableTLS:   cfg.DisableTLS,
 		HTTPPostMode: cfg.HTTPostMode,
 	}, nil)
-
 	if err != nil {
 		return nil, err
 	}

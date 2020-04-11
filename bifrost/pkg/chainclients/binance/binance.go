@@ -27,7 +27,6 @@ import (
 	"gitlab.com/thorchain/thornode/bifrost/blockscanner"
 	"gitlab.com/thorchain/thornode/bifrost/config"
 	"gitlab.com/thorchain/thornode/bifrost/metrics"
-	"gitlab.com/thorchain/thornode/bifrost/pubkeymanager"
 	"gitlab.com/thorchain/thornode/bifrost/thorclient"
 	stypes "gitlab.com/thorchain/thornode/bifrost/thorclient/types"
 	"gitlab.com/thorchain/thornode/bifrost/tss"
@@ -106,29 +105,13 @@ func (b *Binance) initBlockScanner(m *metrics.Metrics) error {
 	if err != nil {
 		return pkerrors.Wrap(err, "fail to create scan storage")
 	}
-	startBlockHeight := int64(0)
-	if !b.cfg.BlockScanner.EnforceBlockHeight {
-		startBlockHeight, err = b.thorchainBridge.GetLastObservedInHeight(common.BNBChain)
-		if err != nil {
-			return pkerrors.Wrap(err, "fail to get start block height from thorchain")
-		}
-		if startBlockHeight == 0 {
-			startBlockHeight, err = b.GetHeight()
-			if err != nil {
-				return pkerrors.Wrap(err, "fail to get binance height")
-			}
-			b.logger.Info().Int64("height", startBlockHeight).Msg("Current block height is indeterminate; using current height from Binance.")
-		}
-	} else {
-		startBlockHeight = b.cfg.BlockScanner.StartBlockHeight
-	}
 
-	b.bnbScanner, err = NewBinanceBlockScanner(b.cfg.BlockScanner, startBlockHeight, b.storage, b.isTestNet, m)
+	b.bnbScanner, err = NewBinanceBlockScanner(b.cfg.BlockScanner, b.storage, b.isTestNet, m)
 	if err != nil {
 		return pkerrors.Wrap(err, "fail to create block scanner")
 	}
 
-	b.blockScanner, err = blockscanner.NewBlockScanner(b.cfg.BlockScanner, startBlockHeight, b.storage, m, b.bnbScanner)
+	b.blockScanner, err = blockscanner.NewBlockScanner(b.cfg.BlockScanner, b.storage, m, b.thorchainBridge, b.bnbScanner)
 	if err != nil {
 		return pkerrors.Wrap(err, "fail to create block scanner")
 	}
@@ -136,7 +119,7 @@ func (b *Binance) initBlockScanner(m *metrics.Metrics) error {
 	return nil
 }
 
-func (b *Binance) Start(globalTxsQueue chan stypes.TxIn, pubkeyMgr pubkeymanager.PubKeyValidator, m *metrics.Metrics) error {
+func (b *Binance) Start(globalTxsQueue chan stypes.TxIn, m *metrics.Metrics) error {
 	err := b.initBlockScanner(m)
 	if err != nil {
 		b.logger.Error().Err(err).Msg("fail to init block scanner")
