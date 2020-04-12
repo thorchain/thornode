@@ -38,8 +38,10 @@ func NewQuerier(keeper Keeper, validatorMgr VersionedValidatorManager) sdk.Queri
 			return queryKeysign(ctx, path[1:], req, keeper)
 		case q.QueryKeygensPubkey.Key:
 			return queryKeygen(ctx, path[1:], req, keeper)
-		case q.QueryCompleteEvents.Key:
-			return queryCompleteEvents(ctx, path[1:], req, keeper)
+		case q.QueryCompEvents.Key:
+			return queryCompEvents(ctx, path[1:], req, keeper)
+		case q.QueryCompEventsByChain.Key:
+			return queryCompEvents(ctx, path[1:], req, keeper)
 		case q.QueryEventsByTxHash.Key:
 			return queryEventsByTxHash(ctx, path[1:], req, keeper)
 		case q.QueryHeights.Key:
@@ -709,12 +711,22 @@ func queryEventsByTxHash(ctx sdk.Context, path []string, req abci.RequestQuery, 
 	return res, nil
 }
 
-func queryCompleteEvents(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
+func queryCompEvents(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
 	id, err := strconv.ParseInt(path[0], 10, 64)
 	if err != nil {
 		ctx.Logger().Error("fail to discover id number", "error", err)
 		return nil, sdk.ErrInternal("fail to discover id number")
 	}
+
+	chain := common.EmptyChain
+	if len(path[1]) > 0 {
+		chain, err = common.NewChain(path[1])
+		if err != nil {
+			ctx.Logger().Error("fail to discover chain name", "error", err)
+			return nil, sdk.ErrInternal("fail to discover chain name")
+		}
+	}
+
 	u, err := getURLFromData(req.Data)
 	if err != nil {
 		ctx.Logger().Error(err.Error())
@@ -729,8 +741,26 @@ func queryCompleteEvents(ctx sdk.Context, path []string, req abci.RequestQuery, 
 			events = append(events, event)
 			continue
 		}
+
+		// discover the chain event
+		// if no out txs, use intx chain
+		// if out txs, use first non-rune chain, else use rune chain
+		evtChain := event.InTx.Chain
+		if len(event.OutTxs) > 0 {
+			evtChain = common.RuneAsset().Chain
+			for _, outTx := range event.OutTxs {
+				if !evtChain.Equals(outTx.Chain) {
+					evtChain = outTx.Chain
+					break
+				}
+			}
+		}
+
+		if !chain.IsEmpty() && !evtChain.Equals(chain) {
+			continue
+		}
 		if event.Empty() {
-			break
+			continue
 		}
 		if len(es) == 0 {
 			if event.Status == EventPending {
