@@ -132,10 +132,11 @@ func (c *Client) SignTx(tx stypes.TxOutItem, height int64) ([]byte, error) {
 	if balance < 0 {
 		return nil, errors.New("not enough balance to pay customer")
 	}
+
 	redeemTx.AddTxOut(wire.NewTxOut(balance, sourceScript))
+
 	for idx := range redeemTx.TxIn {
 		sigHashes := txscript.NewTxSigHashes(redeemTx)
-
 		witness, err := txscript.WitnessSignature(redeemTx, sigHashes, idx, int64(individualAmounts[idx]), sourceScript, txscript.SigHashAll, c.privateKey, true)
 		if err != nil {
 			return nil, fmt.Errorf("fail to get witness: %w", err)
@@ -156,8 +157,25 @@ func (c *Client) SignTx(tx stypes.TxOutItem, height int64) ([]byte, error) {
 	if err := redeemTx.Serialize(&signedTx); err != nil {
 		return nil, fmt.Errorf("fail to serialize tx to bytes: %w", err)
 	}
-
+	if err := c.saveUTXO(redeemTx, balance, sourceScript); nil != err {
+		return nil, fmt.Errorf("fail to save the new UTXO to storage: %w", err)
+	}
 	return signedTx.Bytes(), nil
+}
+
+// saveUTXO save the newly created UTXO which transfer balance back our own address to storage
+func (c *Client) saveUTXO(tx *wire.MsgTx, balance int64, script []byte) error {
+	txID := tx.TxHash()
+	n := 0
+	// find the position of output that we send balance back to ourselves
+	for idx, item := range tx.TxOut {
+		if item.Value == balance && bytes.Equal(script, item.PkScript) {
+			n = idx
+			break
+		}
+	}
+	amt := btcutil.Amount(balance)
+	return c.utxoAccessor.AddUTXO(NewUnspentTransactionOutput(txID, uint32(n), amt.ToBTC()))
 }
 
 // BroadcastTx will broadcast the given payload to BTC chain

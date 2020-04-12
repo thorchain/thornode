@@ -83,6 +83,7 @@ func (s *BitcoinSignerSuite) SetUpSuite(c *C) {
 
 	s.cfg.ChainHost = s.server.Listener.Addr().String()
 	s.client, err = NewClient(thorKeys, s.cfg, nil)
+	s.client.utxoAccessor = NewDummyUTXOAccessor()
 	c.Assert(err, IsNil)
 	c.Assert(s.client, NotNil)
 }

@@ -5,6 +5,11 @@ type DummyUTXOAccessor struct {
 	storage map[string]UnspentTransactionOutput
 }
 
+func NewDummyUTXOAccessor() *DummyUTXOAccessor {
+	return &DummyUTXOAccessor{
+		storage: make(map[string]UnspentTransactionOutput),
+	}
+}
 func (t *DummyUTXOAccessor) GetUTXOs() ([]UnspentTransactionOutput, error) {
 	result := make([]UnspentTransactionOutput, len(t.storage))
 	for _, item := range t.storage {
