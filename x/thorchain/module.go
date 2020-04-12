@@ -71,13 +71,14 @@ func (AppModuleBasic) GetTxCmd(cdc *codec.Codec) *cobra.Command {
 
 type AppModule struct {
 	AppModuleBasic
-	keeper                Keeper
-	coinKeeper            bank.Keeper
-	supplyKeeper          supply.Keeper
-	txOutStore            VersionedTxOutStore
-	validatorMgr          VersionedValidatorManager
-	versionedVaultManager VersionedVaultManager
-	versionedGasManager   VersionedGasManager
+	keeper                   Keeper
+	coinKeeper               bank.Keeper
+	supplyKeeper             supply.Keeper
+	txOutStore               VersionedTxOutStore
+	validatorMgr             VersionedValidatorManager
+	versionedVaultManager    VersionedVaultManager
+	versionedGasManager      VersionedGasManager
+	versionedObserverManager VersionedObserverManager
 }
 
 // NewAppModule creates a new AppModule Object
@@ -86,14 +87,15 @@ func NewAppModule(k Keeper, bankKeeper bank.Keeper, supplyKeeper supply.Keeper) 
 	versionedVaultMgr := NewVersionedVaultMgr(versionedTxOutStore)
 
 	return AppModule{
-		AppModuleBasic:        AppModuleBasic{},
-		keeper:                k,
-		coinKeeper:            bankKeeper,
-		supplyKeeper:          supplyKeeper,
-		txOutStore:            versionedTxOutStore,
-		validatorMgr:          NewVersionedValidatorMgr(k, versionedTxOutStore, versionedVaultMgr),
-		versionedVaultManager: versionedVaultMgr,
-		versionedGasManager:   NewVersionedGasMgr(),
+		AppModuleBasic:           AppModuleBasic{},
+		keeper:                   k,
+		coinKeeper:               bankKeeper,
+		supplyKeeper:             supplyKeeper,
+		txOutStore:               versionedTxOutStore,
+		validatorMgr:             NewVersionedValidatorMgr(k, versionedTxOutStore, versionedVaultMgr),
+		versionedVaultManager:    versionedVaultMgr,
+		versionedGasManager:      NewVersionedGasMgr(),
+		versionedObserverManager: NewVersionedObserverMgr(),
 	}
 }
 
@@ -108,7 +110,7 @@ func (am AppModule) Route() string {
 }
 
 func (am AppModule) NewHandler() sdk.Handler {
-	return NewHandler(am.keeper, am.txOutStore, am.validatorMgr, am.versionedVaultManager, am.versionedGasManager)
+	return NewHandler(am.keeper, am.txOutStore, am.validatorMgr, am.versionedVaultManager, am.versionedObserverManager, am.versionedGasManager)
 }
 
 func (am AppModule) QuerierRoute() string {
@@ -122,8 +124,15 @@ func (am AppModule) NewQuerierHandler() sdk.Querier {
 func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 	ctx.Logger().Debug("Begin Block", "height", req.Header.Height)
 
-	am.keeper.ClearObservingAddresses(ctx)
 	version := am.keeper.GetLowestActiveVersion(ctx)
+	am.keeper.ClearObservingAddresses(ctx)
+	obMgr, err := am.versionedObserverManager.GetObserverManager(ctx, version)
+	if err != nil {
+		ctx.Logger().Error(fmt.Sprintf("observer manager that compatible with version :%s is not available", version))
+		return
+	}
+	obMgr.BeginBlock()
+
 	gasMgr, err := am.versionedGasManager.GetGasManager(ctx, version)
 	if err != nil {
 		ctx.Logger().Error(fmt.Sprintf("gas manager that compatible with version :%s is not available", version))
@@ -194,6 +203,12 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 			}
 		}
 	}
+	obMgr, err := am.versionedObserverManager.GetObserverManager(ctx, version)
+	if err != nil {
+		ctx.Logger().Error(fmt.Sprintf("observer manager that compatible with version :%s is not available", version))
+		return nil
+	}
+	obMgr.EndBlock(ctx, am.keeper)
 	gasMgr, err := am.versionedGasManager.GetGasManager(ctx, version)
 	if err != nil {
 		ctx.Logger().Error(fmt.Sprintf("gas manager that compatible with version :%s is not available", version))

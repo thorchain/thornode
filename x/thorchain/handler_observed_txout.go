@@ -10,24 +10,27 @@ import (
 )
 
 type ObservedTxOutHandler struct {
-	keeper                Keeper
-	versionedTxOutStore   VersionedTxOutStore
-	validatorMgr          VersionedValidatorManager
-	versionedVaultManager VersionedVaultManager
-	versionedGasMgr       VersionedGasManager
+	keeper                   Keeper
+	versionedTxOutStore      VersionedTxOutStore
+	validatorMgr             VersionedValidatorManager
+	versionedVaultManager    VersionedVaultManager
+	versionedGasMgr          VersionedGasManager
+	versionedObserverManager VersionedObserverManager
 }
 
 func NewObservedTxOutHandler(keeper Keeper,
+	versionedObserverManager VersionedObserverManager,
 	txOutStore VersionedTxOutStore,
 	validatorMgr VersionedValidatorManager,
 	versionedVaultManager VersionedVaultManager,
 	versionedGasMgr VersionedGasManager) ObservedTxOutHandler {
 	return ObservedTxOutHandler{
-		keeper:                keeper,
-		versionedTxOutStore:   txOutStore,
-		validatorMgr:          validatorMgr,
-		versionedVaultManager: versionedVaultManager,
-		versionedGasMgr:       versionedGasMgr,
+		keeper:                   keeper,
+		versionedTxOutStore:      txOutStore,
+		validatorMgr:             validatorMgr,
+		versionedVaultManager:    versionedVaultManager,
+		versionedGasMgr:          versionedGasMgr,
+		versionedObserverManager: versionedObserverManager,
 	}
 }
 
@@ -96,7 +99,19 @@ func (h ObservedTxOutHandler) handleV1(ctx sdk.Context, version semver.Version, 
 		return sdk.ErrInternal(err.Error()).Result()
 	}
 
-	handler := NewHandler(h.keeper, h.versionedTxOutStore, h.validatorMgr, h.versionedVaultManager, h.versionedGasMgr)
+	obMgr, err := h.versionedObserverManager.GetObserverManager(ctx, version)
+	if err != nil {
+		ctx.Logger().Error("fail to get observer manager", "error", err)
+		return errBadVersion.Result()
+	}
+
+	gasMgr, err := h.versionedGasMgr.GetGasManager(ctx, version)
+	if err != nil {
+		ctx.Logger().Error(fmt.Sprintf("gas manager that compatible with version :%s is not available", version))
+		return sdk.ErrInternal("fail to get gas manager").Result()
+	}
+
+	handler := NewHandler(h.keeper, h.versionedTxOutStore, h.validatorMgr, h.versionedVaultManager, h.versionedObserverManager, h.versionedGasMgr)
 
 	for _, tx := range msg.Txs {
 
@@ -117,9 +132,7 @@ func (h ObservedTxOutHandler) handleV1(ctx sdk.Context, version semver.Version, 
 			if voter.Height == ctx.BlockHeight() {
 				// we've already process the transaction, but we should still
 				// update the observing addresses
-				if err := h.keeper.AddObservingAddresses(ctx, msg.GetSigners()); err != nil {
-					ctx.Logger().Error("fail to add observing address", "error", err)
-				}
+				obMgr.AppendObserver(tx.Tx.Chain, msg.GetSigners())
 			}
 			continue
 		}
@@ -163,11 +176,7 @@ func (h ObservedTxOutHandler) handleV1(ctx sdk.Context, version semver.Version, 
 				"tx", tx.Tx.String())
 			continue
 		}
-		gasMgr, err := h.versionedGasMgr.GetGasManager(ctx, version)
-		if err != nil {
-			ctx.Logger().Error(fmt.Sprintf("gas manager that compatible with version :%s is not available", version))
-			return sdk.ErrInternal("fail to get gas manager").Result()
-		}
+
 		// Apply Gas fees
 		if err := AddGasFees(ctx, h.keeper, tx, gasMgr); err != nil {
 			return sdk.ErrInternal(fmt.Errorf("fail to add gas fee: %w", err).Error()).Result()
@@ -192,9 +201,7 @@ func (h ObservedTxOutHandler) handleV1(ctx sdk.Context, version semver.Version, 
 
 		// add addresses to observing addresses. This is used to detect
 		// active/inactive observing node accounts
-		if err := h.keeper.AddObservingAddresses(ctx, txOut.Signers); err != nil {
-			return sdk.ErrInternal(err.Error()).Result()
-		}
+		obMgr.AppendObserver(tx.Tx.Chain, txOut.Signers)
 
 		result := handler(ctx, m)
 		if !result.IsOK() {

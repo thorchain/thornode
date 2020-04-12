@@ -35,7 +35,8 @@ func (s *HandlerObservedTxOutSuite) TestValidate(c *C) {
 
 	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(w.versionedTxOutStore)
 	versionedGasMgr := NewVersionedGasMgr()
-	handler := NewObservedTxOutHandler(keeper, w.versionedTxOutStore, w.validatorMgr, versionedVaultMgrDummy, versionedGasMgr)
+	versionedObMgr := NewDummyVersionedObserverMgr()
+	handler := NewObservedTxOutHandler(keeper, versionedObMgr, w.versionedTxOutStore, w.validatorMgr, versionedVaultMgrDummy, versionedGasMgr)
 
 	// happy path
 	ver := constants.SWVersion
@@ -226,12 +227,17 @@ func (s *HandlerObservedTxOutSuite) TestHandle(c *C) {
 	keeper.txOutStore = txOutStore
 	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(versionedTxOutStoreDummy)
 	versionedGasMgr := NewVersionedGasMgr()
-	handler := NewObservedTxOutHandler(keeper, versionedTxOutStoreDummy, w.validatorMgr, versionedVaultMgrDummy, versionedGasMgr)
+	versionedObMgr := NewVersionedObserverMgr()
+	handler := NewObservedTxOutHandler(keeper, versionedObMgr, versionedTxOutStoreDummy, w.validatorMgr, versionedVaultMgrDummy, versionedGasMgr)
 
 	c.Assert(err, IsNil)
 	msg := NewMsgObservedTxOut(txs, keeper.nas[0].NodeAddress)
 	result := handler.handle(ctx, msg, ver)
 	c.Assert(result.IsOK(), Equals, true)
+	obMgr, err := versionedObMgr.GetObserverManager(ctx, ver)
+	c.Assert(err, IsNil)
+	obMgr.EndBlock(ctx, keeper)
+
 	items, err := txOutStore.GetOutboundItems(ctx)
 	c.Assert(err, IsNil)
 	c.Assert(items, HasLen, 0)
@@ -281,7 +287,8 @@ func (s *HandlerObservedTxOutSuite) TestGasUpdate(c *C) {
 	keeper.txOutStore = txOutStore
 	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(versionedTxOutStoreDummy)
 	versionedGasMgr := NewVersionedGasMgr()
-	handler := NewObservedTxOutHandler(keeper, versionedTxOutStoreDummy, w.validatorMgr, versionedVaultMgrDummy, versionedGasMgr)
+	versionedObMgr := NewDummyVersionedObserverMgr()
+	handler := NewObservedTxOutHandler(keeper, versionedObMgr, versionedTxOutStoreDummy, w.validatorMgr, versionedVaultMgrDummy, versionedGasMgr)
 
 	c.Assert(err, IsNil)
 	msg := NewMsgObservedTxOut(txs, keeper.nas[0].NodeAddress)
@@ -337,7 +344,8 @@ func (s *HandlerObservedTxOutSuite) TestHandleStolenFunds(c *C) {
 	keeper.txOutStore = txOutStore
 	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(versionedTxOutStoreDummy)
 	versionedGasMgr := NewVersionedGasMgr()
-	handler := NewObservedTxOutHandler(keeper, versionedTxOutStoreDummy, w.validatorMgr, versionedVaultMgrDummy, versionedGasMgr)
+	versionedObMgr := NewDummyVersionedObserverMgr()
+	handler := NewObservedTxOutHandler(keeper, versionedObMgr, versionedTxOutStoreDummy, w.validatorMgr, versionedVaultMgrDummy, versionedGasMgr)
 
 	c.Assert(err, IsNil)
 	msg := NewMsgObservedTxOut(txs, keeper.nas[0].NodeAddress)

@@ -50,7 +50,8 @@ func (s *HandlerObservedTxInSuite) TestValidate(c *C) {
 
 	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(w.versionedTxOutStore)
 	versionedGasMgr := NewDummyVersionedGasMgr()
-	handler := NewObservedTxInHandler(keeper, w.versionedTxOutStore, w.validatorMgr, versionedVaultMgrDummy, versionedGasMgr)
+	versionedObMgr := NewDummyVersionedObserverMgr()
+	handler := NewObservedTxInHandler(keeper, versionedObMgr, w.versionedTxOutStore, w.validatorMgr, versionedVaultMgrDummy, versionedGasMgr)
 
 	// happy path
 	ver := constants.SWVersion
@@ -253,11 +254,16 @@ func (s *HandlerObservedTxInSuite) TestHandle(c *C) {
 	c.Assert(err, IsNil)
 	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(versionedTxOutStore)
 	versionedGasMgr := NewVersionedGasMgr()
-	handler := NewObservedTxInHandler(keeper, versionedTxOutStore, w.validatorMgr, versionedVaultMgrDummy, versionedGasMgr)
+	versionedObMgr := NewVersionedObserverMgr()
+	handler := NewObservedTxInHandler(keeper, versionedObMgr, versionedTxOutStore, w.validatorMgr, versionedVaultMgrDummy, versionedGasMgr)
 
 	c.Assert(err, IsNil)
 	msg := NewMsgObservedTxIn(txs, keeper.nas[0].NodeAddress)
 	result := handler.handle(ctx, msg, ver)
+	obMgr, err := versionedObMgr.GetObserverManager(ctx, ver)
+	c.Assert(err, IsNil)
+	obMgr.EndBlock(ctx, keeper)
+
 	c.Assert(result.IsOK(), Equals, true)
 	items, err := txOutStore.GetOutboundItems(ctx)
 	c.Assert(err, IsNil)
@@ -322,7 +328,8 @@ func (s *HandlerObservedTxInSuite) TestMigrateMemo(c *C) {
 	c.Assert(err, IsNil)
 	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(versionedTxOutStore)
 	versionedGasMgr := NewVersionedGasMgr()
-	handler := NewObservedTxInHandler(keeper, versionedTxOutStore, w.validatorMgr, versionedVaultMgrDummy, versionedGasMgr)
+	versionedObMgr := NewDummyVersionedObserverMgr()
+	handler := NewObservedTxInHandler(keeper, versionedObMgr, versionedTxOutStore, w.validatorMgr, versionedVaultMgrDummy, versionedGasMgr)
 
 	c.Assert(err, IsNil)
 	msg := NewMsgObservedTxIn(txs, keeper.nas[0].NodeAddress)
