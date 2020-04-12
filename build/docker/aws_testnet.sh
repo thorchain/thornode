@@ -1,5 +1,7 @@
 #!/bin/sh
 
+set -x
+
 export USER=$(hostname -s)
 export DOCKER_SERVER="${THORNODE_ENV}-${THORNODE_SERVICE}-$(date +%s)" # must be unique
 export SEED_ENDPOINT=https://${THORNODE_ENV}-seed.thorchain.info
