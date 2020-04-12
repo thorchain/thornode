@@ -291,6 +291,10 @@ func queryPoolAddresses(ctx sdk.Context, path []string, req abci.RequestQuery, k
 			return nil, sdk.ErrInternal("fail to get chains")
 		}
 
+		// if no chains yet, assume BNB chain is available
+		// TODO: This is a chicken/egg problem. We can't add the chain until
+		// we've observed at least one transaction. But we can't send a
+		// transaction until we get the address of the pool on the chain
 		if len(chains) == 0 {
 			chains = common.Chains{common.BNBChain}
 		}
@@ -750,10 +754,8 @@ func queryCompleteEvents(ctx sdk.Context, path []string, req abci.RequestQuery, 
 }
 
 func queryHeights(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
-	var chain common.Chain
-	if path[0] == "" {
-		chain = common.BNBChain
-	} else {
+	chain := common.BNBChain
+	if len(path[0]) > 0 {
 		var err error
 		chain, err = common.NewChain(path[0])
 		if err != nil {

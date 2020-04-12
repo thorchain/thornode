@@ -81,7 +81,7 @@ func postTxsHandler(cliCtx context.CLIContext) http.HandlerFunc {
 		var outbound types.ObservedTxs
 
 		for _, tx := range req.Txs {
-			chain := common.BNBChain
+			chain := common.EmptyChain
 			if len(tx.Tx.Coins) > 0 {
 				chain = tx.Tx.Coins[0].Asset.Chain
 			}

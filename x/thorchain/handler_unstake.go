@@ -154,7 +154,7 @@ func (h UnstakeHandler) handle(ctx sdk.Context, msg MsgSetUnStake, version semve
 		memo = NewRagnarokMemo(ctx.BlockHeight()).String()
 	}
 	toi := &TxOutItem{
-		Chain:     common.BNBChain,
+		Chain:     common.RuneAsset().Chain,
 		InHash:    msg.Tx.ID,
 		ToAddress: stakerUnit.RuneAddress,
 		Coin:      common.NewCoin(common.RuneAsset(), runeAmt),
