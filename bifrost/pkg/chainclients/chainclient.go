@@ -1,7 +1,6 @@
 package chainclients
 
 import (
-	"gitlab.com/thorchain/thornode/bifrost/metrics"
 	stypes "gitlab.com/thorchain/thornode/bifrost/thorclient/types"
 	"gitlab.com/thorchain/thornode/common"
 )
@@ -28,6 +27,6 @@ type ChainClient interface {
 	GetChain() common.Chain
 	GetGasFee(count uint64) common.Gas
 	ValidateMetadata(_ interface{}) bool
-	Start(globalTxsQueue chan stypes.TxIn, m *metrics.Metrics) error
-	Stop() error
+	Start(globalTxsQueue chan stypes.TxIn)
+	Stop()
 }

@@ -90,7 +90,7 @@ func (s *EthereumSuite) TearDownSuite(c *C) {
 var account = "0xde0b295669a9fd93d5f28d9ec85e40f4cb697bae"
 
 func (s *EthereumSuite) TestNewClient(c *C) {
-	e, err := NewClient(s.thorKeys, config.ChainConfiguration{}, nil, s.bridge)
+	e, err := NewClient(s.thorKeys, config.ChainConfiguration{}, nil, s.bridge, s.m)
 	c.Assert(e, IsNil)
 	c.Assert(err, NotNil)
 
@@ -148,7 +148,7 @@ func (s *EthereumSuite) TestNewClient(c *C) {
 		}
 	}))
 	splitted := strings.SplitAfter(server.URL, ":")
-	e2, err2 := NewClient(s.thorKeys, config.ChainConfiguration{RPCHost: "localhost:" + splitted[len(splitted)-1]}, nil, s.bridge)
+	e2, err2 := NewClient(s.thorKeys, config.ChainConfiguration{RPCHost: "http://localhost:" + splitted[len(splitted)-1]}, nil, s.bridge, s.m)
 	c.Assert(err2, IsNil)
 	c.Assert(e2, NotNil)
 

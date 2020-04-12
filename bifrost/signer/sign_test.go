@@ -265,13 +265,9 @@ func (b *MockChainClient) GetPubKey() crypto.PubKey {
 	return nil
 }
 
-func (b *MockChainClient) Start(globalTxsQueue chan stypes.TxIn, m *metrics.Metrics) error {
-	return nil
-}
+func (b *MockChainClient) Start(globalTxsQueue chan stypes.TxIn) {}
 
-func (b *MockChainClient) Stop() error {
-	return nil
-}
+func (b *MockChainClient) Stop() {}
 
 func (s *SignSuite) TestHandleYggReturn_Success_FeeSingleton(c *C) {
 	sign := &Signer{

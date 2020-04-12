@@ -44,7 +44,7 @@ func getConfigForTest(rpcHost string) config.BlockScannerConfiguration {
 
 func (s *BlockScannerTestSuite) TestNewBlockScanner(c *C) {
 	c.Skip("skip")
-	storage, err := blockscanner.NewBlockScannerStorage("eth/path")
+	storage, err := blockscanner.NewBlockScannerStorage("")
 	c.Assert(err, IsNil)
 	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {}))
 	ctx := context.Background()
