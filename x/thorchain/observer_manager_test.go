@@ -1,6 +1,8 @@
 package thorchain
 
 import (
+	"sort"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"gitlab.com/thorchain/thornode/common"
 	. "gopkg.in/check.v1"
@@ -34,5 +36,7 @@ func (ObserverManagerTestSuite) TestObserverManager(c *C) {
 	addrs, err := k.GetObservingAddresses(ctx)
 	c.Assert(err, IsNil)
 	c.Check(addrs, HasLen, 2)
+	// sort alphabetically
+	sort.SliceStable(addrs, func(i, j int) bool { return addrs[i].String() > addrs[j].String() })
 	c.Check(addrs, DeepEquals, []sdk.AccAddress{a1, a2})
 }
