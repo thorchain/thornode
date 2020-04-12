@@ -193,15 +193,16 @@ fi
 sleep 15
 echo "make bond to Asgard"
 export PEERS=$(curl -sL testnet-seed.thorchain.info/node_ip_list.json | jq -r '.[]')
-export PEER=$(curl -sL testnet-seed.thorchain.info/node_ip_list.json | jq -r '.[]' | shuf -n 1)
+rm -f /tmp/peers.txt
+for ip in $PEERS; do
+    echo "$(curl -s http://${ip}:26657/status | jq -r '.result.sync_info.latest_block_height') $ip" >> /tmp/peers.txt
+done
+export PEER=$(cat /tmp/peers.txt | sort -n -r | head -n 1 | awk '{print $NF}')
+
 NODE_ACCOUNT=$(docker exec thor-daemon thorcli keys show thorchain -a)
 BOND_MEMO=BOND:$NODE_ACCOUNT
 
-# find active asgard vault, pull from all nodes, pick the most common
-for ip in $PEERS; do
-    curl -s http://${ip}:1317/thorchain/pool_addresses | jq -r '.current[0].address' >> /tmp/addrs.txt
-done
-ASGARD=$(sort /tmp/addrs.txt | uniq -c | sort -n -r | head -n 1 | awk '{print $NF}')
+ASGARD=$(curl -s http://${PEER}:1317/thorchain/pool_addresses | jq -r '.current[0].address')
 
 echo ${BOND_WALLET_PASSWORD} | tbnbcli send \
                                 --from $BOND_WALLET \
