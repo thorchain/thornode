@@ -88,6 +88,7 @@ func (c *Client) SignTx(tx stypes.TxOutItem, height int64) ([]byte, error) {
 	totalAmt := float64(0)
 	individualAmounts := make([]btcutil.Amount, len(txes))
 	for idx, item := range txes {
+		// double check that the utxo is still valid
 		outputPoint := wire.NewOutPoint(&item.TxID, item.N)
 		sourceTxIn := wire.NewTxIn(outputPoint, nil, nil)
 		redeemTx.AddTxIn(sourceTxIn)
@@ -157,14 +158,27 @@ func (c *Client) SignTx(tx stypes.TxOutItem, height int64) ([]byte, error) {
 	if err := redeemTx.Serialize(&signedTx); err != nil {
 		return nil, fmt.Errorf("fail to serialize tx to bytes: %w", err)
 	}
-	if err := c.saveUTXO(redeemTx, balance, sourceScript); nil != err {
+	if err := c.saveNewUTXO(redeemTx, balance, sourceScript); nil != err {
 		return nil, fmt.Errorf("fail to save the new UTXO to storage: %w", err)
+	}
+	if err := c.removeSpentUTXO(txes); err != nil {
+		return nil, fmt.Errorf("fail to remove already spent transaction output: %w", err)
 	}
 	return signedTx.Bytes(), nil
 }
 
+func (c *Client) removeSpentUTXO(txs []UnspentTransactionOutput) error {
+	for _, item := range txs {
+		key := item.GetKey()
+		if err := c.utxoAccessor.RemoveUTXO(key); err != nil {
+			return fmt.Errorf("fail to remove unspent transaction output(%s): %w", key, err)
+		}
+	}
+	return nil
+}
+
 // saveUTXO save the newly created UTXO which transfer balance back our own address to storage
-func (c *Client) saveUTXO(tx *wire.MsgTx, balance int64, script []byte) error {
+func (c *Client) saveNewUTXO(tx *wire.MsgTx, balance int64, script []byte) error {
 	txID := tx.TxHash()
 	n := 0
 	// find the position of output that we send balance back to ourselves
