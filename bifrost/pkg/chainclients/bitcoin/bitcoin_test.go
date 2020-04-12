@@ -114,10 +114,12 @@ func (s *BitcoinSuite) TestFetchTxs(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(txs.BlockHeight, Equals, "1696761")
 	c.Assert(txs.Chain, Equals, common.BTCChain)
+	c.Assert(txs.Count, Equals, "4")
 	c.Assert(txs.TxArray[0].Tx, Equals, "3075045b8fe31659634d57084c9c8979f8c91029994dc9ab0b9444f1e793603a:0")
 	c.Assert(txs.TxArray[0].Sender, Equals, "tb1qdxxlx4r4jk63cve3rjpj428m26xcukjn5yegff")
 	c.Assert(txs.TxArray[0].To, Equals, "tb1qkq7weysjn6ljc2ywmjmwp8ttcckg8yyxjdz5k6")
 	c.Assert(txs.TxArray[0].Coins.Equals(common.Coins{common.NewCoin(common.BTCAsset, sdk.NewUint(1090601))}), Equals, true)
+	c.Assert(txs.TxArray[0].Gas.Equals(common.Gas{common.NewCoin(common.BTCAsset, sdk.NewUint(18499507))}), Equals, true)
 	c.Assert(len(txs.TxArray), Equals, 4)
 }
 
@@ -387,4 +389,32 @@ func (s *BitcoinSuite) TestIgnoreTx(c *C) {
 	}
 	ignored = s.client.ignoreTx(&tx)
 	c.Assert(ignored, Equals, false)
+}
+
+func (s *BitcoinSuite) TestGetGas(c *C) {
+	// vin[0] returns value 0.19590108
+	tx := btcjson.TxRawResult{
+		Vin: []btcjson.Vin{
+			btcjson.Vin{
+				Txid: "24ed2d26fd5d4e0e8fa86633e40faf1bdfc8d1903b1cd02855286312d48818a2",
+				Vout: 0,
+			},
+		},
+		Vout: []btcjson.Vout{
+			btcjson.Vout{
+				Value: 0.12345678,
+				ScriptPubKey: btcjson.ScriptPubKeyResult{
+					Addresses: []string{"tb1qkq7weysjn6ljc2ywmjmwp8ttcckg8yyxjdz5k6"},
+				},
+			},
+			btcjson.Vout{
+				ScriptPubKey: btcjson.ScriptPubKeyResult{
+					Asm: "OP_RETURN 74686f72636861696e3a636f6e736f6c6964617465",
+				},
+			},
+		},
+	}
+	gas, err := s.client.getGas(&tx)
+	c.Assert(err, IsNil)
+	c.Assert(gas.Equals(common.Gas{common.NewCoin(common.BTCAsset, sdk.NewUint(7244430))}), Equals, true)
 }
