@@ -4,6 +4,7 @@ import (
 	"gitlab.com/thorchain/thornode/bifrost/config"
 	"gitlab.com/thorchain/thornode/bifrost/metrics"
 	"gitlab.com/thorchain/thornode/bifrost/pkg/chainclients/binance"
+	"gitlab.com/thorchain/thornode/bifrost/pkg/chainclients/bitcoin"
 	"gitlab.com/thorchain/thornode/bifrost/pkg/chainclients/ethereum"
 	"gitlab.com/thorchain/thornode/bifrost/thorclient"
 	"gitlab.com/thorchain/thornode/common"
@@ -18,15 +19,18 @@ func LoadChains(thorKeys *thorclient.Keys, cfg []config.ChainConfiguration, serv
 		switch chain.ChainID {
 		case common.BNBChain:
 			bnb, err := binance.NewBinance(thorKeys, chain, server, thorchainBridge, m)
-			if err != nil {
-				continue
+			if err == nil {
+				chains[common.BNBChain] = bnb
 			}
-
-			chains[common.BNBChain] = bnb
 		case common.ETHChain:
 			eth, err := ethereum.NewClient(thorKeys, chain, server, thorchainBridge, m)
 			if err == nil {
 				chains[common.ETHChain] = eth
+			}
+		case common.BTCChain:
+			btc, err := bitcoin.NewClient(thorKeys, chain, server, thorchainBridge, m)
+			if err == nil {
+				chains[common.BTCChain] = btc
 			}
 		default:
 			continue
