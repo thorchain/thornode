@@ -11,7 +11,6 @@ import (
 	"github.com/btcsuite/btcd/btcjson"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/rpcclient"
-	"github.com/btcsuite/btcutil"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
 	tssp "gitlab.com/thorchain/tss/go-tss/tss"
@@ -134,21 +133,7 @@ func (c *Client) GetAddress(poolPubKey common.PubKey) string {
 
 // GetAccount returns account with balance for an address
 func (c *Client) GetAccount(addr string) (common.Account, error) {
-	address, err := btcutil.DecodeAddress(addr, c.getChainCfg())
-	if err != nil {
-		return common.Account{}, errors.Wrap(err, "fail to decode address")
-	}
-	acct, err := c.client.GetAccount(address)
-	if err != nil {
-		return common.Account{}, errors.Wrap(err, "fail to get account")
-	}
-	balance, err := c.client.GetBalance(acct)
-	if err != nil {
-		return common.Account{}, errors.Wrap(err, "fail to get balance")
-	}
-	amount := uint64(balance.ToBTC() * common.One)
-	account := common.NewAccount(0, 0, common.AccountCoins{common.AccountCoin{Amount: amount, Denom: "BTC.BTC"}})
-	return account, nil
+	return common.Account{}, fmt.Errorf("not implemented")
 }
 
 // FetchTxs retrieves txs for a block height
