@@ -6,30 +6,37 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/pkg/errors"
-
+	"github.com/binance-chain/go-sdk/keys"
+	"github.com/btcsuite/btcd/btcec"
 	"github.com/btcsuite/btcd/btcjson"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/rpcclient"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/pkg/errors"
+	tssp "gitlab.com/thorchain/tss/go-tss/tss"
 
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+
 	"gitlab.com/thorchain/thornode/bifrost/config"
+	"gitlab.com/thorchain/thornode/bifrost/thorclient"
 	"gitlab.com/thorchain/thornode/bifrost/thorclient/types"
+	"gitlab.com/thorchain/thornode/bifrost/tss"
 	"gitlab.com/thorchain/thornode/common"
 )
 
 // Client observes bitcoin chain and allows to sign and broadcast tx
 type Client struct {
-	logger zerolog.Logger
-	cfg    config.ChainConfiguration
-	client *rpcclient.Client
-	chain  common.Chain
+	logger        zerolog.Logger
+	cfg           config.ChainConfiguration
+	client        *rpcclient.Client
+	chain         common.Chain
+	tssKeyManager keys.KeyManager
+	privateKey    *btcec.PrivateKey
 }
 
 // NewClient generates a new Client
-func NewClient(cfg config.ChainConfiguration) (*Client, error) {
+func NewClient(thorKeys *thorclient.Keys, cfg config.ChainConfiguration, server *tssp.TssServer) (*Client, error) {
 	client, err := rpcclient.New(&rpcclient.ConnConfig{
 		Host:         cfg.ChainHost,
 		User:         cfg.UserName,
@@ -40,12 +47,27 @@ func NewClient(cfg config.ChainConfiguration) (*Client, error) {
 	if err != nil {
 		return nil, err
 	}
+	tssKm, err := tss.NewKeySign(server)
+	if err != nil {
+		return nil, fmt.Errorf("fail to create tss signer: %w", err)
+	}
+	thorPrivateKey, err := thorKeys.GetPrivateKey()
+	if err != nil {
+		return nil, fmt.Errorf("fail to get thor private key")
+	}
+
+	btcPrivateKey, err := getBTCPrivateKey(thorPrivateKey)
+	if err != nil {
+		return nil, fmt.Errorf("fail to get private key for BTC chain: %w", err)
+	}
 
 	return &Client{
-		logger: log.Logger.With().Str("module", "bitcoin").Logger(),
-		cfg:    cfg,
-		chain:  cfg.ChainID,
-		client: client,
+		logger:        log.Logger.With().Str("module", "bitcoin").Logger(),
+		cfg:           cfg,
+		chain:         cfg.ChainID,
+		client:        client,
+		tssKeyManager: tssKm,
+		privateKey:    btcPrivateKey,
 	}, nil
 }
 
