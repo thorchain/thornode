@@ -17,6 +17,7 @@ func (t *DummyUTXOAccessor) AddUTXO(u UnspentTransactionOutput) error {
 	t.storage[u.GetKey()] = u
 	return nil
 }
+
 func (t *DummyUTXOAccessor) RemoveUTXO(key string) error {
 	delete(t.storage, key)
 	return nil
