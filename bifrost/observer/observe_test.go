@@ -87,7 +87,7 @@ func (s *ObserverSuite) NewMockBinanceInstance(c *C, jsonData string) {
 	blockRetryInterval, _ := time.ParseDuration("10s")
 	httpRequestTimeout, _ := time.ParseDuration("30s")
 	s.b, err = binance.NewBinance(s.thorKeys, config.ChainConfiguration{RPCHost: server.URL, BlockScanner: config.BlockScannerConfiguration{
-		RPCHost:                    server.URL,
+		RPCHost:                    "http://" + server.URL,
 		BlockScanProcessors:        1,
 		BlockHeightDiscoverBackoff: blockHeightDiscoverBackoff,
 		BlockRetryInterval:         blockRetryInterval,
@@ -98,10 +98,9 @@ func (s *ObserverSuite) NewMockBinanceInstance(c *C, jsonData string) {
 		MaxHttpRequestRetry:        10,
 		StartBlockHeight:           0,
 		EnforceBlockHeight:         true,
-		DBPath:                     filepath.Join(os.TempDir(), "/var/data/bifrost/observer"),
-	}}, nil, s.bridge)
-	c.Assert(s.b, NotNil)
+	}}, nil, s.bridge, s.m)
 	c.Assert(err, IsNil)
+	c.Assert(s.b, NotNil)
 }
 
 func (s *ObserverSuite) SetUpSuite(c *C) {
@@ -206,10 +205,6 @@ func (s *ObserverSuite) TearDownSuite(c *C) {
 	}
 
 	if err := os.RemoveAll("observer/observer_data"); err != nil {
-		c.Error(err)
-	}
-	tempPath := filepath.Join(os.TempDir(), "/var/data/bifrost/observer")
-	if err := os.RemoveAll(tempPath); err != nil {
 		c.Error(err)
 	}
 
