@@ -192,7 +192,11 @@ fi
 
 sleep 15
 echo "make bond to Asgard"
+
+# fetch list of peers
 export PEERS=$(curl -sL testnet-seed.thorchain.info/node_ip_list.json | jq -r '.[]')
+
+# find PEER with highest block height
 rm -f /tmp/peers.txt
 for ip in $PEERS; do
     echo "$(curl -s http://${ip}:26657/status | jq -r '.result.sync_info.latest_block_height') $ip" >> /tmp/peers.txt
