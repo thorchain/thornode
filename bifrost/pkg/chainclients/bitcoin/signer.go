@@ -39,11 +39,6 @@ func (c *Client) getChainCfg() *chaincfg.Params {
 	return nil
 }
 
-func (c *Client) getAllUnspentUtxo() ([]string, error) {
-	// TODO how we going to do this?
-	return nil, nil
-}
-
 func (c *Client) getLastOutput(inputTxId, sourceAddr string) (btcjson.Vout, error) {
 	txHash, err := chainhash.NewHashFromStr(inputTxId)
 	if err != nil {
@@ -85,7 +80,7 @@ func (c *Client) SignTx(tx stypes.TxOutItem, height int64) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("fail to get source pay to address script: %w", err)
 	}
-	txes, err := c.getAllUnspentUtxo()
+	txes, err := c.utxoAccessor.GetUTXOs()
 	if err != nil {
 		return nil, fmt.Errorf("fail to get unspent UTXO")
 	}
@@ -93,22 +88,13 @@ func (c *Client) SignTx(tx stypes.TxOutItem, height int64) ([]byte, error) {
 	totalAmt := float64(0)
 	individualAmounts := make([]btcutil.Amount, len(txes))
 	for idx, item := range txes {
-		vOut, err := c.getLastOutput(item, sourceAddr.String())
-		if err != nil {
-			return nil, fmt.Errorf("sorry didn't find last output for tx(%s): %w", item, err)
-		}
-		c.logger.Info().Msgf("find last output, value: %f BTC,index: %d", vOut.Value, vOut.N)
-		txHash, err := chainhash.NewHashFromStr(item)
-		if err != nil {
-			return nil, fmt.Errorf("fail to parse txhash(%s): %w", item, err)
-		}
-		outputPoint := wire.NewOutPoint(txHash, vOut.N)
+		outputPoint := wire.NewOutPoint(&item.TxID, item.N)
 		sourceTxIn := wire.NewTxIn(outputPoint, nil, nil)
 		redeemTx.AddTxIn(sourceTxIn)
-		totalAmt += vOut.Value
-		amt, err := btcutil.NewAmount(vOut.Value)
+		totalAmt += item.Value
+		amt, err := btcutil.NewAmount(item.Value)
 		if err != nil {
-			return nil, fmt.Errorf("fail to parse amount(%f): %w", vOut.Value, err)
+			return nil, fmt.Errorf("fail to parse amount(%f): %w", item.Value, err)
 		}
 		individualAmounts[idx] = amt
 	}
