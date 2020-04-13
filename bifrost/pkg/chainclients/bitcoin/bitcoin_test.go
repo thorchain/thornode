@@ -142,7 +142,7 @@ func (s *BitcoinSuite) TestFetchTxs(c *C) {
 	c.Assert(txs.BlockHeight, Equals, "1696761")
 	c.Assert(txs.Chain, Equals, common.BTCChain)
 	c.Assert(txs.Count, Equals, "4")
-	c.Assert(txs.TxArray[0].Tx, Equals, "3075045b8fe31659634d57084c9c8979f8c91029994dc9ab0b9444f1e793603a:0")
+	c.Assert(txs.TxArray[0].Tx, Equals, "3075045b8fe31659634d57084c9c8979f8c91029994dc9ab0b9444f1e793603a")
 	c.Assert(txs.TxArray[0].Sender, Equals, "tb1qdxxlx4r4jk63cve3rjpj428m26xcukjn5yegff")
 	c.Assert(txs.TxArray[0].To, Equals, "tb1qkq7weysjn6ljc2ywmjmwp8ttcckg8yyxjdz5k6")
 	c.Assert(txs.TxArray[0].Coins.Equals(common.Coins{common.NewCoin(common.BTCAsset, sdk.NewUint(1090601))}), Equals, true)

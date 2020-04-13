@@ -73,6 +73,15 @@ func (o *Observer) processTxIns() {
 				o.logger.Error().Err(err).Msg("fail to send to thorchain")
 				o.errCounter.WithLabelValues("fail_send_to_thorchain", txIn.BlockHeight).Inc()
 			}
+			// check if chain client has OnObservedTxIn method then call it
+			chainClient, err := o.getChain(txIn.Chain)
+			if err != nil {
+				o.logger.Error().Err(err).Msg("fail to retrieve chain client")
+			}
+			i, ok := chainClient.(interface{ OnObservedTxIn(txIn types.TxIn) })
+			if ok {
+				i.OnObservedTxIn(txIn)
+			}
 		}
 	}
 }

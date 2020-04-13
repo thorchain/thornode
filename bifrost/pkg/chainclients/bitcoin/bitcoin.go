@@ -88,6 +88,11 @@ func NewClient(thorKeys *thorclient.Keys, cfg config.ChainConfiguration, server 
 		return c, errors.Wrap(err, "fail to create block scanner")
 	}
 
+	c.utxoAccessor, err = NewUTXOAccessor(path)
+	if err != nil {
+		return c, errors.Wrap(err, "fail to create utxo accessor")
+	}
+
 	return c, nil
 }
 
@@ -134,6 +139,25 @@ func (c *Client) GetAddress(poolPubKey common.PubKey) string {
 // GetAccount returns account with balance for an address
 func (c *Client) GetAccount(addr string) (common.Account, error) {
 	return common.Account{}, fmt.Errorf("not implemented")
+}
+
+// OnObservedTxIn gets called from observer when we have a valid observation
+// For bitcoin chain client we want to save the utxo we can spend later to sign
+func (c *Client) OnObservedTxIn(txIn types.TxIn) {
+	for _, tx := range txIn.TxArray {
+		hash, err := chainhash.NewHashFromStr(tx.Tx)
+		if err != nil {
+			// TODO do something about it?
+			continue
+		}
+		value := float64(tx.Coins.GetCoin(common.BTCAsset).Amount.Uint64() / common.One)
+		utxo := NewUnspentTransactionOutput(*hash, 0, value)
+		err = c.utxoAccessor.AddUTXO(utxo)
+		if err != nil {
+			// TODO do something about it?
+			continue
+		}
+	}
 }
 
 // FetchTxs retrieves txs for a block height
@@ -183,7 +207,7 @@ func (c *Client) extractTxs(block *btcjson.GetBlockVerboseResult) (types.TxIn, e
 		}
 		amount := uint64(tx.Vout[0].Value * common.One)
 		txItems = append(txItems, types.TxInItem{
-			Tx:     fmt.Sprintf("%s:0", tx.Txid),
+			Tx:     tx.Txid,
 			Sender: sender,
 			To:     tx.Vout[0].ScriptPubKey.Addresses[0],
 			Coins: common.Coins{

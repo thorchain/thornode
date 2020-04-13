@@ -6,7 +6,7 @@ import (
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 )
 
-// UnspentTransactionOutput
+// UnspentTransactionOutput struct
 type UnspentTransactionOutput struct {
 	TxID  chainhash.Hash `json:"tx_id"`
 	N     uint32         `json:"n"`
