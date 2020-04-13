@@ -25,6 +25,7 @@ import (
 	. "gopkg.in/check.v1"
 
 	"gitlab.com/thorchain/thornode/bifrost/config"
+	"gitlab.com/thorchain/thornode/bifrost/metrics"
 	"gitlab.com/thorchain/thornode/bifrost/thorclient"
 	stypes "gitlab.com/thorchain/thornode/bifrost/thorclient/types"
 	"gitlab.com/thorchain/thornode/common"
@@ -34,13 +35,16 @@ import (
 type BitcoinSignerSuite struct {
 	client  *Client
 	server  *httptest.Server
+	bridge  *thorclient.ThorchainBridge
 	cfg     config.ChainConfiguration
+	m       *metrics.Metrics
 	cleanup func()
 }
 
 var _ = Suite(&BitcoinSignerSuite{})
 
 func (s *BitcoinSignerSuite) SetUpSuite(c *C) {
+	s.m = GetMetricForTest(c)
 	s.cfg = config.ChainConfiguration{
 		ChainID:     "BTC",
 		UserName:    "bob",
@@ -68,6 +72,9 @@ func (s *BitcoinSignerSuite) SetUpSuite(c *C) {
 	c.Assert(err, IsNil)
 	thorKeys, err := thorclient.NewKeys(cfg.ChainHomeFolder, cfg.SignerName, cfg.SignerPasswd)
 	c.Assert(err, IsNil)
+	s.bridge, err = thorclient.NewThorchainBridge(cfg, s.m)
+	c.Assert(err, IsNil)
+
 	s.server = httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		r := struct {
 			Method string `json:"method"`
@@ -87,7 +94,7 @@ func (s *BitcoinSignerSuite) SetUpSuite(c *C) {
 	}))
 
 	s.cfg.ChainHost = s.server.Listener.Addr().String()
-	s.client, err = NewClient(thorKeys, s.cfg, nil)
+	s.client, err = NewClient(thorKeys, s.cfg, nil, s.bridge, s.m)
 	s.client.utxoAccessor = NewDummyUTXOAccessor()
 	c.Assert(err, IsNil)
 	c.Assert(s.client, NotNil)
