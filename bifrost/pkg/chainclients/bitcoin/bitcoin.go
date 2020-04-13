@@ -147,14 +147,14 @@ func (c *Client) OnObservedTxIn(txIn types.TxIn) {
 	for _, tx := range txIn.TxArray {
 		hash, err := chainhash.NewHashFromStr(tx.Tx)
 		if err != nil {
-			// TODO do something about it?
+			c.logger.Error().Err(err).Str("txID", tx.Tx).Msg("fail to add spendable utxo to storage")
 			continue
 		}
-		value := float64(tx.Coins.GetCoin(common.BTCAsset).Amount.Uint64() / common.One)
+		value := float64(tx.Coins.GetCoin(common.BTCAsset).Amount.Uint64()) / common.One
 		utxo := NewUnspentTransactionOutput(*hash, 0, value)
 		err = c.utxoAccessor.AddUTXO(utxo)
 		if err != nil {
-			// TODO do something about it?
+			c.logger.Error().Err(err).Str("txID", tx.Tx).Msg("fail to add spendable utxo to storage")
 			continue
 		}
 	}
