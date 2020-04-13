@@ -75,7 +75,7 @@ type item struct {
 }
 
 // NewBinanceBlockScanner create a new instance of BlockScan
-func NewBinanceBlockScanner(cfg config.BlockScannerConfiguration, startBlockHeight int64, scanStorage blockscanner.ScannerStorage, isTestNet bool, m *metrics.Metrics) (*BinanceBlockScanner, error) {
+func NewBinanceBlockScanner(cfg config.BlockScannerConfiguration, scanStorage blockscanner.ScannerStorage, isTestNet bool, m *metrics.Metrics) (*BinanceBlockScanner, error) {
 	if len(cfg.RPCHost) == 0 {
 		return nil, errors.New("rpc host is empty")
 	}
@@ -417,7 +417,6 @@ func (b *BinanceBlockScanner) fromStdTx(hash string, stdTx tx.StdTx) ([]stypes.T
 			txInItem.Gas = common.CalcGasPrice(common.Tx{Coins: txInItem.Coins}, common.BNBAsset, []sdk.Uint{sdk.NewUint(b.singleFee), sdk.NewUint(b.multiFee)})
 
 			txs = append(txs, txInItem)
-
 		default:
 			continue
 		}

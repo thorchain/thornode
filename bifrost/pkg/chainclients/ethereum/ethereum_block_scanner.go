@@ -3,10 +3,12 @@ package ethereum
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"math/big"
+	"net/http"
 	"strconv"
 	"strings"
-	"sync"
+	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	etypes "github.com/ethereum/go-ethereum/core/types"
@@ -15,15 +17,14 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-	"github.com/syndtr/goleveldb/leveldb"
+	"github.com/tendermint/tendermint/types"
 
 	"gitlab.com/thorchain/thornode/common"
 
 	"gitlab.com/thorchain/thornode/bifrost/blockscanner"
 	"gitlab.com/thorchain/thornode/bifrost/config"
 	"gitlab.com/thorchain/thornode/bifrost/metrics"
-	"gitlab.com/thorchain/thornode/bifrost/pkg/chainclients/ethereum/types"
-	pubkeymanager "gitlab.com/thorchain/thornode/bifrost/pubkeymanager"
+	etypes2 "gitlab.com/thorchain/thornode/bifrost/pkg/chainclients/ethereum/types"
 	stypes "gitlab.com/thorchain/thornode/bifrost/thorclient/types"
 )
 
@@ -33,85 +34,41 @@ var eipSigner = etypes.NewEIP155Signer(big.NewInt(1))
 
 // BlockScanner is to scan the blocks
 type BlockScanner struct {
-	cfg                config.BlockScannerConfiguration
-	logger             zerolog.Logger
-	wg                 *sync.WaitGroup
-	stopChan           chan struct{}
-	db                 blockscanner.ScannerStorage
-	commonBlockScanner *blockscanner.CommonBlockScanner
-	m                  *metrics.Metrics
-	errCounter         *prometheus.CounterVec
-	pubkeyMgr          pubkeymanager.PubKeyValidator
-	globalTxsQueue     chan stypes.TxIn
-	client             *ethclient.Client
-	rpcHost            string
+	cfg        config.BlockScannerConfiguration
+	logger     zerolog.Logger
+	httpClient *http.Client
+	db         blockscanner.ScannerStorage
+	m          *metrics.Metrics
+	errCounter *prometheus.CounterVec
+	client     *ethclient.Client
 }
 
 // NewBlockScanner create a new instance of BlockScan
-func NewBlockScanner(cfg config.BlockScannerConfiguration, startBlockHeight int64, isTestNet bool, client *ethclient.Client, pkmgr pubkeymanager.PubKeyValidator, m *metrics.Metrics) (*BlockScanner, error) {
+func NewBlockScanner(cfg config.BlockScannerConfiguration, scanStorage blockscanner.ScannerStorage, isTestNet bool, client *ethclient.Client, m *metrics.Metrics) (*BlockScanner, error) {
 	if len(cfg.RPCHost) == 0 {
 		return nil, errors.New("rpc host is empty")
 	}
 
-	rpcHost := cfg.RPCHost
-	if !strings.HasPrefix(rpcHost, "http") {
-		rpcHost = fmt.Sprintf("http://%s", rpcHost)
-	}
-	scanStorage, err := NewStorage(cfg.DBPath)
-	if err != nil {
-		return nil, err
+	if !strings.HasPrefix(cfg.RPCHost, "http") {
+		cfg.RPCHost = fmt.Sprintf("http://%s", cfg.RPCHost)
 	}
 	if scanStorage == nil {
 		return nil, errors.New("scanStorage is nil")
 	}
-	if pkmgr == nil {
-		return nil, errors.New("pubkey validator is nil")
-	}
 	if m == nil {
 		return nil, errors.New("metrics is nil")
 	}
-	commonBlockScanner, err := blockscanner.NewCommonBlockScanner(cfg, startBlockHeight, scanStorage, m, types.EthereumSupplemental{})
-	if err != nil {
-		return nil, errors.Wrap(err, "fail to create common block scanner")
-	}
 
 	return &BlockScanner{
-		cfg:                cfg,
-		pubkeyMgr:          pkmgr,
-		logger:             log.Logger.With().Str("module", "blockscanner").Str("chain", "ethereum").Logger(),
-		wg:                 &sync.WaitGroup{},
-		stopChan:           make(chan struct{}),
-		db:                 scanStorage,
-		commonBlockScanner: commonBlockScanner,
-		errCounter:         m.GetCounterVec(metrics.BlockScanError(common.ETHChain)),
-		rpcHost:            rpcHost,
-		client:             client,
+		cfg:        cfg,
+		logger:     log.Logger.With().Str("module", "blockscanner").Str("chain", "ethereum").Logger(),
+		db:         scanStorage,
+		errCounter: m.GetCounterVec(metrics.BlockScanError(common.ETHChain)),
+		client:     client,
+		httpClient: &http.Client{
+			Timeout: cfg.HttpRequestTimeout,
+		},
 	}, nil
-}
-
-func NewStorage(levelDbFolder string) (*blockscanner.LevelDBScannerStorage, error) {
-	if len(levelDbFolder) == 0 {
-		levelDbFolder = DefaultObserverLevelDBFolder
-	}
-	db, err := leveldb.OpenFile(levelDbFolder, nil)
-	if err != nil {
-		return nil, errors.Wrapf(err, "fail to open level db %s", levelDbFolder)
-	}
-	levelDbStorage, err := blockscanner.NewLevelDBScannerStorage(db)
-	if err != nil {
-		return nil, errors.New("fail to create leven db")
-	}
-	return levelDbStorage, nil
-}
-
-// Start starts block scanner
-func (e *BlockScanner) Start(globalTxsQueue chan stypes.TxIn) {
-	e.globalTxsQueue = globalTxsQueue
-	for idx := 1; idx <= e.cfg.BlockScanProcessors; idx++ {
-		e.wg.Add(1)
-		go e.processBlocks(idx)
-	}
-	e.commonBlockScanner.Start()
 }
 
 // GetTxHash return hex formatted value of tx hash
@@ -124,18 +81,20 @@ func GetTxHash(encodedTx string) (string, error) {
 }
 
 // processBlock extracts transactions from block
-func (e *BlockScanner) processBlock(block blockscanner.Block) error {
+func (e *BlockScanner) processBlock(block blockscanner.Block) (stypes.TxIn, error) {
+	noTx := stypes.TxIn{}
+
 	strBlock := strconv.FormatInt(block.Height, 10)
 	if err := e.db.SetBlockScanStatus(block, blockscanner.Processing); err != nil {
 		e.errCounter.WithLabelValues("fail_set_block_status", strBlock).Inc()
-		return errors.Wrapf(err, "fail to set block scan status for block %d", block.Height)
+		return noTx, errors.Wrapf(err, "fail to set block scan status for block %d", block.Height)
 	}
 
 	e.logger.Debug().Int64("block", block.Height).Int("txs", len(block.Txs)).Msg("txs")
 	if len(block.Txs) == 0 {
 		e.m.GetCounter(metrics.BlockWithoutTx("ETH")).Inc()
 		e.logger.Debug().Int64("block", block.Height).Msg("there are no txs in this block")
-		return nil
+		return noTx, nil
 	}
 
 	var txIn stypes.TxIn
@@ -144,7 +103,7 @@ func (e *BlockScanner) processBlock(block blockscanner.Block) error {
 		if err != nil {
 			e.errCounter.WithLabelValues("fail_get_tx_hash", strBlock).Inc()
 			e.logger.Error().Err(err).Str("tx", txn).Msg("fail to get tx hash from raw data")
-			return errors.Wrap(err, "fail to get tx hash from tx raw data")
+			return noTx, errors.Wrap(err, "fail to get tx hash from tx raw data")
 		}
 
 		txItemIn, err := e.fromTxToTxIn(txn)
@@ -153,7 +112,7 @@ func (e *BlockScanner) processBlock(block blockscanner.Block) error {
 			e.logger.Error().Err(err).Str("hash", hash).Msg("fail to get one tx from server")
 			// if THORNode fail to get one tx hash from server, then THORNode should bail, because THORNode might miss tx
 			// if THORNode bail here, then THORNode should retry later
-			return errors.Wrap(err, "fail to get one tx from server")
+			return noTx, errors.Wrap(err, "fail to get one tx from server")
 		}
 		if txItemIn != nil {
 			txIn.TxArray = append(txIn.TxArray, *txItemIn)
@@ -164,139 +123,116 @@ func (e *BlockScanner) processBlock(block blockscanner.Block) error {
 	if len(txIn.TxArray) == 0 {
 		e.m.GetCounter(metrics.BlockNoTxIn("ETH")).Inc()
 		e.logger.Debug().Int64("block", block.Height).Msg("no tx need to be processed in this block")
-		return nil
+		return noTx, nil
 	}
 
 	// TODO implement postponing for transactions if total transfer values per block for address to secure against attacks
 	txIn.BlockHeight = strconv.FormatInt(block.Height, 10)
 	txIn.Count = strconv.Itoa(len(txIn.TxArray))
 	txIn.Chain = common.ETHChain
-	e.globalTxsQueue <- txIn
-
-	return nil
+	return txIn, nil
 }
 
-// processBlocks processes blocks and gets transactions
-func (e *BlockScanner) processBlocks(idx int) {
-	e.logger.Debug().Int("idx", idx).Msg("start searching tx in a block")
-	defer e.logger.Debug().Int("idx", idx).Msg("stop searching tx in a block")
-	defer e.wg.Done()
-
-	for {
-		select {
-		case <-e.stopChan: // time to get out
-			return
-		case block, more := <-e.commonBlockScanner.GetMessages():
-			if !more {
-				return
-			}
-			e.logger.Debug().Int64("block", block.Height).Msg("processing block")
-			if err := e.processBlock(block); err != nil {
-				if errStatus := e.db.SetBlockScanStatus(block, blockscanner.Failed); errStatus != nil {
-					e.errCounter.WithLabelValues("fail_set_block_status", "").Inc()
-					e.logger.Error().Err(err).Int64("height", block.Height).Msg("fail to set block to fail status")
-				}
-				e.errCounter.WithLabelValues("fail_search_block", "").Inc()
-				e.logger.Error().Err(err).Int64("height", block.Height).Msg("fail to search tx in block")
-				// THORNode will have a retry go routine to check it.
-				continue
-			}
-			// set a block as success
-			if err := e.db.RemoveBlockStatus(block.Height); err != nil {
-				e.errCounter.WithLabelValues("fail_remove_block_status", "").Inc()
-				e.logger.Error().Err(err).Int64("block", block.Height).Msg("fail to remove block status from data store, thus block will be re processed")
-			}
-		}
-	}
-}
-
-func (e BlockScanner) MatchedAddress(txInItem *stypes.TxInItem) bool {
-	// Check if we are migrating our funds...
-	if ok := e.isMigration(txInItem.Sender, txInItem.Memo); ok {
-		e.logger.Debug().Str("memo", txInItem.Memo).Msg("migrate")
-		return true
-	}
-
-	// Check if our pool is registering a new yggdrasil pool. Ie
-	// sending the staked assets to the user
-	if ok := e.isRegisterYggdrasil(txInItem.Sender, txInItem.Memo); ok {
-		e.logger.Debug().Str("memo", txInItem.Memo).Msg("yggdrasil+")
-		return true
-	}
-
-	// Check if out pool is de registering a yggdrasil pool. Ie sending
-	// the bond back to the user
-	if ok := e.isDeregisterYggdrasil(txInItem.Sender, txInItem.Memo); ok {
-		e.logger.Debug().Str("memo", txInItem.Memo).Msg("yggdrasil-")
-		return true
-	}
-
-	// Check if THORNode are sending from a yggdrasil address
-	if ok := e.isYggdrasil(txInItem.Sender); ok {
-		e.logger.Debug().Str("assets sent from yggdrasil pool", txInItem.Memo).Msg("fill order")
-		return true
-	}
-
-	// Check if THORNode are sending to a yggdrasil address
-	if ok := e.isYggdrasil(txInItem.To); ok {
-		e.logger.Debug().Str("assets to yggdrasil pool", txInItem.Memo).Msg("refill")
-		return true
-	}
-
-	// outbound message from pool, when it is outbound, it does not matter how much coins THORNode send to customer for now
-	if ok := e.isOutboundMsg(txInItem.Sender, txInItem.Memo); ok {
-		e.logger.Debug().Str("memo", txInItem.Memo).Msg("outbound")
-		return true
-	}
-
-	return false
-}
-
-// Check if memo is for registering an Asgard vault
-func (e *BlockScanner) isMigration(addr, memo string) bool {
-	return e.isAddrWithMemo(addr, memo, "migrate")
-}
-
-// Check if memo is for registering a Yggdrasil vault
-func (e *BlockScanner) isRegisterYggdrasil(addr, memo string) bool {
-	return e.isAddrWithMemo(addr, memo, "yggdrasil+")
-}
-
-// Check if memo is for de registering a Yggdrasil vault
-func (e *BlockScanner) isDeregisterYggdrasil(addr, memo string) bool {
-	return e.isAddrWithMemo(addr, memo, "yggdrasil-")
-}
-
-// Check if THORNode have an outbound yggdrasil transaction
-func (e *BlockScanner) isYggdrasil(addr string) bool {
-	ok, _ := e.pubkeyMgr.IsValidPoolAddress(addr, common.ETHChain)
-	return ok
-}
-
-func (e *BlockScanner) isOutboundMsg(addr, memo string) bool {
-	return e.isAddrWithMemo(addr, memo, "outbound")
-}
-
-func (e *BlockScanner) isAddrWithMemo(addr, memo, targetMemo string) bool {
-	match, _ := e.pubkeyMgr.IsValidPoolAddress(addr, common.ETHChain)
-	if !match {
-		return false
-	}
-	lowerMemo := strings.ToLower(memo)
-	if strings.HasPrefix(lowerMemo, targetMemo) {
-		return true
-	}
-	return false
-}
-
-func (e *BlockScanner) getCoinsForTxIn(tx *etypes.Transaction) (common.Coins, error) {
-	asset, err := common.NewAsset("ETH.ETH")
+func (e *BlockScanner) FetchTxs(height int64) (stypes.TxIn, error) {
+	rawTxs, err := e.getRPCBlock(height)
 	if err != nil {
-		e.errCounter.WithLabelValues("fail_create_ticker", "ETH").Inc()
-		return nil, errors.Wrap(err, "fail to create asset, ETH is not valid")
+		return stypes.TxIn{}, err
 	}
-	amt := sdk.NewUint(tx.Value().Uint64())
-	return common.Coins{common.NewCoin(asset, amt)}, nil
+
+	block := blockscanner.Block{Height: height, Txs: rawTxs}
+	e.logger.Debug().Int64("block", block.Height).Msg("processing block")
+	txIn, err := e.processBlock(block)
+	if err != nil {
+		if errStatus := e.db.SetBlockScanStatus(block, blockscanner.Failed); errStatus != nil {
+			e.errCounter.WithLabelValues("fail_set_block_status", "").Inc()
+			e.logger.Error().Err(err).Int64("height", block.Height).Msg("fail to set block to fail status")
+		}
+		e.errCounter.WithLabelValues("fail_search_block", "").Inc()
+		e.logger.Error().Err(err).Int64("height", block.Height).Msg("fail to search tx in block")
+		// THORNode will have a retry go routine to check it.
+		return txIn, err
+	}
+	// set a block as success
+	if err := e.db.RemoveBlockStatus(block.Height); err != nil {
+		e.errCounter.WithLabelValues("fail_remove_block_status", "").Inc()
+		e.logger.Error().Err(err).Int64("block", block.Height).Msg("fail to remove block status from data store, thus block will be re processed")
+	}
+	return txIn, nil
+}
+
+func (e *BlockScanner) getFromHttp(url, body string) ([]byte, error) {
+	req, err := http.NewRequest(http.MethodGet, url, strings.NewReader(body))
+	if err != nil {
+		e.errCounter.WithLabelValues("fail_create_http_request", url).Inc()
+		return nil, errors.Wrap(err, "fail to create http request")
+	}
+	if len(body) > 0 {
+		req.Header.Add("Content-Type", "application/json")
+	}
+	resp, err := e.httpClient.Do(req)
+	if err != nil {
+		e.errCounter.WithLabelValues("fail_send_http_request", url).Inc()
+		return nil, errors.Wrapf(err, "fail to get from %s ", url)
+	}
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			e.logger.Error().Err(err).Msg("fail to close http response body.")
+		}
+	}()
+
+	if resp.StatusCode != http.StatusOK {
+		e.errCounter.WithLabelValues("unexpected_status_code", resp.Status).Inc()
+		return nil, errors.Errorf("unexpected status code:%d from %s", resp.StatusCode, url)
+	}
+	return ioutil.ReadAll(resp.Body)
+}
+
+func (e *BlockScanner) getRPCBlock(height int64) ([]string, error) {
+	start := time.Now()
+	defer func() {
+		if err := recover(); err != nil {
+			e.logger.Error().Msgf("fail to get RPCBlock:%s", err)
+		}
+		duration := time.Since(start)
+		e.m.GetHistograms(metrics.BlockDiscoveryDuration).Observe(duration.Seconds())
+	}()
+	body := e.BlockRequest(height)
+	buf, err := e.getFromHttp(e.cfg.RPCHost, body)
+	if err != nil {
+		e.errCounter.WithLabelValues("fail_get_block", e.cfg.RPCHost).Inc()
+		time.Sleep(300 * time.Millisecond)
+		return nil, err
+	}
+
+	rawTxns, err := e.UnmarshalBlock(buf)
+	if err != nil {
+		e.errCounter.WithLabelValues("fail_unmarshal_block", e.cfg.RPCHost).Inc()
+	}
+	return rawTxns, err
+}
+
+func (e *BlockScanner) BlockRequest(height int64) string {
+	return `{"jsonrpc":"2.0","method":"eth_getBlockByNumber","params":["0x` + fmt.Sprintf("%x", height) + `", true],"id":1}`
+}
+
+func (e *BlockScanner) UnmarshalBlock(buf []byte) ([]string, error) {
+	var head *types.Header
+	var body etypes2.RPCBlock
+	if err := json.Unmarshal(buf, &head); err != nil {
+		return nil, err
+	}
+	if err := json.Unmarshal(buf, &body); err != nil {
+		return nil, err
+	}
+	txs := make([]string, 0)
+	for _, tx := range body.Transactions {
+		bytes, err := tx.Transaction.MarshalJSON()
+		if err != nil {
+			return nil, errors.Wrap(err, "fail to unmarshal tx from block")
+		}
+		txs = append(txs, string(bytes))
+	}
+	return txs, nil
 }
 
 func (e *BlockScanner) fromTxToTxIn(encodedTx string) (*stypes.TxInItem, error) {
@@ -307,11 +243,7 @@ func (e *BlockScanner) fromTxToTxIn(encodedTx string) (*stypes.TxInItem, error) 
 	if err := json.Unmarshal([]byte(encodedTx), tx); err != nil {
 		return nil, err
 	}
-	return e.fromStdTx(tx)
-}
 
-// fromStdTx - process a stdTx
-func (e *BlockScanner) fromStdTx(tx *etypes.Transaction) (*stypes.TxInItem, error) {
 	txInItem := &stypes.TxInItem{
 		Tx: tx.Hash().String(),
 	}
@@ -327,10 +259,13 @@ func (e *BlockScanner) fromStdTx(tx *etypes.Transaction) (*stypes.TxInItem, erro
 		return nil, errors.New("missing receiver")
 	}
 	txInItem.To = tx.To().String()
-	txInItem.Coins, err = e.getCoinsForTxIn(tx)
+
+	asset, err := common.NewAsset("ETH.ETH")
 	if err != nil {
-		return nil, errors.Wrap(err, "fail to convert coins")
+		e.errCounter.WithLabelValues("fail_create_ticker", "ETH").Inc()
+		return nil, errors.Wrap(err, "fail to create asset, ETH is not valid")
 	}
+	txInItem.Coins = append(txInItem.Coins, common.NewCoin(asset, sdk.NewUint(tx.Value().Uint64())))
 
 	// TODO: We should not assume what the gas fees are going to be in
 	// the future (although they are largely static for Ethereum). We
@@ -341,45 +276,5 @@ func (e *BlockScanner) fromStdTx(tx *etypes.Transaction) (*stypes.TxInItem, erro
 
 	txInItem.Gas = common.GetETHGasFee()
 
-	if ok := e.MatchedAddress(txInItem); !ok {
-		return nil, errors.New("address is not matched")
-	}
-
-	// NOTE: the following could result in the same tx being added
-	// twice, which is expected. We want to make sure we generate both
-	// a inbound and outbound txn, if we both apply.
-
-	// check if the from address is a valid pool
-	if ok, cpi := e.pubkeyMgr.IsValidPoolAddress(txInItem.Sender, common.ETHChain); ok {
-		txInItem.ObservedPoolAddress = cpi.PubKey.String()
-	}
-	// check if the to address is a valid pool address
-	if ok, cpi := e.pubkeyMgr.IsValidPoolAddress(txInItem.To, common.ETHChain); ok {
-		txInItem.ObservedPoolAddress = cpi.PubKey.String()
-	} else {
-		// Apparently we don't recognize where we are sending funds to.
-		// Lets check if we should because its an internal transaction
-		// moving funds between vaults (for example). If it is, lets
-		// manually trigger an update of pubkeys, then check again...
-		switch strings.ToLower(txInItem.Memo) {
-		case "migrate", "yggdrasil-", "yggdrasil+":
-			e.pubkeyMgr.FetchPubKeys()
-			if ok, cpi := e.pubkeyMgr.IsValidPoolAddress(txInItem.To, common.ETHChain); ok {
-				txInItem.ObservedPoolAddress = cpi.PubKey.String()
-			}
-		}
-	}
 	return txInItem, nil
-}
-
-// Stop stops block scanner
-func (e *BlockScanner) Stop() error {
-	e.logger.Debug().Msg("receive stop request")
-	defer e.logger.Debug().Msg("block scanner stopped")
-	if err := e.commonBlockScanner.Stop(); err != nil {
-		e.logger.Error().Err(err).Msg("fail to stop common block scanner")
-	}
-	close(e.stopChan)
-	e.wg.Wait()
-	return nil
 }

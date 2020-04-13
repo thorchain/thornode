@@ -63,19 +63,19 @@ func getStdTx(f, t string, coins []types.Coin, memo string) (tx.StdTx, error) {
 
 func (s *BlockScannerTestSuite) TestNewBlockScanner(c *C) {
 	c.Skip("skip")
-	bs, err := NewBinanceBlockScanner(getConfigForTest(""), 0, blockscanner.NewMockScannerStorage(), true, s.m)
+	bs, err := NewBinanceBlockScanner(getConfigForTest(""), blockscanner.NewMockScannerStorage(), true, s.m)
 	c.Assert(err, NotNil)
 	c.Assert(bs, IsNil)
-	bs, err = NewBinanceBlockScanner(getConfigForTest("127.0.0.1"), 0, blockscanner.NewMockScannerStorage(), true, s.m)
+	bs, err = NewBinanceBlockScanner(getConfigForTest("127.0.0.1"), blockscanner.NewMockScannerStorage(), true, s.m)
 	c.Assert(err, NotNil)
 	c.Assert(bs, IsNil)
-	bs, err = NewBinanceBlockScanner(getConfigForTest("127.0.0.1"), 0, nil, true, s.m)
+	bs, err = NewBinanceBlockScanner(getConfigForTest("127.0.0.1"), nil, true, s.m)
 	c.Assert(err, NotNil)
 	c.Assert(bs, IsNil)
-	bs, err = NewBinanceBlockScanner(getConfigForTest("127.0.0.1"), 0, blockscanner.NewMockScannerStorage(), true, s.m)
+	bs, err = NewBinanceBlockScanner(getConfigForTest("127.0.0.1"), blockscanner.NewMockScannerStorage(), true, s.m)
 	c.Assert(err, NotNil)
 	c.Assert(bs, IsNil)
-	bs, err = NewBinanceBlockScanner(getConfigForTest("127.0.0.1"), 0, blockscanner.NewMockScannerStorage(), true, s.m)
+	bs, err = NewBinanceBlockScanner(getConfigForTest("127.0.0.1"), blockscanner.NewMockScannerStorage(), true, s.m)
 	c.Assert(err, IsNil)
 	c.Assert(bs, NotNil)
 }
@@ -221,7 +221,7 @@ func (s *BlockScannerTestSuite) TestSearchTxInABlockFromServer(c *C) {
 	})
 	server := httptest.NewTLSServer(h)
 	defer server.Close()
-	bs, err := NewBinanceBlockScanner(getConfigForTest(server.URL), 0, blockscanner.NewMockScannerStorage(), true, s.m)
+	bs, err := NewBinanceBlockScanner(getConfigForTest(server.URL), blockscanner.NewMockScannerStorage(), true, s.m)
 	c.Assert(err, IsNil)
 	c.Assert(bs, NotNil)
 }
@@ -242,7 +242,7 @@ func (s *BlockScannerTestSuite) TestFromTxToTxIn(c *C) {
 		err := json.Unmarshal([]byte(input), &query)
 		c.Check(err, IsNil)
 		c.Check(query.Result.Txs, NotNil)
-		bs, err := NewBinanceBlockScanner(getConfigForTest("127.0.0.1"), 0, blockscanner.NewMockScannerStorage(), true, s.m)
+		bs, err := NewBinanceBlockScanner(getConfigForTest("127.0.0.1"), blockscanner.NewMockScannerStorage(), true, s.m)
 		c.Assert(err, IsNil)
 		c.Assert(bs, NotNil)
 		c.Log(input)
@@ -289,7 +289,6 @@ func (s *BlockScannerTestSuite) TestFromStdTx(c *C) {
 	c.Skip("skip")
 	bs, err := NewBinanceBlockScanner(
 		getConfigForTest("127.0.0.1"),
-		0,
 		blockscanner.NewMockScannerStorage(),
 		true,
 		s.m,

@@ -6,16 +6,6 @@ import (
 	"gitlab.com/thorchain/thornode/common"
 )
 
-// Calculate pool rewards
-func calcPoolRewards(totalPoolRewards, totalStakedRune sdk.Uint, pools []Pool) []sdk.Uint {
-	amts := make([]sdk.Uint, 0, len(pools))
-	for _, pool := range pools {
-		amt := common.GetShare(pool.BalanceRune, totalStakedRune, totalPoolRewards)
-		amts = append(amts, amt)
-	}
-	return amts
-}
-
 // Calculate pool deficit based on the pool's accrued fees compared with total fees.
 func calcPoolDeficit(stakerDeficit, totalFees sdk.Uint, poolFees sdk.Uint) sdk.Uint {
 	return common.GetShare(poolFees, totalFees, stakerDeficit)
