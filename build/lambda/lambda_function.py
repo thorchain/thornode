@@ -6,12 +6,23 @@ prefix = 'node_ip_'
 s3_resource = boto3.resource('s3')
 buckets = ['testnet-seed.thorchain.info']
 
+def get_url(ip_addr, path):
+  return 'http://' + ip_addr + ':26657' + path
+
 def get_new_ip_list(ip_addr):
-  response = requests.get('http://' + ip_addr + ':26657/net_info')
+  response = requests.get(get_url(ip_addr, "/net_info"))
   peers = [x['remote_ip'] for x in response.json()['result']['peers']]
   peers.append(ip_addr)
+  peers = list(set(peers)) # uniqify
 
-  return list(set(peers))
+  # filter nodes that are not "caught up"
+  results = []    
+  for peer in peers:
+    response = requests.get(get_url(ip_addr, "/status"))
+    if not response.json()['result']['sync_info']['catching_up']:
+        results.append(peer)
+
+  return results
 
 
 def lambda_handler(event, context):

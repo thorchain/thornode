@@ -17,6 +17,8 @@ stages:
 
 unit_tests:
   stage: test
+  except:
+    - schedules
   coverage: '/total:\s+\(statements\)\s+(\d+.\d+\%)/'
   variables:
     SignerName: "statechain"
@@ -29,6 +31,8 @@ unit_tests:
 lint_code:
   image: golangci/golangci-lint
   stage: test
+  except:
+    - schedules
   before_script:
     - go get mvdan.cc/gofumpt
   script:

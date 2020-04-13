@@ -17,8 +17,8 @@ services:
       - no-new-privileges
     ulimits:
       nofile:
-        soft: 16000
-        hard: 16000
+        soft: 65535
+        hard: 65535
     sysctls:
       net.core.somaxconn: 4096
     logging:
@@ -44,8 +44,8 @@ services:
       - no-new-privileges
     ulimits:
       nofile:
-        soft: 16000
-        hard: 16000
+        soft: 65535
+        hard: 65535
     sysctls:
       net.core.somaxconn: 4096
     logging:

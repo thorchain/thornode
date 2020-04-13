@@ -58,6 +58,10 @@ func (k KVStore) GetObservingAddresses(ctx sdk.Context) ([]sdk.AccAddress, error
 // AddObservingAddresses - add a list of addresses that have been helpful in
 // getting enough observations to process an inbound tx.
 func (k KVStore) AddObservingAddresses(ctx sdk.Context, inAddresses []sdk.AccAddress) error {
+	if len(inAddresses) == 0 {
+		return nil
+	}
+
 	// combine addresses
 	curr, err := k.GetObservingAddresses(ctx)
 	if err != nil {

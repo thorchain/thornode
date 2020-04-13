@@ -10,7 +10,6 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
-	"strings"
 
 	"github.com/binance-chain/go-sdk/common/types"
 	ctypes "github.com/binance-chain/go-sdk/common/types"
@@ -36,7 +35,6 @@ import (
 // Binance is a structure to sign and broadcast tx to binance chain used by signer mostly
 type Binance struct {
 	logger          zerolog.Logger
-	RPCHost         string
 	cfg             config.ChainConfiguration
 	chainID         string
 	isTestNet       bool
@@ -51,12 +49,7 @@ type Binance struct {
 }
 
 // NewBinance create new instance of binance client
-func NewBinance(thorKeys *thorclient.Keys, cfg config.ChainConfiguration, server *tssp.TssServer, thorchainBridge *thorclient.ThorchainBridge) (*Binance, error) {
-	if len(cfg.RPCHost) == 0 {
-		return nil, errors.New("rpc host is empty")
-	}
-	rpcHost := cfg.RPCHost
-
+func NewBinance(thorKeys *thorclient.Keys, cfg config.ChainConfiguration, server *tssp.TssServer, thorchainBridge *thorclient.ThorchainBridge, m *metrics.Metrics) (*Binance, error) {
 	tssKm, err := tss.NewKeySign(server)
 	if err != nil {
 		return nil, fmt.Errorf("fail to create tss signer: %w", err)
@@ -80,81 +73,73 @@ func NewBinance(thorKeys *thorclient.Keys, cfg config.ChainConfiguration, server
 		pubkey:  pk,
 	}
 
-	if !strings.HasPrefix(rpcHost, "http") {
-		rpcHost = fmt.Sprintf("http://%s", rpcHost)
-	}
-
-	return &Binance{
+	b := &Binance{
 		logger:          log.With().Str("module", "binance").Logger(),
-		RPCHost:         rpcHost,
 		cfg:             cfg,
 		accts:           NewBinanceMetaDataStore(),
 		client:          &http.Client{},
 		tssKeyManager:   tssKm,
 		localKeyManager: localKm,
 		thorchainBridge: thorchainBridge,
-	}, nil
-}
+	}
 
-func (b *Binance) initBlockScanner(m *metrics.Metrics) error {
-	b.checkIsTestNet()
+	if err := b.checkIsTestNet(); err != nil {
+		b.logger.Error().Err(err).Msg("fail to check if is testnet")
+		return b, err
+	}
 
-	var err error
-	path := fmt.Sprintf("%s/%s", b.cfg.BlockScanner.DBPath, b.cfg.BlockScanner.ChainID)
+	var path string // if not set later, will in memory storage
+	if len(b.cfg.BlockScanner.DBPath) > 0 {
+		path = fmt.Sprintf("%s/%s", b.cfg.BlockScanner.DBPath, b.cfg.BlockScanner.ChainID)
+	}
 	b.storage, err = blockscanner.NewBlockScannerStorage(path)
 	if err != nil {
-		return pkerrors.Wrap(err, "fail to create scan storage")
+		return nil, pkerrors.Wrap(err, "fail to create scan storage")
 	}
 
 	b.bnbScanner, err = NewBinanceBlockScanner(b.cfg.BlockScanner, b.storage, b.isTestNet, m)
 	if err != nil {
-		return pkerrors.Wrap(err, "fail to create block scanner")
+		return nil, pkerrors.Wrap(err, "fail to create block scanner")
 	}
 
 	b.blockScanner, err = blockscanner.NewBlockScanner(b.cfg.BlockScanner, b.storage, m, b.thorchainBridge, b.bnbScanner)
 	if err != nil {
-		return pkerrors.Wrap(err, "fail to create block scanner")
+		return nil, pkerrors.Wrap(err, "fail to create block scanner")
 	}
 
-	return nil
+	return b, nil
 }
 
-func (b *Binance) Start(globalTxsQueue chan stypes.TxIn, m *metrics.Metrics) error {
-	err := b.initBlockScanner(m)
-	if err != nil {
-		b.logger.Error().Err(err).Msg("fail to init block scanner")
-		return err
-	}
+func (b *Binance) Start(globalTxsQueue chan stypes.TxIn) {
 	b.blockScanner.Start(globalTxsQueue)
-	return nil
 }
 
-func (b *Binance) Stop() error {
-	return nil
+func (b *Binance) Stop() {
+	b.blockScanner.Stop()
 }
 
 // IsTestNet determinate whether we are running on test net by checking the status
-func (b *Binance) checkIsTestNet() {
+func (b *Binance) checkIsTestNet() error {
 	// Cached data after first call
 	if b.isTestNet {
-		return
+		return nil
 	}
 
-	u, err := url.Parse(b.RPCHost)
+	u, err := url.Parse(b.cfg.RPCHost)
 	if err != nil {
-		log.Fatal().Msgf("Unable to parse rpc host: %s\n", b.RPCHost)
+		return pkerrors.Wrap(err, fmt.Sprintf("Unable to parse rpc host: %s\n", b.cfg.RPCHost))
 	}
 
 	u.Path = "/status"
 
 	resp, err := b.client.Get(u.String())
 	if err != nil {
-		log.Fatal().Msgf("%v\n", err)
+		return err
 	}
 
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
-			log.Error().Err(err).Msg("fail to close resp body")
+			b.logger.Error().Err(err).Msg("fail to close resp body")
 		}
 	}()
 
@@ -175,7 +160,7 @@ func (b *Binance) checkIsTestNet() {
 
 	var status Status
 	if err := json.Unmarshal(data, &status); err != nil {
-		log.Fatal().Err(err).Msg("fail to unmarshal body")
+		return pkerrors.Wrap(err, "fail to unmarshal body")
 	}
 
 	b.chainID = status.Result.NodeInfo.Network
@@ -186,6 +171,8 @@ func (b *Binance) checkIsTestNet() {
 	} else {
 		types.Network = types.ProdNetwork
 	}
+
+	return nil
 }
 
 func (b *Binance) GetChain() common.Chain {
@@ -193,7 +180,7 @@ func (b *Binance) GetChain() common.Chain {
 }
 
 func (b *Binance) GetHeight() (int64, error) {
-	u, err := url.Parse(b.RPCHost)
+	u, err := url.Parse(b.cfg.RPCHost)
 	if err != nil {
 		return 0, fmt.Errorf("unable to parse dex host: %w", err)
 	}
@@ -420,9 +407,9 @@ func (b *Binance) GetAccount(addr string) (common.Account, error) {
 		b.logger.Error().Err(err).Msgf("fail to get parse address: %s", addr)
 		return common.Account{}, err
 	}
-	u, err := url.Parse(b.RPCHost)
+	u, err := url.Parse(b.cfg.RPCHost)
 	if err != nil {
-		log.Fatal().Msgf("Error parsing rpc (%s): %s", b.RPCHost, err)
+		log.Fatal().Msgf("Error parsing rpc (%s): %s", b.cfg.RPCHost, err)
 		return common.Account{}, err
 	}
 	u.Path = "/abci_query"
@@ -480,9 +467,9 @@ func (b *Binance) GetAccount(addr string) (common.Account, error) {
 
 // broadcastTx is to broadcast the tx to binance chain
 func (b *Binance) BroadcastTx(tx stypes.TxOutItem, hexTx []byte) error {
-	u, err := url.Parse(b.RPCHost)
+	u, err := url.Parse(b.cfg.RPCHost)
 	if err != nil {
-		log.Error().Msgf("Error parsing rpc (%s): %s", b.RPCHost, err)
+		log.Error().Msgf("Error parsing rpc (%s): %s", b.cfg.RPCHost, err)
 		return err
 	}
 	u.Path = "broadcast_tx_commit"

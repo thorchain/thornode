@@ -226,7 +226,7 @@ func refundBond(ctx sdk.Context, tx common.Tx, nodeAcc NodeAccount, keeper Keepe
 		}
 		// refund bond
 		txOutItem := &TxOutItem{
-			Chain:       common.BNBChain,
+			Chain:       common.RuneAsset().Chain,
 			ToAddress:   nodeAcc.BondAddress,
 			VaultPubKey: vault.PubKey,
 			InHash:      tx.ID,

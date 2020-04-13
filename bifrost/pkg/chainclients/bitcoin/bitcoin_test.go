@@ -5,13 +5,24 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
+	"strconv"
 	"testing"
+	"time"
 
+	ctypes "github.com/binance-chain/go-sdk/common/types"
 	"github.com/btcsuite/btcd/btcjson"
+	"github.com/cosmos/cosmos-sdk/client/keys"
+	cKeys "github.com/cosmos/cosmos-sdk/crypto/keys"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"gitlab.com/thorchain/thornode/bifrost/config"
-	"gitlab.com/thorchain/thornode/common"
 	. "gopkg.in/check.v1"
+
+	"gitlab.com/thorchain/thornode/bifrost/config"
+	"gitlab.com/thorchain/thornode/bifrost/metrics"
+	"gitlab.com/thorchain/thornode/bifrost/thorclient"
+	"gitlab.com/thorchain/thornode/common"
+	types2 "gitlab.com/thorchain/thornode/x/thorchain/types"
 )
 
 func TestPackage(t *testing.T) { TestingT(t) }
@@ -19,7 +30,9 @@ func TestPackage(t *testing.T) { TestingT(t) }
 type BitcoinSuite struct {
 	client  *Client
 	server  *httptest.Server
+	bridge  *thorclient.ThorchainBridge
 	cfg     config.ChainConfiguration
+	m       *metrics.Metrics
 	cleanup func()
 }
 
@@ -27,7 +40,26 @@ var _ = Suite(
 	&BitcoinSuite{},
 )
 
+var m *metrics.Metrics
+
+func GetMetricForTest(c *C) *metrics.Metrics {
+	if m == nil {
+		var err error
+		m, err = metrics.NewMetrics(config.MetricsConfiguration{
+			Enabled:      false,
+			ListenPort:   9000,
+			ReadTimeout:  time.Second,
+			WriteTimeout: time.Second,
+			Chains:       common.Chains{common.ETHChain},
+		})
+		c.Assert(m, NotNil)
+		c.Assert(err, IsNil)
+	}
+	return m
+}
+
 func (s *BitcoinSuite) SetUpSuite(c *C) {
+	s.m = GetMetricForTest(c)
 	s.cfg = config.ChainConfiguration{
 		ChainID:     "BTC",
 		UserName:    "bob",
@@ -35,6 +67,29 @@ func (s *BitcoinSuite) SetUpSuite(c *C) {
 		DisableTLS:  true,
 		HTTPostMode: true,
 	}
+	ns := strconv.Itoa(time.Now().Nanosecond())
+	types2.SetupConfigForTest()
+	ctypes.Network = ctypes.TestNetwork
+	c.Assert(os.Setenv("NET", "testnet"), IsNil)
+
+	thordir := filepath.Join(os.TempDir(), ns, ".thorcli")
+	cfg := config.ClientConfiguration{
+		ChainID:         "thorchain",
+		ChainHost:       "localhost",
+		SignerName:      "bob",
+		SignerPasswd:    "password",
+		ChainHomeFolder: thordir,
+	}
+
+	kb, err := keys.NewKeyBaseFromDir(thordir)
+	c.Assert(err, IsNil)
+	_, _, err = kb.CreateMnemonic(cfg.SignerName, cKeys.English, cfg.SignerPasswd, cKeys.Secp256k1)
+	c.Assert(err, IsNil)
+	thorKeys, err := thorclient.NewKeys(cfg.ChainHomeFolder, cfg.SignerName, cfg.SignerPasswd)
+	c.Assert(err, IsNil)
+	s.bridge, err = thorclient.NewThorchainBridge(cfg, s.m)
+	c.Assert(err, IsNil)
+
 	s.server = httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		r := struct {
 			Method string `json:"method"`
@@ -47,12 +102,13 @@ func (s *BitcoinSuite) SetUpSuite(c *C) {
 			httpTestHandler(c, rw, "../../../../test/fixtures/btc/block.json")
 		case r.Method == "getrawtransaction":
 			httpTestHandler(c, rw, "../../../../test/fixtures/btc/tx.json")
+		case r.Method == "getblockcount":
+			httpTestHandler(c, rw, "../../../../test/fixtures/btc/blockcount.json")
 		}
 	}))
 
 	s.cfg.ChainHost = s.server.Listener.Addr().String()
-	var err error
-	s.client, err = NewClient(s.cfg)
+	s.client, err = NewClient(thorKeys, s.cfg, nil, s.bridge, s.m)
 	c.Assert(err, IsNil)
 	c.Assert(s.client, NotNil)
 }
@@ -388,4 +444,31 @@ func (s *BitcoinSuite) TestGetGas(c *C) {
 	gas, err := s.client.getGas(&tx)
 	c.Assert(err, IsNil)
 	c.Assert(gas.Equals(common.Gas{common.NewCoin(common.BTCAsset, sdk.NewUint(7244430))}), Equals, true)
+}
+
+func (s *BitcoinSuite) TestGetChain(c *C) {
+	chain := s.client.GetChain()
+	c.Assert(chain, Equals, common.BTCChain)
+}
+
+func (s *BitcoinSuite) TestGetAddress(c *C) {
+	os.Setenv("NET", "mainnet")
+	pubkey := common.PubKey("thorpub1addwnpepqt7qug8vk9r3saw8n4r803ydj2g3dqwx0mvq5akhnze86fc536xcy2cr8a2")
+	addr := s.client.GetAddress(pubkey)
+	c.Assert(addr, Equals, "bc1q2gjc0rnhy4nrxvuklk6ptwkcs9kcr59mcl2q9j")
+}
+
+func (s *BitcoinSuite) TestGetHeight(c *C) {
+	height, err := s.client.GetHeight()
+	c.Assert(err, IsNil)
+	c.Assert(height, Equals, int64(10))
+}
+
+func (s *BitcoinSuite) TestGetAccount(c *C) {
+	c.Skip("wallet not implemented")
+	acct, err := s.client.GetAccount("bc1q2gjc0rnhy4nrxvuklk6ptwkcs9kcr59mcl2q9j")
+	c.Assert(err, IsNil)
+	c.Assert(acct.AccountNumber, Equals, 0)
+	c.Assert(acct.Sequence, Equals, 0)
+	c.Assert(acct.Coins[0].Amount, Equals, 10)
 }

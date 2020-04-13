@@ -1,6 +1,8 @@
 package types
 
 import (
+	"fmt"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"gitlab.com/thorchain/thornode/common"
@@ -49,8 +51,8 @@ func (msg MsgSetUnStake) ValidateBasic() sdk.Error {
 	if msg.RuneAddress.IsEmpty() {
 		return sdk.ErrUnknownRequest("Address cannot be empty")
 	}
-	if !msg.RuneAddress.IsChain(common.BNBChain) {
-		return sdk.ErrUnknownRequest("Address must be a BNB address")
+	if !msg.RuneAddress.IsChain(common.RuneAsset().Chain) {
+		return sdk.ErrUnknownRequest(fmt.Sprintf("Address must be a %s address", common.RuneAsset().Chain))
 	}
 	if msg.UnstakeBasisPoints.IsZero() {
 		return sdk.ErrUnknownRequest("UnstakeBasicPoints can't be zero")

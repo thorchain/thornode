@@ -10,7 +10,6 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/binance-chain/go-sdk/common/types"
@@ -28,6 +27,7 @@ import (
 	"gitlab.com/thorchain/thornode/bifrost/blockscanner"
 	"gitlab.com/thorchain/thornode/bifrost/config"
 	"gitlab.com/thorchain/thornode/bifrost/metrics"
+	btypes "gitlab.com/thorchain/thornode/bifrost/pkg/chainclients/binance/types"
 	stypes "gitlab.com/thorchain/thornode/bifrost/thorclient/types"
 )
 
@@ -43,47 +43,8 @@ type BinanceBlockScanner struct {
 	multiFee   uint64
 }
 
-type QueryResult struct {
-	Result struct {
-		Response struct {
-			Value string `json:"value"`
-		} `json:"response"`
-	} `json:"result"`
-}
-
-type itemData struct {
-	Txs []string `json:"txs"`
-}
-
-type itemHeader struct {
-	Height string `json:"height"`
-}
-
-type itemBlock struct {
-	Header itemHeader `json:"header"`
-	Data   itemData   `json:"data"`
-}
-
-type itemResult struct {
-	Block itemBlock `json:"block"`
-}
-
-type item struct {
-	Jsonrpc string     `json:"jsonrpc"`
-	ID      string     `json:"id"`
-	Result  itemResult `json:"result"`
-}
-
 // NewBinanceBlockScanner create a new instance of BlockScan
 func NewBinanceBlockScanner(cfg config.BlockScannerConfiguration, scanStorage blockscanner.ScannerStorage, isTestNet bool, m *metrics.Metrics) (*BinanceBlockScanner, error) {
-	if len(cfg.RPCHost) == 0 {
-		return nil, errors.New("rpc host is empty")
-	}
-
-	if !strings.HasPrefix(cfg.RPCHost, "http") {
-		cfg.RPCHost = fmt.Sprintf("http://%s", cfg.RPCHost)
-	}
-
 	if scanStorage == nil {
 		return nil, errors.New("scanStorage is nil")
 	}
@@ -136,7 +97,7 @@ func (b *BinanceBlockScanner) updateFees(height int64) error {
 	if err != nil {
 		return err
 	}
-	var result QueryResult
+	var result btypes.QueryResult
 	if err := json.Unmarshal(bz, &result); err != nil {
 		return err
 	}
@@ -318,7 +279,7 @@ func (b *BinanceBlockScanner) UnmarshalBlock(buf []byte) ([]string, error) {
 		return nil, nil
 	}
 
-	var block item
+	var block btypes.BlockResult
 	err := json.Unmarshal(buf, &block)
 	if err != nil {
 		return nil, errors.Wrap(err, "fail to unmarshal body to rpcBlock")
