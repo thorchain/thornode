@@ -54,7 +54,7 @@ require (
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15
 	gopkg.in/ini.v1 v1.52.0 // indirect
 	gopkg.in/yaml.v2 v2.2.8 // indirect
-	mvdan.cc/gofumpt v0.0.0-20200407124128-2096975b8dcb // indirect
+	mvdan.cc/gofumpt v0.0.0-20200412215918-a91da47f375c // indirect
 
 )
 

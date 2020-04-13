@@ -1111,5 +1111,7 @@ mvdan.cc/gofumpt v0.0.0-20200324091932-79fd7e92aeae h1:85j1GpS4Pg9WCsx2zvuKBdKF/
 mvdan.cc/gofumpt v0.0.0-20200324091932-79fd7e92aeae/go.mod h1:JcEKJKbW2k+khw0skCxi8eobww1gXIi/3Igh2DG3Uls=
 mvdan.cc/gofumpt v0.0.0-20200407124128-2096975b8dcb h1:z7/14tDgjaTk93xpFRQmoIN/8SYA8bP6zyC13IOHJ3M=
 mvdan.cc/gofumpt v0.0.0-20200407124128-2096975b8dcb/go.mod h1:uTqElrkKOUAA7VR+N1tlOYjKdQo4bf5X3X+qtpyPu9c=
+mvdan.cc/gofumpt v0.0.0-20200412215918-a91da47f375c h1:Xs+D7brYpYCRLQhYVJcoJ2tH5XIUk8Okv99YaEVl/IM=
+mvdan.cc/gofumpt v0.0.0-20200412215918-a91da47f375c/go.mod h1:uTqElrkKOUAA7VR+N1tlOYjKdQo4bf5X3X+qtpyPu9c=
 sigs.k8s.io/yaml v1.1.0/go.mod h1:UJmg0vDUVViEyp3mgSv9WPwZCDxu4rQW1olrI1uml+o=
 sourcegraph.com/sourcegraph/appdash v0.0.0-20190731080439-ebfcffb1b5c0/go.mod h1:hI742Nqp5OhwiqlzhgfbWU4mW4yO10fP+LoT9WOswdU=
