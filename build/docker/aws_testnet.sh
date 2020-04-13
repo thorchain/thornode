@@ -1,7 +1,7 @@
 #!/bin/sh
 
 export USER=$(hostname -s)
-export DOCKER_SERVER="${USER}-${THORNODE_ENV}-${THORNODE_SERVICE}"
+export DOCKER_SERVER="${THORNODE_ENV}-${THORNODE_SERVICE}-$(date +%s)" # must be unique
 export SEED_ENDPOINT=https://${THORNODE_ENV}-seed.thorchain.info
 export BUCKET_NAME=thorchain.info
 export SEED_BUCKET="${THORNODE_ENV}-seed.${BUCKET_NAME}"
@@ -97,24 +97,10 @@ start_the_stack () {
     docker-machine ssh ${DOCKER_SERVER} sudo bash $BOOTSTRAP
 }
 
-update_ip() {
-IP=$(docker-machine ip ${DOCKER_SERVER})
-
-echo "updating IP on https://${THORNODE_ENV}-seed.thorchain.info/bonded_nodes.json"
-aws s3 cp s3://${SEED_BUCKET}/${S3_FILE} /tmp/${S3_FILE} > /dev/null
-
-cat <<EOF >> /tmp/${S3_FILE}
-{"ip": "${IP}", "date": "${DATE}", "PUB_KEY": "${PUB_KEY}"}
-EOF
-
-aws s3 cp /tmp/${S3_FILE} s3://${SEED_BUCKET}/
-rm -rf /tmp/${S3_FILE}
-}
-
 # checks if there is are any standby/ready nodes, exits if there are
 check_for_slots() {
     standy=$(curl -s $PEER:1317/thorchain/nodeaccounts | jq -r '.[] | select(.status | inside("standby ready")) | select(.bond | contains("100000000")) | .status')
-    if [[ $(echo $standby | wc -l) -ge 0 ]]; then
+    if [[ $(echo $standby | sed '/^$/d' | wc -l) -gt 0 ]]; then
         echo "A node is already waiting to be churned in.... exiting"
         exit 0
     fi
@@ -142,9 +128,6 @@ verify_stack () {
         HEALTHCHECK_CMD=$(curl -s -o /dev/null -w "%{http_code}" ${HEALTHCHECK_URL})
         if  [ "${HEALTHCHECK_CMD}" == 200 ]; then
 	        echo "HEALTHCHECK PASSED"
-	        if [ "${THORNODE_SERVICE}" == standalone ]; then
-	            update_ip
-	        fi
         else
 	        echo "HEALTHCHECK FAILED"
 	        exit 1
@@ -209,10 +192,22 @@ fi
 
 sleep 15
 echo "make bond to Asgard"
-export PEER=$(curl -s ${SEED_ENDPOINT}/$S3_FILE |tail -n 1 |jq '.'ip | sed -e 's/"//g' -e "s/null//g")
+
+# fetch list of peers
+export PEERS=$(curl -sL testnet-seed.thorchain.info/node_ip_list.json | jq -r '.[]')
+
+# find PEER with highest block height
+rm -f /tmp/peers.txt
+for ip in $PEERS; do
+    echo "$(curl -s http://${ip}:26657/status | jq -r '.result.sync_info.latest_block_height') $ip" >> /tmp/peers.txt
+done
+export PEER=$(cat /tmp/peers.txt | sort -n -r | head -n 1 | awk '{print $NF}')
+
 NODE_ACCOUNT=$(docker exec thor-daemon thorcli keys show thorchain -a)
 BOND_MEMO=BOND:$NODE_ACCOUNT
-ASGARD=$(curl -s http://${PEER}:1317/thorchain/pool_addresses | jq '.current[]'.address | sed -e 's/"//g')
+
+ASGARD=$(curl -s http://${PEER}:1317/thorchain/pool_addresses | jq -r '.current[0].address')
+
 echo ${BOND_WALLET_PASSWORD} | tbnbcli send \
                                 --from $BOND_WALLET \
                                 --to $ASGARD \
@@ -225,59 +220,18 @@ echo ${BOND_WALLET_PASSWORD} | tbnbcli send \
 echo "just finished making bond"
 
 echo "setting node keys"
-sleep 120 # wait for thorchain to register the new node account
+sleep 30 # wait for thorchain to register the new node account
 export SIGNER_PASSWD=$(aws secretsmanager get-secret-value --secret-id ${THORNODE_ENV}-signer-passwd --region $AWS_REGION  | jq -r .SecretString | awk -F'[:]' '{print $2}' | sed -e 's/}//' | sed -e 's/"//g')
 docker exec thor-daemon ash -c "echo $SIGNER_PASSWD | thorcli tx thorchain set-node-keys $PUB_KEY $PUB_KEY $VALIDATOR --node tcp://$PEER:26657 --from $SIGNER_NAME --yes"
 
-update_ip
-
 # delete local bond-wallet
-echo ${BOND_WALLET_PASSWORD} | tbnbcli keys delete $BOND_WALLET
+# echo ${BOND_WALLET_PASSWORD} | tbnbcli keys delete $BOND_WALLET
 
 # delete local faucet-wallet
 if [ ! -z "${CI}" ]; then
     echo ${FAUCET_PASSWORD} | tbnbcli keys delete $FAUCET_WALLET
 fi
 }
-
-# create a script used to self destruct
-cat <<EOF > /opt/${THORNODE_ENV}/self-destruct
-#!/bin/sh
-
-echo "Checking to see if its time to self destruct..."
-
-node_status=$(curl -s localhost:1317/thorchain/nodeaccount/${NODE_ACCOUNT} | jq -r '.status')
-bond=$(curl -s localhost:1317/thorchain/nodeaccount/${NODE_ACCOUNT} | jq -r '.bond')
-
-if [ "$node_status" = "active" ]; then
-    echo "node is still active... exiting"
-    exit 0
-fi
-
-if [[ $bond -eq 100000000 ]]; then
-    echo "node is hasn't been churned in yet... exiting"
-    exit 0
-fi
-
-ASGARD=$(curl -s http://${PEER}:1317/thorchain/pool_addresses | jq -r '.current[0].address')
-echo ${BOND_WALLET_PASSWORD} | tbnbcli send \
-                                --from ${BOND_WALLET} \
-                                --to $ASGARD \
-                                --amount "1:BNB" \
-                                --chain-id=${CHAIN_ID} \
-                                --node=${TENDERMINT_NODE} \
-                                --memo "LEAVE" \
-                                --json
-
-
-# we have been churned out, we should shutdown
-echo "node has been churned out, ready to be shutdown"
-shutdown -h now
-EOF
-
-# setup crontab
-echo "* * * * * root /bin/bash /opt/${THORNODE_ENV}/self-destruct" >> /etc/cron.d/self-destruct
-
 
 final_cleanup () {
     echo "performing final cleanup"
@@ -298,7 +252,9 @@ final_cleanup () {
 # START #
 #########
 if [ ! -z "${AWS_VPC_ID}" ] && [ ! -z "${AWS_REGION}" ] && [ ! -z "${AWS_INSTANCE_TYPE}" ] && [ ! -z "${THORNODE_ENV}" ] && [ ! -z "${THORNODE_SERVICE}" ]; then
-    check_for_slots
+    if [ "${THORNODE_SERVICE}" == churn ]; then
+        check_for_slots
+    fi
     create_server
     start_the_stack
     verify_stack

@@ -13,6 +13,7 @@ apt-get update -y
 apt-get install -y \
     build-essential \
     jq \
+    make \
     apt-transport-https \
     ca-certificates \
     curl \
@@ -45,6 +46,9 @@ git clone --single-branch --branch ${BRANCH} ${THORNODE_REPO} ${GIT_PATH} >> $LO
 mkdir -p /opt/${THORNODE_ENV}
 chmod -R 777 /opt/${THORNODE_ENV}
 
+# setup crontab
+echo "0 * * * * root /bin/bash /opt/${THORNODE_ENV}/self-destruct" >> /etc/cron.d/self-destruct
+
 cat <<EOF > /opt/${THORNODE_ENV}/binance-bootstrap
 #!/bin/sh
 
@@ -62,6 +66,7 @@ cat <<EOF > /opt/${THORNODE_ENV}/standalone-bootstrap
 
 start_stack () {
     cd $GIT_PATH/build/docker
+    docker pull registry.gitlab.com/thorchain/thornode:${THORNODE_ENV}
     export TAG=${THORNODE_ENV} && \
     export SIGNER_PASSWD=${THORNODE_PASSWD} && \
     export BINANCE_HOST="http://testnet-binance.thorchain.info:26657" && \
@@ -77,10 +82,11 @@ cat <<EOF > /opt/${THORNODE_ENV}/churn-bootstrap
 
 start_stack () {
     cd $GIT_PATH/build/docker
+    docker pull registry.gitlab.com/thorchain/thornode:${THORNODE_ENV}
     export TAG=${THORNODE_ENV} && \
     export SIGNER_PASSWD=${THORNODE_PASSWD} && \
     export BINANCE_HOST="http://testnet-binance.thorchain.info:26657" && \
-    export PEER=$(curl -s ${SEED_ENDPOINT}/bonded_nodes.json |tail -n 1 |jq '.'ip | sed -e 's/"//g' -e "s/null//g") && \
+    export PEER=$(curl -sL testnet-seed.thorchain.info/node_ip_list.json | jq -r .[] | shuf -n 1) && \
     make run-${THORNODE_ENV}-validator >> $LOGFILE
 }
 
@@ -94,4 +100,28 @@ tbnbcli version >> $LOGFILE
 
 start_stack
 sleep 120
+EOF
+
+cat <<EOF > /opt/${THORNODE_ENV}/self-destruct
+#!/bin/sh
+
+echo "Checking to see if its time to self destruct..."
+
+NODE_ACCOUNT=\$(docker exec thor-daemon thorcli keys show thorchain -a)
+node_status=\$(curl -s localhost:1317/thorchain/nodeaccount/\$NODE_ACCOUNT | jq -r '.status')
+bond=\$(curl -s localhost:1317/thorchain/nodeaccount/\$NODE_ACCOUNT | jq -r '.bond')
+
+if [ "\$node_status" = "active" ]; then
+    echo "node is still active... exiting"
+    exit 0
+fi
+
+if [[ \$bond -eq 100000000 ]]; then
+    echo "node is hasn't been churned in yet... exiting"
+    exit 0
+fi
+
+# we have been churned out, we should shutdown
+echo "node has been churned out, ready to be shutdown"
+shutdown -h now
 EOF
