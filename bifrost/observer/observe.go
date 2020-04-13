@@ -77,6 +77,7 @@ func (o *Observer) processTxIns() {
 			chainClient, err := o.getChain(txIn.Chain)
 			if err != nil {
 				o.logger.Error().Err(err).Msg("fail to retrieve chain client")
+				continue
 			}
 			i, ok := chainClient.(interface{ OnObservedTxIn(txIn types.TxIn) })
 			if ok {
