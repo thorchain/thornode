@@ -12,11 +12,16 @@ import (
 	"time"
 
 	ctypes "github.com/binance-chain/go-sdk/common/types"
+	"github.com/btcsuite/btcd/btcec"
 	"github.com/btcsuite/btcd/chaincfg"
+	"github.com/btcsuite/btcd/chaincfg/chainhash"
+	"github.com/btcsuite/btcd/wire"
+	"github.com/btcsuite/btcutil"
 	"github.com/cosmos/cosmos-sdk/client/keys"
 	cKeys "github.com/cosmos/cosmos-sdk/crypto/keys"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/tendermint/tendermint/crypto/secp256k1"
+	"gitlab.com/thorchain/txscript"
 	. "gopkg.in/check.v1"
 
 	"gitlab.com/thorchain/thornode/bifrost/config"
@@ -83,6 +88,7 @@ func (s *BitcoinSignerSuite) SetUpSuite(c *C) {
 
 	s.cfg.ChainHost = s.server.Listener.Addr().String()
 	s.client, err = NewClient(thorKeys, s.cfg, nil)
+	s.client.utxoAccessor = NewDummyUTXOAccessor()
 	c.Assert(err, IsNil)
 	c.Assert(s.client, NotNil)
 }
@@ -161,9 +167,58 @@ func (s *BitcoinSignerSuite) TestSignTx(c *C) {
 	c.Assert(err, IsNil)
 	txOutItem.ToAddress = addr
 
+	// nothing to sign , because there is not enough UTXO
 	result, err = s.client.SignTx(txOutItem, 4)
 	c.Assert(err, NotNil)
 	c.Assert(result, IsNil)
+	s.client.utxoAccessor.AddUTXO(GetRandomUTXO(0.5))
+
+	result, err = s.client.SignTx(txOutItem, 5)
+	c.Assert(err, NotNil)
+	c.Assert(result, IsNil)
+}
+
+func (s *BitcoinSignerSuite) TestSignTxHappyPath(c *C) {
+	addr, err := types2.GetRandomPubKey().GetAddress(common.BTCChain)
+	c.Assert(err, IsNil)
+	txOutItem := stypes.TxOutItem{
+		Chain:       common.BTCChain,
+		ToAddress:   addr,
+		VaultPubKey: "thorpub1addwnpepqw2k68efthm08f0f5akhjs6fk5j2pze4wkwt4fmnymf9yd463puru988m2y",
+		SeqNo:       0,
+		Coins: common.Coins{
+			common.NewCoin(common.BTCAsset, sdk.NewUint(10)),
+		},
+		Memo: "outboundbtc",
+		MaxGas: common.Gas{
+			common.NewCoin(common.BTCAsset, sdk.NewUint(1)),
+		},
+		InHash:  "",
+		OutHash: "",
+	}
+	txHash, err := chainhash.NewHashFromStr("256222fb25a9950479bb26049a2c00e75b89abbb7f0cf646c623b93e942c4c34")
+	c.Assert(err, IsNil)
+	utxo := NewUnspentTransactionOutput(*txHash, 0, 0.01049996)
+	c.Assert(s.client.utxoAccessor.AddUTXO(utxo), IsNil)
+	priKeyBuf, err := hex.DecodeString("b404c5ec58116b5f0fe13464a92e46626fc5db130e418cbce98df86ffe9317c5")
+	c.Assert(err, IsNil)
+	pkey, _ := btcec.PrivKeyFromBytes(btcec.S256(), priKeyBuf)
+	c.Assert(pkey, NotNil)
+	s.client.privateKey = pkey
+	buf, err := s.client.SignTx(txOutItem, 1)
+	c.Assert(err, IsNil)
+	c.Assert(buf, NotNil)
+}
+
+func GetRandomUTXO(amount float64) UnspentTransactionOutput {
+	tx := wire.NewMsgTx(wire.TxVersion)
+	pk := types2.GetRandomPubKey()
+	addr, _ := pk.GetAddress(common.BTCChain)
+	btcAddr, _ := btcutil.DecodeAddress(addr.String(), &chaincfg.TestNet3Params)
+	script, _ := txscript.PayToAddrScript(btcAddr)
+	btcAmt, _ := btcutil.NewAmount(amount)
+	tx.AddTxOut(wire.NewTxOut(int64(btcAmt), script))
+	return NewUnspentTransactionOutput(tx.TxHash(), 0, amount)
 }
 
 func (s *BitcoinSignerSuite) TestBroadcastTx(c *C) {

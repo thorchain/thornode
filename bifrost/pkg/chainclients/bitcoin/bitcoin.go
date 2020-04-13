@@ -33,6 +33,7 @@ type Client struct {
 	chain         common.Chain
 	tssKeyManager keys.KeyManager
 	privateKey    *btcec.PrivateKey
+	utxoAccessor  UnspentTransactionOutputAccessor
 }
 
 // NewClient generates a new Client
