@@ -12,12 +12,13 @@ import (
 	"github.com/btcsuite/btcd/rpcclient"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
-	tssp "gitlab.com/thorchain/tss/go-tss/tss"
-
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	tssp "gitlab.com/thorchain/tss/go-tss/tss"
 
+	"gitlab.com/thorchain/thornode/bifrost/blockscanner"
 	"gitlab.com/thorchain/thornode/bifrost/config"
+	"gitlab.com/thorchain/thornode/bifrost/metrics"
 	"gitlab.com/thorchain/thornode/bifrost/thorclient"
 	"gitlab.com/thorchain/thornode/bifrost/thorclient/types"
 	"gitlab.com/thorchain/thornode/bifrost/tss"
@@ -31,13 +32,14 @@ type Client struct {
 	client       *rpcclient.Client
 	chain        common.Chain
 	privateKey   *btcec.PrivateKey
+	blockScanner *blockscanner.BlockScanner
 	utxoAccessor UnspentTransactionOutputAccessor
 	ksWrapper    *KeySignWrapper
 	bridge       *thorclient.ThorchainBridge
 }
 
 // NewClient generates a new Client
-func NewClient(thorKeys *thorclient.Keys, cfg config.ChainConfiguration, server *tssp.TssServer, bridge *thorclient.ThorchainBridge) (*Client, error) {
+func NewClient(thorKeys *thorclient.Keys, cfg config.ChainConfiguration, server *tssp.TssServer, bridge *thorclient.ThorchainBridge, m *metrics.Metrics) (*Client, error) {
 	client, err := rpcclient.New(&rpcclient.ConnConfig{
 		Host:         cfg.ChainHost,
 		User:         cfg.UserName,
@@ -61,12 +63,12 @@ func NewClient(thorKeys *thorclient.Keys, cfg config.ChainConfiguration, server 
 	if err != nil {
 		return nil, fmt.Errorf("fail to get private key for BTC chain: %w", err)
 	}
-
 	ksWrapper, err := NewKeySignWrapper(btcPrivateKey, bridge, tssKm)
 	if err != nil {
 		return nil, fmt.Errorf("fail to create keysign wrapper: %w", err)
 	}
-	return &Client{
+
+	c := &Client{
 		logger:     log.Logger.With().Str("module", "bitcoin").Logger(),
 		cfg:        cfg,
 		chain:      cfg.ChainID,
@@ -74,7 +76,68 @@ func NewClient(thorKeys *thorclient.Keys, cfg config.ChainConfiguration, server 
 		privateKey: btcPrivateKey,
 		ksWrapper:  ksWrapper,
 		bridge:     bridge,
-	}, nil
+	}
+
+	var path string // if not set later, will in memory storage
+	if len(c.cfg.BlockScanner.DBPath) > 0 {
+		path = fmt.Sprintf("%s/%s", c.cfg.BlockScanner.DBPath, c.cfg.BlockScanner.ChainID)
+	}
+	storage, err := blockscanner.NewBlockScannerStorage(path)
+	if err != nil {
+		return c, errors.Wrap(err, "fail to create blockscanner storage")
+	}
+
+	c.blockScanner, err = blockscanner.NewBlockScanner(c.cfg.BlockScanner, storage, m, bridge, c)
+	if err != nil {
+		return c, errors.Wrap(err, "fail to create block scanner")
+	}
+
+	return c, nil
+}
+
+// Start starts the block scanner
+func (c *Client) Start(globalTxsQueue chan types.TxIn) {
+	c.blockScanner.Start(globalTxsQueue)
+}
+
+// Stop stops the block scanner
+func (c *Client) Stop() {
+	c.blockScanner.Stop()
+}
+
+// GetChain returns BTC Chain
+func (c *Client) GetChain() common.Chain {
+	return common.BTCChain
+}
+
+// GetHeight returns current block height
+func (c *Client) GetHeight() (int64, error) {
+	return c.client.GetBlockCount()
+}
+
+// GetGasFee returns gas fee
+func (c *Client) GetGasFee(count uint64) common.Gas {
+	return common.Gas{} // TODO not implemented yet
+}
+
+// ValidateMetadata validates metadata
+func (c *Client) ValidateMetadata(inter interface{}) bool {
+	return true // TODO not implemented yet
+}
+
+// GetAddress returns address from pubkey
+func (c *Client) GetAddress(poolPubKey common.PubKey) string {
+	addr, err := poolPubKey.GetAddress(common.BTCChain)
+	if err != nil {
+		c.logger.Error().Err(err).Str("pool_pub_key", poolPubKey.String()).Msg("fail to get pool address")
+		return ""
+	}
+	return addr.String()
+}
+
+// GetAccount returns account with balance for an address
+func (c *Client) GetAccount(addr string) (common.Account, error) {
+	return common.Account{}, fmt.Errorf("not implemented")
 }
 
 // FetchTxs retrieves txs for a block height
@@ -103,7 +166,7 @@ func (c *Client) getBlock(height int64) (*btcjson.GetBlockVerboseResult, error) 
 func (c *Client) extractTxs(block *btcjson.GetBlockVerboseResult) (types.TxIn, error) {
 	txIn := types.TxIn{
 		BlockHeight: strconv.FormatInt(block.Height, 10),
-		Chain:       c.chain,
+		Chain:       c.GetChain(),
 	}
 	var txItems []types.TxInItem
 	for _, tx := range block.RawTx {

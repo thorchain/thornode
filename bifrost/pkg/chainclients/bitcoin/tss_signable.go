@@ -49,6 +49,7 @@ func (ts *TssSignable) Sign(payload []byte) (*btcec.Signature, error) {
 	sig.S = new(big.Int).SetBytes(result[32:])
 	return &sig, nil
 }
+
 func (ts *TssSignable) GetPubKey() *btcec.PublicKey {
 	cpk, err := sdk.GetAccPubKeyBech32(ts.poolPubKey.String())
 	if err != nil {
