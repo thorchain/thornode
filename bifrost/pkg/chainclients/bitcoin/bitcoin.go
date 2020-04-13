@@ -6,7 +6,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/binance-chain/go-sdk/keys"
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/btcsuite/btcd/btcjson"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
@@ -27,17 +26,18 @@ import (
 
 // Client observes bitcoin chain and allows to sign and broadcast tx
 type Client struct {
-	logger        zerolog.Logger
-	cfg           config.ChainConfiguration
-	client        *rpcclient.Client
-	chain         common.Chain
-	tssKeyManager keys.KeyManager
-	privateKey    *btcec.PrivateKey
-	utxoAccessor  UnspentTransactionOutputAccessor
+	logger       zerolog.Logger
+	cfg          config.ChainConfiguration
+	client       *rpcclient.Client
+	chain        common.Chain
+	privateKey   *btcec.PrivateKey
+	utxoAccessor UnspentTransactionOutputAccessor
+	ksWrapper    *KeySignWrapper
+	bridge       *thorclient.ThorchainBridge
 }
 
 // NewClient generates a new Client
-func NewClient(thorKeys *thorclient.Keys, cfg config.ChainConfiguration, server *tssp.TssServer) (*Client, error) {
+func NewClient(thorKeys *thorclient.Keys, cfg config.ChainConfiguration, server *tssp.TssServer, bridge *thorclient.ThorchainBridge) (*Client, error) {
 	client, err := rpcclient.New(&rpcclient.ConnConfig{
 		Host:         cfg.ChainHost,
 		User:         cfg.UserName,
@@ -62,13 +62,18 @@ func NewClient(thorKeys *thorclient.Keys, cfg config.ChainConfiguration, server 
 		return nil, fmt.Errorf("fail to get private key for BTC chain: %w", err)
 	}
 
+	ksWrapper, err := NewKeySignWrapper(btcPrivateKey, bridge, tssKm)
+	if err != nil {
+		return nil, fmt.Errorf("fail to create keysign wrapper: %w", err)
+	}
 	return &Client{
-		logger:        log.Logger.With().Str("module", "bitcoin").Logger(),
-		cfg:           cfg,
-		chain:         cfg.ChainID,
-		client:        client,
-		tssKeyManager: tssKm,
-		privateKey:    btcPrivateKey,
+		logger:     log.Logger.With().Str("module", "bitcoin").Logger(),
+		cfg:        cfg,
+		chain:      cfg.ChainID,
+		client:     client,
+		privateKey: btcPrivateKey,
+		ksWrapper:  ksWrapper,
+		bridge:     bridge,
 	}, nil
 }
 

@@ -30,6 +30,7 @@ type BitcoinSuite struct {
 	client  *Client
 	server  *httptest.Server
 	cfg     config.ChainConfiguration
+	bridge  *thorclient.ThorchainBridge
 	cleanup func()
 }
 
@@ -81,6 +82,7 @@ func (s *BitcoinSuite) SetUpSuite(c *C) {
 	}))
 
 	s.cfg.ChainHost = s.server.Listener.Addr().String()
+
 	s.client, err = NewClient(thorKeys, s.cfg, nil)
 	c.Assert(err, IsNil)
 	c.Assert(s.client, NotNil)

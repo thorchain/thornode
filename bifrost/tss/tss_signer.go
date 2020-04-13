@@ -15,9 +15,10 @@ import (
 	"github.com/tendermint/btcd/btcec"
 	"github.com/tendermint/tendermint/crypto"
 
-	"gitlab.com/thorchain/thornode/common"
 	"gitlab.com/thorchain/tss/go-tss/keysign"
 	tss "gitlab.com/thorchain/tss/go-tss/tss"
+
+	"gitlab.com/thorchain/thornode/common"
 )
 
 // KeySign is a proxy between signer and TSS
@@ -64,7 +65,7 @@ func (s *KeySign) makeSignature(msg tx.StdSignMsg, poolPubKey string, signerPubK
 	if err != nil {
 		return stdSignature, fmt.Errorf("fail to get pub key: %w", err)
 	}
-	signPack, err := s.remoteSign(msg.Bytes(), poolPubKey, signerPubKeys)
+	signPack, err := s.RemoteSign(msg.Bytes(), poolPubKey, signerPubKeys)
 	if err != nil {
 		return stdSignature, fmt.Errorf("fail to TSS sign: %w", err)
 	}
@@ -106,7 +107,7 @@ func (s *KeySign) SignWithPool(msg tx.StdSignMsg, poolPubKey common.PubKey, sign
 	return bz, nil
 }
 
-func (s *KeySign) remoteSign(msg []byte, poolPubKey string, signerPubKeys common.PubKeys) ([]byte, error) {
+func (s *KeySign) RemoteSign(msg []byte, poolPubKey string, signerPubKeys common.PubKeys) ([]byte, error) {
 	if len(msg) == 0 {
 		return nil, nil
 	}
