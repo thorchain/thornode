@@ -9,11 +9,12 @@ import (
 	"github.com/btcsuite/btcd/btcjson"
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
-	"github.com/btcsuite/btcd/txscript"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
+	"github.com/btcsuite/btcutil/txsort"
 	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/secp256k1"
+	"gitlab.com/thorchain/txscript"
 
 	stypes "gitlab.com/thorchain/thornode/bifrost/thorclient/types"
 	"gitlab.com/thorchain/thornode/common"
@@ -37,11 +38,6 @@ func (c *Client) getChainCfg() *chaincfg.Params {
 		return &chaincfg.MainNetParams
 	}
 	return nil
-}
-
-func (c *Client) getAllUnspentUtxo() ([]string, error) {
-	// TODO how we going to do this?
-	return nil, nil
 }
 
 func (c *Client) getLastOutput(inputTxId, sourceAddr string) (btcjson.Vout, error) {
@@ -85,30 +81,23 @@ func (c *Client) SignTx(tx stypes.TxOutItem, height int64) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("fail to get source pay to address script: %w", err)
 	}
-	txes, err := c.getAllUnspentUtxo()
+	txes, err := c.utxoAccessor.GetUTXOs()
 	if err != nil {
 		return nil, fmt.Errorf("fail to get unspent UTXO")
 	}
+
 	redeemTx := wire.NewMsgTx(wire.TxVersion)
 	totalAmt := float64(0)
 	individualAmounts := make([]btcutil.Amount, len(txes))
 	for idx, item := range txes {
-		vOut, err := c.getLastOutput(item, sourceAddr.String())
-		if err != nil {
-			return nil, fmt.Errorf("sorry didn't find last output for tx(%s): %w", item, err)
-		}
-		c.logger.Info().Msgf("find last output, value: %f BTC,index: %d", vOut.Value, vOut.N)
-		txHash, err := chainhash.NewHashFromStr(item)
-		if err != nil {
-			return nil, fmt.Errorf("fail to parse txhash(%s): %w", item, err)
-		}
-		outputPoint := wire.NewOutPoint(txHash, vOut.N)
+		// double check that the utxo is still valid
+		outputPoint := wire.NewOutPoint(&item.TxID, item.N)
 		sourceTxIn := wire.NewTxIn(outputPoint, nil, nil)
 		redeemTx.AddTxIn(sourceTxIn)
-		totalAmt += vOut.Value
-		amt, err := btcutil.NewAmount(vOut.Value)
+		totalAmt += item.Value
+		amt, err := btcutil.NewAmount(item.Value)
 		if err != nil {
-			return nil, fmt.Errorf("fail to parse amount(%f): %w", vOut.Value, err)
+			return nil, fmt.Errorf("fail to parse amount(%f): %w", item.Value, err)
 		}
 		individualAmounts[idx] = amt
 	}
@@ -146,7 +135,9 @@ func (c *Client) SignTx(tx stypes.TxOutItem, height int64) ([]byte, error) {
 	if balance < 0 {
 		return nil, errors.New("not enough balance to pay customer")
 	}
+
 	redeemTx.AddTxOut(wire.NewTxOut(balance, sourceScript))
+
 	for idx := range redeemTx.TxIn {
 		sigHashes := txscript.NewTxSigHashes(redeemTx)
 
@@ -165,13 +156,43 @@ func (c *Client) SignTx(tx stypes.TxOutItem, height int64) ([]byte, error) {
 			return nil, fmt.Errorf("fail to execute the script: %w", err)
 		}
 	}
-
+	finalTx := txsort.Sort(redeemTx)
 	var signedTx bytes.Buffer
-	if err := redeemTx.Serialize(&signedTx); err != nil {
+	if err := finalTx.Serialize(&signedTx); err != nil {
 		return nil, fmt.Errorf("fail to serialize tx to bytes: %w", err)
 	}
-
+	if err := c.saveNewUTXO(finalTx, balance, sourceScript); nil != err {
+		return nil, fmt.Errorf("fail to save the new UTXO to storage: %w", err)
+	}
+	if err := c.removeSpentUTXO(txes); err != nil {
+		return nil, fmt.Errorf("fail to remove already spent transaction output: %w", err)
+	}
 	return signedTx.Bytes(), nil
+}
+
+func (c *Client) removeSpentUTXO(txs []UnspentTransactionOutput) error {
+	for _, item := range txs {
+		key := item.GetKey()
+		if err := c.utxoAccessor.RemoveUTXO(key); err != nil {
+			return fmt.Errorf("fail to remove unspent transaction output(%s): %w", key, err)
+		}
+	}
+	return nil
+}
+
+// saveUTXO save the newly created UTXO which transfer balance back our own address to storage
+func (c *Client) saveNewUTXO(tx *wire.MsgTx, balance int64, script []byte) error {
+	txID := tx.TxHash()
+	n := 0
+	// find the position of output that we send balance back to ourselves
+	for idx, item := range tx.TxOut {
+		if item.Value == balance && bytes.Equal(script, item.PkScript) {
+			n = idx
+			break
+		}
+	}
+	amt := btcutil.Amount(balance)
+	return c.utxoAccessor.AddUTXO(NewUnspentTransactionOutput(txID, uint32(n), amt.ToBTC()))
 }
 
 // BroadcastTx will broadcast the given payload to BTC chain
