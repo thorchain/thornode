@@ -12,7 +12,7 @@ func NewDummyUTXOAccessor() *DummyUTXOAccessor {
 }
 
 func (t *DummyUTXOAccessor) GetUTXOs() ([]UnspentTransactionOutput, error) {
-	result := make([]UnspentTransactionOutput, len(t.storage))
+	result := make([]UnspentTransactionOutput, 0, len(t.storage))
 	for _, item := range t.storage {
 		result = append(result, item)
 	}

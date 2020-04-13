@@ -11,6 +11,7 @@ import (
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
+	"github.com/btcsuite/btcutil/txsort"
 	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/secp256k1"
 	"gitlab.com/thorchain/txscript"
@@ -84,6 +85,7 @@ func (c *Client) SignTx(tx stypes.TxOutItem, height int64) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("fail to get unspent UTXO")
 	}
+
 	redeemTx := wire.NewMsgTx(wire.TxVersion)
 	totalAmt := float64(0)
 	individualAmounts := make([]btcutil.Amount, len(txes))
@@ -138,6 +140,7 @@ func (c *Client) SignTx(tx stypes.TxOutItem, height int64) ([]byte, error) {
 
 	for idx := range redeemTx.TxIn {
 		sigHashes := txscript.NewTxSigHashes(redeemTx)
+
 		witness, err := txscript.WitnessSignature(redeemTx, sigHashes, idx, int64(individualAmounts[idx]), sourceScript, txscript.SigHashAll, c.privateKey, true)
 		if err != nil {
 			return nil, fmt.Errorf("fail to get witness: %w", err)
@@ -153,12 +156,12 @@ func (c *Client) SignTx(tx stypes.TxOutItem, height int64) ([]byte, error) {
 			return nil, fmt.Errorf("fail to execute the script: %w", err)
 		}
 	}
-
+	finalTx := txsort.Sort(redeemTx)
 	var signedTx bytes.Buffer
-	if err := redeemTx.Serialize(&signedTx); err != nil {
+	if err := finalTx.Serialize(&signedTx); err != nil {
 		return nil, fmt.Errorf("fail to serialize tx to bytes: %w", err)
 	}
-	if err := c.saveNewUTXO(redeemTx, balance, sourceScript); nil != err {
+	if err := c.saveNewUTXO(finalTx, balance, sourceScript); nil != err {
 		return nil, fmt.Errorf("fail to save the new UTXO to storage: %w", err)
 	}
 	if err := c.removeSpentUTXO(txes); err != nil {
