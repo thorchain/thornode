@@ -48,7 +48,7 @@ func (k *MockThorchainKeyManager) RemoteSign(msg []byte, poolPubKey string, sign
 	fmt.Println(base64.StdEncoding.EncodeToString(msg))
 	// this is the key we are using to test
 	if poolPubKey == "thorpub1addwnpepqdvw4jxzzpr4ulvrm045k967x5mfr2hcjl9wud692jvztxmx7td2szeyl8l" {
-		return getSignature("ORXh10F2qLJeb/maHLTobieHxNQDp6YIb757nFiZNhQ=", "Y9v/zE5OiZ8EDkpkHNsmkWs1dout5HKi/a/Lr9wJvQY=")
+		return getSignature("bKCP3BmWnWjLHEFQVXE9wi7XNmrwlI3txiNC82fh9TY=", "bJsoQg5jTsMwXGpX6hinNWiaRO+Wyyr72j6r7bkpKPw=")
 	}
 	return nil, nil
 }

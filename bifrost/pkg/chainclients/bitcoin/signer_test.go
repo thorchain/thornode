@@ -252,7 +252,7 @@ func (s *BitcoinSignerSuite) TestSignTxWithTSS(c *C) {
 	s.client.ksWrapper, err = NewKeySignWrapper(s.client.privateKey, s.client.bridge, thorKeyManager)
 	txHash, err := chainhash.NewHashFromStr("66d2d6b5eb564972c59e4797683a1225a02515a41119f0a8919381236b63e948")
 	c.Assert(err, IsNil)
-	utxo := NewUnspentTransactionOutput(*txHash, 0, 0.00018)
+	utxo := NewUnspentTransactionOutput(*txHash, 0, 0.00018, 1)
 	c.Assert(s.client.utxoAccessor.AddUTXO(utxo), IsNil)
 	// fake a tss keysign is hard, especially with the hash change every time.
 	buf, err := s.client.SignTx(txOutItem, 1)
