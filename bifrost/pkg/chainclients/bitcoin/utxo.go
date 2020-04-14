@@ -8,17 +8,19 @@ import (
 
 // UnspentTransactionOutput struct
 type UnspentTransactionOutput struct {
-	TxID  chainhash.Hash `json:"tx_id"`
-	N     uint32         `json:"n"`
-	Value float64        `json:"value"`
+	TxID        chainhash.Hash `json:"tx_id"`
+	N           uint32         `json:"n"`
+	Value       float64        `json:"value"`
+	BlockHeight int64          `json:"block_height"`
 }
 
 // NewUnspentTransactionOutput create a new instance of UnspentTransactionOutput
-func NewUnspentTransactionOutput(txID chainhash.Hash, n uint32, value float64) UnspentTransactionOutput {
+func NewUnspentTransactionOutput(txID chainhash.Hash, n uint32, value float64, blockHeight int64) UnspentTransactionOutput {
 	return UnspentTransactionOutput{
-		TxID:  txID,
-		N:     n,
-		Value: value,
+		TxID:        txID,
+		N:           n,
+		Value:       value,
+		BlockHeight: blockHeight,
 	}
 }
 

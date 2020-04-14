@@ -151,7 +151,12 @@ func (c *Client) OnObservedTxIn(txIn types.TxIn) {
 			continue
 		}
 		value := float64(tx.Coins.GetCoin(common.BTCAsset).Amount.Uint64()) / common.One
-		utxo := NewUnspentTransactionOutput(*hash, 0, value)
+		blockHeight, err := strconv.ParseInt(txIn.BlockHeight, 10, 64)
+		if err != nil {
+			c.logger.Error().Err(err).Str("txID", tx.Tx).Msg("fail to add spendable utxo to storage")
+			continue
+		}
+		utxo := NewUnspentTransactionOutput(*hash, 0, value, blockHeight)
 		err = c.utxoAccessor.AddUTXO(utxo)
 		if err != nil {
 			c.logger.Error().Err(err).Str("txID", tx.Tx).Msg("fail to add spendable utxo to storage")
