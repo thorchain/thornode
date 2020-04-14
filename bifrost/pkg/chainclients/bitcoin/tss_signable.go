@@ -1,6 +1,7 @@
 package bitcoin
 
 import (
+	"encoding/base64"
 	"math/big"
 
 	"github.com/btcsuite/btcd/btcec"
@@ -34,6 +35,7 @@ func NewTssSignable(pubKey common.PubKey, bridge *thorclient.ThorchainBridge, ma
 
 // Sign the given payload
 func (ts *TssSignable) Sign(payload []byte) (*btcec.Signature, error) {
+	ts.logger.Debug().Msgf("msg to sign:%s", base64.StdEncoding.EncodeToString(payload))
 	keySignParty, err := ts.thorchainBridge.GetKeysignParty(ts.poolPubKey)
 	if err != nil {
 		ts.logger.Error().Err(err).Msg("fail to get keysign party")
@@ -43,7 +45,6 @@ func (ts *TssSignable) Sign(payload []byte) (*btcec.Signature, error) {
 	if err != nil {
 		return nil, err
 	}
-	// TODO I am not sure this is the right way to create a signature
 	var sig btcec.Signature
 	sig.R = new(big.Int).SetBytes(result[:32])
 	sig.S = new(big.Int).SetBytes(result[32:])
