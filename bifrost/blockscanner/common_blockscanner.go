@@ -168,7 +168,7 @@ func (b *CommonBlockScanner) scanBlocks() {
 				if !strings.Contains(err.Error(), "Height must be less than or equal to the current blockchain height") {
 
 					b.errorCounter.WithLabelValues("fail_get_block", "").Inc()
-					// b.logger.Error().Err(err).Msg("fail to get RPCBlock")
+					b.logger.Error().Err(err).Msg("fail to get RPCBlock")
 				}
 				continue
 			}
