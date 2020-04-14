@@ -19,9 +19,11 @@ type MockThorchainKeyManager struct {
 func (k *MockThorchainKeyManager) Sign(tx.StdSignMsg) ([]byte, error) {
 	return nil, nil
 }
+
 func (k *MockThorchainKeyManager) GetPrivKey() crypto.PrivKey {
 	return nil
 }
+
 func (k *MockThorchainKeyManager) GetAddr() ctypes.AccAddress {
 	return nil
 }
@@ -29,12 +31,15 @@ func (k *MockThorchainKeyManager) GetAddr() ctypes.AccAddress {
 func (k *MockThorchainKeyManager) ExportAsMnemonic() (string, error) {
 	return "", nil
 }
+
 func (k *MockThorchainKeyManager) ExportAsPrivateKey() (string, error) {
 	return "", nil
 }
+
 func (k *MockThorchainKeyManager) ExportAsKeyStore(password string) (*keys.EncryptedKeyJSON, error) {
 	return nil, nil
 }
+
 func (k *MockThorchainKeyManager) SignWithPool(msg tx.StdSignMsg, poolPubKey common.PubKey, signerPubKeys common.PubKeys) ([]byte, error) {
 	return nil, nil
 }
@@ -47,6 +52,7 @@ func (k *MockThorchainKeyManager) RemoteSign(msg []byte, poolPubKey string, sign
 	}
 	return nil, nil
 }
+
 func getSignature(r, s string) ([]byte, error) {
 	rBytes, err := base64.StdEncoding.DecodeString(r)
 	if err != nil {
