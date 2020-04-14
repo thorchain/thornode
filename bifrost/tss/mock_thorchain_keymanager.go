@@ -1,4 +1,4 @@
-package bitcoin
+package tss
 
 import (
 	"encoding/base64"
@@ -51,19 +51,4 @@ func (k *MockThorchainKeyManager) RemoteSign(msg []byte, poolPubKey string, sign
 		return getSignature("ORXh10F2qLJeb/maHLTobieHxNQDp6YIb757nFiZNhQ=", "Y9v/zE5OiZ8EDkpkHNsmkWs1dout5HKi/a/Lr9wJvQY=")
 	}
 	return nil, nil
-}
-
-func getSignature(r, s string) ([]byte, error) {
-	rBytes, err := base64.StdEncoding.DecodeString(r)
-	if err != nil {
-		return nil, err
-	}
-	sBytes, err := base64.StdEncoding.DecodeString(s)
-	if err != nil {
-		return nil, err
-	}
-	sigBytes := make([]byte, 64)
-	copy(sigBytes[32-len(rBytes):32], rBytes)
-	copy(sigBytes[64-len(sBytes):64], sBytes)
-	return sigBytes, nil
 }

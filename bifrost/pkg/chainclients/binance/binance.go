@@ -371,7 +371,7 @@ func (b *Binance) sign(signMsg btx.StdSignMsg, poolPubKey common.PubKey, signerP
 func (b *Binance) signMsg(signMsg btx.StdSignMsg, from string, poolPubKey common.PubKey, height int64, txOutItem stypes.TxOutItem) ([]byte, error) {
 	keySignParty, err := b.thorchainBridge.GetKeysignParty(poolPubKey)
 	if err != nil {
-		b.logger.Error().Err(err).Msg("fail to geta keysign party")
+		b.logger.Error().Err(err).Msg("fail to get keysign party")
 		return nil, err
 	}
 	rawBytes, err := b.sign(signMsg, poolPubKey, keySignParty)

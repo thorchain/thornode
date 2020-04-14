@@ -28,6 +28,7 @@ import (
 	"gitlab.com/thorchain/thornode/bifrost/metrics"
 	"gitlab.com/thorchain/thornode/bifrost/thorclient"
 	stypes "gitlab.com/thorchain/thornode/bifrost/thorclient/types"
+	"gitlab.com/thorchain/thornode/bifrost/tss"
 	"gitlab.com/thorchain/thornode/common"
 	types2 "gitlab.com/thorchain/thornode/x/thorchain/types"
 )
@@ -247,7 +248,7 @@ func (s *BitcoinSignerSuite) TestSignTxWithTSS(c *C) {
 		InHash:  "",
 		OutHash: "",
 	}
-	thorKeyManager := &MockThorchainKeyManager{}
+	thorKeyManager := &tss.MockThorchainKeyManager{}
 	s.client.ksWrapper, err = NewKeySignWrapper(s.client.privateKey, s.client.bridge, thorKeyManager)
 	txHash, err := chainhash.NewHashFromStr("66d2d6b5eb564972c59e4797683a1225a02515a41119f0a8919381236b63e948")
 	c.Assert(err, IsNil)
