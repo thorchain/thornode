@@ -489,7 +489,7 @@ func (s *BitcoinSuite) TestOnObservedTxIn(c *C) {
 				Coins: common.Coins{
 					common.NewCoin(common.BTCAsset, sdk.NewUint(123456789)),
 				},
-				Memo: "SWAP:BNB",
+				Memo: "MEMO",
 			},
 		},
 	}
@@ -514,7 +514,7 @@ func (s *BitcoinSuite) TestOnObservedTxIn(c *C) {
 				Coins: common.Coins{
 					common.NewCoin(common.BTCAsset, sdk.NewUint(123456)),
 				},
-				Memo: "SWAP:ETH",
+				Memo: "MEMO",
 			},
 		},
 	}
@@ -543,7 +543,7 @@ func (s *BitcoinSuite) TestOnObservedTxIn(c *C) {
 				Coins: common.Coins{
 					common.NewCoin(common.BTCAsset, sdk.NewUint(12345678)),
 				},
-				Memo: "SWAP:ETH",
+				Memo: "MEMO",
 			},
 			types.TxInItem{
 				Tx:     "54ed2d26fd5d4e0e8fa86633e40faf1bdfc8d1903b1cd02855286312d48818a2",
@@ -552,7 +552,7 @@ func (s *BitcoinSuite) TestOnObservedTxIn(c *C) {
 				Coins: common.Coins{
 					common.NewCoin(common.BTCAsset, sdk.NewUint(123456)),
 				},
-				Memo: "SWAP:ETH",
+				Memo: "MEMO",
 			},
 		},
 	}
