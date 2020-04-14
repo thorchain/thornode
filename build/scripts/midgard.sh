@@ -19,6 +19,8 @@ PG_DB="${PG_DB:=midgard}"
 
 mkdir -p /etc/midgard
 
+export EXTERNAL_IP="$(dig +short myip.opendns.com @resolver1.opendns.com)"
+
 echo "{
   \"listen_port\": $PORT,
   \"is_testnet\" : $ISTESTNET,
