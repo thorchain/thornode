@@ -6,17 +6,15 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/binance-chain/go-sdk/keys"
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/btcsuite/btcd/btcjson"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/rpcclient"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
-	tssp "gitlab.com/thorchain/tss/go-tss/tss"
-
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	tssp "gitlab.com/thorchain/tss/go-tss/tss"
 
 	"gitlab.com/thorchain/thornode/bifrost/blockscanner"
 	"gitlab.com/thorchain/thornode/bifrost/config"
@@ -29,18 +27,19 @@ import (
 
 // Client observes bitcoin chain and allows to sign and broadcast tx
 type Client struct {
-	logger        zerolog.Logger
-	cfg           config.ChainConfiguration
-	client        *rpcclient.Client
-	chain         common.Chain
-	tssKeyManager keys.KeyManager
-	privateKey    *btcec.PrivateKey
-	utxoAccessor  UnspentTransactionOutputAccessor
-	blockScanner  *blockscanner.BlockScanner
+	logger       zerolog.Logger
+	cfg          config.ChainConfiguration
+	client       *rpcclient.Client
+	chain        common.Chain
+	privateKey   *btcec.PrivateKey
+	blockScanner *blockscanner.BlockScanner
+	utxoAccessor UnspentTransactionOutputAccessor
+	ksWrapper    *KeySignWrapper
+	bridge       *thorclient.ThorchainBridge
 }
 
 // NewClient generates a new Client
-func NewClient(thorKeys *thorclient.Keys, cfg config.ChainConfiguration, server *tssp.TssServer, thorchainBridge *thorclient.ThorchainBridge, m *metrics.Metrics) (*Client, error) {
+func NewClient(thorKeys *thorclient.Keys, cfg config.ChainConfiguration, server *tssp.TssServer, bridge *thorclient.ThorchainBridge, m *metrics.Metrics) (*Client, error) {
 	client, err := rpcclient.New(&rpcclient.ConnConfig{
 		Host:         cfg.ChainHost,
 		User:         cfg.UserName,
@@ -64,14 +63,19 @@ func NewClient(thorKeys *thorclient.Keys, cfg config.ChainConfiguration, server 
 	if err != nil {
 		return nil, fmt.Errorf("fail to get private key for BTC chain: %w", err)
 	}
+	ksWrapper, err := NewKeySignWrapper(btcPrivateKey, bridge, tssKm)
+	if err != nil {
+		return nil, fmt.Errorf("fail to create keysign wrapper: %w", err)
+	}
 
 	c := &Client{
-		logger:        log.Logger.With().Str("module", "bitcoin").Logger(),
-		cfg:           cfg,
-		chain:         cfg.ChainID,
-		client:        client,
-		tssKeyManager: tssKm,
-		privateKey:    btcPrivateKey,
+		logger:     log.Logger.With().Str("module", "bitcoin").Logger(),
+		cfg:        cfg,
+		chain:      cfg.ChainID,
+		client:     client,
+		privateKey: btcPrivateKey,
+		ksWrapper:  ksWrapper,
+		bridge:     bridge,
 	}
 
 	var path string // if not set later, will in memory storage
@@ -83,7 +87,7 @@ func NewClient(thorKeys *thorclient.Keys, cfg config.ChainConfiguration, server 
 		return c, errors.Wrap(err, "fail to create blockscanner storage")
 	}
 
-	c.blockScanner, err = blockscanner.NewBlockScanner(c.cfg.BlockScanner, storage, m, thorchainBridge, c)
+	c.blockScanner, err = blockscanner.NewBlockScanner(c.cfg.BlockScanner, storage, m, bridge, c)
 	if err != nil {
 		return c, errors.Wrap(err, "fail to create block scanner")
 	}

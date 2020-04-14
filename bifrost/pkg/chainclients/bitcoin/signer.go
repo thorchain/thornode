@@ -17,6 +17,7 @@ import (
 	"gitlab.com/thorchain/txscript"
 
 	stypes "gitlab.com/thorchain/thornode/bifrost/thorclient/types"
+	"gitlab.com/thorchain/thornode/bifrost/tss"
 	"gitlab.com/thorchain/thornode/common"
 )
 
@@ -140,9 +141,26 @@ func (c *Client) SignTx(tx stypes.TxOutItem, height int64) ([]byte, error) {
 
 	for idx := range redeemTx.TxIn {
 		sigHashes := txscript.NewTxSigHashes(redeemTx)
-
-		witness, err := txscript.WitnessSignature(redeemTx, sigHashes, idx, int64(individualAmounts[idx]), sourceScript, txscript.SigHashAll, c.privateKey, true)
+		sig := c.ksWrapper.GetSignable(tx.VaultPubKey)
+		witness, err := txscript.WitnessSignature(redeemTx, sigHashes, idx, int64(individualAmounts[idx]), sourceScript, txscript.SigHashAll, sig, true)
 		if err != nil {
+			var keysignError tss.KeysignError
+			if errors.As(err, &keysignError) {
+				if len(keysignError.Blame.BlameNodes) == 0 {
+					// TSS doesn't know which node to blame
+					return nil, err
+				}
+
+				// key sign error forward the keysign blame to thorchain
+				txID, err := c.bridge.PostKeysignFailure(keysignError.Blame, height, tx.Memo, tx.Coins)
+				if err != nil {
+					c.logger.Error().Err(err).Msg("fail to post keysign failure to thorchain")
+					return nil, err
+				} else {
+					c.logger.Info().Str("tx_id", txID.String()).Msgf("post keysign failure to thorchain")
+					return nil, fmt.Errorf("sent keysign failure to thorchain")
+				}
+			}
 			return nil, fmt.Errorf("fail to get witness: %w", err)
 		}
 

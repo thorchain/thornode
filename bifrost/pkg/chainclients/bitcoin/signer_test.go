@@ -28,6 +28,7 @@ import (
 	"gitlab.com/thorchain/thornode/bifrost/metrics"
 	"gitlab.com/thorchain/thornode/bifrost/thorclient"
 	stypes "gitlab.com/thorchain/thornode/bifrost/thorclient/types"
+	"gitlab.com/thorchain/thornode/bifrost/tss"
 	"gitlab.com/thorchain/thornode/common"
 	types2 "gitlab.com/thorchain/thornode/x/thorchain/types"
 )
@@ -72,28 +73,34 @@ func (s *BitcoinSignerSuite) SetUpSuite(c *C) {
 	c.Assert(err, IsNil)
 	thorKeys, err := thorclient.NewKeys(cfg.ChainHomeFolder, cfg.SignerName, cfg.SignerPasswd)
 	c.Assert(err, IsNil)
-	s.bridge, err = thorclient.NewThorchainBridge(cfg, s.m)
-	c.Assert(err, IsNil)
 
 	s.server = httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
-		r := struct {
-			Method string `json:"method"`
-		}{}
-		json.NewDecoder(req.Body).Decode(&r)
-		defer func() {
-			c.Assert(req.Body.Close(), IsNil)
-		}()
-		switch r.Method {
-		case "getrawtransaction":
-			httpTestHandler(c, rw, "../../../../test/fixtures/btc/tx.json")
-		case "getinfo":
-			httpTestHandler(c, rw, "../../../../test/fixtures/btc/getinfo.json")
-		case "sendrawtransaction":
-			httpTestHandler(c, rw, "../../../../test/fixtures/btc/sendrawtransaction.json")
+		if req.RequestURI == "/thorchain/vaults/thorpub1addwnpepqdvw4jxzzpr4ulvrm045k967x5mfr2hcjl9wud692jvztxmx7td2szeyl8l/signers" {
+			_, err := rw.Write([]byte("[]"))
+			c.Assert(err, IsNil)
+		} else {
+			r := struct {
+				Method string `json:"method"`
+			}{}
+			json.NewDecoder(req.Body).Decode(&r)
+			defer func() {
+				c.Assert(req.Body.Close(), IsNil)
+			}()
+			switch r.Method {
+			case "getrawtransaction":
+				httpTestHandler(c, rw, "../../../../test/fixtures/btc/tx.json")
+			case "getinfo":
+				httpTestHandler(c, rw, "../../../../test/fixtures/btc/getinfo.json")
+			case "sendrawtransaction":
+				httpTestHandler(c, rw, "../../../../test/fixtures/btc/sendrawtransaction.json")
+			}
 		}
 	}))
 
 	s.cfg.ChainHost = s.server.Listener.Addr().String()
+	cfg.ChainHost = s.server.Listener.Addr().String()
+	s.bridge, err = thorclient.NewThorchainBridge(cfg, s.m)
+	c.Assert(err, IsNil)
 	s.client, err = NewClient(thorKeys, s.cfg, nil, s.bridge, s.m)
 	s.client.utxoAccessor = NewDummyUTXOAccessor()
 	c.Assert(err, IsNil)
@@ -185,7 +192,7 @@ func (s *BitcoinSignerSuite) TestSignTx(c *C) {
 	c.Assert(result, IsNil)
 }
 
-func (s *BitcoinSignerSuite) TestSignTxHappyPath(c *C) {
+func (s *BitcoinSignerSuite) TestSignTxHappyPathWithPrivateKey(c *C) {
 	addr, err := types2.GetRandomPubKey().GetAddress(common.BTCChain)
 	c.Assert(err, IsNil)
 	txOutItem := stypes.TxOutItem{
@@ -211,10 +218,46 @@ func (s *BitcoinSignerSuite) TestSignTxHappyPath(c *C) {
 	c.Assert(err, IsNil)
 	pkey, _ := btcec.PrivKeyFromBytes(btcec.S256(), priKeyBuf)
 	c.Assert(pkey, NotNil)
+	ksw, err := NewKeySignWrapper(pkey, s.client.bridge, s.client.ksWrapper.tssKeyManager)
+	c.Assert(err, IsNil)
 	s.client.privateKey = pkey
+	s.client.ksWrapper = ksw
+	vaultPubKey, err := GetBech32AccountPubKey(pkey)
+	c.Assert(err, IsNil)
+	txOutItem.VaultPubKey = vaultPubKey
 	buf, err := s.client.SignTx(txOutItem, 1)
 	c.Assert(err, IsNil)
 	c.Assert(buf, NotNil)
+}
+
+func (s *BitcoinSignerSuite) TestSignTxWithTSS(c *C) {
+	addr, err := types2.GetRandomPubKey().GetAddress(common.BTCChain)
+	c.Assert(err, IsNil)
+	txOutItem := stypes.TxOutItem{
+		Chain:       common.BTCChain,
+		ToAddress:   addr,
+		VaultPubKey: "thorpub1addwnpepqdvw4jxzzpr4ulvrm045k967x5mfr2hcjl9wud692jvztxmx7td2szeyl8l",
+		SeqNo:       0,
+		Coins: common.Coins{
+			common.NewCoin(common.BTCAsset, sdk.NewUint(10)),
+		},
+		Memo: "outboundbtc",
+		MaxGas: common.Gas{
+			common.NewCoin(common.BTCAsset, sdk.NewUint(1)),
+		},
+		InHash:  "",
+		OutHash: "",
+	}
+	thorKeyManager := &tss.MockThorchainKeyManager{}
+	s.client.ksWrapper, err = NewKeySignWrapper(s.client.privateKey, s.client.bridge, thorKeyManager)
+	txHash, err := chainhash.NewHashFromStr("66d2d6b5eb564972c59e4797683a1225a02515a41119f0a8919381236b63e948")
+	c.Assert(err, IsNil)
+	utxo := NewUnspentTransactionOutput(*txHash, 0, 0.00018)
+	c.Assert(s.client.utxoAccessor.AddUTXO(utxo), IsNil)
+	// fake a tss keysign is hard, especially with the hash change every time.
+	buf, err := s.client.SignTx(txOutItem, 1)
+	c.Assert(err, NotNil)
+	c.Assert(buf, IsNil)
 }
 
 func GetRandomUTXO(amount float64) UnspentTransactionOutput {
