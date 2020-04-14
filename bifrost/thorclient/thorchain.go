@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
-	"strings"
 	"sync"
 	"time"
 
@@ -45,18 +44,17 @@ const (
 
 // ThorchainBridge will be used to send tx to thorchain
 type ThorchainBridge struct {
-	logger         zerolog.Logger
-	cdc            *codec.Codec
-	cfg            config.ClientConfiguration
-	tendermintHost string
-	keys           *Keys
-	errCounter     *prometheus.CounterVec
-	m              *metrics.Metrics
-	blockHeight    int64
-	accountNumber  uint64
-	seqNumber      uint64
-	httpClient     *retryablehttp.Client
-	broadcastLock  *sync.RWMutex
+	logger        zerolog.Logger
+	cdc           *codec.Codec
+	cfg           config.ClientConfiguration
+	keys          *Keys
+	errCounter    *prometheus.CounterVec
+	m             *metrics.Metrics
+	blockHeight   int64
+	accountNumber uint64
+	seqNumber     uint64
+	httpClient    *retryablehttp.Client
+	broadcastLock *sync.RWMutex
 }
 
 // NewThorchainBridge create a new instance of ThorchainBridge
@@ -84,34 +82,16 @@ func NewThorchainBridge(cfg config.ClientConfiguration, m *metrics.Metrics) (*Th
 	httpClient := retryablehttp.NewClient()
 	httpClient.Logger = nil
 
-	tendermint, err := getTendermintHost(cfg.ChainHost)
-	if err != nil {
-		return nil, fmt.Errorf("fail to get tendermint host: %s", err)
-	}
-
 	return &ThorchainBridge{
-		logger:         logger,
-		cdc:            MakeCodec(),
-		cfg:            cfg,
-		tendermintHost: tendermint,
-		keys:           k,
-		errCounter:     m.GetCounterVec(metrics.ThorchainClientError),
-		httpClient:     httpClient,
-		m:              m,
-		broadcastLock:  &sync.RWMutex{},
+		logger:        logger,
+		cdc:           MakeCodec(),
+		cfg:           cfg,
+		keys:          k,
+		errCounter:    m.GetCounterVec(metrics.ThorchainClientError),
+		httpClient:    httpClient,
+		m:             m,
+		broadcastLock: &sync.RWMutex{},
 	}, nil
-}
-
-// getTendermintHost - with given host, replace port with tendermint port 26657
-func getTendermintHost(host string) (string, error) {
-	if !strings.HasPrefix(host, "http") {
-		host = "http://" + host
-	}
-	u, err := url.Parse(host)
-	if err != nil {
-		return "", err
-	}
-	return fmt.Sprintf("%s:26657", u.Hostname()), nil
 }
 
 // MakeCodec creates codec
@@ -354,7 +334,7 @@ func (b *ThorchainBridge) GetKeysignParty(vaultPubKey common.PubKey) (common.Pub
 func (b *ThorchainBridge) IsCatchingUp() (bool, error) {
 	uri := url.URL{
 		Scheme: "http",
-		Host:   b.tendermintHost,
+		Host:   b.cfg.ChainRPC,
 		Path:   StatusEndpoint,
 	}
 
@@ -377,16 +357,17 @@ func (b *ThorchainBridge) IsCatchingUp() (bool, error) {
 	return resp.Result.SyncInfo.CatchingUp, nil
 }
 
-func (b *ThorchainBridge) WaitToCatchUp() {
+func (b *ThorchainBridge) WaitToCatchUp() error {
 	for {
-		ok, err := b.IsCatchingUp()
+		yes, err := b.IsCatchingUp()
 		if err != nil {
-			b.logger.Error().Err(err).Msg("failed to fetch catching up status from tendermint")
+			return err
 		}
-		if ok {
+		if !yes {
 			break
 		}
 		b.logger.Info().Msg("thorchain is not caught up... waiting...")
 		time.Sleep(5 * time.Second)
 	}
+	return nil
 }

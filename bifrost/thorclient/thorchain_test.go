@@ -50,11 +50,11 @@ func (s *ThorchainSuite) SetUpSuite(c *C) {
 		}
 	}))
 	s.cfg.ChainHost = s.server.Listener.Addr().String()
+	s.cfg.ChainRPC = s.server.Listener.Addr().String()
 
 	var err error
 	s.bridge, err = NewThorchainBridge(s.cfg, GetMetricForTest(c))
 	s.bridge.httpClient.RetryMax = 1 // fail fast
-	s.bridge.tendermintHost = s.server.Listener.Addr().String()
 	c.Assert(err, IsNil)
 	c.Assert(s.bridge, NotNil)
 }
@@ -231,20 +231,6 @@ func (s *ThorchainSuite) TestGetKeysignParty(c *C) {
 	pubKeys, err := s.bridge.GetKeysignParty(pubKey)
 	c.Assert(err, IsNil)
 	c.Assert(pubKeys, HasLen, 3)
-}
-
-func (s *ThorchainSuite) TestGetTendermintHost(c *C) {
-	host, err := getTendermintHost("localhost")
-	c.Assert(err, IsNil)
-	c.Check(host, Equals, "localhost:26657")
-
-	host, err = getTendermintHost("http://127.0.0.1:61995/path/to/something")
-	c.Assert(err, IsNil)
-	c.Check(host, Equals, "127.0.0.1:26657")
-
-	host, err = getTendermintHost("127.0.0.1:61995")
-	c.Assert(err, IsNil)
-	c.Check(host, Equals, "127.0.0.1:26657")
 }
 
 func (s *ThorchainSuite) TestIsCatchingUp(c *C) {
