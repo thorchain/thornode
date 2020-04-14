@@ -17,7 +17,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-	"github.com/tendermint/tendermint/types"
 
 	"gitlab.com/thorchain/thornode/common"
 
@@ -54,7 +53,7 @@ func NewBlockScanner(cfg config.BlockScannerConfiguration, scanStorage blockscan
 
 	return &BlockScanner{
 		cfg:        cfg,
-		logger:     log.Logger.With().Str("module", "blockscanner").Str("chain", "ethereum").Logger(),
+		logger:     log.Logger.With().Str("module", "blockscanner").Str("chain", "ETH").Logger(),
 		db:         scanStorage,
 		errCounter: m.GetCounterVec(metrics.BlockScanError(common.ETHChain)),
 		client:     client,
@@ -70,7 +69,7 @@ func GetTxHash(encodedTx string) (string, error) {
 	if err := json.Unmarshal([]byte(encodedTx), &tx); err != nil {
 		return "", err
 	}
-	return fmt.Sprintf("0x%x", tx.Hash().String()), nil
+	return fmt.Sprintf("%s", tx.Hash().Hex()), nil
 }
 
 // processBlock extracts transactions from block
@@ -102,7 +101,7 @@ func (e *BlockScanner) processBlock(block blockscanner.Block) (stypes.TxIn, erro
 		txItemIn, err := e.fromTxToTxIn(txn)
 		if err != nil {
 			e.errCounter.WithLabelValues("fail_get_tx", strBlock).Inc()
-			e.logger.Error().Err(err).Str("hash", hash).Msg("fail to get one tx from server")
+			e.logger.Error().Err(err).Str("hash", hash).Msg("fail to get one tx from server")	
 			// if THORNode fail to get one tx hash from server, then THORNode should bail, because THORNode might miss tx
 			// if THORNode bail here, then THORNode should retry later
 			return noTx, errors.Wrap(err, "fail to get one tx from server")
@@ -197,24 +196,34 @@ func (e *BlockScanner) getRPCBlock(height int64) ([]string, error) {
 		return nil, err
 	}
 
-	rawTxns, err := e.UnmarshalBlock(buf)
+	rawTxs, err := e.UnmarshalBlock(buf)
 	if err != nil {
 		e.errCounter.WithLabelValues("fail_unmarshal_block", e.cfg.RPCHost).Inc()
 	}
-	return rawTxns, err
+	return rawTxs, err
 }
 
 func (e *BlockScanner) BlockRequest(height int64) string {
 	return `{"jsonrpc":"2.0","method":"eth_getBlockByNumber","params":["0x` + fmt.Sprintf("%x", height) + `", true],"id":1}`
 }
 
-func (e *BlockScanner) UnmarshalBlock(buf []byte) ([]string, error) {
-	var head *types.Header
-	var body etypes2.RPCBlock
-	if err := json.Unmarshal(buf, &head); err != nil {
+func (e *BlockScanner) UnmarshalBlock(buf []byte) ([]string, error)	 {
+	e.logger.Debug().Msgf("lol block %s", string(buf))
+	type Request struct {
+		Jsonrpc string          `json:"jsonrpc"`
+		Id      int             `json:"id"`
+		Result  json.RawMessage `json:"result"`
+	}
+	var dec Request
+	if err := json.Unmarshal(buf, &dec); err != nil {
 		return nil, err
 	}
-	if err := json.Unmarshal(buf, &body); err != nil {
+	var head etypes.Header
+	var body etypes2.RPCBlock
+	if err := json.Unmarshal(dec.Result, &head); err != nil {
+		return nil, err
+	}
+	if err := json.Unmarshal(dec.Result, &body); err != nil {
 		return nil, err
 	}
 	txs := make([]string, 0)
@@ -238,20 +247,20 @@ func (e *BlockScanner) fromTxToTxIn(encodedTx string) (*stypes.TxInItem, error) 
 	}
 
 	txInItem := &stypes.TxInItem{
-		Tx: tx.Hash().String(),
+		Tx: eipSigner.Hash(tx).Hex(),
 	}
-	// tx data field bytes should be exactly as outboud or yggradsil- or migrate or yggdrasil+, etc
+	// tx data field bytes should be hex encoded byres string as outboud or yggradsil- or migrate or yggdrasil+, etc
 	txInItem.Memo = string(tx.Data())
 
 	sender, err := eipSigner.Sender(tx)
 	if err != nil {
-		return nil, nil
+		return nil, err
 	}
-	txInItem.Sender = sender.String()
+	txInItem.Sender = strings.ToLower(sender.String())
 	if tx.To() == nil {
-		return nil, errors.New("missing receiver")
+		return nil, err
 	}
-	txInItem.To = tx.To().String()
+	txInItem.To = strings.ToLower(tx.To().String())
 
 	asset, err := common.NewAsset("ETH.ETH")
 	if err != nil {
