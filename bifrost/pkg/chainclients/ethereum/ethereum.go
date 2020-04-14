@@ -145,7 +145,7 @@ func (c *Client) GetGasPrice() (*big.Int, error) {
 }
 
 func (c *Client) GetGasFee(count uint64) common.Gas {
-	return common.GetETHGasFee()
+	return common.GetETHGasFee(big.NewInt(int64(count)))
 }
 
 func (c *Client) ValidateMetadata(inter interface{}) bool {

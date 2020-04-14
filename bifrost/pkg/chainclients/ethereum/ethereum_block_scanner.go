@@ -1,6 +1,7 @@
 package ethereum
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -27,7 +28,11 @@ import (
 	stypes "gitlab.com/thorchain/thornode/bifrost/thorclient/types"
 )
 
-const DefaultObserverLevelDBFolder = `observer_data`
+const (
+	DefaultObserverLevelDBFolder = `observer_data`
+	GasPriceUpdateInterval       = 100
+	DefaultGasPrice              = 1
+)
 
 var eipSigner = etypes.NewEIP155Signer(big.NewInt(1))
 
@@ -39,6 +44,7 @@ type BlockScanner struct {
 	db         blockscanner.ScannerStorage
 	m          *metrics.Metrics
 	errCounter *prometheus.CounterVec
+	gasPrice   *big.Int
 	client     *ethclient.Client
 }
 
@@ -53,10 +59,11 @@ func NewBlockScanner(cfg config.BlockScannerConfiguration, scanStorage blockscan
 
 	return &BlockScanner{
 		cfg:        cfg,
-		logger:     log.Logger.With().Str("module", "blockscanner").Str("chain", "ETH").Logger(),
+		logger:     log.Logger.With().Str("module", "blockscanner").Str("chain", common.ETHChain.String()).Logger(),
 		db:         scanStorage,
 		errCounter: m.GetCounterVec(metrics.BlockScanError(common.ETHChain)),
 		client:     client,
+		gasPrice:   big.NewInt(DefaultGasPrice),
 		httpClient: &http.Client{
 			Timeout: cfg.HttpRequestTimeout,
 		},
@@ -75,9 +82,10 @@ func GetTxHash(encodedTx string) (string, error) {
 // processBlock extracts transactions from block
 func (e *BlockScanner) processBlock(block blockscanner.Block) (stypes.TxIn, error) {
 	noTx := stypes.TxIn{}
+	var err error
 
 	strBlock := strconv.FormatInt(block.Height, 10)
-	if err := e.db.SetBlockScanStatus(block, blockscanner.Processing); err != nil {
+	if err = e.db.SetBlockScanStatus(block, blockscanner.Processing); err != nil {
 		e.errCounter.WithLabelValues("fail_set_block_status", strBlock).Inc()
 		return noTx, errors.Wrapf(err, "fail to set block scan status for block %d", block.Height)
 	}
@@ -87,6 +95,14 @@ func (e *BlockScanner) processBlock(block blockscanner.Block) (stypes.TxIn, erro
 		e.m.GetCounter(metrics.BlockWithoutTx("ETH")).Inc()
 		e.logger.Debug().Int64("block", block.Height).Msg("there are no txs in this block")
 		return noTx, nil
+	}
+	// Update gas price once per 100 blocks
+	if e.gasPrice.Uint64() == DefaultGasPrice || block.Height%GasPriceUpdateInterval == 0 {
+		ctx := context.Background()
+		e.gasPrice, err = e.client.SuggestGasPrice(ctx)
+		if err != nil {
+			return noTx, nil
+		}
 	}
 
 	var txIn stypes.TxIn
@@ -268,15 +284,7 @@ func (e *BlockScanner) fromTxToTxIn(encodedTx string) (*stypes.TxInItem, error) 
 		return nil, errors.Wrap(err, "fail to create asset, ETH is not valid")
 	}
 	txInItem.Coins = append(txInItem.Coins, common.NewCoin(asset, sdk.NewUint(tx.Value().Uint64())))
-
-	// TODO: We should not assume what the gas fees are going to be in
-	// the future (although they are largely static for Ethereum). We
-	// should modulus the Ethereum block height and get the latest fee
-	// prices every 1,000 or so blocks. This would ensure that all
-	// observers will always report the same gas prices as they update
-	// their price fees at the same time.
-
-	txInItem.Gas = common.GetETHGasFee()
+	txInItem.Gas = common.GetETHGasFee(e.gasPrice)
 
 	return txInItem, nil
 }

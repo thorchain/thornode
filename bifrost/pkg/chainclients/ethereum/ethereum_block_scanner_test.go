@@ -83,6 +83,10 @@ func (s *BlockScannerTestSuite) TestProcessBlock(c *C) {
 		var rpcRequest RPCRequest
 		err = json.Unmarshal(body, &rpcRequest)
 		c.Assert(err, IsNil)
+		if rpcRequest.Method == "eth_gasPrice" {
+			_, err := rw.Write([]byte(`{"jsonrpc":"2.0","id":1,"result":"0x1"}`))
+			c.Assert(err, IsNil)
+		}
 		if rpcRequest.Method == "eth_getBlockByNumber" {
 			_, err := rw.Write([]byte(`{"jsonrpc":"2.0","id":1,"result":{
 				"parentHash":"0x8b535592eb3192017a527bbf8e3596da86b3abea51d6257898b2ced9d3a83826",
@@ -155,7 +159,23 @@ func (s *BlockScannerTestSuite) TestGetTxHash(c *C) {
 }
 
 func (s *BlockScannerTestSuite) TestFromTxToTxIn(c *C) {
-	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {}))
+	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		body, err := ioutil.ReadAll(req.Body)
+		c.Assert(err, IsNil)
+		type RPCRequest struct {
+			JSONRPC string          `json:"jsonrpc"`
+			ID      interface{}     `json:"id"`
+			Method  string          `json:"method"`
+			Params  json.RawMessage `json:"params"`
+		}
+		var rpcRequest RPCRequest
+		err = json.Unmarshal(body, &rpcRequest)
+		c.Assert(err, IsNil)
+		if rpcRequest.Method == "eth_gasPrice" {
+			_, err := rw.Write([]byte(`{"jsonrpc":"2.0","id":1,"result":"0x1"}`))
+			c.Assert(err, IsNil)
+		}
+	}))
 	ctx := context.Background()
 	ethClient, err := ethclient.DialContext(ctx, server.URL)
 	c.Assert(err, IsNil)
