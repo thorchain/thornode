@@ -7,7 +7,7 @@ import (
 
 // GetValidators returns validators from thorchain
 func (b *ThorchainBridge) GetValidators() (*types.ValidatorsResp, error) {
-	body, _, err := b.get(ValidatorsEndpoint)
+	body, _, err := b.getWithPath(ValidatorsEndpoint)
 	if err != nil {
 		b.errCounter.WithLabelValues("fail_get_validators", "").Inc()
 		return &types.ValidatorsResp{}, errors.Wrap(err, "failed to get validators")

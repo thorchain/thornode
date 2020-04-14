@@ -25,6 +25,7 @@ echo "{
     \"thorchain\": {
         \"chain_id\": \"$CHAIN_ID\",
         \"chain_host\": \"$CHAIN_API\",
+        \"chain_rpc\": \"$CHAIN_RPC\",
         \"signer_name\": \"$SIGNER_NAME\"
     },
     \"metrics\": {

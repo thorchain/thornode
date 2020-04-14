@@ -38,11 +38,11 @@ func (b *ThorchainBridge) GetBlockHeight() (int64, error) {
 
 // getLastBlock calls the /lastblock/{chain} endpoint and Unmarshal's into the QueryResHeights type
 func (b *ThorchainBridge) getLastBlock(chain common.Chain) (types.QueryResHeights, error) {
-	url := LastBlockEndpoint
+	path := LastBlockEndpoint
 	if chain.String() != "" {
-		url = fmt.Sprintf("%s/%s", url, chain.String())
+		path = fmt.Sprintf("%s/%s", path, chain.String())
 	}
-	buf, _, err := b.get(url)
+	buf, _, err := b.getWithPath(path)
 	if err != nil {
 		return types.QueryResHeights{}, errors.Wrap(err, "failed to get lastblock")
 	}
