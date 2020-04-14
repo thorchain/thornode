@@ -96,7 +96,7 @@ func (s *ObserverSuite) NewMockBinanceInstance(c *C, jsonData string) {
 		HttpRequestReadTimeout:     httpRequestTimeout,
 		HttpRequestWriteTimeout:    httpRequestTimeout,
 		MaxHttpRequestRetry:        10,
-		StartBlockHeight:           0,
+		StartBlockHeight:           1, // avoids querying thorchain for block height
 		EnforceBlockHeight:         true,
 	}}, nil, s.bridge, s.m)
 	c.Assert(err, IsNil)

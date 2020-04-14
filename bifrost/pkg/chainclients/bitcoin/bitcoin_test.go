@@ -68,6 +68,9 @@ func (s *BitcoinSuite) SetUpSuite(c *C) {
 		Password:    "password",
 		DisableTLS:  true,
 		HTTPostMode: true,
+		BlockScanner: config.BlockScannerConfiguration{
+			StartBlockHeight: 1, // avoids querying thorchain for block height
+		},
 	}
 	ns := strconv.Itoa(time.Now().Nanosecond())
 	ttypes.SetupConfigForTest()

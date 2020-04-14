@@ -104,7 +104,12 @@ func (s *BinancechainSuite) TestNewBinance(c *C) {
 		}
 	}))
 
-	b2, err2 := NewBinance(s.thorKeys, config.ChainConfiguration{RPCHost: server.URL}, nil, s.bridge, s.m)
+	b2, err2 := NewBinance(s.thorKeys, config.ChainConfiguration{
+		RPCHost: server.URL,
+		BlockScanner: config.BlockScannerConfiguration{
+			StartBlockHeight: 1, // avoids querying thorchain for block height
+		},
+	}, nil, s.bridge, s.m)
 	c.Assert(err2, IsNil)
 	c.Assert(b2, NotNil)
 }
@@ -149,7 +154,12 @@ func (s *BinancechainSuite) TestGetHeight(c *C) {
 		}
 	}))
 
-	b, err := NewBinance(s.thorKeys, config.ChainConfiguration{RPCHost: server.URL}, nil, s.bridge, s.m)
+	b, err := NewBinance(s.thorKeys, config.ChainConfiguration{
+		RPCHost: server.URL,
+		BlockScanner: config.BlockScannerConfiguration{
+			StartBlockHeight: 1, // avoids querying thorchain for block height
+		},
+	}, nil, s.bridge, s.m)
 	c.Assert(err, IsNil)
 
 	height, err := b.GetHeight()
@@ -199,6 +209,9 @@ func (s *BinancechainSuite) TestSignTx(c *C) {
 	c.Assert(err, IsNil)
 	b2, err2 := NewBinance(s.thorKeys, config.ChainConfiguration{
 		RPCHost: server.URL,
+		BlockScanner: config.BlockScannerConfiguration{
+			StartBlockHeight: 1, // avoids querying thorchain for block height
+		},
 	}, nil, b, s.m)
 	c.Assert(err2, IsNil)
 	c.Assert(b2, NotNil)
@@ -234,6 +247,9 @@ func (s *BinancechainSuite) TestGetGasFee(c *C) {
 	c.Assert(err, IsNil)
 	b2, err2 := NewBinance(s.thorKeys, config.ChainConfiguration{
 		RPCHost: server.URL,
+		BlockScanner: config.BlockScannerConfiguration{
+			StartBlockHeight: 1, // avoids querying thorchain for block height
+		},
 	}, nil, b, s.m)
 	c.Assert(err2, IsNil)
 	c.Assert(b2, NotNil)

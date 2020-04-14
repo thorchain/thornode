@@ -1,0 +1,38 @@
+{
+  "jsonrpc": "2.0",
+  "id": "",
+  "result": {
+    "node_info": {
+      "protocol_version": {
+        "p2p": "7",
+        "block": "10",
+        "app": "0"
+      },
+      "id": "9aac6218c5f51fbe8ed97bfaa3ec89c62c05ef92",
+      "listen_addr": "tcp://0.0.0.0:26656",
+      "network": "thorchain",
+      "version": "0.32.9",
+      "channels": "4020212223303800",
+      "moniker": "thor1l0xg0w8872qqvnp4q7cpqkhkjqnh43d49e4q5w",
+      "other": {
+        "tx_index": "on",
+        "rpc_address": "tcp://0.0.0.0:26657"
+      }
+    },
+    "sync_info": {
+      "latest_block_hash": "17AA8202B622F3DF77A8BBDB61A482730A4BB295085F3E1DDBD9659B70EDAFE1",
+      "latest_app_hash": "48F007C355C1E889B241D11B885C2211CFFEA6121A56A3F974CE16B4BF2FE65E",
+      "latest_block_height": "197675",
+      "latest_block_time": "2020-04-13T23:49:52.441531961Z",
+      "catching_up": false
+    },
+    "validator_info": {
+      "address": "1AADB9E565305F9F8551C02353DA987C4696137C",
+      "pub_key": {
+        "type": "tendermint/PubKeyEd25519",
+        "value": "afhWvOV99xgphAX1dJEjJdzW5j783rCa3UzEFkqLjus="
+      },
+      "voting_power": "100"
+    }
+  }
+}

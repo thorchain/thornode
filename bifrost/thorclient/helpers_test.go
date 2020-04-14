@@ -25,6 +25,7 @@ func SetupStateChainForTest(c *C) (config.ClientConfiguration, cKeys.Info, func(
 	cfg := config.ClientConfiguration{
 		ChainID:         "thorchain",
 		ChainHost:       "localhost",
+		ChainRPC:        "localhost",
 		SignerName:      "bob",
 		SignerPasswd:    "password",
 		ChainHomeFolder: thorcliDir,

@@ -41,6 +41,8 @@ func (s *ThorchainSuite) SetUpSuite(c *C) {
 			httpTestHandler(c, rw, s.nodeAccountFixture)
 		case strings.HasPrefix(req.RequestURI, LastBlockEndpoint):
 			httpTestHandler(c, rw, "../../test/fixtures/endpoints/lastblock/bnb.json")
+		case strings.HasPrefix(req.RequestURI, StatusEndpoint):
+			httpTestHandler(c, rw, "../../test/fixtures/endpoints/status/status.json")
 		case strings.HasPrefix(req.RequestURI, KeysignEndpoint):
 			httpTestHandler(c, rw, "../../test/fixtures/endpoints/keysign/template.json")
 		case strings.HasPrefix(req.RequestURI, "/thorchain/vaults") && strings.HasSuffix(req.RequestURI, "/signers"):
@@ -48,6 +50,7 @@ func (s *ThorchainSuite) SetUpSuite(c *C) {
 		}
 	}))
 	s.cfg.ChainHost = s.server.Listener.Addr().String()
+	s.cfg.ChainRPC = s.server.Listener.Addr().String()
 
 	var err error
 	s.bridge, err = NewThorchainBridge(s.cfg, GetMetricForTest(c))
@@ -87,7 +90,7 @@ func httpTestHandler(c *C, rw http.ResponseWriter, fixture string) {
 }
 
 func (s *ThorchainSuite) TestGet(c *C) {
-	buf, status, err := s.bridge.get("")
+	buf, status, err := s.bridge.getWithPath("")
 	c.Check(status, Equals, http.StatusOK)
 	c.Assert(err, IsNil)
 	c.Assert(buf, NotNil)
@@ -228,4 +231,10 @@ func (s *ThorchainSuite) TestGetKeysignParty(c *C) {
 	pubKeys, err := s.bridge.GetKeysignParty(pubKey)
 	c.Assert(err, IsNil)
 	c.Assert(pubKeys, HasLen, 3)
+}
+
+func (s *ThorchainSuite) TestIsCatchingUp(c *C) {
+	ok, err := s.bridge.IsCatchingUp()
+	c.Assert(err, IsNil)
+	c.Assert(ok, Equals, false)
 }
