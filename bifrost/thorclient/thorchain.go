@@ -360,7 +360,7 @@ func (b *ThorchainBridge) IsCatchingUp() (bool, error) {
 
 	body, _, err := b.get(uri.String())
 	if err != nil {
-		return false, errors.Wrap(err, "failed to get auth accounts")
+		return false, errors.Wrap(err, "failed to get status data")
 	}
 
 	var resp struct {
