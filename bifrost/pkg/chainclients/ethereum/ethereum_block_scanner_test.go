@@ -31,7 +31,7 @@ func (s *BlockScannerTestSuite) SetUpSuite(c *C) {
 func getConfigForTest(rpcHost string) config.BlockScannerConfiguration {
 	return config.BlockScannerConfiguration{
 		RPCHost:                    rpcHost,
-		StartBlockHeight:           0,
+		StartBlockHeight:           1, // avoids querying thorchain for block height
 		BlockScanProcessors:        1,
 		HttpRequestTimeout:         time.Second,
 		HttpRequestReadTimeout:     time.Second * 30,

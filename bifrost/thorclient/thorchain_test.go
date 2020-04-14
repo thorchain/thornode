@@ -1,6 +1,7 @@
 package thorclient
 
 import (
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -34,6 +35,7 @@ func (s *ThorchainSuite) SetUpSuite(c *C) {
 	cfg2.SetBech32PrefixForAccount(cmd.Bech32PrefixAccAddr, cmd.Bech32PrefixAccPub)
 	s.cfg, _, s.cleanup = SetupStateChainForTest(c)
 	s.server = httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		fmt.Printf("Request URI: %s\n", req.RequestURI)
 		switch {
 		case strings.HasPrefix(req.RequestURI, AuthAccountEndpoint):
 			httpTestHandler(c, rw, s.authAccountFixture)
@@ -41,6 +43,8 @@ func (s *ThorchainSuite) SetUpSuite(c *C) {
 			httpTestHandler(c, rw, s.nodeAccountFixture)
 		case strings.HasPrefix(req.RequestURI, LastBlockEndpoint):
 			httpTestHandler(c, rw, "../../test/fixtures/endpoints/lastblock/bnb.json")
+		case strings.HasPrefix(req.RequestURI, StatusEndpoint):
+			httpTestHandler(c, rw, "../../test/fixtures/endpoints/status/status.json")
 		case strings.HasPrefix(req.RequestURI, KeysignEndpoint):
 			httpTestHandler(c, rw, "../../test/fixtures/endpoints/keysign/template.json")
 		case strings.HasPrefix(req.RequestURI, "/thorchain/vaults") && strings.HasSuffix(req.RequestURI, "/signers"):
@@ -52,6 +56,7 @@ func (s *ThorchainSuite) SetUpSuite(c *C) {
 	var err error
 	s.bridge, err = NewThorchainBridge(s.cfg, GetMetricForTest(c))
 	s.bridge.httpClient.RetryMax = 1 // fail fast
+	s.bridge.tendermintHost = s.server.Listener.Addr().String()
 	c.Assert(err, IsNil)
 	c.Assert(s.bridge, NotNil)
 }
@@ -87,7 +92,7 @@ func httpTestHandler(c *C, rw http.ResponseWriter, fixture string) {
 }
 
 func (s *ThorchainSuite) TestGet(c *C) {
-	buf, status, err := s.bridge.get("")
+	buf, status, err := s.bridge.getWithPath("")
 	c.Check(status, Equals, http.StatusOK)
 	c.Assert(err, IsNil)
 	c.Assert(buf, NotNil)
@@ -228,4 +233,24 @@ func (s *ThorchainSuite) TestGetKeysignParty(c *C) {
 	pubKeys, err := s.bridge.GetKeysignParty(pubKey)
 	c.Assert(err, IsNil)
 	c.Assert(pubKeys, HasLen, 3)
+}
+
+func (s *ThorchainSuite) TestGetTendermintHost(c *C) {
+	host, err := getTendermintHost("localhost")
+	c.Assert(err, IsNil)
+	c.Check(host, Equals, "localhost:26657")
+
+	host, err = getTendermintHost("http://127.0.0.1:61995/path/to/something")
+	c.Assert(err, IsNil)
+	c.Check(host, Equals, "127.0.0.1:26657")
+
+	host, err = getTendermintHost("127.0.0.1:61995")
+	c.Assert(err, IsNil)
+	c.Check(host, Equals, "127.0.0.1:26657")
+}
+
+func (s *ThorchainSuite) TestIsCatchingUp(c *C) {
+	ok, err := s.bridge.IsCatchingUp()
+	c.Assert(err, IsNil)
+	c.Assert(ok, Equals, false)
 }

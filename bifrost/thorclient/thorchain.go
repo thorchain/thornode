@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -39,21 +40,23 @@ const (
 	ValidatorsEndpoint       = "/thorchain/validators"
 	VaultsEndpoint           = "/thorchain/vaults/pubkeys"
 	SignerMembershipEndpoint = "/thorchain/vaults/%s/signers"
+	StatusEndpoint           = "/status"
 )
 
 // ThorchainBridge will be used to send tx to thorchain
 type ThorchainBridge struct {
-	logger        zerolog.Logger
-	cdc           *codec.Codec
-	cfg           config.ClientConfiguration
-	keys          *Keys
-	errCounter    *prometheus.CounterVec
-	m             *metrics.Metrics
-	blockHeight   int64
-	accountNumber uint64
-	seqNumber     uint64
-	httpClient    *retryablehttp.Client
-	broadcastLock *sync.RWMutex
+	logger         zerolog.Logger
+	cdc            *codec.Codec
+	cfg            config.ClientConfiguration
+	tendermintHost string
+	keys           *Keys
+	errCounter     *prometheus.CounterVec
+	m              *metrics.Metrics
+	blockHeight    int64
+	accountNumber  uint64
+	seqNumber      uint64
+	httpClient     *retryablehttp.Client
+	broadcastLock  *sync.RWMutex
 }
 
 // NewThorchainBridge create a new instance of ThorchainBridge
@@ -81,16 +84,34 @@ func NewThorchainBridge(cfg config.ClientConfiguration, m *metrics.Metrics) (*Th
 	httpClient := retryablehttp.NewClient()
 	httpClient.Logger = nil
 
+	tendermint, err := getTendermintHost(cfg.ChainHost)
+	if err != nil {
+		return nil, fmt.Errorf("fail to get tendermint host: %s", err)
+	}
+
 	return &ThorchainBridge{
-		logger:        logger,
-		cdc:           MakeCodec(),
-		cfg:           cfg,
-		keys:          k,
-		errCounter:    m.GetCounterVec(metrics.ThorchainClientError),
-		httpClient:    httpClient,
-		m:             m,
-		broadcastLock: &sync.RWMutex{},
+		logger:         logger,
+		cdc:            MakeCodec(),
+		cfg:            cfg,
+		tendermintHost: tendermint,
+		keys:           k,
+		errCounter:     m.GetCounterVec(metrics.ThorchainClientError),
+		httpClient:     httpClient,
+		m:              m,
+		broadcastLock:  &sync.RWMutex{},
 	}, nil
+}
+
+// getTendermintHost - with given host, replace port with tendermint port 26657
+func getTendermintHost(host string) (string, error) {
+	if !strings.HasPrefix(host, "http") {
+		host = "http://" + host
+	}
+	u, err := url.Parse(host)
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("%s:26657", u.Hostname()), nil
 }
 
 // MakeCodec creates codec
@@ -102,9 +123,13 @@ func MakeCodec() *codec.Codec {
 	return cdc
 }
 
+func (b *ThorchainBridge) getWithPath(path string) ([]byte, int, error) {
+	return b.get(b.getThorChainURL(path))
+}
+
 // get handle all the low level http GET calls using retryablehttp.ThorchainBridge
-func (b *ThorchainBridge) get(path string) ([]byte, int, error) {
-	resp, err := b.httpClient.Get(b.getThorChainURL(path))
+func (b *ThorchainBridge) get(url string) ([]byte, int, error) {
+	resp, err := b.httpClient.Get(url)
 	if err != nil {
 		b.errCounter.WithLabelValues("fail_get_from_thorchain", "").Inc()
 		return nil, http.StatusNotFound, errors.Wrap(err, "failed to GET from thorchain")
@@ -160,9 +185,9 @@ func (b *ThorchainBridge) getThorChainURL(path string) string {
 
 // getAccountNumberAndSequenceNumber returns account and Sequence number required to post into thorchain
 func (b *ThorchainBridge) getAccountNumberAndSequenceNumber() (uint64, uint64, error) {
-	url := fmt.Sprintf("%s/%s", AuthAccountEndpoint, b.keys.GetSignerInfo().GetAddress())
+	path := fmt.Sprintf("%s/%s", AuthAccountEndpoint, b.keys.GetSignerInfo().GetAddress())
 
-	body, _, err := b.get(url)
+	body, _, err := b.getWithPath(path)
 	if err != nil {
 		return 0, 0, errors.Wrap(err, "failed to get auth accounts")
 	}
@@ -313,7 +338,7 @@ func (b *ThorchainBridge) EnsureNodeWhitelisted() error {
 // GetKeysignParty call into thorchain to get the node accounts that should be join together to sign the message
 func (b *ThorchainBridge) GetKeysignParty(vaultPubKey common.PubKey) (common.PubKeys, error) {
 	p := fmt.Sprintf(SignerMembershipEndpoint, vaultPubKey.String())
-	result, _, err := b.get(p)
+	result, _, err := b.getWithPath(p)
 	if err != nil {
 		return common.PubKeys{}, fmt.Errorf("fail to get key sign party from thorchain: %w", err)
 	}
@@ -322,4 +347,46 @@ func (b *ThorchainBridge) GetKeysignParty(vaultPubKey common.PubKey) (common.Pub
 		return common.PubKeys{}, fmt.Errorf("fail to unmarshal result to pubkeys:%w", err)
 	}
 	return keys, nil
+}
+
+// IsCatchingUp returns bool for if thorchain is catching up to the rest of the
+// nodes. Returns yes, if it is, false if it is caught up.
+func (b *ThorchainBridge) IsCatchingUp() (bool, error) {
+	uri := url.URL{
+		Scheme: "http",
+		Host:   b.tendermintHost,
+		Path:   StatusEndpoint,
+	}
+
+	body, _, err := b.get(uri.String())
+	if err != nil {
+		return false, errors.Wrap(err, "failed to get auth accounts")
+	}
+
+	var resp struct {
+		Result struct {
+			SyncInfo struct {
+				CatchingUp bool `json:"catching_up"`
+			} `json:"sync_info"`
+		} `json:"result"`
+	}
+
+	if err := json.Unmarshal(body, &resp); err != nil {
+		return false, errors.Wrap(err, "failed to unmarshal tendermint status")
+	}
+	return resp.Result.SyncInfo.CatchingUp, nil
+}
+
+func (b *ThorchainBridge) WaitToCatchUp() {
+	for {
+		ok, err := b.IsCatchingUp()
+		if err != nil {
+			b.logger.Error().Err(err).Msg("failed to fetch catching up status from tendermint")
+		}
+		if ok {
+			break
+		}
+		b.logger.Info().Msg("thorchain is not caught up... waiting...")
+		time.Sleep(5 * time.Second)
+	}
 }

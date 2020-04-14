@@ -85,17 +85,20 @@ func (s *BlockScannerTestSuite) TearDownSuite(c *C) {
 func (s *BlockScannerTestSuite) TestNewBlockScanner(c *C) {
 	mss := NewMockScannerStorage()
 	cbs, err := NewBlockScanner(config.BlockScannerConfiguration{
-		RPCHost: "",
+		RPCHost:          "",
+		StartBlockHeight: 1, // avoids querying thorchain for block height
 	}, mss, nil, nil, DummyFetcher{})
 	c.Check(cbs, IsNil)
 	c.Check(err, NotNil)
 	cbs, err = NewBlockScanner(config.BlockScannerConfiguration{
-		RPCHost: "localhost",
+		RPCHost:          "localhost",
+		StartBlockHeight: 1, // avoids querying thorchain for block height
 	}, mss, nil, nil, DummyFetcher{})
 	c.Check(cbs, IsNil)
 	c.Check(err, NotNil)
 	cbs, err = NewBlockScanner(config.BlockScannerConfiguration{
-		RPCHost: "localhost",
+		RPCHost:          "localhost",
+		StartBlockHeight: 1, // avoids querying thorchain for block height
 	}, mss, m, s.bridge, DummyFetcher{})
 	c.Check(cbs, NotNil)
 	c.Check(err, IsNil)
@@ -122,7 +125,7 @@ func (s *BlockScannerTestSuite) TestBlockScanner(c *C) {
 	defer server.Close()
 	cbs, err := NewBlockScanner(config.BlockScannerConfiguration{
 		RPCHost:                    server.URL,
-		StartBlockHeight:           0,
+		StartBlockHeight:           1, // avoids querying thorchain for block height
 		BlockScanProcessors:        1,
 		HttpRequestTimeout:         time.Second,
 		HttpRequestReadTimeout:     time.Second * 30,
@@ -163,7 +166,7 @@ func (s *BlockScannerTestSuite) TestBadBlock(c *C) {
 	defer server.Close()
 	cbs, err := NewBlockScanner(config.BlockScannerConfiguration{
 		RPCHost:                    server.URL,
-		StartBlockHeight:           0,
+		StartBlockHeight:           1, // avoids querying thorchain for block height
 		BlockScanProcessors:        1,
 		HttpRequestTimeout:         time.Second,
 		HttpRequestReadTimeout:     time.Second * 30,
@@ -187,7 +190,7 @@ func (s *BlockScannerTestSuite) TestBadConnection(c *C) {
 	mss := NewMockScannerStorage()
 	cbs, err := NewBlockScanner(config.BlockScannerConfiguration{
 		RPCHost:                    "localhost:23450",
-		StartBlockHeight:           0,
+		StartBlockHeight:           1, // avoids querying thorchain for block height
 		BlockScanProcessors:        1,
 		HttpRequestTimeout:         time.Second,
 		HttpRequestReadTimeout:     time.Second * 30,

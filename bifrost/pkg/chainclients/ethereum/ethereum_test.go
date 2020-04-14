@@ -148,7 +148,12 @@ func (s *EthereumSuite) TestNewClient(c *C) {
 		}
 	}))
 	splitted := strings.SplitAfter(server.URL, ":")
-	e2, err2 := NewClient(s.thorKeys, config.ChainConfiguration{RPCHost: "http://localhost:" + splitted[len(splitted)-1]}, nil, s.bridge, s.m)
+	e2, err2 := NewClient(s.thorKeys, config.ChainConfiguration{
+		RPCHost: "http://localhost:" + splitted[len(splitted)-1],
+		BlockScanner: config.BlockScannerConfiguration{
+			StartBlockHeight: 1, // avoids querying thorchain for block height
+		},
+	}, nil, s.bridge, s.m)
 	c.Assert(err2, IsNil)
 	c.Assert(e2, NotNil)
 

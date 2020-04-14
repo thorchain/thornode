@@ -145,6 +145,9 @@ func (b *BlockScanner) FetchLastHeight() (int64, error) {
 	}
 
 	// attempt to find the height from thorchain
+	// wait for thorchain to be caught up first
+	b.thorchainBridge.WaitToCatchUp()
+
 	if b.thorchainBridge != nil {
 		height, _ := b.thorchainBridge.GetLastObservedInHeight(b.cfg.ChainID)
 		if height > 0 {
