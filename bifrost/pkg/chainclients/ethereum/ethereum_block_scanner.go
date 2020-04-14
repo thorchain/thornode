@@ -101,7 +101,7 @@ func (e *BlockScanner) processBlock(block blockscanner.Block) (stypes.TxIn, erro
 		txItemIn, err := e.fromTxToTxIn(txn)
 		if err != nil {
 			e.errCounter.WithLabelValues("fail_get_tx", strBlock).Inc()
-			e.logger.Error().Err(err).Str("hash", hash).Msg("fail to get one tx from server")	
+			e.logger.Error().Err(err).Str("hash", hash).Msg("fail to get one tx from server")
 			// if THORNode fail to get one tx hash from server, then THORNode should bail, because THORNode might miss tx
 			// if THORNode bail here, then THORNode should retry later
 			return noTx, errors.Wrap(err, "fail to get one tx from server")
@@ -207,7 +207,7 @@ func (e *BlockScanner) BlockRequest(height int64) string {
 	return `{"jsonrpc":"2.0","method":"eth_getBlockByNumber","params":["0x` + fmt.Sprintf("%x", height) + `", true],"id":1}`
 }
 
-func (e *BlockScanner) UnmarshalBlock(buf []byte) ([]string, error)	 {
+func (e *BlockScanner) UnmarshalBlock(buf []byte) ([]string, error) {
 	e.logger.Debug().Msgf("lol block %s", string(buf))
 	type Request struct {
 		Jsonrpc string          `json:"jsonrpc"`
