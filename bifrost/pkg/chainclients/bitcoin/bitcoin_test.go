@@ -13,6 +13,7 @@ import (
 
 	ctypes "github.com/binance-chain/go-sdk/common/types"
 	"github.com/btcsuite/btcd/btcjson"
+	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/cosmos/cosmos-sdk/client/keys"
 	cKeys "github.com/cosmos/cosmos-sdk/crypto/keys"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -21,8 +22,9 @@ import (
 	"gitlab.com/thorchain/thornode/bifrost/config"
 	"gitlab.com/thorchain/thornode/bifrost/metrics"
 	"gitlab.com/thorchain/thornode/bifrost/thorclient"
+	"gitlab.com/thorchain/thornode/bifrost/thorclient/types"
 	"gitlab.com/thorchain/thornode/common"
-	types2 "gitlab.com/thorchain/thornode/x/thorchain/types"
+	ttypes "gitlab.com/thorchain/thornode/x/thorchain/types"
 )
 
 func TestPackage(t *testing.T) { TestingT(t) }
@@ -68,7 +70,7 @@ func (s *BitcoinSuite) SetUpSuite(c *C) {
 		HTTPostMode: true,
 	}
 	ns := strconv.Itoa(time.Now().Nanosecond())
-	types2.SetupConfigForTest()
+	ttypes.SetupConfigForTest()
 	ctypes.Network = ctypes.TestNetwork
 	c.Assert(os.Setenv("NET", "testnet"), IsNil)
 
@@ -142,7 +144,7 @@ func (s *BitcoinSuite) TestFetchTxs(c *C) {
 	c.Assert(txs.BlockHeight, Equals, "1696761")
 	c.Assert(txs.Chain, Equals, common.BTCChain)
 	c.Assert(txs.Count, Equals, "4")
-	c.Assert(txs.TxArray[0].Tx, Equals, "3075045b8fe31659634d57084c9c8979f8c91029994dc9ab0b9444f1e793603a:0")
+	c.Assert(txs.TxArray[0].Tx, Equals, "3075045b8fe31659634d57084c9c8979f8c91029994dc9ab0b9444f1e793603a")
 	c.Assert(txs.TxArray[0].Sender, Equals, "tb1qdxxlx4r4jk63cve3rjpj428m26xcukjn5yegff")
 	c.Assert(txs.TxArray[0].To, Equals, "tb1qkq7weysjn6ljc2ywmjmwp8ttcckg8yyxjdz5k6")
 	c.Assert(txs.TxArray[0].Coins.Equals(common.Coins{common.NewCoin(common.BTCAsset, sdk.NewUint(1090601))}), Equals, true)
@@ -471,4 +473,91 @@ func (s *BitcoinSuite) TestGetAccount(c *C) {
 	c.Assert(acct.AccountNumber, Equals, 0)
 	c.Assert(acct.Sequence, Equals, 0)
 	c.Assert(acct.Coins[0].Amount, Equals, 10)
+}
+
+func (s *BitcoinSuite) TestOnObservedTxIn(c *C) {
+	utxoAccessor := s.client.utxoAccessor
+	txIn := types.TxIn{
+		BlockHeight: "1",
+		Count:       "1",
+		Chain:       common.BTCChain,
+		TxArray: []types.TxInItem{
+			types.TxInItem{
+				Tx:     "31f8699ce9028e9cd37f8a6d58a79e614a96e3fdd0f58be5fc36d2d95484716f",
+				Sender: "bc1q2gjc0rnhy4nrxvuklk6ptwkcs9kcr59mcl2q9j",
+				To:     "bc1q0s4mg25tu6termrk8egltfyme4q7sg3h0e56p3",
+				Coins: common.Coins{
+					common.NewCoin(common.BTCAsset, sdk.NewUint(123456789)),
+				},
+				Memo: "MEMO",
+			},
+		},
+	}
+	txID, _ := chainhash.NewHashFromStr("31f8699ce9028e9cd37f8a6d58a79e614a96e3fdd0f58be5fc36d2d95484716f")
+	s.client.OnObservedTxIn(txIn)
+	utxos, err := utxoAccessor.GetUTXOs()
+	c.Assert(err, IsNil)
+	c.Assert(len(utxos), Equals, 1)
+	c.Assert(utxos[0].TxID, Equals, *txID)
+	c.Assert(utxos[0].N, Equals, uint32(0))
+	c.Assert(utxos[0].Value, Equals, float64(1.23456789))
+
+	txIn = types.TxIn{
+		BlockHeight: "2",
+		Count:       "1",
+		Chain:       common.BTCChain,
+		TxArray: []types.TxInItem{
+			types.TxInItem{
+				Tx:     "24ed2d26fd5d4e0e8fa86633e40faf1bdfc8d1903b1cd02855286312d48818a2",
+				Sender: "bc1q0s4mg25tu6termrk8egltfyme4q7sg3h0e56p3",
+				To:     "bc1q2gjc0rnhy4nrxvuklk6ptwkcs9kcr59mcl2q9j",
+				Coins: common.Coins{
+					common.NewCoin(common.BTCAsset, sdk.NewUint(123456)),
+				},
+				Memo: "MEMO",
+			},
+		},
+	}
+	txID, _ = chainhash.NewHashFromStr("24ed2d26fd5d4e0e8fa86633e40faf1bdfc8d1903b1cd02855286312d48818a2")
+	s.client.OnObservedTxIn(txIn)
+	utxos, err = utxoAccessor.GetUTXOs()
+	c.Assert(err, IsNil)
+	c.Assert(len(utxos), Equals, 2)
+	c.Assert(utxos[0].TxID, Equals, *txID)
+	c.Assert(utxos[0].N, Equals, uint32(0))
+	c.Assert(utxos[0].Value, Equals, float64(0.00123456))
+	txID, _ = chainhash.NewHashFromStr("31f8699ce9028e9cd37f8a6d58a79e614a96e3fdd0f58be5fc36d2d95484716f")
+	c.Assert(utxos[1].TxID, Equals, *txID)
+	c.Assert(utxos[1].N, Equals, uint32(0))
+	c.Assert(utxos[1].Value, Equals, float64(1.23456789))
+
+	txIn = types.TxIn{
+		BlockHeight: "3",
+		Count:       "2",
+		Chain:       common.BTCChain,
+		TxArray: []types.TxInItem{
+			types.TxInItem{
+				Tx:     "44ed2d26fd5d4e0e8fa86633e40faf1bdfc8d1903b1cd02855286312d48818a2",
+				Sender: "bc1q0s4mg25tu6termrk8egltfyme4q7sg3h0e56p3",
+				To:     "bc1q2gjc0rnhy4nrxvuklk6ptwkcs9kcr59mcl2q9j",
+				Coins: common.Coins{
+					common.NewCoin(common.BTCAsset, sdk.NewUint(12345678)),
+				},
+				Memo: "MEMO",
+			},
+			types.TxInItem{
+				Tx:     "54ed2d26fd5d4e0e8fa86633e40faf1bdfc8d1903b1cd02855286312d48818a2",
+				Sender: "bc1q0s4mg25tu6termrk8egltfyme4q7sg3h0e56p3",
+				To:     "bc1q2gjc0rnhy4nrxvuklk6ptwkcs9kcr59mcl2q9j",
+				Coins: common.Coins{
+					common.NewCoin(common.BTCAsset, sdk.NewUint(123456)),
+				},
+				Memo: "MEMO",
+			},
+		},
+	}
+	s.client.OnObservedTxIn(txIn)
+	utxos, err = utxoAccessor.GetUTXOs()
+	c.Assert(err, IsNil)
+	c.Assert(len(utxos), Equals, 4)
 }
