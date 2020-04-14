@@ -20,6 +20,11 @@ PG_DB="${PG_DB:=midgard}"
 mkdir -p /etc/midgard
 
 export EXTERNAL_IP="$(dig +short myip.opendns.com @resolver1.opendns.com)"
+if [ ! -z "$EXTERNAL_IP" ]; then
+    openssl ecparam -genkey -name secp384r1 -out server.key
+    openssl req -new -x509 -sha256 -key server.key -out server.crt -days 3650 -batch
+fi
+
 
 echo "{
   \"listen_port\": $PORT,
