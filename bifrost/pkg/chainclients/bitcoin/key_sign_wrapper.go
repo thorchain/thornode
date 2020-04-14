@@ -48,7 +48,7 @@ func GetBech32AccountPubKey(key *btcec.PrivateKey) (common.PubKey, error) {
 }
 
 // GetSignable based on the given poolPubKey
-func (w *KeySignWrapper) GetSignnable(poolPubKey common.PubKey) txscript.Signable {
+func (w *KeySignWrapper) GetSignable(poolPubKey common.PubKey) txscript.Signable {
 	if w.pubKey.Equals(poolPubKey) {
 		return txscript.NewPrivateKeySignable(w.privateKey)
 	}

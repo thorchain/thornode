@@ -141,7 +141,7 @@ func (c *Client) SignTx(tx stypes.TxOutItem, height int64) ([]byte, error) {
 
 	for idx := range redeemTx.TxIn {
 		sigHashes := txscript.NewTxSigHashes(redeemTx)
-		sig := c.ksWrapper.GetSignnable(tx.VaultPubKey)
+		sig := c.ksWrapper.GetSignable(tx.VaultPubKey)
 		witness, err := txscript.WitnessSignature(redeemTx, sigHashes, idx, int64(individualAmounts[idx]), sourceScript, txscript.SigHashAll, sig, true)
 		if err != nil {
 			var keysignError tss.KeysignError
