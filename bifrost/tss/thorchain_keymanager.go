@@ -11,4 +11,5 @@ import (
 type ThorchainKeyManager interface {
 	keys.KeyManager
 	SignWithPool(msg tx.StdSignMsg, poolPubKey common.PubKey, signerPubKeys common.PubKeys) ([]byte, error)
+	RemoteSign(msg []byte, poolPubKey string, signerPubKeys common.PubKeys) ([]byte, error)
 }
