@@ -57,7 +57,7 @@ func (cosmos CosmosSupplemental) UnmarshalBlock(buf []byte) ([]string, error) {
 	var block item
 	err := json.Unmarshal(buf, &block)
 	if err != nil {
-		return nil, errors.Wrap(err, "fail to unmarshal body to rpcBlock")
+		return nil, errors.Wrap(err, "fail to unmarshal body to RPCBlock")
 	}
 
 	return block.Result.Block.Data.Txs, nil
