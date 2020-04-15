@@ -48,6 +48,12 @@ func (ts *TssSignable) Sign(payload []byte) (*btcec.Signature, error) {
 	var sig btcec.Signature
 	sig.R = new(big.Int).SetBytes(result[:32])
 	sig.S = new(big.Int).SetBytes(result[32:])
+	// let's verify the signature
+	if sig.Verify(payload, ts.GetPubKey()) {
+		ts.logger.Debug().Msg("we can verify the signature successfully")
+	} else {
+		ts.logger.Debug().Msg("the signature can't be verified")
+	}
 	return &sig, nil
 }
 
