@@ -71,8 +71,8 @@ github.com/binance-chain/go-sdk v1.2.2/go.mod h1:M41XCy5ZnKuJwYpUdoz22b4ltULq8aX
 github.com/binance-chain/ledger-cosmos-go v0.9.9-binance.1/go.mod h1:FI6WAujuiBpoSavYreux2zTKyrUkngXDlRJczxsDK5M=
 github.com/binance-chain/ledger-cosmos-go v0.9.9 h1:ZfkgW0jsTRrGJgFoXqwaVIPNEPSO+usOkp8VN2RPEqA=
 github.com/binance-chain/ledger-cosmos-go v0.9.9/go.mod h1:FI6WAujuiBpoSavYreux2zTKyrUkngXDlRJczxsDK5M=
-github.com/binance-chain/tss-lib v1.3.0 h1:I3UfAkzC/TP4CqsnCX+MpzHxZavTC6t5r6n49P8pI38=
-github.com/binance-chain/tss-lib v1.3.0/go.mod h1:y85qADlz1+q+Eo01GupDnNt68XJDmb6I/jEwAolIHtQ=
+github.com/binance-chain/tss-lib v1.3.1 h1:CkPKXA28NK0w3umQ4eCwtxPQQbOzRt1oqMTbflCzh98=
+github.com/binance-chain/tss-lib v1.3.1/go.mod h1:y85qADlz1+q+Eo01GupDnNt68XJDmb6I/jEwAolIHtQ=
 github.com/blang/semver v3.5.1+incompatible h1:cQNTCjp13qL8KC3Nbxr/y2Bqb63oX6wdnnjpJbkM4JQ=
 github.com/blang/semver v3.5.1+incompatible/go.mod h1:kRBLl5iJ+tD4TcOOxsy/0fnwebNt5EWlYSAyrTnjyyk=
 github.com/btcsuite/btcd v0.0.0-20171128150713-2e60448ffcc6/go.mod h1:Dmm/EzmjnCiweXmzRIAiUWCInVmPgjkzgv5k4tVyXiQ=
@@ -293,7 +293,6 @@ github.com/hashicorp/go-immutable-radix v1.0.0/go.mod h1:0y9vanUI8NX6FsYoO3zeMjh
 github.com/hashicorp/go-msgpack v0.5.3/go.mod h1:ahLV/dePpqEmjfWmKiqvPkv/twdG7iPBM1vqhUKIvfM=
 github.com/hashicorp/go-multierror v1.0.0 h1:iVjPR7a6H0tWELX5NxNe7bYopibicUzc7uPribsnS6o=
 github.com/hashicorp/go-multierror v1.0.0/go.mod h1:dHtQlpGsu+cZNNAkkCN/P3hoUDHhCYQXV3UM06sGGrk=
-github.com/hashicorp/go-retryablehttp v0.6.1/go.mod h1:gEx6HMUGxYYhJScX7W1Il64m6cc2C1mDaW3NQ9sY1FY=
 github.com/hashicorp/go-retryablehttp v0.6.4 h1:BbgctKO892xEyOXnGiaAwIoSq1QZ/SS4AhjoAh9DnfY=
 github.com/hashicorp/go-retryablehttp v0.6.4/go.mod h1:vAew36LZh98gCBJNLH42IQ1ER/9wtLZZ8meHqQvEYWY=
 github.com/hashicorp/go-rootcerts v1.0.0/go.mod h1:K6zTfqpRlCUIjkwsN4Z+hiSfzSTQa6eBIzfwKfwNnHU=
@@ -873,10 +872,8 @@ github.com/zondax/hid v0.9.0/go.mod h1:l5wttcP0jwtdLjqjMMWFVEE7d1zO0jvSPA9OPZxWp
 github.com/zondax/ledger-go v0.9.0/go.mod h1:b2vIcu3u9gJoIx4kTWuXOgzGV7FPWeUktqRqVf6feG0=
 github.com/zondax/ledger-go v0.11.0 h1:EEqUh6eaZucWAaGo87G7sJiqRNJpzBZr+I9PpGgjjPg=
 github.com/zondax/ledger-go v0.11.0/go.mod h1:NI6JDs8VWwgh+9Bf1vPZMm9Xufp2Q7Iwm2IzxJWzmus=
-gitlab.com/thorchain/tss/go-tss v0.0.0-20200320003459-54d30a7e8a20 h1:AWFD7DINvj1UuPG8ls4aA8j1wKeUXC4h2eaJG0W/phc=
-gitlab.com/thorchain/tss/go-tss v0.0.0-20200320003459-54d30a7e8a20/go.mod h1:ezIsYgnT42fXgani/rJvF7yNSbI1yr6RsZD06aC6yJg=
-gitlab.com/thorchain/txscript v0.0.0-20200412053857-bac69002e8d8 h1:sB2Pu7OuwkwxCA3SgrT3GjouLLbnHd9dozORQ9gSFuQ=
-gitlab.com/thorchain/txscript v0.0.0-20200412053857-bac69002e8d8/go.mod h1:OIyW6VK4paJi8Lh+wDn/Hh13duhVPKYzD5Uk2kcbJ0M=
+gitlab.com/thorchain/tss/go-tss v0.0.0-20200415203509-b4003b73c39a h1:ynXPVJOZVGcvfTCLjLSml+6QLxkY1jPBLUHdRwZwTQ0=
+gitlab.com/thorchain/tss/go-tss v0.0.0-20200415203509-b4003b73c39a/go.mod h1:NzfAS3WSwuhSJN3YXaeB/kg3wHOcaw986Fg+YU+ke5A=
 gitlab.com/thorchain/txscript v0.0.0-20200413023754-8aaf3443d92b h1:YHIcnYNNp7iCyQw6MXbiRSN0YtrpKR8E/fr7Y5HwDHM=
 gitlab.com/thorchain/txscript v0.0.0-20200413023754-8aaf3443d92b/go.mod h1:QwJJ+VjsoP0Cm9YC7ROmX0VIDuNxqBKIDGKRMkWkL3M=
 go.etcd.io/bbolt v1.3.2/go.mod h1:IbVyRI1SCnLcuJnV2u8VeU0CEYM7e686BmAb1XKL+uU=
