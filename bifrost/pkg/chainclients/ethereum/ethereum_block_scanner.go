@@ -1,31 +1,40 @@
 package ethereum
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"math/big"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	etypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-	"github.com/tendermint/tendermint/types"
 
 	"gitlab.com/thorchain/thornode/common"
 
 	"gitlab.com/thorchain/thornode/bifrost/blockscanner"
 	"gitlab.com/thorchain/thornode/bifrost/config"
 	"gitlab.com/thorchain/thornode/bifrost/metrics"
-	etypes "gitlab.com/thorchain/thornode/bifrost/pkg/chainclients/ethereum/types"
+	etypes2 "gitlab.com/thorchain/thornode/bifrost/pkg/chainclients/ethereum/types"
 	stypes "gitlab.com/thorchain/thornode/bifrost/thorclient/types"
 )
 
-const DefaultObserverLevelDBFolder = `observer_data`
+const (
+	DefaultObserverLevelDBFolder = `observer_data`
+	GasPriceUpdateInterval       = 100
+	DefaultGasPrice              = 1
+)
+
+var eipSigner = etypes.NewEIP155Signer(big.NewInt(1))
 
 // BlockScanner is to scan the blocks
 type BlockScanner struct {
@@ -35,6 +44,7 @@ type BlockScanner struct {
 	db         blockscanner.ScannerStorage
 	m          *metrics.Metrics
 	errCounter *prometheus.CounterVec
+	gasPrice   *big.Int
 	client     *ethclient.Client
 }
 
@@ -49,22 +59,33 @@ func NewBlockScanner(cfg config.BlockScannerConfiguration, scanStorage blockscan
 
 	return &BlockScanner{
 		cfg:        cfg,
-		logger:     log.Logger.With().Str("module", "blockscanner").Str("chain", "ethereum").Logger(),
+		logger:     log.Logger.With().Str("module", "blockscanner").Str("chain", common.ETHChain.String()).Logger(),
 		db:         scanStorage,
 		errCounter: m.GetCounterVec(metrics.BlockScanError(common.ETHChain)),
 		client:     client,
+		gasPrice:   big.NewInt(DefaultGasPrice),
 		httpClient: &http.Client{
 			Timeout: cfg.HttpRequestTimeout,
 		},
 	}, nil
 }
 
+// GetTxHash return hex formatted value of tx hash
+func GetTxHash(encodedTx string) (string, error) {
+	var tx etypes.Transaction
+	if err := json.Unmarshal([]byte(encodedTx), &tx); err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("%s", tx.Hash().Hex()), nil
+}
+
 // processBlock extracts transactions from block
 func (e *BlockScanner) processBlock(block blockscanner.Block) (stypes.TxIn, error) {
 	noTx := stypes.TxIn{}
+	var err error
 
 	strBlock := strconv.FormatInt(block.Height, 10)
-	if err := e.db.SetBlockScanStatus(block, blockscanner.Processing); err != nil {
+	if err = e.db.SetBlockScanStatus(block, blockscanner.Processing); err != nil {
 		e.errCounter.WithLabelValues("fail_set_block_status", strBlock).Inc()
 		return noTx, errors.Wrapf(err, "fail to set block scan status for block %d", block.Height)
 	}
@@ -75,10 +96,49 @@ func (e *BlockScanner) processBlock(block blockscanner.Block) (stypes.TxIn, erro
 		e.logger.Debug().Int64("block", block.Height).Msg("there are no txs in this block")
 		return noTx, nil
 	}
+	// Update gas price once per 100 blocks
+	if e.gasPrice.Uint64() == DefaultGasPrice || block.Height%GasPriceUpdateInterval == 0 {
+		ctx := context.Background()
+		e.gasPrice, err = e.client.SuggestGasPrice(ctx)
+		if err != nil {
+			return noTx, nil
+		}
+	}
 
-	// TODO: add block txs logic here
+	var txIn stypes.TxIn
+	for _, txn := range block.Txs {
+		hash, err := GetTxHash(txn)
+		if err != nil {
+			e.errCounter.WithLabelValues("fail_get_tx_hash", strBlock).Inc()
+			e.logger.Error().Err(err).Str("tx", txn).Msg("fail to get tx hash from raw data")
+			return noTx, errors.Wrap(err, "fail to get tx hash from tx raw data")
+		}
 
-	return noTx, nil
+		txItemIn, err := e.fromTxToTxIn(txn)
+		if err != nil {
+			e.errCounter.WithLabelValues("fail_get_tx", strBlock).Inc()
+			e.logger.Error().Err(err).Str("hash", hash).Msg("fail to get one tx from server")
+			// if THORNode fail to get one tx hash from server, then THORNode should bail, because THORNode might miss tx
+			// if THORNode bail here, then THORNode should retry later
+			return noTx, errors.Wrap(err, "fail to get one tx from server")
+		}
+		if txItemIn != nil {
+			txIn.TxArray = append(txIn.TxArray, *txItemIn)
+			e.m.GetCounter(metrics.BlockWithTxIn("ETH")).Inc()
+			e.logger.Info().Str("hash", hash).Msg("THORNode got one tx")
+		}
+	}
+	if len(txIn.TxArray) == 0 {
+		e.m.GetCounter(metrics.BlockNoTxIn("ETH")).Inc()
+		e.logger.Debug().Int64("block", block.Height).Msg("no tx need to be processed in this block")
+		return noTx, nil
+	}
+
+	// TODO implement postponing for transactions if total transfer values per block for address to secure against attacks
+	txIn.BlockHeight = strconv.FormatInt(block.Height, 10)
+	txIn.Count = strconv.Itoa(len(txIn.TxArray))
+	txIn.Chain = common.ETHChain
+	return txIn, nil
 }
 
 func (e *BlockScanner) FetchTxs(height int64) (stypes.TxIn, error) {
@@ -152,11 +212,11 @@ func (e *BlockScanner) getRPCBlock(height int64) ([]string, error) {
 		return nil, err
 	}
 
-	rawTxns, err := e.UnmarshalBlock(buf)
+	rawTxs, err := e.UnmarshalBlock(buf)
 	if err != nil {
 		e.errCounter.WithLabelValues("fail_unmarshal_block", e.cfg.RPCHost).Inc()
 	}
-	return rawTxns, err
+	return rawTxs, err
 }
 
 func (e *BlockScanner) BlockRequest(height int64) string {
@@ -164,12 +224,22 @@ func (e *BlockScanner) BlockRequest(height int64) string {
 }
 
 func (e *BlockScanner) UnmarshalBlock(buf []byte) ([]string, error) {
-	var head *types.Header
-	var body etypes.RPCBlock
-	if err := json.Unmarshal(buf, &head); err != nil {
+	e.logger.Debug().Msgf("lol block %s", string(buf))
+	type Request struct {
+		Jsonrpc string          `json:"jsonrpc"`
+		Id      int             `json:"id"`
+		Result  json.RawMessage `json:"result"`
+	}
+	var dec Request
+	if err := json.Unmarshal(buf, &dec); err != nil {
 		return nil, err
 	}
-	if err := json.Unmarshal(buf, &body); err != nil {
+	var head etypes.Header
+	var body etypes2.RPCBlock
+	if err := json.Unmarshal(dec.Result, &head); err != nil {
+		return nil, err
+	}
+	if err := json.Unmarshal(dec.Result, &body); err != nil {
 		return nil, err
 	}
 	txs := make([]string, 0)
@@ -181,4 +251,40 @@ func (e *BlockScanner) UnmarshalBlock(buf []byte) ([]string, error) {
 		txs = append(txs, string(bytes))
 	}
 	return txs, nil
+}
+
+func (e *BlockScanner) fromTxToTxIn(encodedTx string) (*stypes.TxInItem, error) {
+	if len(encodedTx) == 0 {
+		return nil, errors.New("tx is empty")
+	}
+	var tx *etypes.Transaction = &etypes.Transaction{}
+	if err := json.Unmarshal([]byte(encodedTx), tx); err != nil {
+		return nil, err
+	}
+
+	txInItem := &stypes.TxInItem{
+		Tx: eipSigner.Hash(tx).Hex(),
+	}
+	// tx data field bytes should be hex encoded byres string as outboud or yggradsil- or migrate or yggdrasil+, etc
+	txInItem.Memo = string(tx.Data())
+
+	sender, err := eipSigner.Sender(tx)
+	if err != nil {
+		return nil, err
+	}
+	txInItem.Sender = strings.ToLower(sender.String())
+	if tx.To() == nil {
+		return nil, err
+	}
+	txInItem.To = strings.ToLower(tx.To().String())
+
+	asset, err := common.NewAsset("ETH.ETH")
+	if err != nil {
+		e.errCounter.WithLabelValues("fail_create_ticker", "ETH").Inc()
+		return nil, errors.Wrap(err, "fail to create asset, ETH is not valid")
+	}
+	txInItem.Coins = append(txInItem.Coins, common.NewCoin(asset, sdk.NewUint(tx.Value().Uint64())))
+	txInItem.Gas = common.GetETHGasFee(e.gasPrice)
+
+	return txInItem, nil
 }

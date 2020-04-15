@@ -1,6 +1,7 @@
 package common
 
 import (
+	"math/big"
 	"sort"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -117,8 +118,10 @@ func GetBNBGasFeeMulti(count uint64) Gas {
 	}
 }
 
-func GetETHGasFee() Gas {
-	return ETHGasFeeTransfer
+func GetETHGasFee(gasPrice *big.Int) Gas {
+	return Gas{
+		{Asset: ETHAsset, Amount: ethTransferFee.Mul(sdk.NewUintFromBigInt(gasPrice))},
+	}
 }
 
 func (g Gas) IsValid() error {

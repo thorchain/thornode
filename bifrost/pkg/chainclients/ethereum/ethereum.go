@@ -2,11 +2,13 @@ package ethereum
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"math/big"
 
 	ecommon "github.com/ethereum/go-ethereum/common"
+	etypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	pkerrors "github.com/pkg/errors"
 	"github.com/rs/zerolog"
@@ -143,7 +145,7 @@ func (c *Client) GetGasPrice() (*big.Int, error) {
 }
 
 func (c *Client) GetGasFee(count uint64) common.Gas {
-	return common.GetETHGasFee()
+	return common.GetETHGasFee(big.NewInt(int64(count)))
 }
 
 func (c *Client) ValidateMetadata(inter interface{}) bool {
@@ -170,7 +172,12 @@ func (c *Client) GetAccount(addr string) (common.Account, error) {
 	return account, nil
 }
 
-// BroadcastTx decodes tx using rlp and broadcasts to Ethereum chain
-func (c *Client) BroadcastTx(stx stypes.TxOutItem, hexTx []byte) error {
-	return nil
+// BroadcastTx decodes tx using rlp and broadcasts too Ethereum chain
+func (e *Client) BroadcastTx(stx stypes.TxOutItem, hexTx []byte) error {
+	var tx *etypes.Transaction = &etypes.Transaction{}
+	if err := json.Unmarshal(hexTx, tx); err != nil {
+		return err
+	}
+	ctx := context.Background()
+	return e.client.SendTransaction(ctx, tx)
 }
