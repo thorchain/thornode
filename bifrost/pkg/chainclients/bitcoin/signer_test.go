@@ -44,7 +44,7 @@ type BitcoinSignerSuite struct {
 
 var _ = Suite(&BitcoinSignerSuite{})
 
-func (s *BitcoinSignerSuite) SetUpSuite(c *C) {
+func (s *BitcoinSignerSuite) SetUpTest(c *C) {
 	s.m = GetMetricForTest(c)
 	s.cfg = config.ChainConfiguration{
 		ChainID:     "BTC",
@@ -110,7 +110,7 @@ func (s *BitcoinSignerSuite) SetUpSuite(c *C) {
 	c.Assert(s.client, NotNil)
 }
 
-func (s *BitcoinSignerSuite) TearDownSuite(c *C) {
+func (s *BitcoinSignerSuite) TearDownTest(c *C) {
 	s.server.Close()
 }
 
@@ -128,8 +128,7 @@ func (s *BitcoinSignerSuite) TestGetBTCPrivateKey(c *C) {
 }
 
 func (s *BitcoinSignerSuite) TestGetChainCfg(c *C) {
-	os.Setenv("NET", "testnet")
-	defer os.Remove("NET")
+	defer os.Setenv("NET", "testnet")
 	param := s.client.getChainCfg()
 	c.Assert(param, Equals, &chaincfg.TestNet3Params)
 	os.Setenv("NET", "mainnet")
@@ -234,7 +233,9 @@ func (s *BitcoinSignerSuite) TestSignTxHappyPathWithPrivateKey(c *C) {
 }
 
 func (s *BitcoinSignerSuite) TestSignTxWithTSS(c *C) {
-	addr, err := types2.GetRandomPubKey().GetAddress(common.BTCChain)
+	pubkey, err := common.NewPubKey("thorpub1addwnpepqdvw4jxzzpr4ulvrm045k967x5mfr2hcjl9wud692jvztxmx7td2szeyl8l")
+	c.Assert(err, IsNil)
+	addr, err := pubkey.GetAddress(common.BTCChain)
 	c.Assert(err, IsNil)
 	txOutItem := stypes.TxOutItem{
 		Chain:       common.BTCChain,
@@ -257,10 +258,9 @@ func (s *BitcoinSignerSuite) TestSignTxWithTSS(c *C) {
 	c.Assert(err, IsNil)
 	utxo := NewUnspentTransactionOutput(*txHash, 0, 0.00018, 1)
 	c.Assert(s.client.utxoAccessor.AddUTXO(utxo), IsNil)
-	// fake a tss keysign is hard, especially with the hash change every time.
 	buf, err := s.client.SignTx(txOutItem, 1)
-	c.Assert(err, NotNil)
-	c.Assert(buf, IsNil)
+	c.Assert(err, IsNil)
+	c.Assert(buf, NotNil)
 }
 
 func GetRandomUTXO(amount float64) UnspentTransactionOutput {
