@@ -1,6 +1,8 @@
 package common
 
 import (
+	"math/big"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	. "gopkg.in/check.v1"
 )
@@ -10,10 +12,10 @@ type GasSuite struct{}
 var _ = Suite(&GasSuite{})
 
 func (s *GasSuite) TestETHGasFee(c *C) {
-	gas := GetETHGasFee()
+	gas := GetETHGasFee(big.NewInt(20))
 	amt := gas[0].Amount
 	c.Check(
-		amt.Equal(sdk.NewUint(21000)),
+		amt.Equal(sdk.NewUint(420000)),
 		Equals,
 		true,
 		Commentf("%d", amt.Uint64()),
