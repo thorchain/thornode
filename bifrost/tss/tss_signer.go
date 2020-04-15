@@ -1,7 +1,6 @@
 package tss
 
 import (
-	"crypto/sha256"
 	"encoding/base64"
 	"fmt"
 	"math/big"
@@ -108,23 +107,11 @@ func (s *KeySign) SignWithPool(msg tx.StdSignMsg, poolPubKey common.PubKey, sign
 	return bz, nil
 }
 
-func (s *KeySign) hash(msg []byte) ([]byte, error) {
-	h := sha256.New()
-	_, err := h.Write(msg)
-	if err != nil {
-		return nil, fmt.Errorf("fail to calculate hash: %w", err)
-	}
-	return h.Sum(nil), nil
-}
-
 func (s *KeySign) RemoteSign(msg []byte, poolPubKey string, signerPubKeys common.PubKeys) ([]byte, error) {
 	if len(msg) == 0 {
 		return nil, nil
 	}
-	hashedMsg, err := s.hash(msg)
-	if err != nil {
-		return nil, fmt.Errorf("fail to calculaet msg hash: %w", err)
-	}
+	hashedMsg := crypto.Sha256(msg)
 	encodedMsg := base64.StdEncoding.EncodeToString(hashedMsg)
 	rResult, sResult, err := s.toLocalTSSSigner(poolPubKey, encodedMsg, signerPubKeys)
 	if err != nil {
