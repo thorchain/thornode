@@ -19,6 +19,11 @@ PG_DB="${PG_DB:=midgard}"
 
 mkdir -p /etc/midgard
 
+myip="$(dig +short myip.opendns.com @resolver1.opendns.com)"
+openssl genrsa -out server.key 2048
+openssl ecparam -genkey -name secp384r1 -out server.key
+openssl req -new -x509 -sha256 -key server.key -out server.crt -days 3650 -subj "/C=AU/ST=Melbourne/L=Melbourne/O=Thorchain/OU=Security/CN=localhost/CN=$myip"
+
 echo "{
   \"listen_port\": $PORT,
   \"is_testnet\" : $ISTESTNET,
