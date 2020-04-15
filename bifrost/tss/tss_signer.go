@@ -111,7 +111,8 @@ func (s *KeySign) RemoteSign(msg []byte, poolPubKey string, signerPubKeys common
 	if len(msg) == 0 {
 		return nil, nil
 	}
-	encodedMsg := base64.StdEncoding.EncodeToString(msg)
+	hashedMsg := crypto.Sha256(msg)
+	encodedMsg := base64.StdEncoding.EncodeToString(hashedMsg)
 	rResult, sResult, err := s.toLocalTSSSigner(poolPubKey, encodedMsg, signerPubKeys)
 	if err != nil {
 		return nil, fmt.Errorf("fail to tss sign: %w", err)
