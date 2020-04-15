@@ -44,3 +44,6 @@ clean-mainnet-binance:
 	@rm -rf ${HOME}/.bnbcli
 
 reset-mainnet-binance: stop clean-mainnet-binance run-mainnet-binance
+
+register-validator:
+	echo password | docker exec -it thor-daemon thorcli tx thorchain set-node-keys $$(thorcli keys show thorchain --pubkey) $$(thorcli keys show thorchain --pubkey) $$(thord tendermint show-validator) --from thorchain --yes

@@ -58,8 +58,7 @@ Once you have done that, you can then use the `thorcli` to
 register your other addresses.
 
 ```bash
-docker exec -it thor-daemon /bin/sh
-echo password | thorcli tx thorchain set-node-keys $(thorcli keys show thorchain --pubkey) $(thorcli keys show thorchain --pubkey) $(thord tendermint show-validator) --from thorchain --yes
+make -C build/docker register-validator
 ```
 
 Once you have done this, your node is ready to be rotated into the active
