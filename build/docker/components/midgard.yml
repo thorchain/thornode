@@ -4,7 +4,7 @@ services:
 
   midgard:
     container_name: midgard
-    image: registry.gitlab.com/thorchain/midgard
+    image: registry.gitlab.com/thorchain/midgard:${TAG:-latest}
     restart: unless-stopped
     ports:
       - 8080:8080
