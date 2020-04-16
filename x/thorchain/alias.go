@@ -41,6 +41,7 @@ const (
 
 var (
 	NewPool                        = types.NewPool
+	NewTxMarker                    = types.NewTxMarker
 	NewVaultData                   = types.NewVaultData
 	NewObservedTx                  = types.NewObservedTx
 	NewTssVoter                    = types.NewTssVoter
@@ -173,4 +174,6 @@ type (
 	EventStatuses               = types.EventStatuses
 	GasPool                     = types.GasPool
 	EventGas                    = types.EventGas
+	TxMarker                    = types.TxMarker
+	TxMarkers                   = types.TxMarkers
 )
