@@ -2,6 +2,7 @@ package common
 
 import (
 	btypes "github.com/binance-chain/go-sdk/common/types"
+	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/cosmos/cosmos-sdk/crypto/keys"
 	. "gopkg.in/check.v1"
 )
@@ -35,6 +36,11 @@ func (s ChainSuite) TestChain(c *C) {
 	c.Assert(ETHChain.GetGasAsset(), Equals, ETHAsset)
 	c.Assert(EmptyChain.GetGasAsset(), Equals, EmptyAsset)
 
+	c.Assert(BNBChain.AddressPrefix(MockNet), Equals, btypes.TestNetwork.Bech32Prefixes())
 	c.Assert(BNBChain.AddressPrefix(TestNet), Equals, btypes.TestNetwork.Bech32Prefixes())
 	c.Assert(BNBChain.AddressPrefix(MainNet), Equals, btypes.ProdNetwork.Bech32Prefixes())
+
+	c.Assert(BTCChain.AddressPrefix(MockNet), Equals, chaincfg.RegressionNetParams.Bech32HRPSegwit)
+	c.Assert(BTCChain.AddressPrefix(TestNet), Equals, chaincfg.TestNet3Params.Bech32HRPSegwit)
+	c.Assert(BTCChain.AddressPrefix(MainNet), Equals, chaincfg.MainNetParams.Bech32HRPSegwit)
 }

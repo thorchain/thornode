@@ -33,6 +33,8 @@ func getBTCPrivateKey(key crypto.PrivKey) (*btcec.PrivateKey, error) {
 func (c *Client) getChainCfg() *chaincfg.Params {
 	cn := common.GetCurrentChainNetwork()
 	switch cn {
+	case common.MockNet:
+		return &chaincfg.RegressionNetParams
 	case common.TestNet:
 		return &chaincfg.TestNet3Params
 	case common.MainNet:

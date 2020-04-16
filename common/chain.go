@@ -96,6 +96,18 @@ func (c Chain) GetGasAsset() Asset {
 // AddressPrefix return the address prefix used by the given network (testnet/mainnet)
 func (c Chain) AddressPrefix(cn ChainNetwork) string {
 	switch cn {
+	case MockNet:
+		switch c {
+		case BNBChain:
+			return btypes.TestNetwork.Bech32Prefixes()
+		case ETHChain:
+			return "0x"
+		case THORChain:
+			// TODO update this to use testnet address prefix
+			return types.GetConfig().GetBech32AccountAddrPrefix()
+		case BTCChain:
+			return chaincfg.RegressionNetParams.Bech32HRPSegwit
+		}
 	case TestNet:
 		switch c {
 		case BNBChain:
@@ -106,7 +118,7 @@ func (c Chain) AddressPrefix(cn ChainNetwork) string {
 			// TODO update this to use testnet address prefix
 			return types.GetConfig().GetBech32AccountAddrPrefix()
 		case BTCChain:
-			return chaincfg.MainNetParams.Bech32HRPSegwit
+			return chaincfg.TestNet3Params.Bech32HRPSegwit
 		}
 	case MainNet:
 		switch c {
@@ -117,7 +129,7 @@ func (c Chain) AddressPrefix(cn ChainNetwork) string {
 		case THORChain:
 			return types.GetConfig().GetBech32AccountAddrPrefix()
 		case BTCChain:
-			return chaincfg.TestNet3Params.Bech32HRPSegwit
+			return chaincfg.MainNetParams.Bech32HRPSegwit
 		}
 	}
 	return ""
