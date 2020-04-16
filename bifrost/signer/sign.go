@@ -16,6 +16,7 @@ import (
 	tssCommon "gitlab.com/thorchain/tss/go-tss/common"
 	tssp "gitlab.com/thorchain/tss/go-tss/tss"
 
+	"gitlab.com/thorchain/thornode/bifrost/blockscanner"
 	"gitlab.com/thorchain/thornode/bifrost/config"
 	"gitlab.com/thorchain/thornode/bifrost/metrics"
 	"gitlab.com/thorchain/thornode/bifrost/pkg/chainclients"
@@ -31,19 +32,19 @@ import (
 
 // Signer will pull the tx out from thorchain and then forward it to chain
 type Signer struct {
-	logger                zerolog.Logger
-	cfg                   config.SignerConfiguration
-	wg                    *sync.WaitGroup
-	thorchainBridge       *thorclient.ThorchainBridge
-	stopChan              chan struct{}
-	thorchainBlockScanner *ThorchainBlockScan
-	chains                map[common.Chain]chainclients.ChainClient
-	storage               SignerStorage
-	m                     *metrics.Metrics
-	errCounter            *prometheus.CounterVec
-	tssKeygen             *tss.KeyGen
-	thorKeys              *thorclient.Keys
-	pubkeyMgr             pubkeymanager.PubKeyValidator
+	logger          zerolog.Logger
+	cfg             config.SignerConfiguration
+	wg              *sync.WaitGroup
+	thorchainBridge *thorclient.ThorchainBridge
+	stopChan        chan struct{}
+	blockScanner    *blockscanner.BlockScanner
+	chains          map[common.Chain]chainclients.ChainClient
+	storage         SignerStorage
+	m               *metrics.Metrics
+	errCounter      *prometheus.CounterVec
+	tssKeygen       *tss.KeyGen
+	thorKeys        *thorclient.Keys
+	pubkeyMgr       pubkeymanager.PubKeyValidator
 }
 
 // NewSigner create a new instance of signer
@@ -82,10 +83,17 @@ func NewSigner(cfg config.SignerConfiguration,
 	}
 	pubkeyMgr.AddNodePubKey(na.PubKeySet.Secp256k1)
 
+	cfg.BlockScanner.ChainID = common.THORChain // hard code to thorchain
+
 	// Create pubkey manager and add our private key (Yggdrasil pubkey)
 	thorchainBlockScanner, err := NewThorchainBlockScan(cfg.BlockScanner, storage, thorchainBridge, m, pubkeyMgr)
 	if err != nil {
 		return nil, fmt.Errorf("fail to create thorchain block scan: %w", err)
+	}
+
+	blockScanner, err := blockscanner.NewBlockScanner(cfg.BlockScanner, storage, m, thorchainBridge, thorchainBlockScanner)
+	if err != nil {
+		return nil, errors.Wrap(err, "fail to create block scanner")
 	}
 
 	kg, err := tss.NewTssKeyGen(thorKeys, tssServer)
@@ -94,18 +102,18 @@ func NewSigner(cfg config.SignerConfiguration,
 	}
 
 	return &Signer{
-		logger:                log.With().Str("module", "signer").Logger(),
-		cfg:                   cfg,
-		wg:                    &sync.WaitGroup{},
-		stopChan:              make(chan struct{}),
-		thorchainBlockScanner: thorchainBlockScanner,
-		chains:                chains,
-		m:                     m,
-		storage:               storage,
-		errCounter:            m.GetCounterVec(metrics.SignerError),
-		pubkeyMgr:             pubkeyMgr,
-		thorchainBridge:       thorchainBridge,
-		tssKeygen:             kg,
+		logger:          log.With().Str("module", "signer").Logger(),
+		cfg:             cfg,
+		wg:              &sync.WaitGroup{},
+		stopChan:        make(chan struct{}),
+		blockScanner:    blockScanner,
+		chains:          chains,
+		m:               m,
+		storage:         storage,
+		errCounter:      m.GetCounterVec(metrics.SignerError),
+		pubkeyMgr:       pubkeyMgr,
+		thorchainBridge: thorchainBridge,
+		tssKeygen:       kg,
 	}, nil
 }
 
@@ -118,46 +126,12 @@ func (s *Signer) getChain(chainID common.Chain) (chainclients.ChainClient, error
 	return chain, nil
 }
 
-func (s *Signer) CheckTransaction(key string, chainID common.Chain, metadata interface{}) (TxStatus, error) {
-	chain, err := s.getChain(chainID)
-	if err != nil {
-		return TxUnknown, err
-	}
-
-	// if we don't have the transaction yet, say its unavailable
-	if !s.storage.Has(key) {
-		return TxUnavailable, nil
-	}
-
-	tx, err := s.storage.Get(key)
-	if err != nil {
-		return TxUnknown, err
-	}
-
-	// if the tx isn't available, return immediately
-	if tx.Status != TxAvailable {
-		return tx.Status, nil
-	}
-
-	// validate metadata
-	if !chain.ValidateMetadata(metadata) {
-		return TxUnavailable, nil
-	}
-
-	return TxAvailable, nil
-}
-
 func (s *Signer) Start() error {
-	s.wg.Add(1)
-	go s.processTxnOut(s.thorchainBlockScanner.GetTxOutMessages(), 1)
-
-	s.wg.Add(1)
-	go s.processKeygen(s.thorchainBlockScanner.GetKeygenMessages())
-
 	s.wg.Add(1)
 	go s.signTransactions()
 
-	return s.thorchainBlockScanner.Start()
+	s.blockScanner.Start(nil)
+	return nil
 }
 
 func (s *Signer) shouldSign(tx types.TxOutItem) bool {
@@ -426,8 +400,6 @@ func (s *Signer) Stop() error {
 	if err := s.m.Stop(); err != nil {
 		s.logger.Error().Err(err).Msg("fail to stop metric server")
 	}
-	if err := s.thorchainBlockScanner.Stop(); err != nil {
-		s.logger.Error().Err(err).Msg("stop thorchain block scanner")
-	}
+	s.blockScanner.Stop()
 	return s.storage.Close()
 }

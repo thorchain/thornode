@@ -14,6 +14,7 @@ import (
 	"gitlab.com/thorchain/thornode/bifrost/metrics"
 	"gitlab.com/thorchain/thornode/bifrost/thorclient"
 	"gitlab.com/thorchain/thornode/bifrost/thorclient/types"
+	"gitlab.com/thorchain/thornode/common"
 )
 
 type BlockScannerFetcher interface {
@@ -152,7 +153,12 @@ func (b *BlockScanner) FetchLastHeight() (int64, error) {
 	}
 
 	if b.thorchainBridge != nil {
-		height, _ := b.thorchainBridge.GetLastObservedInHeight(b.cfg.ChainID)
+		var height int64
+		if b.cfg.ChainID.Equals(common.THORChain) {
+			height, _ = b.thorchainBridge.GetBlockHeight()
+		} else {
+			height, _ = b.thorchainBridge.GetLastObservedInHeight(b.cfg.ChainID)
+		}
 		if height > 0 {
 			return height, nil
 		}

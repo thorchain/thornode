@@ -3,7 +3,6 @@ package signer
 import (
 	"errors"
 	"fmt"
-	"strconv"
 	"sync"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -17,23 +16,23 @@ import (
 	pubkeymanager "gitlab.com/thorchain/thornode/bifrost/pubkeymanager"
 	"gitlab.com/thorchain/thornode/bifrost/thorclient"
 	"gitlab.com/thorchain/thornode/bifrost/thorclient/types"
-	stypes "gitlab.com/thorchain/thornode/x/thorchain/types"
+	stypes "gitlab.com/thorchain/thornode/bifrost/thorclient/types"
+	ttypes "gitlab.com/thorchain/thornode/x/thorchain/types"
 )
 
 type ThorchainBlockScan struct {
-	logger             zerolog.Logger
-	wg                 *sync.WaitGroup
-	stopChan           chan struct{}
-	txOutChan          chan types.TxOut
-	keygenChan         chan stypes.KeygenBlock
-	cfg                config.BlockScannerConfiguration
-	scannerStorage     blockscanner.ScannerStorage
-	commonBlockScanner *blockscanner.CommonBlockScanner
-	thorchain          *thorclient.ThorchainBridge
-	m                  *metrics.Metrics
-	errCounter         *prometheus.CounterVec
-	pubkeyMgr          pubkeymanager.PubKeyValidator
-	cdc                *codec.Codec
+	logger         zerolog.Logger
+	wg             *sync.WaitGroup
+	stopChan       chan struct{}
+	txOutChan      chan types.TxOut
+	keygenChan     chan ttypes.KeygenBlock
+	cfg            config.BlockScannerConfiguration
+	scannerStorage blockscanner.ScannerStorage
+	thorchain      *thorclient.ThorchainBridge
+	m              *metrics.Metrics
+	errCounter     *prometheus.CounterVec
+	pubkeyMgr      pubkeymanager.PubKeyValidator
+	cdc            *codec.Codec
 }
 
 // NewThorchainBlockScan create a new instance of thorchain block scanner
@@ -44,23 +43,18 @@ func NewThorchainBlockScan(cfg config.BlockScannerConfiguration, scanStorage blo
 	if m == nil {
 		return nil, errors.New("metric is nil")
 	}
-	commonBlockScanner, err := blockscanner.NewCommonBlockScanner(cfg, 0, scanStorage, m, blockscanner.CosmosSupplemental{})
-	if err != nil {
-		return nil, fmt.Errorf("fail to create txOut block scanner: %w", err)
-	}
 	return &ThorchainBlockScan{
-		logger:             log.With().Str("module", "thorchainblockscanner").Logger(),
-		wg:                 &sync.WaitGroup{},
-		stopChan:           make(chan struct{}),
-		txOutChan:          make(chan types.TxOut),
-		keygenChan:         make(chan stypes.KeygenBlock),
-		cfg:                cfg,
-		scannerStorage:     scanStorage,
-		commonBlockScanner: commonBlockScanner,
-		thorchain:          thorchain,
-		errCounter:         m.GetCounterVec(metrics.ThorchainBlockScannerError),
-		pubkeyMgr:          pubkeyMgr,
-		cdc:                codec.New(),
+		logger:         log.With().Str("module", "thorchainblockscanner").Logger(),
+		wg:             &sync.WaitGroup{},
+		stopChan:       make(chan struct{}),
+		txOutChan:      make(chan types.TxOut),
+		keygenChan:     make(chan ttypes.KeygenBlock),
+		cfg:            cfg,
+		scannerStorage: scanStorage,
+		thorchain:      thorchain,
+		errCounter:     m.GetCounterVec(metrics.ThorchainBlockScannerError),
+		pubkeyMgr:      pubkeyMgr,
+		cdc:            codec.New(),
 	}, nil
 }
 
@@ -69,16 +63,21 @@ func (b *ThorchainBlockScan) GetTxOutMessages() <-chan types.TxOut {
 	return b.txOutChan
 }
 
-func (b *ThorchainBlockScan) GetKeygenMessages() <-chan stypes.KeygenBlock {
+func (b *ThorchainBlockScan) GetKeygenMessages() <-chan ttypes.KeygenBlock {
 	return b.keygenChan
 }
 
-// Start to scan blocks
-func (b *ThorchainBlockScan) Start() error {
-	b.wg.Add(1)
-	go b.processBlocks(1)
-	b.commonBlockScanner.Start()
-	return nil
+func (b *ThorchainBlockScan) FetchTxs(height int64) (stypes.TxIn, error) {
+	fmt.Printf("<<<< Block: %d\n", height)
+	if err := b.processTxOutBlock(height); err != nil {
+		fmt.Println("ERR1")
+		return stypes.TxIn{}, err
+	}
+	if err := b.processKeygenBlock(height); err != nil {
+		fmt.Println("ERR2")
+		return stypes.TxIn{}, err
+	}
+	return stypes.TxIn{}, nil
 }
 
 func (b *ThorchainBlockScan) processKeygenBlock(blockHeight int64) error {
@@ -126,6 +125,7 @@ func (b *ThorchainBlockScan) processTxOutBlock(blockHeight int64) error {
 	return nil
 }
 
+/*
 func (b *ThorchainBlockScan) processBlocks(idx int) {
 	b.logger.Debug().Int("idx", idx).Msg("start searching tx out in a block")
 	defer b.logger.Debug().Int("idx", idx).Msg("stop searching tx out in a block")
@@ -172,12 +172,4 @@ func (b *ThorchainBlockScan) processBlocks(idx int) {
 		}
 	}
 }
-
-// Stop the scanner
-func (b *ThorchainBlockScan) Stop() error {
-	b.logger.Info().Msg("received request to stop thorchain block scanner")
-	defer b.logger.Info().Msg("thorchain block scanner stopped successfully")
-	close(b.stopChan)
-	b.wg.Wait()
-	return nil
-}
+*/
