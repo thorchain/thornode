@@ -126,12 +126,10 @@ func main() {
 		log.Fatal().Err(err).Msg("fail to create tss instance")
 	}
 
-	go func() {
-		defer log.Info().Msg("tss instance exit")
-		if err := tssIns.Start(); err != nil {
-			log.Err(err).Msg("fail to start tss instance")
-		}
-	}()
+	if err := tssIns.Start(); err != nil {
+		log.Err(err).Msg("fail to start tss instance")
+	}
+
 	healthServer := NewHealthServer(cfg.TSS.InfoAddress, tssIns)
 	go func() {
 		defer log.Info().Msg("health server exit")
@@ -193,12 +191,10 @@ func main() {
 	if err := obs.Stop(); err != nil {
 		log.Fatal().Err(err).Msg("fail to stop observer")
 	}
-
 	// stop signer
 	if err := sign.Stop(); err != nil {
 		log.Fatal().Err(err).Msg("fail to stop signer")
 	}
-
 	// stop go tss
 	tssIns.Stop()
 	if err := healthServer.Stop(); err != nil {
