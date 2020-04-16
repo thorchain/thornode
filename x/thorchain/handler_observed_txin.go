@@ -191,7 +191,7 @@ func (h ObservedTxInHandler) handleV1(ctx sdk.Context, version semver.Version, m
 		}
 
 		// construct msg from memo
-		m, txErr := processOneTxIn(ctx, h.keeper, txIn, msg.Signer)
+		m, txErr := processOneTxIn(ctx, constAccessor, h.keeper, txIn, msg.Signer)
 		if txErr != nil {
 			ctx.Logger().Error("fail to process inbound tx", "error", txErr.Error(), "tx hash", tx.Tx.ID.String())
 			if newErr := refundTx(ctx, tx, txOutStore, h.keeper, constAccessor, txErr.Code(), fmt.Sprint(txErr.Data())); nil != newErr {
