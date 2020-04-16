@@ -115,6 +115,7 @@ func (h ObservedTxOutHandler) handleV1(ctx sdk.Context, version semver.Version, 
 	handler := NewHandler(h.keeper, h.versionedTxOutStore, h.validatorMgr, h.versionedVaultManager, h.versionedObserverManager, h.versionedGasMgr)
 
 	for _, tx := range msg.Txs {
+		tx.Tx.Memo = fetchMemo(ctx, constAccessor, h.keeper, tx.Tx)
 
 		// check we are sending from a valid vault
 		if !h.keeper.VaultExists(ctx, tx.ObservedPubKey) {
@@ -137,7 +138,7 @@ func (h ObservedTxOutHandler) handleV1(ctx sdk.Context, version semver.Version, 
 			}
 			continue
 		}
-		ctx.Logger().Info("handleMsgObservedTxOut request", "Tx:", msg.Txs[0].String())
+		ctx.Logger().Info("handleMsgObservedTxOut request", "Tx:", tx.String())
 
 		// if memo isn't valid or its an inbound memo, and its funds moving
 		// from a yggdrasil vault, slash the node
@@ -170,7 +171,8 @@ func (h ObservedTxOutHandler) handleV1(ctx sdk.Context, version semver.Version, 
 		}
 
 		txOut := voter.GetTx(activeNodeAccounts) // get consensus tx, in case our for loop is incorrect
-		m, err := processOneTxIn(ctx, constAccessor, h.keeper, txOut, msg.Signer)
+		txOut.Tx.Memo = tx.Tx.Memo
+		m, err := processOneTxIn(ctx, h.keeper, txOut, msg.Signer)
 		if err != nil || tx.Tx.Chain.IsEmpty() {
 			ctx.Logger().Error("fail to process txOut",
 				"error", err,

@@ -243,6 +243,7 @@ func (tos *TxOutStorageV2) addToBlockOut(ctx sdk.Context, toi *TxOutItem) error 
 	if err != nil {
 		return err
 	}
+	fmt.Printf("TxOUtHash: %s\n", hash)
 
 	// add a tx marker
 	mark := NewTxMarker(tos.height, toi.Memo)
