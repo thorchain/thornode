@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/btcsuite/btcd/btcjson"
@@ -175,6 +176,7 @@ func (c *Client) OnObservedTxIn(txIn types.TxIn) {
 func (c *Client) FetchTxs(height int64) (types.TxIn, error) {
 	block, err := c.getBlock(height)
 	if err != nil {
+		time.Sleep(300 * time.Millisecond)
 		return types.TxIn{}, errors.Wrap(err, "fail to get block")
 	}
 	txs, err := c.extractTxs(block)
