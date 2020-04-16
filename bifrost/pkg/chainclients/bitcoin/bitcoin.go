@@ -91,8 +91,8 @@ func NewClient(thorKeys *thorclient.Keys, cfg config.ChainConfiguration, server 
 	if err != nil {
 		return c, errors.Wrap(err, "fail to create block scanner")
 	}
-
-	c.utxoAccessor, err = NewUTXOAccessor(path)
+	utxoPath := fmt.Sprintf("%s/%s/utxo", c.cfg.BlockScanner.DBPath, c.cfg.BlockScanner.ChainID)
+	c.utxoAccessor, err = NewUTXOAccessor(utxoPath)
 	if err != nil {
 		return c, errors.Wrap(err, "fail to create utxo accessor")
 	}
