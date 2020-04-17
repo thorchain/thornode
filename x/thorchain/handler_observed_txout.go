@@ -115,8 +115,6 @@ func (h ObservedTxOutHandler) handleV1(ctx sdk.Context, version semver.Version, 
 	handler := NewHandler(h.keeper, h.versionedTxOutStore, h.validatorMgr, h.versionedVaultManager, h.versionedObserverManager, h.versionedGasMgr)
 
 	for _, tx := range msg.Txs {
-		tx.Tx.Memo = fetchMemo(ctx, constAccessor, h.keeper, tx.Tx)
-
 		// check we are sending from a valid vault
 		if !h.keeper.VaultExists(ctx, tx.ObservedPubKey) {
 			ctx.Logger().Info("Not valid Observed Pubkey", tx.ObservedPubKey)
@@ -138,6 +136,7 @@ func (h ObservedTxOutHandler) handleV1(ctx sdk.Context, version semver.Version, 
 			}
 			continue
 		}
+		tx.Tx.Memo = fetchMemo(ctx, constAccessor, h.keeper, tx.Tx)
 		ctx.Logger().Info("handleMsgObservedTxOut request", "Tx:", tx.String())
 
 		// if memo isn't valid or its an inbound memo, and its funds moving
