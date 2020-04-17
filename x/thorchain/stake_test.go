@@ -1,8 +1,9 @@
 package thorchain
 
 import (
+	"errors"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/pkg/errors"
 	. "gopkg.in/check.v1"
 
 	"gitlab.com/thorchain/thornode/common"

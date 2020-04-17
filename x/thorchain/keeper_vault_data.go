@@ -6,8 +6,6 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/pkg/errors"
-
 	"gitlab.com/thorchain/thornode/common"
 	"gitlab.com/thorchain/thornode/constants"
 )
@@ -144,7 +142,7 @@ func (k KVStore) UpdateVaultData(ctx sdk.Context, constAccessor constants.Consta
 		for _, pool := range pools {
 			fees, err := k.GetPoolLiquidityFees(ctx, currentHeight, pool.Asset)
 			if err != nil {
-				err = errors.Wrap(err, "fail to get fees")
+				err = fmt.Errorf("fail to get fees: %w", err)
 				ctx.Logger().Error(err.Error())
 				return err
 			}
@@ -171,7 +169,7 @@ func (k KVStore) UpdateVaultData(ctx sdk.Context, constAccessor constants.Consta
 			pool.BalanceRune = common.SafeSub(pool.BalanceRune, poolDeficit)
 			vault.BondRewardRune = vault.BondRewardRune.Add(poolDeficit)
 			if err := k.SetPool(ctx, pool); err != nil {
-				err = errors.Wrap(err, "fail to set pool")
+				err = fmt.Errorf("fail to set pool: %w", err)
 				ctx.Logger().Error(err.Error())
 				return err
 			}
@@ -258,7 +256,7 @@ func payPoolRewards(ctx sdk.Context, k Keeper, poolRewards []sdk.Uint, pools Poo
 	for i, reward := range poolRewards {
 		pools[i].BalanceRune = pools[i].BalanceRune.Add(reward)
 		if err := k.SetPool(ctx, pools[i]); err != nil {
-			err = errors.Wrap(err, "fail to set pool")
+			err = fmt.Errorf("fail to set pool: %w", err)
 			ctx.Logger().Error(err.Error())
 			return err
 		}

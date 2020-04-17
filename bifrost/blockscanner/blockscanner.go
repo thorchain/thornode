@@ -1,11 +1,11 @@
 package blockscanner
 
 import (
+	"errors"
 	"strconv"
 	"strings"
 	"sync"
 
-	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"

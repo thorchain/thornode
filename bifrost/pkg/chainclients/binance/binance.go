@@ -18,7 +18,6 @@ import (
 	"github.com/binance-chain/go-sdk/types/msg"
 	btx "github.com/binance-chain/go-sdk/types/tx"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	pkerrors "github.com/pkg/errors"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	tssp "gitlab.com/thorchain/tss/go-tss/tss"
@@ -94,17 +93,17 @@ func NewBinance(thorKeys *thorclient.Keys, cfg config.ChainConfiguration, server
 	}
 	b.storage, err = blockscanner.NewBlockScannerStorage(path)
 	if err != nil {
-		return nil, pkerrors.Wrap(err, "fail to create scan storage")
+		return nil, fmt.Errorf("fail to create scan storage: %w", err)
 	}
 
 	b.bnbScanner, err = NewBinanceBlockScanner(b.cfg.BlockScanner, b.storage, b.isTestNet, m)
 	if err != nil {
-		return nil, pkerrors.Wrap(err, "fail to create block scanner")
+		return nil, fmt.Errorf("fail to create block scanner: %w", err)
 	}
 
 	b.blockScanner, err = blockscanner.NewBlockScanner(b.cfg.BlockScanner, b.storage, m, b.thorchainBridge, b.bnbScanner)
 	if err != nil {
-		return nil, pkerrors.Wrap(err, "fail to create block scanner")
+		return nil, fmt.Errorf("fail to create block scanner: %w", err)
 	}
 
 	return b, nil
@@ -127,7 +126,7 @@ func (b *Binance) checkIsTestNet() error {
 
 	u, err := url.Parse(b.cfg.RPCHost)
 	if err != nil {
-		return pkerrors.Wrap(err, fmt.Sprintf("Unable to parse rpc host: %s\n", b.cfg.RPCHost))
+		return fmt.Errorf("Unable to parse rpc host: %s: %w", b.cfg.RPCHost, err)
 	}
 
 	u.Path = "/status"
@@ -160,7 +159,7 @@ func (b *Binance) checkIsTestNet() error {
 
 	var status Status
 	if err := json.Unmarshal(data, &status); err != nil {
-		return pkerrors.Wrap(err, "fail to unmarshal body")
+		return fmt.Errorf("fail to unmarshal body: %w", err)
 	}
 
 	b.chainID = status.Result.NodeInfo.Network
@@ -187,7 +186,7 @@ func (b *Binance) GetHeight() (int64, error) {
 	u.Path = "abci_info"
 	resp, err := b.client.Get(u.String())
 	if err != nil {
-		return 0, fmt.Errorf("fail to get request(%s): %w", u.String(), err) // errors.Wrap(err, "Get request failed")
+		return 0, fmt.Errorf("fail to get request(%s): %w", u.String(), err) // fmt.Errorf("Get request failed: %w", err)
 	}
 
 	defer func() {

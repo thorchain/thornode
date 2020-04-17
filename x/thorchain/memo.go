@@ -1,12 +1,12 @@
 package thorchain
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/pkg/errors"
 
 	"gitlab.com/thorchain/thornode/common"
 )
@@ -439,7 +439,7 @@ func ParseMemo(memo string) (Memo, error) {
 		}
 		addr, err := sdk.AccAddressFromBech32(parts[1])
 		if err != nil {
-			return noMemo, errors.Wrapf(err, "%s is an invalid thorchain address", parts[1])
+			return noMemo, fmt.Errorf("%s is an invalid thorchain address: %w", parts[1], err)
 		}
 		return NewBondMemo(addr), nil
 	case txYggdrasilFund:
