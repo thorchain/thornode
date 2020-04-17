@@ -175,6 +175,11 @@ func (s *PubKeyTestSuite) TestPubKeySet(c *C) {
 }
 
 func (s *PubKeyTestSuite) TestPubKeyGetAddress(c *C) {
+	original := os.Getenv("NET")
+	defer func() {
+		os.Setenv("NET", original)
+	}()
+
 	for _, d := range s.keyData {
 		privB, _ := hex.DecodeString(d.priv)
 		pubB, _ := hex.DecodeString(d.pub)
