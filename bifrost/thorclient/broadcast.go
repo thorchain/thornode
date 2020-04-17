@@ -3,12 +3,12 @@ package thorclient
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"sync/atomic"
 	"time"
 
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-	"github.com/pkg/errors"
 
 	"gitlab.com/thorchain/thornode/bifrost/metrics"
 	"gitlab.com/thorchain/thornode/bifrost/thorclient/types"
@@ -37,7 +37,7 @@ func (b *ThorchainBridge) Broadcast(stdTx authtypes.StdTx, mode types.TxMode) (c
 		var seqNum uint64
 		b.accountNumber, seqNum, err = b.getAccountNumberAndSequenceNumber()
 		if err != nil {
-			return noTxID, errors.Wrap(err, "fail to get account number and sequence number from thorchain ")
+			return noTxID, fmt.Errorf("fail to get account number and sequence number from thorchain : %w", err)
 		}
 		b.blockHeight = blockHeight
 		if seqNum > b.seqNumber {
@@ -57,7 +57,7 @@ func (b *ThorchainBridge) Broadcast(stdTx authtypes.StdTx, mode types.TxMode) (c
 	sig, err := authtypes.MakeSignature(b.keys.GetKeybase(), b.cfg.SignerName, b.cfg.SignerPasswd, stdMsg)
 	if err != nil {
 		b.errCounter.WithLabelValues("fail_sign", "").Inc()
-		return noTxID, errors.Wrap(err, "fail to sign the message")
+		return noTxID, fmt.Errorf("fail to sign the message: %w", err)
 	}
 
 	signed := authtypes.NewStdTx(
@@ -78,14 +78,14 @@ func (b *ThorchainBridge) Broadcast(stdTx authtypes.StdTx, mode types.TxMode) (c
 	result, err := b.cdc.MarshalJSON(setTx)
 	if err != nil {
 		b.errCounter.WithLabelValues("fail_marshal_settx", "").Inc()
-		return noTxID, errors.Wrap(err, "fail to marshal settx to json")
+		return noTxID, fmt.Errorf("fail to marshal settx to json: %w", err)
 	}
 
 	b.logger.Info().Str("payload", string(result)).Msg("post to thorchain")
 
 	body, err := b.post(BroadcastTxsEndpoint, "application/json", bytes.NewBuffer(result))
 	if err != nil {
-		return noTxID, errors.Wrap(err, "fail to post tx to thorchain")
+		return noTxID, fmt.Errorf("fail to post tx to thorchain: %w", err)
 	}
 
 	// NOTE: we can actually see two different json responses for the same end.
@@ -102,14 +102,14 @@ func (b *ThorchainBridge) Broadcast(stdTx authtypes.StdTx, mode types.TxMode) (c
 		err = json.Unmarshal(body, &badCommit)
 		if err != nil {
 			b.logger.Error().Err(err).Msg("fail unmarshal bad commit")
-			return noTxID, errors.Wrap(err, "fail to unmarshal bad commit")
+			return noTxID, fmt.Errorf("fail to unmarshal bad commit: %w", err)
 		}
 
 		// check for any failure logs
 		if badCommit.Code > 0 {
 			err := errors.New(badCommit.Log)
 			b.logger.Error().Err(err).Msg("fail to broadcast")
-			return badCommit.TxHash, errors.Wrap(err, "fail to broadcast")
+			return badCommit.TxHash, fmt.Errorf("fail to broadcast: %w", err)
 		}
 	}
 
@@ -117,7 +117,7 @@ func (b *ThorchainBridge) Broadcast(stdTx authtypes.StdTx, mode types.TxMode) (c
 		if !log.Success {
 			err := errors.New(log.Log)
 			b.logger.Error().Err(err).Msg("fail to broadcast")
-			return noTxID, errors.Wrap(err, "fail to broadcast")
+			return noTxID, fmt.Errorf("fail to broadcast: %w", err)
 		}
 	}
 

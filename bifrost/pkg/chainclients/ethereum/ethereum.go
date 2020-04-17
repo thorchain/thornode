@@ -10,7 +10,6 @@ import (
 	ecommon "github.com/ethereum/go-ethereum/common"
 	etypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
-	pkerrors "github.com/pkg/errors"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	tssp "gitlab.com/thorchain/tss/go-tss/tss"
@@ -74,17 +73,17 @@ func NewClient(thorKeys *thorclient.Keys, cfg config.ChainConfiguration, server 
 	}
 	storage, err := blockscanner.NewBlockScannerStorage(path)
 	if err != nil {
-		return c, pkerrors.Wrap(err, "fail to create blockscanner storage")
+		return c, fmt.Errorf("fail to create blockscanner storage: %w", err)
 	}
 
 	ethScanner, err := NewBlockScanner(c.cfg.BlockScanner, storage, c.isTestNet, c.client, m)
 	if err != nil {
-		return c, pkerrors.Wrap(err, "fail to create eth block scanner")
+		return c, fmt.Errorf("fail to create eth block scanner: %w", err)
 	}
 
 	c.blockScanner, err = blockscanner.NewBlockScanner(c.cfg.BlockScanner, storage, m, c.thorchainBridge, ethScanner)
 	if err != nil {
-		return c, pkerrors.Wrap(err, "fail to create block scanner")
+		return c, fmt.Errorf("fail to create block scanner: %w", err)
 	}
 
 	return c, nil

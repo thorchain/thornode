@@ -1,9 +1,10 @@
 package blockscanner
 
 import (
+	"errors"
+	"fmt"
 	"io"
 
-	"github.com/pkg/errors"
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/storage"
 )
@@ -33,12 +34,12 @@ func NewBlockScannerStorage(levelDbFolder string) (*BlockScannerStorage, error) 
 		storage := storage.NewMemStorage()
 		db, err = leveldb.Open(storage, nil)
 		if err != nil {
-			return nil, errors.Wrapf(err, "fail to in memory open level db")
+			return nil, fmt.Errorf("fail to in memory open level db: %w", err)
 		}
 	} else {
 		db, err = leveldb.OpenFile(levelDbFolder, nil)
 		if err != nil {
-			return nil, errors.Wrapf(err, "fail to open level db %s", levelDbFolder)
+			return nil, fmt.Errorf("fail to open level db %s: %w", levelDbFolder, err)
 		}
 	}
 	levelDbStorage, err := NewLevelDBScannerStorage(db)

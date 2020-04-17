@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/pkg/errors"
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/util"
 )
@@ -34,7 +33,7 @@ func (t *LevelDBUTXOAccessor) GetUTXOs() ([]UnspentTransactionOutput, error) {
 		}
 		var utxo UnspentTransactionOutput
 		if err := json.Unmarshal(buf, &utxo); err != nil {
-			return nil, errors.Wrap(err, "fail to unmarshal to utxo")
+			return nil, fmt.Errorf("fail to unmarshal to utxo: %w", err)
 		}
 		results = append(results, utxo)
 	}
@@ -45,11 +44,11 @@ func (t *LevelDBUTXOAccessor) GetUTXOs() ([]UnspentTransactionOutput, error) {
 func (t *LevelDBUTXOAccessor) AddUTXO(u UnspentTransactionOutput) error {
 	buf, err := json.Marshal(u)
 	if err != nil {
-		return errors.Wrap(err, "fail to marshal utxo to json")
+		return fmt.Errorf("fail to marshal utxo to json: %w", err)
 	}
 	key := fmt.Sprintf("%s%s", PrefixUTXOStorage, u.GetKey())
 	if err := t.db.Put([]byte(key), buf, nil); err != nil {
-		return errors.Wrap(err, "fail to add utxo to level db storage")
+		return fmt.Errorf("fail to add utxo to level db storage: %w", err)
 	}
 	return nil
 }

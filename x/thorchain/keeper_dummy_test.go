@@ -1,6 +1,7 @@
 package thorchain
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/blang/semver"
@@ -8,7 +9,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/bank"
 	"github.com/cosmos/cosmos-sdk/x/supply"
-	"github.com/pkg/errors"
 	"github.com/tendermint/tendermint/libs/log"
 
 	"gitlab.com/thorchain/thornode/common"

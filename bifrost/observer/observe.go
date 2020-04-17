@@ -1,10 +1,11 @@
 package observer
 
 import (
+	"errors"
+	"fmt"
 	"strconv"
 	"strings"
 
-	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -206,17 +207,17 @@ func (o *Observer) isAddrWithMemo(chain common.Chain, addr, memo, targetMemo str
 func (o *Observer) signAndSendToThorchain(txIn types.TxIn) error {
 	txs, err := o.getThorchainTxIns(txIn)
 	if err != nil {
-		return errors.Wrap(err, "fail to convert txin to thorchain txin")
+		return fmt.Errorf("fail to convert txin to thorchain txin: %w", err)
 	}
 	stdTx, err := o.thorchainBridge.GetObservationsStdTx(txs)
 	if err != nil {
 		o.errCounter.WithLabelValues("fail_to_sign", txIn.BlockHeight).Inc()
-		return errors.Wrap(err, "fail to sign the tx")
+		return fmt.Errorf("fail to sign the tx: %w", err)
 	}
 	txID, err := o.thorchainBridge.Broadcast(*stdTx, types.TxSync)
 	if err != nil {
 		o.errCounter.WithLabelValues("fail_to_send_to_thorchain", txIn.BlockHeight).Inc()
-		return errors.Wrap(err, "fail to send the tx to thorchain")
+		return fmt.Errorf("fail to send the tx to thorchain: %w", err)
 	}
 	o.logger.Info().Str("block", txIn.BlockHeight).Str("thorchain hash", txID.String()).Msg("sign and send to thorchain successfully")
 	return nil
@@ -232,31 +233,31 @@ func (o *Observer) getThorchainTxIns(txIn types.TxIn) (stypes.ObservedTxs, error
 		txID, err := common.NewTxID(item.Tx)
 		if err != nil {
 			o.errCounter.WithLabelValues("fail_to_parse_tx_hash", txIn.BlockHeight).Inc()
-			return nil, errors.Wrapf(err, "fail to parse tx hash, %s is invalid ", item.Tx)
+			return nil, fmt.Errorf("fail to parse tx hash, %s is invalid: %w", item.Tx, err)
 		}
 		sender, err := common.NewAddress(item.Sender)
 		if err != nil {
 			o.errCounter.WithLabelValues("fail_to_parse_sender", item.Sender).Inc()
-			return nil, errors.Wrapf(err, "fail to parse sender,%s is invalid sender address", item.Sender)
+			return nil, fmt.Errorf("fail to parse sender,%s is invalid sender address: %w", item.Sender, err)
 		}
 
 		to, err := common.NewAddress(item.To)
 		if err != nil {
 			o.errCounter.WithLabelValues("fail_to_parse_sender", item.Sender).Inc()
-			return nil, errors.Wrapf(err, "fail to parse sender,%s is invalid sender address", item.Sender)
+			return nil, fmt.Errorf("fail to parse sender,%s is invalid sender address: %w", item.Sender, err)
 		}
 
 		h, err := strconv.ParseInt(txIn.BlockHeight, 10, 64)
 		if err != nil {
 			o.errCounter.WithLabelValues("fail to parse block height", txIn.BlockHeight).Inc()
-			return nil, errors.Wrapf(err, "fail to parse block height")
+			return nil, fmt.Errorf("fail to parse block height: %w", err)
 		}
 		o.logger.Debug().Msgf("pool pubkey %s", item.ObservedPoolPubKey)
 		chainAddr, _ := item.ObservedPoolPubKey.GetAddress(txIn.Chain)
 		o.logger.Debug().Msgf("%s address %s", txIn.Chain.String(), chainAddr)
 		if err != nil {
 			o.errCounter.WithLabelValues("fail to parse observed pool address", item.ObservedPoolPubKey.String()).Inc()
-			return nil, errors.Wrapf(err, "fail to parse observed pool address: %s", item.ObservedPoolPubKey.String())
+			return nil, fmt.Errorf("fail to parse observed pool address: %s: %w", item.ObservedPoolPubKey.String(), err)
 		}
 		txs[i] = stypes.NewObservedTx(
 			common.NewTx(txID, sender, to, item.Coins, item.Gas, item.Memo),

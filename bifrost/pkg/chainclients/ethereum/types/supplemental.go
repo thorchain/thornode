@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/pkg/errors"
 )
 
 // Ethereum supplemental with block scanner methods block request and unmarshal block
@@ -28,7 +27,7 @@ func (eth EthereumSupplemental) UnmarshalBlock(buf []byte) ([]string, error) {
 	for _, tx := range body.Transactions {
 		bytes, err := tx.Transaction.MarshalJSON()
 		if err != nil {
-			return nil, errors.Wrap(err, "fail to unmarshal tx from block")
+			return nil, fmt.Errorf("fail to unmarshal tx from block: %w", err)
 		}
 		txs = append(txs, string(bytes))
 	}

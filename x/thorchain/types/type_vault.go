@@ -1,11 +1,11 @@
 package types
 
 import (
+	"errors"
 	"fmt"
 	"sort"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/pkg/errors"
 
 	"gitlab.com/thorchain/thornode/common"
 	"gitlab.com/thorchain/thornode/constants"

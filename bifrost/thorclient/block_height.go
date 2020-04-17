@@ -3,8 +3,6 @@ package thorclient
 import (
 	"fmt"
 
-	"github.com/pkg/errors"
-
 	"gitlab.com/thorchain/thornode/common"
 	"gitlab.com/thorchain/thornode/x/thorchain/types"
 )
@@ -13,7 +11,7 @@ import (
 func (b *ThorchainBridge) GetLastObservedInHeight(chain common.Chain) (int64, error) {
 	lastblock, err := b.getLastBlock(chain)
 	if err != nil {
-		return 0, errors.Wrap(err, "failed to GetLastObservedInHeight")
+		return 0, fmt.Errorf("failed to GetLastObservedInHeight: %w", err)
 	}
 	return lastblock.LastChainHeight, nil
 }
@@ -22,7 +20,7 @@ func (b *ThorchainBridge) GetLastObservedInHeight(chain common.Chain) (int64, er
 func (b *ThorchainBridge) GetLastSignedOutHeight() (int64, error) {
 	lastblock, err := b.getLastBlock("")
 	if err != nil {
-		return 0, errors.Wrap(err, "failed to GetLastSignedOutHeight")
+		return 0, fmt.Errorf("failed to GetLastSignedOutHeight: %w", err)
 	}
 	return lastblock.LastSignedHeight, nil
 }
@@ -31,7 +29,7 @@ func (b *ThorchainBridge) GetLastSignedOutHeight() (int64, error) {
 func (b *ThorchainBridge) GetBlockHeight() (int64, error) {
 	lastblock, err := b.getLastBlock("")
 	if err != nil {
-		return 0, errors.Wrap(err, "failed to GetStatechainHeight")
+		return 0, fmt.Errorf("failed to GetStatechainHeight: %w", err)
 	}
 	return lastblock.Statechain, nil
 }
@@ -44,12 +42,12 @@ func (b *ThorchainBridge) getLastBlock(chain common.Chain) (types.QueryResHeight
 	}
 	buf, _, err := b.getWithPath(path)
 	if err != nil {
-		return types.QueryResHeights{}, errors.Wrap(err, "failed to get lastblock")
+		return types.QueryResHeights{}, fmt.Errorf("failed to get lastblock: %w", err)
 	}
 	var lastBlock types.QueryResHeights
 	if err := b.cdc.UnmarshalJSON(buf, &lastBlock); err != nil {
 		b.errCounter.WithLabelValues("fail_unmarshal_lastblock", "").Inc()
-		return types.QueryResHeights{}, errors.Wrap(err, "failed to unmarshal last block")
+		return types.QueryResHeights{}, fmt.Errorf("failed to unmarshal last block: %w", err)
 	}
 	return lastBlock, nil
 }

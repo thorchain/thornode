@@ -1,8 +1,9 @@
 package thorchain
 
 import (
+	"fmt"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/pkg/errors"
 	"gitlab.com/thorchain/thornode/common"
 )
 
@@ -30,7 +31,7 @@ func (k KVStore) GetStakerPool(ctx sdk.Context, stakerID common.Address) (Staker
 	buf := store.Get([]byte(key))
 	if err := k.cdc.UnmarshalBinaryBare(buf, &ps); err != nil {
 		ctx.Logger().Error("fail to unmarshal stakerpool", "error", err)
-		return StakerPool{}, errors.Wrap(err, "fail to unmarshal stakerpool")
+		return StakerPool{}, fmt.Errorf("fail to unmarshal stakerpool: %w", err)
 	}
 	return ps, nil
 }
