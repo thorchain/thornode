@@ -22,6 +22,7 @@ export SIGNER_NAME=thorchain
 export BOND_AMOUNT=100000000:RUNE-A1F
 export GAS_FEE=75001
 export DISK_SIZE=${DISK_SIZE:=100}
+export AWS_INSTANCE_TYPE=${AWS_INSTANCE_TYPE:=c5.xlarge}
 
 cleanup () {
     echo "performing cleanup"
