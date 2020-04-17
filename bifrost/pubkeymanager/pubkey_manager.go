@@ -1,6 +1,7 @@
 package pubkeymanager
 
 import (
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -10,7 +11,6 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/hashicorp/go-retryablehttp"
-	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -69,7 +69,7 @@ func NewPubKeyManager(chainHost string, m *metrics.Metrics) (*PubKeyManager, err
 func (pkm *PubKeyManager) Start() error {
 	pubkeys, err := pkm.getPubkeys()
 	if err != nil {
-		return errors.Wrap(err, "fail to get pubkeys from thorchain")
+		return fmt.Errorf("fail to get pubkeys from thorchain: %w", err)
 	}
 	for _, pk := range pubkeys {
 		pkm.AddPubKey(pk, false)
@@ -235,7 +235,7 @@ func (pkm *PubKeyManager) getPubkeys() (common.PubKeys, error) {
 	}
 	resp, err := retryablehttp.Get(uri.String())
 	if err != nil {
-		return nil, errors.Wrap(err, "fail to get pubkeys from thorchain")
+		return nil, fmt.Errorf("fail to get pubkeys from thorchain: %w", err)
 	}
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
@@ -243,7 +243,7 @@ func (pkm *PubKeyManager) getPubkeys() (common.PubKeys, error) {
 		}
 	}()
 	if resp.StatusCode != http.StatusOK {
-		return nil, errors.Wrap(err, "fail to get pubkeys from thorchain")
+		return nil, fmt.Errorf("fail to get pubkeys from thorchain: %w", err)
 	}
 
 	var pubs struct {
@@ -252,11 +252,11 @@ func (pkm *PubKeyManager) getPubkeys() (common.PubKeys, error) {
 	}
 	buf, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return nil, errors.Wrap(err, "fail to read response body")
+		return nil, fmt.Errorf("fail to read response body: %w", err)
 	}
 	if err := pkm.cdc.UnmarshalJSON(buf, &pubs); err != nil {
 		pkm.errCounter.WithLabelValues("fail_unmarshal_pubkeys", "").Inc()
-		return nil, errors.Wrap(err, "fail to unmarshal pubkeys")
+		return nil, fmt.Errorf("fail to unmarshal pubkeys: %w", err)
 	}
 	pubkeys := append(pubs.Asgard, pubs.Yggdrasil...)
 	return pubkeys, nil

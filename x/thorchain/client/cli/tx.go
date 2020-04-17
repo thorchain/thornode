@@ -9,7 +9,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
-	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
 	"gitlab.com/thorchain/thornode/common"
@@ -77,11 +76,11 @@ func GetCmdSetNodeKeys(cdc *codec.Codec) *cobra.Command {
 			pk := common.NewPubKeySet(secp256k1Key, ed25519Key)
 			validatorConsPubKey, err := sdk.GetConsPubKeyBech32(args[2])
 			if err != nil {
-				return errors.Wrap(err, "fail to parse validator consensus public key")
+				return fmt.Errorf("fail to parse validator consensus public key: %w", err)
 			}
 			validatorConsPubKeyStr, err := sdk.Bech32ifyConsPub(validatorConsPubKey)
 			if err != nil {
-				return errors.Wrap(err, "fail to convert public key to string")
+				return fmt.Errorf("fail to convert public key to string: %w", err)
 			}
 			msg := types.NewMsgSetNodeKeys(pk, validatorConsPubKeyStr, cliCtx.GetFromAddress())
 			err = msg.ValidateBasic()
@@ -106,15 +105,15 @@ func GetCmdEndPool(cdc *codec.Codec) *cobra.Command {
 
 			asset, err := common.NewAsset(args[0])
 			if err != nil {
-				return errors.Wrap(err, "invalid asset")
+				return fmt.Errorf("invalid asset: %w", err)
 			}
 			requester, err := common.NewAddress(args[1])
 			if err != nil {
-				return errors.Wrap(err, "invalid requster bnb address")
+				return fmt.Errorf("invalid requster bnb address: %w", err)
 			}
 			txID, err := common.NewTxID(args[2])
 			if err != nil {
-				return errors.Wrap(err, "invalid tx hash")
+				return fmt.Errorf("invalid tx hash: %w", err)
 			}
 
 			tx := common.Tx{

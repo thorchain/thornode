@@ -1,6 +1,7 @@
 package signer
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -9,13 +10,13 @@ import (
 
 	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	tssCommon "gitlab.com/thorchain/tss/go-tss/common"
 	tssp "gitlab.com/thorchain/tss/go-tss/tss"
 
+	"gitlab.com/thorchain/thornode/bifrost/blockscanner"
 	"gitlab.com/thorchain/thornode/bifrost/config"
 	"gitlab.com/thorchain/thornode/bifrost/metrics"
 	"gitlab.com/thorchain/thornode/bifrost/pkg/chainclients"
@@ -36,6 +37,7 @@ type Signer struct {
 	wg                    *sync.WaitGroup
 	thorchainBridge       *thorclient.ThorchainBridge
 	stopChan              chan struct{}
+	blockScanner          *blockscanner.BlockScanner
 	thorchainBlockScanner *ThorchainBlockScan
 	chains                map[common.Chain]chainclients.ChainClient
 	storage               SignerStorage
@@ -57,7 +59,7 @@ func NewSigner(cfg config.SignerConfiguration,
 	m *metrics.Metrics) (*Signer, error) {
 	storage, err := NewSignerStore(cfg.SignerDbPath, thorchainBridge.GetConfig().SignerPasswd)
 	if err != nil {
-		return nil, errors.Wrap(err, "fail to create thorchain scan storage")
+		return nil, fmt.Errorf("fail to create thorchain scan storage: %w", err)
 	}
 
 	var na *ttypes.NodeAccount
@@ -82,10 +84,17 @@ func NewSigner(cfg config.SignerConfiguration,
 	}
 	pubkeyMgr.AddNodePubKey(na.PubKeySet.Secp256k1)
 
+	cfg.BlockScanner.ChainID = common.THORChain // hard code to thorchain
+
 	// Create pubkey manager and add our private key (Yggdrasil pubkey)
 	thorchainBlockScanner, err := NewThorchainBlockScan(cfg.BlockScanner, storage, thorchainBridge, m, pubkeyMgr)
 	if err != nil {
-		return nil, errors.Wrap(err, "fail to create thorchain block scan")
+		return nil, fmt.Errorf("fail to create thorchain block scan: %w", err)
+	}
+
+	blockScanner, err := blockscanner.NewBlockScanner(cfg.BlockScanner, storage, m, thorchainBridge, thorchainBlockScanner)
+	if err != nil {
+		return nil, fmt.Errorf("fail to create block scanner: %w", err)
 	}
 
 	kg, err := tss.NewTssKeyGen(thorKeys, tssServer)
@@ -98,6 +107,7 @@ func NewSigner(cfg config.SignerConfiguration,
 		cfg:                   cfg,
 		wg:                    &sync.WaitGroup{},
 		stopChan:              make(chan struct{}),
+		blockScanner:          blockScanner,
 		thorchainBlockScanner: thorchainBlockScanner,
 		chains:                chains,
 		m:                     m,
@@ -118,35 +128,6 @@ func (s *Signer) getChain(chainID common.Chain) (chainclients.ChainClient, error
 	return chain, nil
 }
 
-func (s *Signer) CheckTransaction(key string, chainID common.Chain, metadata interface{}) (TxStatus, error) {
-	chain, err := s.getChain(chainID)
-	if err != nil {
-		return TxUnknown, err
-	}
-
-	// if we don't have the transaction yet, say its unavailable
-	if !s.storage.Has(key) {
-		return TxUnavailable, nil
-	}
-
-	tx, err := s.storage.Get(key)
-	if err != nil {
-		return TxUnknown, err
-	}
-
-	// if the tx isn't available, return immediately
-	if tx.Status != TxAvailable {
-		return tx.Status, nil
-	}
-
-	// validate metadata
-	if !chain.ValidateMetadata(metadata) {
-		return TxUnavailable, nil
-	}
-
-	return TxAvailable, nil
-}
-
 func (s *Signer) Start() error {
 	s.wg.Add(1)
 	go s.processTxnOut(s.thorchainBlockScanner.GetTxOutMessages(), 1)
@@ -157,7 +138,8 @@ func (s *Signer) Start() error {
 	s.wg.Add(1)
 	go s.signTransactions()
 
-	return s.thorchainBlockScanner.Start()
+	s.blockScanner.Start(nil)
+	return nil
 }
 
 func (s *Signer) shouldSign(tx types.TxOutItem) bool {
@@ -287,12 +269,12 @@ func (s *Signer) sendKeygenToThorchain(height int64, poolPk common.PubKey, blame
 	strHeight := strconv.FormatInt(height, 10)
 	if err != nil {
 		s.errCounter.WithLabelValues("fail_to_sign", strHeight).Inc()
-		return errors.Wrap(err, "fail to sign the tx")
+		return fmt.Errorf("fail to sign the tx: %w", err)
 	}
 	txID, err := s.thorchainBridge.Broadcast(*stdTx, types.TxSync)
 	if err != nil {
 		s.errCounter.WithLabelValues("fail_to_send_to_thorchain", strHeight).Inc()
-		return errors.Wrap(err, "fail to send the tx to thorchain")
+		return fmt.Errorf("fail to send the tx to thorchain: %w", err)
 	}
 	s.logger.Info().Int64("block", height).Str("thorchain hash", txID.String()).Msg("sign and send to thorchain successfully")
 	return nil
@@ -426,8 +408,6 @@ func (s *Signer) Stop() error {
 	if err := s.m.Stop(); err != nil {
 		s.logger.Error().Err(err).Msg("fail to stop metric server")
 	}
-	if err := s.thorchainBlockScanner.Stop(); err != nil {
-		s.logger.Error().Err(err).Msg("stop thorchain block scanner")
-	}
+	s.blockScanner.Stop()
 	return s.storage.Close()
 }

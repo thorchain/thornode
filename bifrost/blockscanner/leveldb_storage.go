@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/pkg/errors"
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/util"
 )
@@ -54,10 +53,10 @@ func (ldbss *LevelDBScannerStorage) SetBlockScanStatus(block Block, status Block
 	}
 	buf, err := json.Marshal(blockStatusItem)
 	if err != nil {
-		return errors.Wrap(err, "fail to marshal BlockStatusItem to json")
+		return fmt.Errorf("fail to marshal BlockStatusItem to json: %w", err)
 	}
 	if err := ldbss.db.Put([]byte(getBlockStatusKey(block.Height)), buf, nil); err != nil {
-		return errors.Wrap(err, "fail to set block scan status")
+		return fmt.Errorf("fail to set block scan status: %w", err)
 	}
 	return nil
 }
@@ -74,7 +73,7 @@ func (ldbss *LevelDBScannerStorage) GetBlocksForRetry(failedOnly bool) ([]Block,
 		}
 		var blockStatusItem BlockStatusItem
 		if err := json.Unmarshal(buf, &blockStatusItem); err != nil {
-			return nil, errors.Wrap(err, "fail to unmarshal to block status item")
+			return nil, fmt.Errorf("fail to unmarshal to block status item: %w", err)
 		}
 		if !failedOnly {
 			results = append(results, blockStatusItem.Block)

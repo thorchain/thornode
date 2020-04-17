@@ -16,6 +16,7 @@ services:
       CHAIN_API: thor-api:1317
       CHAIN_RPC: thor-daemon:26657
       BINANCE_HOST: ${BINANCE_HOST:-https://data-seed-pre-0-s3.binance.org}
+      BTC_HOST: ${BTC_HOST:-bitcoin-regtest:18443}
       PEER: ${PEER}
       SIGNER_PASSWD: ${SIGNER_PASSWD}
     entrypoint:

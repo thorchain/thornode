@@ -3,9 +3,9 @@ package blockscanner
 import (
 	"encoding/binary"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"sync"
-
-	"github.com/pkg/errors"
 )
 
 const MockErrorBlockHeight = 1024
@@ -49,7 +49,7 @@ func (mss *MockScannerStorage) SetBlockScanStatus(block Block, status BlockScanS
 	}
 	buf, err := json.Marshal(blockStatusItem)
 	if err != nil {
-		return errors.Wrap(err, "fail to marshal BlockStatusItem to json")
+		return fmt.Errorf("fail to marshal BlockStatusItem to json: %w", err)
 	}
 	mss.l.Lock()
 	defer mss.l.Unlock()

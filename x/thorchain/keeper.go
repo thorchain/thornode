@@ -8,7 +8,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/bank"
 	"github.com/cosmos/cosmos-sdk/x/supply"
-	"github.com/pkg/errors"
 	"github.com/tendermint/tendermint/libs/log"
 )
 
@@ -78,7 +77,7 @@ const (
 )
 
 func dbError(ctx sdk.Context, wrapper string, err error) error {
-	err = errors.Wrap(err, fmt.Sprintf("KVStore Error: %s", wrapper))
+	err = fmt.Errorf("KVStore Error: %s: %w", wrapper, err)
 	ctx.Logger().Error(err.Error())
 	return err
 }

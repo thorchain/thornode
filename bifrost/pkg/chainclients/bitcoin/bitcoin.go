@@ -5,13 +5,13 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/btcsuite/btcd/btcjson"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/rpcclient"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	tssp "gitlab.com/thorchain/tss/go-tss/tss"
@@ -41,14 +41,14 @@ type Client struct {
 // NewClient generates a new Client
 func NewClient(thorKeys *thorclient.Keys, cfg config.ChainConfiguration, server *tssp.TssServer, bridge *thorclient.ThorchainBridge, m *metrics.Metrics) (*Client, error) {
 	client, err := rpcclient.New(&rpcclient.ConnConfig{
-		Host:         cfg.ChainHost,
+		Host:         cfg.RPCHost,
 		User:         cfg.UserName,
 		Pass:         cfg.Password,
 		DisableTLS:   cfg.DisableTLS,
 		HTTPPostMode: cfg.HTTPostMode,
 	}, nil)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("fail to create bitcoin rpc client: %w", err)
 	}
 	tssKm, err := tss.NewKeySign(server)
 	if err != nil {
@@ -56,12 +56,12 @@ func NewClient(thorKeys *thorclient.Keys, cfg config.ChainConfiguration, server 
 	}
 	thorPrivateKey, err := thorKeys.GetPrivateKey()
 	if err != nil {
-		return nil, fmt.Errorf("fail to get thor private key")
+		return nil, fmt.Errorf("fail to get THORChain private key: %w", err)
 	}
 
 	btcPrivateKey, err := getBTCPrivateKey(thorPrivateKey)
 	if err != nil {
-		return nil, fmt.Errorf("fail to get private key for BTC chain: %w", err)
+		return nil, fmt.Errorf("fail to convert private key for BTC: %w", err)
 	}
 	ksWrapper, err := NewKeySignWrapper(btcPrivateKey, bridge, tssKm)
 	if err != nil {
@@ -78,23 +78,25 @@ func NewClient(thorKeys *thorclient.Keys, cfg config.ChainConfiguration, server 
 		bridge:     bridge,
 	}
 
-	var path string // if not set later, will in memory storage
+	var path string             // if not set later, will in memory storage
+	var pathUTXOAccessor string // if not set later, will in memory storage
 	if len(c.cfg.BlockScanner.DBPath) > 0 {
 		path = fmt.Sprintf("%s/%s", c.cfg.BlockScanner.DBPath, c.cfg.BlockScanner.ChainID)
+		pathUTXOAccessor = fmt.Sprintf("%s-utxos", path)
 	}
 	storage, err := blockscanner.NewBlockScannerStorage(path)
 	if err != nil {
-		return c, errors.Wrap(err, "fail to create blockscanner storage")
+		return c, fmt.Errorf("fail to create blockscanner storage: %w", err)
 	}
 
 	c.blockScanner, err = blockscanner.NewBlockScanner(c.cfg.BlockScanner, storage, m, bridge, c)
 	if err != nil {
-		return c, errors.Wrap(err, "fail to create block scanner")
+		return c, fmt.Errorf("fail to create block scanner: %w", err)
 	}
 
-	c.utxoAccessor, err = NewUTXOAccessor(path)
+	c.utxoAccessor, err = NewUTXOAccessor(pathUTXOAccessor)
 	if err != nil {
-		return c, errors.Wrap(err, "fail to create utxo accessor")
+		return c, fmt.Errorf("fail to create utxo accessor: %w", err)
 	}
 
 	return c, nil
@@ -173,46 +175,47 @@ func (c *Client) OnObservedTxIn(txIn types.TxIn) {
 func (c *Client) FetchTxs(height int64) (types.TxIn, error) {
 	block, err := c.getBlock(height)
 	if err != nil {
-		return types.TxIn{}, errors.Wrap(err, "fail to get block")
+		time.Sleep(300 * time.Millisecond)
+		return types.TxIn{}, fmt.Errorf("fail to get block: %w", err)
 	}
 	txs, err := c.extractTxs(block)
 	if err != nil {
-		return types.TxIn{}, errors.Wrap(err, "fail to extract txs from block")
+		return types.TxIn{}, fmt.Errorf("fail to extract txs from block: %w", err)
 	}
 	return txs, nil
 }
 
 // getBlock retrieves block from chain for a block height
-func (c *Client) getBlock(height int64) (*btcjson.GetBlockVerboseResult, error) {
+func (c *Client) getBlock(height int64) (*btcjson.GetBlockVerboseTxResult, error) {
 	hash, err := c.client.GetBlockHash(height)
 	if err != nil {
-		return &btcjson.GetBlockVerboseResult{}, err
+		return &btcjson.GetBlockVerboseTxResult{}, err
 	}
 	return c.client.GetBlockVerboseTx(hash)
 }
 
 // extractTxs extracts txs from a block to type TxIn
-func (c *Client) extractTxs(block *btcjson.GetBlockVerboseResult) (types.TxIn, error) {
+func (c *Client) extractTxs(block *btcjson.GetBlockVerboseTxResult) (types.TxIn, error) {
 	txIn := types.TxIn{
 		BlockHeight: strconv.FormatInt(block.Height, 10),
 		Chain:       c.GetChain(),
 	}
 	var txItems []types.TxInItem
-	for _, tx := range block.RawTx {
+	for _, tx := range block.Tx {
 		if c.ignoreTx(&tx) {
 			continue
 		}
 		sender, err := c.getSender(&tx)
 		if err != nil {
-			return types.TxIn{}, errors.Wrap(err, "fail to get sender from tx")
+			return types.TxIn{}, fmt.Errorf("fail to get sender from tx: %w", err)
 		}
 		memo, err := c.getMemo(&tx)
 		if err != nil {
-			return types.TxIn{}, errors.Wrap(err, "fail to get memo from tx")
+			return types.TxIn{}, fmt.Errorf("fail to get memo from tx: %w", err)
 		}
 		gas, err := c.getGas(&tx)
 		if err != nil {
-			return types.TxIn{}, errors.Wrap(err, "fail to get gas from tx")
+			return types.TxIn{}, fmt.Errorf("fail to get gas from tx: %w", err)
 		}
 		amount := uint64(tx.Vout[0].Value * common.One)
 		txItems = append(txItems, types.TxInItem{

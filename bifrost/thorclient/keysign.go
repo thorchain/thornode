@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"time"
 
-	"github.com/pkg/errors"
-
+	btypes "gitlab.com/thorchain/thornode/bifrost/blockscanner/types"
 	"gitlab.com/thorchain/thornode/bifrost/thorclient/types"
 )
 
@@ -20,14 +20,15 @@ func (b *ThorchainBridge) GetKeysign(blockHeight int64, pk string) (types.Chains
 	if err != nil {
 		b.errCounter.WithLabelValues("fail_get_tx_out", strconv.FormatInt(blockHeight, 10)).Inc()
 		if status == http.StatusNotFound {
-			return types.ChainsTxOut{}, ErrNotFound
+			time.Sleep(5 * time.Second)
+			return types.ChainsTxOut{}, btypes.UnavailableBlock
 		}
-		return types.ChainsTxOut{}, errors.Wrap(err, "failed to get tx from a block height")
+		return types.ChainsTxOut{}, fmt.Errorf("failed to get tx from a block height: %w", err)
 	}
 	var txOut types.ChainsTxOut
 	if err := json.Unmarshal(body, &txOut); err != nil {
 		b.errCounter.WithLabelValues("fail_unmarshal_tx_out", strconv.FormatInt(blockHeight, 10)).Inc()
-		return types.ChainsTxOut{}, errors.Wrap(err, "failed to unmarshal TxOut")
+		return types.ChainsTxOut{}, fmt.Errorf("failed to unmarshal TxOut: %w", err)
 	}
 	return txOut, nil
 }

@@ -1,9 +1,8 @@
 package types
 
 import (
+	"errors"
 	"strings"
-
-	"github.com/pkg/errors"
 
 	"gitlab.com/thorchain/thornode/common"
 )

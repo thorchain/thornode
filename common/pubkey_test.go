@@ -12,13 +12,19 @@ import (
 	. "gopkg.in/check.v1"
 )
 
+type KeyDataAddr struct {
+	mainnet string
+	testnet string
+	mocknet string
+}
+
 type KeyData struct {
 	priv     string
 	pub      string
-	addrBNB  string
-	addrBTC  string
-	addrETH  string
-	addrTHOR string
+	addrBNB  KeyDataAddr
+	addrBTC  KeyDataAddr
+	addrETH  KeyDataAddr
+	addrTHOR KeyDataAddr
 }
 
 type PubKeyTestSuite struct {
@@ -30,32 +36,99 @@ var _ = Suite(&PubKeyTestSuite{})
 func (s *PubKeyTestSuite) SetUpSuite(c *C) {
 	s.keyData = []KeyData{
 		{
-			priv:    "ef235aacf90d9f4aadd8c92e4b2562e1d9eb97f0df9ba3b508258739cb013db2",
-			pub:     "02b4632d08485ff1df2db55b9dafd23347d1c47a457072a1e87be26896549a8737",
-			addrETH: "0x3fd2D4cE97B082d4BcE3f9fee2A3D60668D2f473",
-			addrBNB: "bnb1j08ys4ct2hzzc2hcz6h2hgrvlmsjynawtf2n0y",
-			addrBTC: "bc1qj08ys4ct2hzzc2hcz6h2hgrvlmsjynawlht528",
+			priv: "ef235aacf90d9f4aadd8c92e4b2562e1d9eb97f0df9ba3b508258739cb013db2",
+			pub:  "02b4632d08485ff1df2db55b9dafd23347d1c47a457072a1e87be26896549a8737",
+			addrETH: KeyDataAddr{
+				mainnet: "0x3fd2D4cE97B082d4BcE3f9fee2A3D60668D2f473",
+				testnet: "0x3fd2D4cE97B082d4BcE3f9fee2A3D60668D2f473",
+				mocknet: "0x3fd2D4cE97B082d4BcE3f9fee2A3D60668D2f473",
+			},
+			addrBNB: KeyDataAddr{
+				mainnet: "bnb1j08ys4ct2hzzc2hcz6h2hgrvlmsjynawtf2n0y",
+				testnet: "tbnb1j08ys4ct2hzzc2hcz6h2hgrvlmsjynaw9urh04",
+				mocknet: "tbnb1j08ys4ct2hzzc2hcz6h2hgrvlmsjynaw9urh04",
+			},
+			addrBTC: KeyDataAddr{
+				mainnet: "bc1qj08ys4ct2hzzc2hcz6h2hgrvlmsjynawlht528",
+				testnet: "tb1qj08ys4ct2hzzc2hcz6h2hgrvlmsjynaw43s835",
+				mocknet: "bcrt1qj08ys4ct2hzzc2hcz6h2hgrvlmsjynawhcf2xa",
+			},
 		},
 		{
-			priv:    "289c2857d4598e37fb9647507e47a309d6133539bf21a8b9cb6df88fd5232032",
-			pub:     "037db227d7094ce215c3a0f57e1bcc732551fe351f94249471934567e0f5dc1bf7",
-			addrETH: "0x970E8128AB834E8EAC17Ab8E3812F010678CF791",
-			addrBTC: "bc1qzupk5lmc84r2dh738a9g3zscavannjy38ghlxu",
-			addrBNB: "bnb1zupk5lmc84r2dh738a9g3zscavannjy3nkkcrl",
+			priv: "289c2857d4598e37fb9647507e47a309d6133539bf21a8b9cb6df88fd5232032",
+			pub:  "037db227d7094ce215c3a0f57e1bcc732551fe351f94249471934567e0f5dc1bf7",
+			addrETH: KeyDataAddr{
+				mainnet: "0x970E8128AB834E8EAC17Ab8E3812F010678CF791",
+				testnet: "0x970E8128AB834E8EAC17Ab8E3812F010678CF791",
+				mocknet: "0x970E8128AB834E8EAC17Ab8E3812F010678CF791",
+			},
+			addrBNB: KeyDataAddr{
+				mainnet: "bnb1zupk5lmc84r2dh738a9g3zscavannjy3nkkcrl",
+				testnet: "tbnb1zupk5lmc84r2dh738a9g3zscavannjy3arlurw",
+				mocknet: "tbnb1zupk5lmc84r2dh738a9g3zscavannjy3arlurw",
+			},
+			addrBTC: KeyDataAddr{
+				mainnet: "bc1qzupk5lmc84r2dh738a9g3zscavannjy38ghlxu",
+				testnet: "tb1qzupk5lmc84r2dh738a9g3zscavannjy3dwvva0",
+				mocknet: "bcrt1qzupk5lmc84r2dh738a9g3zscavannjy3084p2x",
+			},
 		},
 		{
-			priv:    "e810f1d7d6691b4a7a73476f3543bd87d601f9a53e7faf670eac2c5b517d83bf",
-			pub:     "03f98464e8d3fc8e275e34c6f8dc9b99aa244e37b0d695d0dfb8884712ed6d4d35",
-			addrETH: "0xF6dA288748eC4c77642F6c5543717539B3Ae001b",
-			addrBTC: "bc1qqqnde7kqe5sf96j6zf8jpzwr44dh4gkdek4rvd",
-			addrBNB: "bnb1qqnde7kqe5sf96j6zf8jpzwr44dh4gkddg5yfw",
+			priv: "e810f1d7d6691b4a7a73476f3543bd87d601f9a53e7faf670eac2c5b517d83bf",
+			pub:  "03f98464e8d3fc8e275e34c6f8dc9b99aa244e37b0d695d0dfb8884712ed6d4d35",
+			addrETH: KeyDataAddr{
+				mainnet: "0xF6dA288748eC4c77642F6c5543717539B3Ae001b",
+				testnet: "0xF6dA288748eC4c77642F6c5543717539B3Ae001b",
+				mocknet: "0xF6dA288748eC4c77642F6c5543717539B3Ae001b",
+			},
+			addrBNB: KeyDataAddr{
+				mainnet: "bnb1qqnde7kqe5sf96j6zf8jpzwr44dh4gkddg5yfw",
+				testnet: "tbnb1qqnde7kqe5sf96j6zf8jpzwr44dh4gkdraaqfl",
+				mocknet: "tbnb1qqnde7kqe5sf96j6zf8jpzwr44dh4gkdraaqfl",
+			},
+			addrBTC: KeyDataAddr{
+				mainnet: "bc1qqqnde7kqe5sf96j6zf8jpzwr44dh4gkdek4rvd",
+				testnet: "tb1qqqnde7kqe5sf96j6zf8jpzwr44dh4gkdnswsh7",
+				mocknet: "bcrt1qqqnde7kqe5sf96j6zf8jpzwr44dh4gkd3ehaqh",
+			},
 		},
 		{
-			priv:    "a96e62ed3955e65be32703f12d87b6b5cf26039ecfa948dc5107a495418e5330",
-			pub:     "02950e1cdfcb133d6024109fd489f734eeb4502418e538c28481f22bce276f248c",
-			addrETH: "0xFabB9cC6Ec839b1214bB11c53377A56A6Ed81762",
-			addrBTC: "bc1q0s4mg25tu6termrk8egltfyme4q7sg3h0e56p3",
-			addrBNB: "bnb10s4mg25tu6termrk8egltfyme4q7sg3hm84ayj",
+			priv: "a96e62ed3955e65be32703f12d87b6b5cf26039ecfa948dc5107a495418e5330",
+			pub:  "02950e1cdfcb133d6024109fd489f734eeb4502418e538c28481f22bce276f248c",
+			addrETH: KeyDataAddr{
+				mainnet: "0xFabB9cC6Ec839b1214bB11c53377A56A6Ed81762",
+				testnet: "0xFabB9cC6Ec839b1214bB11c53377A56A6Ed81762",
+				mocknet: "0xFabB9cC6Ec839b1214bB11c53377A56A6Ed81762",
+			},
+			addrBNB: KeyDataAddr{
+				mainnet: "bnb10s4mg25tu6termrk8egltfyme4q7sg3hm84ayj",
+				testnet: "tbnb10s4mg25tu6termrk8egltfyme4q7sg3h4jueyr",
+				mocknet: "tbnb10s4mg25tu6termrk8egltfyme4q7sg3h4jueyr",
+			},
+			addrBTC: KeyDataAddr{
+				mainnet: "bc1q0s4mg25tu6termrk8egltfyme4q7sg3h0e56p3",
+				testnet: "tb1q0s4mg25tu6termrk8egltfyme4q7sg3h9l0f6z",
+				mocknet: "bcrt1q0s4mg25tu6termrk8egltfyme4q7sg3h8kkydt",
+			},
+		},
+		{
+			priv: "9294f4d108465fd293f7fe299e6923ef71a77f2cb1eb6d4394839c64ec25d5c0",
+			pub:  "0238383ee4d60176d27cf46f0863bfc6aea624fe9bfc7f4273cc5136d9eb483e4a",
+			addrETH: KeyDataAddr{
+				mainnet: "0x1f30A82340f08177AbA70e6F48054917c74D7d38",
+				testnet: "0x1f30A82340f08177AbA70e6F48054917c74D7d38",
+				mocknet: "0x1f30A82340f08177AbA70e6F48054917c74D7d38",
+			},
+			addrBNB: KeyDataAddr{
+				mainnet: "bnb1jw8h4l3dtz5xxc7uyh5ys70qkezspgfuh4nh0z",
+				testnet: "tbnb1jw8h4l3dtz5xxc7uyh5ys70qkezspgfueq6n0n",
+				mocknet: "tbnb1jw8h4l3dtz5xxc7uyh5ys70qkezspgfueq6n0n",
+			},
+			addrBTC: KeyDataAddr{
+				mainnet: "bc1qjw8h4l3dtz5xxc7uyh5ys70qkezspgfurtjs2p",
+				testnet: "tb1qjw8h4l3dtz5xxc7uyh5ys70qkezspgfufdfr3j",
+				mocknet: "bcrt1qjw8h4l3dtz5xxc7uyh5ys70qkezspgfutyswxm",
+			},
 		},
 	}
 }
@@ -102,7 +175,11 @@ func (s *PubKeyTestSuite) TestPubKeySet(c *C) {
 }
 
 func (s *PubKeyTestSuite) TestPubKeyGetAddress(c *C) {
-	os.Setenv("NET", "mainnet")
+	original := os.Getenv("NET")
+	defer func() {
+		os.Setenv("NET", original)
+	}()
+
 	for _, d := range s.keyData {
 		privB, _ := hex.DecodeString(d.priv)
 		pubB, _ := hex.DecodeString(d.pub)
@@ -122,16 +199,44 @@ func (s *PubKeyTestSuite) TestPubKeyGetAddress(c *C) {
 		pk, err := NewPubKey(pubBech32)
 		c.Assert(err, IsNil)
 
+		os.Setenv("NET", "mainnet")
 		addrETH, err := pk.GetAddress(ETHChain)
 		c.Assert(err, IsNil)
-		c.Assert(addrETH.String(), Equals, d.addrETH)
-
-		addrBTC, err := pk.GetAddress(BTCChain)
-		c.Assert(err, IsNil)
-		c.Assert(addrBTC.String(), Equals, d.addrBTC)
+		c.Assert(addrETH.String(), Equals, d.addrETH.mainnet)
 
 		addrBNB, err := pk.GetAddress(BNBChain)
 		c.Assert(err, IsNil)
-		c.Assert(addrBNB.String(), Equals, d.addrBNB)
+		c.Assert(addrBNB.String(), Equals, d.addrBNB.mainnet)
+
+		addrBTC, err := pk.GetAddress(BTCChain)
+		c.Assert(err, IsNil)
+		c.Assert(addrBTC.String(), Equals, d.addrBTC.mainnet)
+
+		os.Setenv("NET", "testnet")
+		addrETH, err = pk.GetAddress(ETHChain)
+		c.Assert(err, IsNil)
+		c.Assert(addrETH.String(), Equals, d.addrETH.testnet)
+
+		addrBNB, err = pk.GetAddress(BNBChain)
+		c.Assert(err, IsNil)
+		c.Assert(addrBNB.String(), Equals, d.addrBNB.testnet)
+
+		addrBTC, err = pk.GetAddress(BTCChain)
+		c.Assert(err, IsNil)
+		c.Assert(addrBTC.String(), Equals, d.addrBTC.testnet)
+
+		os.Setenv("NET", "mocknet")
+		addrETH, err = pk.GetAddress(ETHChain)
+		c.Assert(err, IsNil)
+		c.Assert(addrETH.String(), Equals, d.addrETH.mocknet)
+
+		addrBNB, err = pk.GetAddress(BNBChain)
+		c.Assert(err, IsNil)
+		c.Assert(addrBNB.String(), Equals, d.addrBNB.mocknet)
+
+		addrBTC, err = pk.GetAddress(BTCChain)
+		c.Assert(err, IsNil)
+		c.Assert(addrBTC.String(), Equals, d.addrBTC.mocknet)
+
 	}
 }

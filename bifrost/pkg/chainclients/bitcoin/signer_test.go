@@ -100,7 +100,7 @@ func (s *BitcoinSignerSuite) SetUpTest(c *C) {
 		}
 	}))
 
-	s.cfg.ChainHost = s.server.Listener.Addr().String()
+	s.cfg.RPCHost = s.server.Listener.Addr().String()
 	cfg.ChainHost = s.server.Listener.Addr().String()
 	s.bridge, err = thorclient.NewThorchainBridge(cfg, s.m)
 	c.Assert(err, IsNil)
@@ -134,15 +134,6 @@ func (s *BitcoinSignerSuite) TestGetChainCfg(c *C) {
 	os.Setenv("NET", "mainnet")
 	param = s.client.getChainCfg()
 	c.Assert(param, Equals, &chaincfg.MainNetParams)
-}
-
-func (s *BitcoinSignerSuite) TestGetLastOutput(c *C) {
-	vOut, err := s.client.getLastOutput("xxxx", "xxxx")
-	c.Assert(err, NotNil)
-	c.Assert(vOut.Value, Equals, float64(0))
-	vOut, err = s.client.getLastOutput("31f8699ce9028e9cd37f8a6d58a79e614a96e3fdd0f58be5fc36d2d95484716f", "tb1qdxxlx4r4jk63cve3rjpj428m26xcukjn5yegff")
-	c.Assert(err, IsNil)
-	c.Assert(vOut.Value, Equals, 0.19590108)
 }
 
 func (s *BitcoinSignerSuite) TestSignTx(c *C) {

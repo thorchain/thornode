@@ -1,0 +1,13 @@
+version: '3'
+
+services:
+  bitcoin-regstest:
+    container_name: bitcoin-regtest
+    restart: unless-stopped
+    image: ruimarinho/bitcoin-core:0.19-alpine
+    ports:
+      - "18443:18443"
+      - "18444:18444"
+    volumes:
+      - "../../scripts:/docker/scripts"
+    entrypoint: "/docker/scripts/bitcoin-mock.sh"

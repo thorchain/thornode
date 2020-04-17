@@ -2,10 +2,10 @@ package thorchain
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/pkg/errors"
 
 	"gitlab.com/thorchain/thornode/common"
 	"gitlab.com/thorchain/thornode/constants"
@@ -23,7 +23,7 @@ func refundTx(ctx sdk.Context, tx ObservedTx, store TxOutStore, keeper Keeper, c
 	for _, coin := range tx.Tx.Coins {
 		pool, err := keeper.GetPool(ctx, coin.Asset)
 		if err != nil {
-			return fmt.Errorf("fail to get pool: %s", err)
+			return fmt.Errorf("fail to get pool: %w", err)
 		}
 
 		if coin.Asset.IsRune() || !pool.BalanceRune.IsZero() {
@@ -416,7 +416,7 @@ func enableNextPool(ctx sdk.Context, keeper Keeper) error {
 }
 
 func wrapError(ctx sdk.Context, err error, wrap string) error {
-	err = errors.Wrap(err, wrap)
+	err = fmt.Errorf("%s: %w", wrap, err)
 	ctx.Logger().Error(err.Error())
 	return err
 }
