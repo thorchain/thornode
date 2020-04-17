@@ -103,7 +103,8 @@ func (b *BlockScanner) scanBlocks() {
 			txIn, err := b.chainScanner.FetchTxs(currentBlock)
 			if err != nil {
 				// don't log an error if its because the block doesn't exist yet
-				if !strings.Contains(err.Error(), "Height must be less than or equal to the current blockchain height") {
+				if !strings.Contains(err.Error(), "Height must be less than or equal to the current blockchain height") &&
+					!strings.Contains(err.Error(), "-8: Block height out of range") {
 
 					b.errorCounter.WithLabelValues("fail_get_block", "").Inc()
 					b.logger.Error().Err(err).Msg("fail to get RPCBlock")
