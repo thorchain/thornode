@@ -3,17 +3,18 @@ package blockscanner
 import (
 	"errors"
 	"strconv"
-	"strings"
 	"sync"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
+	btypes "gitlab.com/thorchain/thornode/bifrost/blockscanner/types"
 	"gitlab.com/thorchain/thornode/bifrost/config"
 	"gitlab.com/thorchain/thornode/bifrost/metrics"
 	"gitlab.com/thorchain/thornode/bifrost/thorclient"
 	"gitlab.com/thorchain/thornode/bifrost/thorclient/types"
+	"gitlab.com/thorchain/thornode/common"
 )
 
 type BlockScannerFetcher interface {
@@ -103,9 +104,7 @@ func (b *BlockScanner) scanBlocks() {
 			txIn, err := b.chainScanner.FetchTxs(currentBlock)
 			if err != nil {
 				// don't log an error if its because the block doesn't exist yet
-				if !strings.Contains(err.Error(), "Height must be less than or equal to the current blockchain height") &&
-					!strings.Contains(err.Error(), "-8: Block height out of range") {
-
+				if errors.Is(err, btypes.UnavailableBlock) {
 					b.errorCounter.WithLabelValues("fail_get_block", "").Inc()
 					b.logger.Error().Err(err).Msg("fail to get RPCBlock")
 				}
@@ -152,7 +151,12 @@ func (b *BlockScanner) FetchLastHeight() (int64, error) {
 	}
 
 	if b.thorchainBridge != nil {
-		height, _ := b.thorchainBridge.GetLastObservedInHeight(b.cfg.ChainID)
+		var height int64
+		if b.cfg.ChainID.Equals(common.THORChain) {
+			height, _ = b.thorchainBridge.GetBlockHeight()
+		} else {
+			height, _ = b.thorchainBridge.GetLastObservedInHeight(b.cfg.ChainID)
+		}
 		if height > 0 {
 			return height, nil
 		}

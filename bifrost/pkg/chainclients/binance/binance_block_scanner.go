@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/binance-chain/go-sdk/common/types"
@@ -22,13 +23,13 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/tendermint/go-amino"
 
-	"gitlab.com/thorchain/thornode/common"
-
 	"gitlab.com/thorchain/thornode/bifrost/blockscanner"
+	bltypes "gitlab.com/thorchain/thornode/bifrost/blockscanner/types"
 	"gitlab.com/thorchain/thornode/bifrost/config"
 	"gitlab.com/thorchain/thornode/bifrost/metrics"
 	btypes "gitlab.com/thorchain/thornode/bifrost/pkg/chainclients/binance/types"
 	stypes "gitlab.com/thorchain/thornode/bifrost/thorclient/types"
+	"gitlab.com/thorchain/thornode/common"
 )
 
 // BinanceBlockScanner is to scan the blocks
@@ -251,6 +252,9 @@ func (b *BinanceBlockScanner) getRPCBlock(height int64) ([]string, error) {
 	if err != nil {
 		b.errCounter.WithLabelValues("fail_get_block", url).Inc()
 		time.Sleep(300 * time.Millisecond)
+		if strings.Contains(err.Error(), "Height must be less than or equal to the current blockchain height") {
+			return nil, bltypes.UnavailableBlock
+		}
 		return nil, err
 	}
 

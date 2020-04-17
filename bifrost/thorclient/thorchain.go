@@ -119,10 +119,11 @@ func (b *ThorchainBridge) get(url string) ([]byte, int, error) {
 			b.logger.Error().Err(err).Msg("failed to close response body")
 		}
 	}()
-	if resp.StatusCode != http.StatusOK {
-		return nil, resp.StatusCode, errors.New("Status code: " + strconv.Itoa(resp.StatusCode) + " returned")
-	}
+
 	buf, err := ioutil.ReadAll(resp.Body)
+	if resp.StatusCode != http.StatusOK {
+		return buf, resp.StatusCode, errors.New("Status code: " + resp.Status + " returned")
+	}
 	if err != nil {
 		b.errCounter.WithLabelValues("fail_read_thorchain_resp", "").Inc()
 		return nil, resp.StatusCode, fmt.Errorf("failed to read response body: %w", err)
