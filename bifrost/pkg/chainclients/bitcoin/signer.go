@@ -6,9 +6,7 @@ import (
 	"fmt"
 
 	"github.com/btcsuite/btcd/btcec"
-	"github.com/btcsuite/btcd/btcjson"
 	"github.com/btcsuite/btcd/chaincfg"
-	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
 	"github.com/btcsuite/btcutil/txsort"
@@ -41,25 +39,6 @@ func (c *Client) getChainCfg() *chaincfg.Params {
 		return &chaincfg.MainNetParams
 	}
 	return nil
-}
-
-func (c *Client) getLastOutput(inputTxId, sourceAddr string) (btcjson.Vout, error) {
-	txHash, err := chainhash.NewHashFromStr(inputTxId)
-	if err != nil {
-		return btcjson.Vout{}, fmt.Errorf("fail to parse (%s) as chain hash: %w", inputTxId, err)
-	}
-	txRaw, err := c.client.GetRawTransactionVerbose(txHash)
-	if err != nil {
-		return btcjson.Vout{}, fmt.Errorf("fail to get the raw transactional: %w", err)
-	}
-	for _, item := range txRaw.Vout {
-		for _, addr := range item.ScriptPubKey.Addresses {
-			if addr == sourceAddr {
-				return item, nil
-			}
-		}
-	}
-	return btcjson.Vout{}, errors.New("not found")
 }
 
 func getGasCoin(tx stypes.TxOutItem) common.Coin {
