@@ -25,7 +25,7 @@ services:
       - "../../scripts:/docker/scripts"
       - ${HOME}/.thornode/standalone/.thord:/root/.thord
       - ${HOME}/.thornode/standalone/.thorcli:/root/.thorcli
-    command: ["bifrost", "-c", "/etc/bifrost/config.json", "-l", "info"]
+    command: ["bifrost", "-c", "/etc/bifrost/config.json", "-l", "debug"]
 
   thor-daemon:
     container_name: thor-daemon
