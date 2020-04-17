@@ -3,7 +3,7 @@
 set -x
 
 USER=$(hostname)
-DISK_SIZE=100
+DISK_SIZE=${DISK_SIZE:=100}
 cd ../../
 LOCAL_VOLUME=$(pwd)
 

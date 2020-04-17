@@ -21,7 +21,7 @@ export CHAIN_ID=Binance-Chain-Nile
 export SIGNER_NAME=thorchain
 export BOND_AMOUNT=100000000:RUNE-A1F
 export GAS_FEE=75001
-export DISK_SIZE=100
+export DISK_SIZE=${DISK_SIZE:=100}
 
 cleanup () {
     echo "performing cleanup"
