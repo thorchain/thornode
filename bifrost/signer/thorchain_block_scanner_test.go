@@ -169,8 +169,4 @@ func (s *ThorchainBlockScanSuite) TestProcess(c *C) {
 	blockScan, err := NewThorchainBlockScan(cfg, s.storage, s.bridge, s.m, pubkeymanager.NewMockPoolAddressValidator())
 	c.Assert(blockScan, NotNil)
 	c.Assert(err, IsNil)
-	err = blockScan.Start()
-	c.Assert(err, IsNil)
-	time.Sleep(time.Second)
-	go blockScan.Stop()
 }

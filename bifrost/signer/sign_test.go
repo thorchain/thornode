@@ -19,13 +19,13 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/tendermint/tendermint/crypto"
 
+	"gitlab.com/thorchain/thornode/bifrost/blockscanner"
 	"gitlab.com/thorchain/thornode/bifrost/config"
 	"gitlab.com/thorchain/thornode/bifrost/metrics"
 	"gitlab.com/thorchain/thornode/bifrost/pkg/chainclients"
 	pubkeymanager "gitlab.com/thorchain/thornode/bifrost/pubkeymanager"
 	"gitlab.com/thorchain/thornode/bifrost/thorclient"
 	stypes "gitlab.com/thorchain/thornode/bifrost/thorclient/types"
-	ttypes "gitlab.com/thorchain/thornode/bifrost/thorclient/types"
 	"gitlab.com/thorchain/thornode/common"
 	"gitlab.com/thorchain/thornode/x/thorchain"
 	types2 "gitlab.com/thorchain/thornode/x/thorchain/types"
@@ -154,7 +154,7 @@ func (s *SignSuite) SetUpSuite(c *C) {
 	c.Assert(err, IsNil)
 	s.bridge, err = thorclient.NewThorchainBridge(cfg, s.m)
 	c.Assert(err, IsNil)
-	s.storage, err = NewSignerStore("/tmp/signer_data", "")
+	s.storage, err = NewSignerStore("", "")
 	c.Assert(err, IsNil)
 }
 
@@ -176,48 +176,6 @@ func (s *SignSuite) TearDownSuite(c *C) {
 	if err := os.RemoveAll("signer/var"); err != nil {
 		c.Error(err)
 	}
-}
-
-func (s *SignSuite) TestCheckTxn(c *C) {
-	storage, err := NewSignerStore("", "")
-	c.Assert(err, IsNil)
-
-	mockChain := &MockCheckTransactionChain{
-		validateMetaData: true,
-	}
-	chain, err := common.NewChain("MOCK")
-	c.Assert(err, IsNil)
-
-	chains := make(map[common.Chain]chainclients.ChainClient)
-	chains[chain] = mockChain
-
-	signer := &Signer{
-		chains:  chains,
-		storage: storage,
-	}
-
-	status, err := signer.CheckTransaction("", "bad chain", nil)
-	c.Assert(err, NotNil)
-	c.Check(status, Equals, TxUnknown)
-
-	status, err = signer.CheckTransaction("", chain, nil)
-	c.Assert(err, IsNil)
-	c.Check(status, Equals, TxUnavailable)
-
-	tx := NewTxOutStoreItem(12, ttypes.TxOutItem{Memo: "foo"})
-	c.Assert(storage.Set(tx), IsNil)
-
-	status, err = signer.CheckTransaction(tx.Key(), chain, nil)
-	c.Assert(err, IsNil)
-	c.Check(status, Equals, TxAvailable)
-
-	spent := NewTxOutStoreItem(100, ttypes.TxOutItem{Memo: "spent"})
-	spent.Status = TxSpent
-	c.Assert(storage.Set(spent), IsNil)
-
-	status, err = signer.CheckTransaction(spent.Key(), chain, nil)
-	c.Assert(err, IsNil)
-	c.Check(status, Equals, TxSpent)
 }
 
 type MockChainClient struct {
@@ -361,13 +319,19 @@ func (s *SignSuite) TestProcess(c *C) {
 			},
 		},
 	}
+
 	blockScan, err := NewThorchainBlockScan(cfg.BlockScanner, s.storage, s.bridge, s.m, pubkeymanager.NewMockPoolAddressValidator())
 	c.Assert(err, IsNil)
+
+	blockScanner, err := blockscanner.NewBlockScanner(cfg.BlockScanner, s.storage, m, s.bridge, blockScan)
+	c.Assert(err, IsNil)
+
 	sign := &Signer{
 		logger:                log.With().Str("module", "signer").Logger(),
 		cfg:                   cfg,
 		wg:                    &sync.WaitGroup{},
 		stopChan:              make(chan struct{}),
+		blockScanner:          blockScanner,
 		thorchainBlockScanner: blockScan,
 		chains:                chains,
 		m:                     s.m,

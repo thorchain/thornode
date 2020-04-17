@@ -19,7 +19,10 @@ const (
 
 // GetCurrentChainNetwork determinate what kind of network currently it is working with
 func GetCurrentChainNetwork() ChainNetwork {
-	if strings.EqualFold(os.Getenv("NET"), "testnet") || strings.EqualFold(os.Getenv("NET"), "mocknet") {
+	if strings.EqualFold(os.Getenv("NET"), "mocknet") {
+		return MockNet
+	}
+	if strings.EqualFold(os.Getenv("NET"), "testnet") {
 		return TestNet
 	}
 	return MainNet
