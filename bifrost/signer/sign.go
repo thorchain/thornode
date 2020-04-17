@@ -32,19 +32,20 @@ import (
 
 // Signer will pull the tx out from thorchain and then forward it to chain
 type Signer struct {
-	logger          zerolog.Logger
-	cfg             config.SignerConfiguration
-	wg              *sync.WaitGroup
-	thorchainBridge *thorclient.ThorchainBridge
-	stopChan        chan struct{}
-	blockScanner    *blockscanner.BlockScanner
-	chains          map[common.Chain]chainclients.ChainClient
-	storage         SignerStorage
-	m               *metrics.Metrics
-	errCounter      *prometheus.CounterVec
-	tssKeygen       *tss.KeyGen
-	thorKeys        *thorclient.Keys
-	pubkeyMgr       pubkeymanager.PubKeyValidator
+	logger                zerolog.Logger
+	cfg                   config.SignerConfiguration
+	wg                    *sync.WaitGroup
+	thorchainBridge       *thorclient.ThorchainBridge
+	stopChan              chan struct{}
+	blockScanner          *blockscanner.BlockScanner
+	thorchainBlockScanner *ThorchainBlockScan
+	chains                map[common.Chain]chainclients.ChainClient
+	storage               SignerStorage
+	m                     *metrics.Metrics
+	errCounter            *prometheus.CounterVec
+	tssKeygen             *tss.KeyGen
+	thorKeys              *thorclient.Keys
+	pubkeyMgr             pubkeymanager.PubKeyValidator
 }
 
 // NewSigner create a new instance of signer
@@ -102,18 +103,19 @@ func NewSigner(cfg config.SignerConfiguration,
 	}
 
 	return &Signer{
-		logger:          log.With().Str("module", "signer").Logger(),
-		cfg:             cfg,
-		wg:              &sync.WaitGroup{},
-		stopChan:        make(chan struct{}),
-		blockScanner:    blockScanner,
-		chains:          chains,
-		m:               m,
-		storage:         storage,
-		errCounter:      m.GetCounterVec(metrics.SignerError),
-		pubkeyMgr:       pubkeyMgr,
-		thorchainBridge: thorchainBridge,
-		tssKeygen:       kg,
+		logger:                log.With().Str("module", "signer").Logger(),
+		cfg:                   cfg,
+		wg:                    &sync.WaitGroup{},
+		stopChan:              make(chan struct{}),
+		blockScanner:          blockScanner,
+		thorchainBlockScanner: thorchainBlockScanner,
+		chains:                chains,
+		m:                     m,
+		storage:               storage,
+		errCounter:            m.GetCounterVec(metrics.SignerError),
+		pubkeyMgr:             pubkeyMgr,
+		thorchainBridge:       thorchainBridge,
+		tssKeygen:             kg,
 	}, nil
 }
 
@@ -127,6 +129,12 @@ func (s *Signer) getChain(chainID common.Chain) (chainclients.ChainClient, error
 }
 
 func (s *Signer) Start() error {
+	s.wg.Add(1)
+	go s.processTxnOut(s.thorchainBlockScanner.GetTxOutMessages(), 1)
+
+	s.wg.Add(1)
+	go s.processKeygen(s.thorchainBlockScanner.GetKeygenMessages())
+
 	s.wg.Add(1)
 	go s.signTransactions()
 

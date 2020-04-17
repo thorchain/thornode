@@ -11,6 +11,7 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"gitlab.com/thorchain/thornode/bifrost/blockscanner"
+	btypes "gitlab.com/thorchain/thornode/bifrost/blockscanner/types"
 	"gitlab.com/thorchain/thornode/bifrost/config"
 	"gitlab.com/thorchain/thornode/bifrost/metrics"
 	pubkeymanager "gitlab.com/thorchain/thornode/bifrost/pubkeymanager"
@@ -68,13 +69,10 @@ func (b *ThorchainBlockScan) GetKeygenMessages() <-chan ttypes.KeygenBlock {
 }
 
 func (b *ThorchainBlockScan) FetchTxs(height int64) (stypes.TxIn, error) {
-	fmt.Printf("<<<< Block: %d\n", height)
 	if err := b.processTxOutBlock(height); err != nil {
-		fmt.Println("ERR1")
 		return stypes.TxIn{}, err
 	}
 	if err := b.processKeygenBlock(height); err != nil {
-		fmt.Println("ERR2")
 		return stypes.TxIn{}, err
 	}
 	return stypes.TxIn{}, nil
@@ -89,11 +87,11 @@ func (b *ThorchainBlockScan) processKeygenBlock(blockHeight int64) error {
 
 	// custom error (to be dropped and not logged) because the block is
 	// available yet
-	if keygen == nil {
-		return errors.New("")
+	if keygen.Height == 0 {
+		return btypes.UnavailableBlock
 	}
 
-	b.keygenChan <- *keygen
+	b.keygenChan <- keygen
 	return nil
 }
 
@@ -107,7 +105,7 @@ func (b *ThorchainBlockScan) processTxOutBlock(blockHeight int64) error {
 			if errors.Is(err, thorclient.ErrNotFound) {
 				// custom error (to be dropped and not logged) because the block is
 				// available yet
-				return errors.New("")
+				return btypes.UnavailableBlock
 			}
 			return fmt.Errorf("fail to get keysign from block scanner: %w", err)
 		}
@@ -117,59 +115,10 @@ func (b *ThorchainBlockScan) processTxOutBlock(blockHeight int64) error {
 			if len(out.TxArray) == 0 {
 				b.logger.Debug().Int64("block", blockHeight).Msg("nothing to process")
 				b.m.GetCounter(metrics.BlockNoTxOut(c)).Inc()
-				return nil
+				continue
 			}
 			b.txOutChan <- out
 		}
 	}
 	return nil
 }
-
-/*
-func (b *ThorchainBlockScan) processBlocks(idx int) {
-	b.logger.Debug().Int("idx", idx).Msg("start searching tx out in a block")
-	defer b.logger.Debug().Int("idx", idx).Msg("stop searching tx out in a block")
-	defer b.wg.Done()
-
-	for {
-		select {
-		case <-b.stopChan: // time to get out
-			return
-		case block, more := <-b.commonBlockScanner.GetMessages():
-			if !more {
-				return
-			}
-			b.logger.Debug().Int64("block", block.Height).Msg("processing block")
-			if err := b.processTxOutBlock(block.Height); err != nil {
-				if errStatus := b.scannerStorage.SetBlockScanStatus(block, blockscanner.Failed); errStatus != nil {
-					b.errCounter.WithLabelValues("fail_set_block_Status", strconv.FormatInt(block.Height, 10))
-					b.logger.Error().Err(err).Int64("height", block.Height).Msg("fail to set block to fail status")
-				}
-				// the error is blank, which means its an error we skip logging
-				if err.Error() == "" {
-					continue
-				}
-				b.errCounter.WithLabelValues("fail_search_tx", strconv.FormatInt(block.Height, 10))
-				b.logger.Error().Err(err).Int64("height", block.Height).Msg("fail to search tx in block")
-				// THORNode will have a retry go routine to check it.
-				continue
-			}
-
-			// set a block as success
-			if err := b.scannerStorage.RemoveBlockStatus(block.Height); err != nil {
-				b.errCounter.WithLabelValues("fail_remove_block_Status", strconv.FormatInt(block.Height, 10))
-				b.logger.Error().Err(err).Int64("block", block.Height).Msg("fail to remove block status from data store, thus block will be re processed")
-			}
-
-			// Intentionally not covering this before the block is marked as
-			// success. This is because we don't care if keygen is successful
-			// or not.
-			b.logger.Debug().Int64("block", block.Height).Msg("processing keygen block")
-			if err := b.processKeygenBlock(block.Height); err != nil {
-				b.errCounter.WithLabelValues("fail_process_keygen", strconv.FormatInt(block.Height, 10))
-				b.logger.Error().Err(err).Int64("height", block.Height).Msg("fail to process keygen")
-			}
-		}
-	}
-}
-*/

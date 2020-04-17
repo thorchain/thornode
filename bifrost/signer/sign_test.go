@@ -327,17 +327,18 @@ func (s *SignSuite) TestProcess(c *C) {
 	c.Assert(err, IsNil)
 
 	sign := &Signer{
-		logger:          log.With().Str("module", "signer").Logger(),
-		cfg:             cfg,
-		wg:              &sync.WaitGroup{},
-		stopChan:        make(chan struct{}),
-		blockScanner:    blockScanner,
-		chains:          chains,
-		m:               s.m,
-		storage:         s.storage,
-		errCounter:      s.m.GetCounterVec(metrics.SignerError),
-		pubkeyMgr:       pubkeymanager.NewMockPoolAddressValidator(),
-		thorchainBridge: s.bridge,
+		logger:                log.With().Str("module", "signer").Logger(),
+		cfg:                   cfg,
+		wg:                    &sync.WaitGroup{},
+		stopChan:              make(chan struct{}),
+		blockScanner:          blockScanner,
+		thorchainBlockScanner: blockScan,
+		chains:                chains,
+		m:                     s.m,
+		storage:               s.storage,
+		errCounter:            s.m.GetCounterVec(metrics.SignerError),
+		pubkeyMgr:             pubkeymanager.NewMockPoolAddressValidator(),
+		thorchainBridge:       s.bridge,
 	}
 	c.Assert(sign, NotNil)
 	err = sign.Start()
