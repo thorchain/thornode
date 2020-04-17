@@ -4,7 +4,6 @@ import (
 	"encoding/base64"
 	"fmt"
 	"math/big"
-
 	"errors"
 
 	ctypes "github.com/binance-chain/go-sdk/common/types"

@@ -3,7 +3,6 @@ package blockscanner
 import (
 	"fmt"
 	"io"
-
 	"errors"
 
 	"github.com/syndtr/goleveldb/leveldb"

@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"sort"
-
 	"errors"
 
 	"github.com/rs/zerolog"

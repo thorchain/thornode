@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strconv"
 	"sync"
-
 	"errors"
 
 	"github.com/cosmos/cosmos-sdk/codec"

@@ -2,7 +2,6 @@ package thorchain
 
 import (
 	"fmt"
-
 	"errors"
 
 	"github.com/blang/semver"

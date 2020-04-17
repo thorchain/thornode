@@ -11,7 +11,6 @@ import (
 	"net/url"
 	"strconv"
 	"time"
-
 	"errors"
 
 	"github.com/binance-chain/go-sdk/common/types"

@@ -10,7 +10,6 @@ import (
 	"strings"
 	"sync"
 	"time"
-
 	"errors"
 
 	"github.com/prometheus/client_golang/prometheus"

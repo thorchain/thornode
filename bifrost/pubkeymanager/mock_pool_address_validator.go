@@ -3,7 +3,6 @@ package pubkeymanager
 import (
 	"fmt"
 	"strings"
-
 	"errors"
 
 	"gitlab.com/thorchain/thornode/common"
