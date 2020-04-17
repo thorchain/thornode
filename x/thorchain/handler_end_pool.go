@@ -1,8 +1,9 @@
 package thorchain
 
 import (
+	"fmt"
+
 	"github.com/blang/semver"
-	"github.com/pkg/errors"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
@@ -91,7 +92,7 @@ func (h EndPoolHandler) handleV1(ctx sdk.Context, msg MsgEndPool, version semver
 	pool, err := h.keeper.GetPool(ctx, msg.Asset)
 	pool.Status = PoolBootstrap
 	if err := h.keeper.SetPool(ctx, pool); err != nil {
-		err = errors.Wrap(err, "fail to set pool")
+		err = fmt.Errorf("fail to set pool: %w", err)
 		return sdk.ErrInternal(err.Error()).Result()
 	}
 	return sdk.Result{

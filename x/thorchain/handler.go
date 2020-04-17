@@ -3,8 +3,9 @@ package thorchain
 import (
 	"fmt"
 
+	"errors"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/pkg/errors"
 
 	"gitlab.com/thorchain/thornode/common"
 	"gitlab.com/thorchain/thornode/constants"
@@ -213,7 +214,7 @@ func getMsgSwapFromMemo(memo SwapMemo, tx ObservedTx, signer sdk.AccAddress) (sd
 
 	coin := tx.Tx.Coins[0]
 	if memo.Asset.Equals(coin.Asset) {
-		return nil, errors.Errorf("swap from %s to %s is noop, refund", memo.Asset.String(), coin.Asset.String())
+		return nil, fmt.Errorf("swap from %s to %s is noop, refund", memo.Asset.String(), coin.Asset.String())
 	}
 
 	// Looks like at the moment THORNode can only process ont ty

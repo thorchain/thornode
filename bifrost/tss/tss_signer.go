@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"math/big"
 
+	"errors"
+
 	ctypes "github.com/binance-chain/go-sdk/common/types"
 	"github.com/binance-chain/go-sdk/keys"
 	"github.com/binance-chain/go-sdk/types/tx"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/tendermint/btcd/btcec"
@@ -175,7 +176,7 @@ func (s *KeySign) toLocalTSSSigner(poolPubKey, sendmsg string, signerPubKeys com
 
 	keySignResp, err := s.server.KeySign(tssMsg)
 	if err != nil {
-		return "", "", errors.Wrapf(err, "fail to send request to local TSS node")
+		return "", "", fmt.Errorf("fail to send request to local TSS node: %w", err)
 	}
 
 	// 1 means success,2 means fail , 0 means NA

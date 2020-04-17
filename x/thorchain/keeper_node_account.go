@@ -1,12 +1,14 @@
 package thorchain
 
 import (
+	"fmt"
 	"sort"
 	"strings"
 
+	"errors"
+
 	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/pkg/errors"
 
 	"gitlab.com/thorchain/thornode/common"
 )
@@ -228,13 +230,13 @@ func (k KVStore) EnsureNodeKeysUnique(ctx sdk.Context, consensusPubKey string, p
 			return dbError(ctx, "", errors.New("Validator Consensus Key cannot be empty"))
 		}
 		if na.ValidatorConsPubKey == consensusPubKey {
-			return dbError(ctx, "", errors.Errorf("%s already exist", na.ValidatorConsPubKey))
+			return dbError(ctx, "", fmt.Errorf("%s already exist", na.ValidatorConsPubKey))
 		}
 		if pubKeys.Equals(common.EmptyPubKeySet) {
 			return dbError(ctx, "", errors.New("PubKeySet cannot be empty"))
 		}
 		if na.PubKeySet.Equals(pubKeys) {
-			return dbError(ctx, "", errors.Errorf("%s already exist", pubKeys))
+			return dbError(ctx, "", fmt.Errorf("%s already exist", pubKeys))
 		}
 	}
 

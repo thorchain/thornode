@@ -5,7 +5,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/pkg/errors"
+	"errors"
+
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"

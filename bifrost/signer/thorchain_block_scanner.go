@@ -5,8 +5,9 @@ import (
 	"strconv"
 	"sync"
 
+	"errors"
+
 	"github.com/cosmos/cosmos-sdk/codec"
-	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -46,7 +47,7 @@ func NewThorchainBlockScan(cfg config.BlockScannerConfiguration, scanStorage blo
 	}
 	commonBlockScanner, err := blockscanner.NewCommonBlockScanner(cfg, 0, scanStorage, m, blockscanner.CosmosSupplemental{})
 	if err != nil {
-		return nil, errors.Wrap(err, "fail to create txOut block scanner")
+		return nil, fmt.Errorf("fail to create txOut block scanner: %w", err)
 	}
 	return &ThorchainBlockScan{
 		logger:             log.With().Str("module", "thorchainblockscanner").Logger(),
@@ -110,7 +111,7 @@ func (b *ThorchainBlockScan) processTxOutBlock(blockHeight int64) error {
 				// available yet
 				return errors.New("")
 			}
-			return errors.Wrap(err, "fail to get keysign from block scanner")
+			return fmt.Errorf("fail to get keysign from block scanner: %w", err)
 		}
 
 		for c, out := range tx.Chains {

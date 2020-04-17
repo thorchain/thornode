@@ -7,7 +7,8 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/pkg/errors"
+	"errors"
+
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/syndtr/goleveldb/leveldb"
@@ -87,12 +88,12 @@ func NewSignerStore(levelDbFolder, passphrase string) (*SignerStore, error) {
 		storage := storage.NewMemStorage()
 		db, err = leveldb.Open(storage, nil)
 		if err != nil {
-			return nil, errors.Wrapf(err, "fail to in memory open level db")
+			return nil, fmt.Errorf("fail to in memory open level db: %w", err)
 		}
 	} else {
 		db, err = leveldb.OpenFile(levelDbFolder, nil)
 		if err != nil {
-			return nil, errors.Wrapf(err, "fail to open level db %s", levelDbFolder)
+			return nil, fmt.Errorf("fail to open level db %s: %w", levelDbFolder, err)
 		}
 	}
 	levelDbStorage, err := blockscanner.NewLevelDBScannerStorage(db)

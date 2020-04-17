@@ -11,7 +11,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/pkg/errors"
+	"errors"
+
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -201,7 +202,7 @@ func (b *CommonBlockScanner) getFromHttp(url, body string) ([]byte, error) {
 	req, err := http.NewRequest(http.MethodGet, url, strings.NewReader(body))
 	if err != nil {
 		b.errorCounter.WithLabelValues("fail_create_http_request", url).Inc()
-		return nil, errors.Wrap(err, "fail to create http request")
+		return nil, fmt.Errorf("fail to create http request: %w", err)
 	}
 	if len(body) > 0 {
 		req.Header.Add("Content-Type", "application/json")
@@ -209,7 +210,7 @@ func (b *CommonBlockScanner) getFromHttp(url, body string) ([]byte, error) {
 	resp, err := b.httpClient.Do(req)
 	if err != nil {
 		b.errorCounter.WithLabelValues("fail_send_http_request", url).Inc()
-		return nil, errors.Wrapf(err, "fail to get from %s ", url)
+		return nil, fmt.Errorf("fail to get from %s: %w", url, err)
 	}
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
@@ -219,7 +220,7 @@ func (b *CommonBlockScanner) getFromHttp(url, body string) ([]byte, error) {
 
 	if resp.StatusCode != http.StatusOK {
 		b.errorCounter.WithLabelValues("unexpected_status_code", resp.Status).Inc()
-		return nil, errors.Errorf("unexpected status code:%d from %s", resp.StatusCode, url)
+		return nil, fmt.Errorf("unexpected status code:%d from %s", resp.StatusCode, url)
 	}
 	buf, err := ioutil.ReadAll(resp.Body)
 	if err != nil {

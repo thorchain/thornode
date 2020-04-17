@@ -4,7 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/pkg/errors"
+	"errors"
+
 	"gitlab.com/thorchain/thornode/common"
 )
 

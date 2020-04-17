@@ -12,7 +12,6 @@ import (
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/rpcclient"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	tssp "gitlab.com/thorchain/tss/go-tss/tss"
@@ -49,20 +48,20 @@ func NewClient(thorKeys *thorclient.Keys, cfg config.ChainConfiguration, server 
 		HTTPPostMode: cfg.HTTPostMode,
 	}, nil)
 	if err != nil {
-		return nil, errors.Wrap(err, "fail to create bitcoin rpc client")
+		return nil, fmt.Errorf("fail to create bitcoin rpc client: %w", err)
 	}
 	tssKm, err := tss.NewKeySign(server)
 	if err != nil {
-		return nil, errors.Wrap(err, "fail to create tss signer")
+		return nil, fmt.Errorf("fail to create tss signer: %w", err)
 	}
 	thorPrivateKey, err := thorKeys.GetPrivateKey()
 	if err != nil {
-		return nil, errors.Wrap(err, "fail to get THORChain private key")
+		return nil, fmt.Errorf("fail to get THORChain private key: %w", err)
 	}
 
 	btcPrivateKey, err := getBTCPrivateKey(thorPrivateKey)
 	if err != nil {
-		return nil, errors.Wrap(err, "fail to convert private key for BTC")
+		return nil, fmt.Errorf("fail to convert private key for BTC: %w", err)
 	}
 	ksWrapper, err := NewKeySignWrapper(btcPrivateKey, bridge, tssKm)
 	if err != nil {
@@ -87,17 +86,17 @@ func NewClient(thorKeys *thorclient.Keys, cfg config.ChainConfiguration, server 
 	}
 	storage, err := blockscanner.NewBlockScannerStorage(path)
 	if err != nil {
-		return c, errors.Wrap(err, "fail to create blockscanner storage")
+		return c, fmt.Errorf("fail to create blockscanner storage: %w", err)
 	}
 
 	c.blockScanner, err = blockscanner.NewBlockScanner(c.cfg.BlockScanner, storage, m, bridge, c)
 	if err != nil {
-		return c, errors.Wrap(err, "fail to create block scanner")
+		return c, fmt.Errorf("fail to create block scanner: %w", err)
 	}
 
 	c.utxoAccessor, err = NewUTXOAccessor(pathUTXOAccessor)
 	if err != nil {
-		return c, errors.Wrap(err, "fail to create utxo accessor")
+		return c, fmt.Errorf("fail to create utxo accessor: %w", err)
 	}
 
 	return c, nil
@@ -177,11 +176,11 @@ func (c *Client) FetchTxs(height int64) (types.TxIn, error) {
 	block, err := c.getBlock(height)
 	if err != nil {
 		time.Sleep(300 * time.Millisecond)
-		return types.TxIn{}, errors.Wrap(err, "fail to get block")
+		return types.TxIn{}, fmt.Errorf("fail to get block: %w", err)
 	}
 	txs, err := c.extractTxs(block)
 	if err != nil {
-		return types.TxIn{}, errors.Wrap(err, "fail to extract txs from block")
+		return types.TxIn{}, fmt.Errorf("fail to extract txs from block: %w", err)
 	}
 	return txs, nil
 }
@@ -208,15 +207,15 @@ func (c *Client) extractTxs(block *btcjson.GetBlockVerboseTxResult) (types.TxIn,
 		}
 		sender, err := c.getSender(&tx)
 		if err != nil {
-			return types.TxIn{}, errors.Wrap(err, "fail to get sender from tx")
+			return types.TxIn{}, fmt.Errorf("fail to get sender from tx: %w", err)
 		}
 		memo, err := c.getMemo(&tx)
 		if err != nil {
-			return types.TxIn{}, errors.Wrap(err, "fail to get memo from tx")
+			return types.TxIn{}, fmt.Errorf("fail to get memo from tx: %w", err)
 		}
 		gas, err := c.getGas(&tx)
 		if err != nil {
-			return types.TxIn{}, errors.Wrap(err, "fail to get gas from tx")
+			return types.TxIn{}, fmt.Errorf("fail to get gas from tx: %w", err)
 		}
 		amount := uint64(tx.Vout[0].Value * common.One)
 		txItems = append(txItems, types.TxInItem{

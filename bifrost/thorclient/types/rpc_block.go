@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
-
-	"github.com/pkg/errors"
 )
 
 type RPCBlock struct {
@@ -36,7 +34,7 @@ func UnmarshalBlock(buf []byte) (string, []string, error) {
 	var block RPCBlock
 	err := json.Unmarshal(buf, &block)
 	if err != nil {
-		return "", nil, errors.Wrap(err, "fail to unmarshal body to RPCBlock")
+		return "", nil, fmt.Errorf("fail to unmarshal body to RPCBlock: %w", err)
 	}
 	return block.Result.Block.Header.Height, block.Result.Block.Data.Txs, nil
 }

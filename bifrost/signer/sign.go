@@ -1,6 +1,7 @@
 package signer
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -9,7 +10,6 @@ import (
 
 	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -57,7 +57,7 @@ func NewSigner(cfg config.SignerConfiguration,
 	m *metrics.Metrics) (*Signer, error) {
 	storage, err := NewSignerStore(cfg.SignerDbPath, thorchainBridge.GetConfig().SignerPasswd)
 	if err != nil {
-		return nil, errors.Wrap(err, "fail to create thorchain scan storage")
+		return nil, fmt.Errorf("fail to create thorchain scan storage: %w", err)
 	}
 
 	var na *ttypes.NodeAccount
@@ -85,7 +85,7 @@ func NewSigner(cfg config.SignerConfiguration,
 	// Create pubkey manager and add our private key (Yggdrasil pubkey)
 	thorchainBlockScanner, err := NewThorchainBlockScan(cfg.BlockScanner, storage, thorchainBridge, m, pubkeyMgr)
 	if err != nil {
-		return nil, errors.Wrap(err, "fail to create thorchain block scan")
+		return nil, fmt.Errorf("fail to create thorchain block scan: %w", err)
 	}
 
 	kg, err := tss.NewTssKeyGen(thorKeys, tssServer)
@@ -287,12 +287,12 @@ func (s *Signer) sendKeygenToThorchain(height int64, poolPk common.PubKey, blame
 	strHeight := strconv.FormatInt(height, 10)
 	if err != nil {
 		s.errCounter.WithLabelValues("fail_to_sign", strHeight).Inc()
-		return errors.Wrap(err, "fail to sign the tx")
+		return fmt.Errorf("fail to sign the tx: %w", err)
 	}
 	txID, err := s.thorchainBridge.Broadcast(*stdTx, types.TxSync)
 	if err != nil {
 		s.errCounter.WithLabelValues("fail_to_send_to_thorchain", strHeight).Inc()
-		return errors.Wrap(err, "fail to send the tx to thorchain")
+		return fmt.Errorf("fail to send the tx to thorchain: %w", err)
 	}
 	s.logger.Info().Int64("block", height).Str("thorchain hash", txID.String()).Msg("sign and send to thorchain successfully")
 	return nil

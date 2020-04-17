@@ -1,8 +1,10 @@
 package thorchain
 
 import (
+	"errors"
+	"fmt"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/pkg/errors"
 	. "gopkg.in/check.v1"
 
 	"gitlab.com/thorchain/thornode/common"
@@ -91,7 +93,7 @@ func (s UnstakeSuite) TestCalculateUnsake(c *C) {
 			expectedUnstakeRune:  sdk.ZeroUint(),
 			expectedUnstakeAsset: sdk.ZeroUint(),
 			expectedUnitLeft:     sdk.ZeroUint(),
-			expectedErr:          errors.Errorf("withdraw basis point %s is not valid", sdk.NewUint(12000)),
+			expectedErr:          fmt.Errorf("withdraw basis point %s is not valid", sdk.NewUint(12000)),
 		},
 		{
 			name:                 "unstake-1",
