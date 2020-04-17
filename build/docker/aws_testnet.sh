@@ -19,7 +19,7 @@ export FUND_MEMO="fund-bond-wallet"
 export TENDERMINT_NODE="testnet-binance.thorchain.info:26657"
 export CHAIN_ID=Binance-Chain-Nile
 export SIGNER_NAME=thorchain
-export BOND_AMOUNT=200000000:RUNE-A1F
+export BOND_AMOUNT=100000000:RUNE-A1F
 export GAS_FEE=75001
 export DISK_SIZE=${DISK_SIZE:=100}
 export AWS_INSTANCE_TYPE=${AWS_INSTANCE_TYPE:=c5.xlarge}
