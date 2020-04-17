@@ -7,6 +7,7 @@ services:
       CHAIN_API: localhost:1317
       CHAIN_RPC: localhost:26657
       BINANCE_HOST: ${BINANCE_HOST:-http://localhost:26660}
+      BTC_HOST: ${BTC_HOST:-localhost:18443}
       TSS_HOST: localhost
   thor-daemon:
     network_mode: "host"

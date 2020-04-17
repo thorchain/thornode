@@ -9,10 +9,12 @@ import (
 type ChainNetwork uint8
 
 const (
-	// TestNetwork for test
+	// TestNet network for test
 	TestNet ChainNetwork = iota
-	// ProdNetwork for main net
+	// MainNet network for main net
 	MainNet
+	// MockNet network for main net
+	MockNet
 )
 
 // GetCurrentChainNetwork determinate what kind of network currently it is working with
