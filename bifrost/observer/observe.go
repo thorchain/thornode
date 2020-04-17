@@ -1,10 +1,10 @@
 package observer
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
-	"errors"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/rs/zerolog"

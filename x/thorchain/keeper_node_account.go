@@ -1,10 +1,10 @@
 package thorchain
 
 import (
+	"errors"
 	"fmt"
 	"sort"
 	"strings"
-	"errors"
 
 	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"

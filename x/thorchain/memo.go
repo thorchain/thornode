@@ -1,10 +1,10 @@
 package thorchain
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
-	"errors"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 

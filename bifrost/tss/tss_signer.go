@@ -2,9 +2,9 @@ package tss
 
 import (
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"math/big"
-	"errors"
 
 	ctypes "github.com/binance-chain/go-sdk/common/types"
 	"github.com/binance-chain/go-sdk/keys"

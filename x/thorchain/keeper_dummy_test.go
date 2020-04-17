@@ -1,8 +1,8 @@
 package thorchain
 
 import (
-	"fmt"
 	"errors"
+	"fmt"
 
 	"github.com/blang/semver"
 	"github.com/cosmos/cosmos-sdk/codec"

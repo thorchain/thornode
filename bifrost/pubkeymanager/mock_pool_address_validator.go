@@ -1,9 +1,9 @@
 package pubkeymanager
 
 import (
+	"errors"
 	"fmt"
 	"strings"
-	"errors"
 
 	"gitlab.com/thorchain/thornode/common"
 )

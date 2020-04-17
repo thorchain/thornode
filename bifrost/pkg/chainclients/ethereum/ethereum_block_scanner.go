@@ -3,6 +3,7 @@ package ethereum
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"math/big"
@@ -10,7 +11,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-	"errors"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	etypes "github.com/ethereum/go-ethereum/core/types"

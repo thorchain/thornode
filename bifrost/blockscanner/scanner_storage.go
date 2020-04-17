@@ -1,9 +1,9 @@
 package blockscanner
 
 import (
+	"errors"
 	"fmt"
 	"io"
-	"errors"
 
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/storage"

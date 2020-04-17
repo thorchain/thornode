@@ -2,8 +2,8 @@ package thorchain
 
 import (
 	"encoding/json"
-	"fmt"
 	"errors"
+	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 

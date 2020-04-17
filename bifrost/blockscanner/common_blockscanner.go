@@ -2,6 +2,7 @@ package blockscanner
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -10,7 +11,6 @@ import (
 	"strings"
 	"sync"
 	"time"
-	"errors"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/rs/zerolog"

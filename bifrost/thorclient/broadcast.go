@@ -3,10 +3,10 @@ package thorclient
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"sync/atomic"
 	"time"
-	"errors"
 
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 

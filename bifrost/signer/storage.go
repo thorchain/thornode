@@ -4,9 +4,9 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"sort"
-	"errors"
 
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"

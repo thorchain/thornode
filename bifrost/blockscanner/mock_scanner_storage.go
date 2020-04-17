@@ -3,9 +3,9 @@ package blockscanner
 import (
 	"encoding/binary"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"sync"
-	"errors"
 )
 
 const MockErrorBlockHeight = 1024

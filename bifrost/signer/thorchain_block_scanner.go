@@ -1,10 +1,10 @@
 package signer
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 	"sync"
-	"errors"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/prometheus/client_golang/prometheus"
