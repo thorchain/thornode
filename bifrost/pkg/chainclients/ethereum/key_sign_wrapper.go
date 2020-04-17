@@ -18,7 +18,7 @@ import (
 )
 
 var (
-	vArray    = []byte{0x02, 0x05}
+	vByte     = byte(0x25)
 	eipSigner = etypes.NewEIP155Signer(big.NewInt(1))
 )
 
@@ -38,6 +38,14 @@ type KeySignWrapper struct {
 	logger        zerolog.Logger
 }
 
+func (w *KeySignWrapper) GetPrivKey() *ecdsa.PrivateKey {
+	return w.privKey
+}
+
+func (w *KeySignWrapper) GetPubKey() common.PubKey {
+	return w.pubKey
+}
+
 func (w *KeySignWrapper) Sign(tx *etypes.Transaction, poolPubKey common.PubKey, signerPubKeys common.PubKeys) ([]byte, error) {
 	var err error
 	sig := make([]byte, 0)
@@ -45,11 +53,13 @@ func (w *KeySignWrapper) Sign(tx *etypes.Transaction, poolPubKey common.PubKey, 
 		sig, err = w.sign(tx)
 	} else {
 		sig, err = w.multiSig(tx, poolPubKey.String(), signerPubKeys)
+		if sig != nil {
+			sig = append(sig, vByte)
+		}
 	}
 	if err != nil {
 		return nil, err
 	}
-	sig = append(sig, vArray...)
 	newTx, err := tx.WithSignature(eipSigner, sig)
 	if err != nil {
 		return nil, err
