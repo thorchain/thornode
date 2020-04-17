@@ -42,7 +42,7 @@ require (
 	github.com/tendermint/tendermint v0.32.9
 	github.com/tendermint/tm-db v0.2.0
 	github.com/zondax/ledger-go v0.11.0 // indirect
-	gitlab.com/thorchain/tss/go-tss v0.0.0-20200415203509-b4003b73c39a
+	gitlab.com/thorchain/tss/go-tss v0.0.0-20200417204539-1af5be2c05a1
 	gitlab.com/thorchain/txscript v0.0.0-20200413023754-8aaf3443d92b
 	go.uber.org/multierr v1.5.0 // indirect
 	golang.org/x/crypto v0.0.0-20200414173820-0848c9571904 // indirect
