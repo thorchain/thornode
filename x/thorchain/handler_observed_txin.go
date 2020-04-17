@@ -122,6 +122,7 @@ func (h ObservedTxInHandler) handleV1(ctx sdk.Context, version semver.Version, m
 	handler := NewHandler(h.keeper, h.versionedTxOutStore, h.validatorMgr, h.versionedVaultManager, h.versionedObserverManager, h.versionedGasMgr)
 
 	for _, tx := range msg.Txs {
+
 		// check we are sending to a valid vault
 		if !h.keeper.VaultExists(ctx, tx.ObservedPubKey) {
 			ctx.Logger().Info("Not valid Observed Pubkey", tx.ObservedPubKey)
@@ -142,11 +143,9 @@ func (h ObservedTxInHandler) handleV1(ctx sdk.Context, version semver.Version, m
 			}
 			continue
 		}
-		tx.Tx.Memo = fetchMemo(ctx, constAccessor, h.keeper, tx.Tx)
 		ctx.Logger().Info("handleMsgObservedTxIn request", "Tx:", tx.String())
 
 		txIn := voter.GetTx(activeNodeAccounts)
-		txIn.Tx.Memo = tx.Tx.Memo
 		vault, err := h.keeper.GetVault(ctx, tx.ObservedPubKey)
 		if err != nil {
 			ctx.Logger().Error("fail to get vault", "error", err)
