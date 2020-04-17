@@ -24,6 +24,7 @@ apt-get install -y \
     python3-pip
 
 systemctl enable cron # enable cron
+systemctl enable docker # enable docker at boot
 
 echo "install aws cli"
 export LC_ALL=C
@@ -110,16 +111,6 @@ echo "Checking to see if its time to self destruct..."
 NODE_ACCOUNT=\$(docker exec thor-daemon thorcli keys show thorchain -a)
 node_status=\$(curl -s localhost:1317/thorchain/nodeaccount/\$NODE_ACCOUNT | jq -r '.status')
 bond=\$(curl -s localhost:1317/thorchain/nodeaccount/\$NODE_ACCOUNT | jq -r '.bond')
-
-if [ "\$node_status" = "null" ]; then
-    echo "unable to get node status... exiting"
-    exit 1
-fi
-
-if [ "\$bond" = "null" ]; then
-    echo "unable to get node bond... exiting"
-    exit 1
-fi
 
 if [ "\$node_status" = "active" ]; then
     echo "node is still active... exiting"
