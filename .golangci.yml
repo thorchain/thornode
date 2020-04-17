@@ -1,7 +1,6 @@
 linters:
   disable-all: true
   enable:
-    - unused
     - deadcode
     - errcheck
     - golint
