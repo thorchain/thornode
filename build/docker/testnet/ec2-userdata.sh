@@ -66,7 +66,6 @@ cat <<EOF > /opt/${THORNODE_ENV}/standalone-bootstrap
 
 start_stack () {
     cd $GIT_PATH/build/docker
-    docker pull registry.gitlab.com/thorchain/thornode:${THORNODE_ENV}
     export TAG=${THORNODE_ENV} && \
     export SIGNER_PASSWD=${THORNODE_PASSWD} && \
     export BINANCE_HOST="http://testnet-binance.thorchain.info:26657" && \

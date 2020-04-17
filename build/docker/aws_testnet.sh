@@ -93,9 +93,8 @@ create_server() {
 
 start_the_stack () {
     echo "waiting for server to be ready"
-    sleep 30
+    sleep 60 # give setup script enough time install required packages
     eval $(docker-machine env ${DOCKER_SERVER} --shell bash)
-    docker-machine ssh ${DOCKER_SERVER} sudo bash apt-get install -y make jq
     docker-machine ssh ${DOCKER_SERVER} sudo bash $BOOTSTRAP
 }
 
