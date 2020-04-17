@@ -91,7 +91,9 @@ func (b *ThorchainBlockScan) processKeygenBlock(blockHeight int64) error {
 		return btypes.UnavailableBlock
 	}
 
-	b.keygenChan <- keygen
+	if len(keygen.Keygens) > 0 {
+		b.keygenChan <- keygen
+	}
 	return nil
 }
 
@@ -102,7 +104,7 @@ func (b *ThorchainBlockScan) processTxOutBlock(blockHeight int64) error {
 		}
 		tx, err := b.thorchain.GetKeysign(blockHeight, pk.String())
 		if err != nil {
-			if errors.Is(err, thorclient.ErrNotFound) {
+			if errors.Is(err, btypes.UnavailableBlock) {
 				// custom error (to be dropped and not logged) because the block is
 				// available yet
 				return btypes.UnavailableBlock
