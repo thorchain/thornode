@@ -104,7 +104,7 @@ func (b *BlockScanner) scanBlocks() {
 			txIn, err := b.chainScanner.FetchTxs(currentBlock)
 			if err != nil {
 				// don't log an error if its because the block doesn't exist yet
-				if err != btypes.UnavailableBlock {
+				if errors.Is(err,btypes.UnavailableBlock) {
 					b.errorCounter.WithLabelValues("fail_get_block", "").Inc()
 					b.logger.Error().Err(err).Msg("fail to get RPCBlock")
 				}
