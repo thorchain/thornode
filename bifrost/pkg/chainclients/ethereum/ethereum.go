@@ -25,15 +25,14 @@ import (
 
 // Client is a structure to sign and broadcast tx to Ethereum chain used by signer mostly
 type Client struct {
-	logger             zerolog.Logger
-	cfg                config.ChainConfiguration
-	chainID            types.ChainID
-	isTestNet          bool
-	pk                 common.PubKey
-	client             *ethclient.Client
-	currentBlockHeight int64
-	thorchainBridge    *thorclient.ThorchainBridge
-	blockScanner       *blockscanner.BlockScanner
+	logger          zerolog.Logger
+	cfg             config.ChainConfiguration
+	chainID         types.ChainID
+	isTestNet       bool
+	pk              common.PubKey
+	client          *ethclient.Client
+	thorchainBridge *thorclient.ThorchainBridge
+	blockScanner    *blockscanner.BlockScanner
 }
 
 // NewClient create new instance of Ethereum client

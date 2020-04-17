@@ -21,6 +21,11 @@ type BlockScannerFetcher interface {
 	FetchTxs(height int64) (types.TxIn, error)
 }
 
+type Block struct {
+	Height int64
+	Txs    []string
+}
+
 // BlockScanner is used to discover block height
 type BlockScanner struct {
 	cfg             config.BlockScannerConfiguration
