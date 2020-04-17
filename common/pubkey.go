@@ -122,10 +122,12 @@ func (pubKey PubKey) GetAddress(chain Chain) (Address, error) {
 		}
 		var net *chaincfg.Params
 		switch chainNetwork {
-		case MainNet:
-			net = &chaincfg.MainNetParams
+		case MockNet:
+			net = &chaincfg.RegressionNetParams
 		case TestNet:
 			net = &chaincfg.TestNet3Params
+		case MainNet:
+			net = &chaincfg.MainNetParams
 		}
 		addr, err := btcutil.NewAddressWitnessPubKeyHash(pk.Address().Bytes(), net)
 		if err != nil {

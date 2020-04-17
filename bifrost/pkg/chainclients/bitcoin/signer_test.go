@@ -100,7 +100,7 @@ func (s *BitcoinSignerSuite) SetUpTest(c *C) {
 		}
 	}))
 
-	s.cfg.ChainHost = s.server.Listener.Addr().String()
+	s.cfg.RPCHost = s.server.Listener.Addr().String()
 	cfg.ChainHost = s.server.Listener.Addr().String()
 	s.bridge, err = thorclient.NewThorchainBridge(cfg, s.m)
 	c.Assert(err, IsNil)

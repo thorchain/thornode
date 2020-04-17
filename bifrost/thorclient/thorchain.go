@@ -2,6 +2,7 @@ package thorclient
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -14,7 +15,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/hashicorp/go-retryablehttp"
-	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -112,7 +112,7 @@ func (b *ThorchainBridge) get(url string) ([]byte, int, error) {
 	resp, err := b.httpClient.Get(url)
 	if err != nil {
 		b.errCounter.WithLabelValues("fail_get_from_thorchain", "").Inc()
-		return nil, http.StatusNotFound, errors.Wrap(err, "failed to GET from thorchain")
+		return nil, http.StatusNotFound, fmt.Errorf("failed to GET from thorchain: %w", err)
 	}
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
@@ -125,7 +125,7 @@ func (b *ThorchainBridge) get(url string) ([]byte, int, error) {
 	buf, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		b.errCounter.WithLabelValues("fail_read_thorchain_resp", "").Inc()
-		return nil, resp.StatusCode, errors.Wrap(err, "failed to read response body")
+		return nil, resp.StatusCode, fmt.Errorf("failed to read response body: %w", err)
 	}
 	return buf, resp.StatusCode, nil
 }
@@ -135,7 +135,7 @@ func (b *ThorchainBridge) post(path string, bodyType string, body interface{}) (
 	resp, err := b.httpClient.Post(b.getThorChainURL(path), bodyType, body)
 	if err != nil {
 		b.errCounter.WithLabelValues("fail_post_to_thorchain", "").Inc()
-		return nil, errors.Wrap(err, "failed to POST to thorchain")
+		return nil, fmt.Errorf("failed to POST to thorchain: %w", err)
 	}
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
@@ -148,7 +148,7 @@ func (b *ThorchainBridge) post(path string, bodyType string, body interface{}) (
 	buf, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		b.errCounter.WithLabelValues("fail_read_thorchain_resp", "").Inc()
-		return nil, errors.Wrap(err, "failed to read response body")
+		return nil, fmt.Errorf("failed to read response body: %w", err)
 	}
 	return buf, nil
 }
@@ -169,23 +169,23 @@ func (b *ThorchainBridge) getAccountNumberAndSequenceNumber() (uint64, uint64, e
 
 	body, _, err := b.getWithPath(path)
 	if err != nil {
-		return 0, 0, errors.Wrap(err, "failed to get auth accounts")
+		return 0, 0, fmt.Errorf("failed to get auth accounts: %w", err)
 	}
 
 	var resp types.AccountResp
 	if err := json.Unmarshal(body, &resp); err != nil {
-		return 0, 0, errors.Wrap(err, "failed to unmarshal account resp")
+		return 0, 0, fmt.Errorf("failed to unmarshal account resp: %w", err)
 	}
 	acc := resp.Result.Value
 
 	accNum, err := strconv.ParseUint(acc.AccountNumber, 10, 64)
 	if err != nil {
-		return 0, 0, errors.Wrap(err, fmt.Sprintf("failed to parse account number (%s)", acc.AccountNumber))
+		return 0, 0, fmt.Errorf("failed to parse account number %s: %w", acc.AccountNumber, err)
 	}
 
 	seq, err := strconv.ParseUint(acc.Sequence, 10, 64)
 	if err != nil {
-		return 0, 0, errors.Wrap(err, fmt.Sprintf("failed to parse sequence number (%s)", acc.Sequence))
+		return 0, 0, fmt.Errorf("failed to parse sequence number %s: %w", acc.Sequence, err)
 	}
 
 	return accNum, seq, nil
@@ -307,10 +307,10 @@ func (b *ThorchainBridge) EnsureNodeWhitelisted() error {
 	}
 	na, err := b.GetNodeAccount(bepAddr)
 	if err != nil {
-		return errors.Wrap(err, "failed to get node account")
+		return fmt.Errorf("failed to get node account: %w", err)
 	}
 	if na.Status == stypes.Disabled || na.Status == stypes.Unknown {
-		return errors.Errorf("node account status %s , will not be able to forward transaction to thorchain", na.Status)
+		return fmt.Errorf("node account status %s , will not be able to forward transaction to thorchain", na.Status)
 	}
 	return nil
 }
@@ -340,7 +340,7 @@ func (b *ThorchainBridge) IsCatchingUp() (bool, error) {
 
 	body, _, err := b.get(uri.String())
 	if err != nil {
-		return false, errors.Wrap(err, "failed to get status data")
+		return false, fmt.Errorf("failed to get status data: %w", err)
 	}
 
 	var resp struct {
@@ -352,7 +352,7 @@ func (b *ThorchainBridge) IsCatchingUp() (bool, error) {
 	}
 
 	if err := json.Unmarshal(body, &resp); err != nil {
-		return false, errors.Wrap(err, "failed to unmarshal tendermint status")
+		return false, fmt.Errorf("failed to unmarshal tendermint status: %w", err)
 	}
 	return resp.Result.SyncInfo.CatchingUp, nil
 }

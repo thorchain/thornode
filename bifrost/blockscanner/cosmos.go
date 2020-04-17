@@ -7,8 +7,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
-
-	"github.com/pkg/errors"
 )
 
 type itemData struct {
@@ -57,7 +55,7 @@ func (cosmos CosmosSupplemental) UnmarshalBlock(buf []byte) ([]string, error) {
 	var block item
 	err := json.Unmarshal(buf, &block)
 	if err != nil {
-		return nil, errors.Wrap(err, "fail to unmarshal body to RPCBlock")
+		return nil, fmt.Errorf("fail to unmarshal body to RPCBlock: %w", err)
 	}
 
 	return block.Result.Block.Data.Txs, nil

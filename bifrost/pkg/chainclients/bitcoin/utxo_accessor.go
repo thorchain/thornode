@@ -1,7 +1,9 @@
 package bitcoin
 
 import (
-	"github.com/pkg/errors"
+	"errors"
+	"fmt"
+
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/storage"
 )
@@ -28,12 +30,12 @@ func NewUTXOAccessor(levelDbFolder string) (*UTXOAccessor, error) {
 		storage := storage.NewMemStorage()
 		db, err = leveldb.Open(storage, nil)
 		if err != nil {
-			return nil, errors.Wrapf(err, "fail to in memory open level db")
+			return nil, fmt.Errorf("fail to in memory open level db: %w", err)
 		}
 	} else {
 		db, err = leveldb.OpenFile(levelDbFolder, nil)
 		if err != nil {
-			return nil, errors.Wrapf(err, "fail to open level db %s", levelDbFolder)
+			return nil, fmt.Errorf("fail to open level db %s: %w", levelDbFolder, err)
 		}
 	}
 	levelDbUTXO, err := NewLevelDBUTXOAccessor(db)

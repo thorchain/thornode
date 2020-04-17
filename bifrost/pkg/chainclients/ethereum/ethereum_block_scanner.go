@@ -3,6 +3,7 @@ package ethereum
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"math/big"
@@ -14,7 +15,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	etypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -87,7 +87,7 @@ func (e *BlockScanner) processBlock(block blockscanner.Block) (stypes.TxIn, erro
 	strBlock := strconv.FormatInt(block.Height, 10)
 	if err = e.db.SetBlockScanStatus(block, blockscanner.Processing); err != nil {
 		e.errCounter.WithLabelValues("fail_set_block_status", strBlock).Inc()
-		return noTx, errors.Wrapf(err, "fail to set block scan status for block %d", block.Height)
+		return noTx, fmt.Errorf("fail to set block scan status for block %d: %w", block.Height, err)
 	}
 
 	e.logger.Debug().Int64("block", block.Height).Int("txs", len(block.Txs)).Msg("txs")
@@ -111,7 +111,7 @@ func (e *BlockScanner) processBlock(block blockscanner.Block) (stypes.TxIn, erro
 		if err != nil {
 			e.errCounter.WithLabelValues("fail_get_tx_hash", strBlock).Inc()
 			e.logger.Error().Err(err).Str("tx", txn).Msg("fail to get tx hash from raw data")
-			return noTx, errors.Wrap(err, "fail to get tx hash from tx raw data")
+			return noTx, fmt.Errorf("fail to get tx hash from tx raw data: %w", err)
 		}
 
 		txItemIn, err := e.fromTxToTxIn(txn)
@@ -120,7 +120,7 @@ func (e *BlockScanner) processBlock(block blockscanner.Block) (stypes.TxIn, erro
 			e.logger.Error().Err(err).Str("hash", hash).Msg("fail to get one tx from server")
 			// if THORNode fail to get one tx hash from server, then THORNode should bail, because THORNode might miss tx
 			// if THORNode bail here, then THORNode should retry later
-			return noTx, errors.Wrap(err, "fail to get one tx from server")
+			return noTx, fmt.Errorf("fail to get one tx from server: %w", err)
 		}
 		if txItemIn != nil {
 			txIn.TxArray = append(txIn.TxArray, *txItemIn)
@@ -172,7 +172,7 @@ func (e *BlockScanner) getFromHttp(url, body string) ([]byte, error) {
 	req, err := http.NewRequest(http.MethodGet, url, strings.NewReader(body))
 	if err != nil {
 		e.errCounter.WithLabelValues("fail_create_http_request", url).Inc()
-		return nil, errors.Wrap(err, "fail to create http request")
+		return nil, fmt.Errorf("fail to create http request: %w", err)
 	}
 	if len(body) > 0 {
 		req.Header.Add("Content-Type", "application/json")
@@ -180,7 +180,7 @@ func (e *BlockScanner) getFromHttp(url, body string) ([]byte, error) {
 	resp, err := e.httpClient.Do(req)
 	if err != nil {
 		e.errCounter.WithLabelValues("fail_send_http_request", url).Inc()
-		return nil, errors.Wrapf(err, "fail to get from %s ", url)
+		return nil, fmt.Errorf("fail to get from %s: %w", url, err)
 	}
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
@@ -190,7 +190,7 @@ func (e *BlockScanner) getFromHttp(url, body string) ([]byte, error) {
 
 	if resp.StatusCode != http.StatusOK {
 		e.errCounter.WithLabelValues("unexpected_status_code", resp.Status).Inc()
-		return nil, errors.Errorf("unexpected status code:%d from %s", resp.StatusCode, url)
+		return nil, fmt.Errorf("unexpected status code:%d from %s", resp.StatusCode, url)
 	}
 	return ioutil.ReadAll(resp.Body)
 }
@@ -246,7 +246,7 @@ func (e *BlockScanner) UnmarshalBlock(buf []byte) ([]string, error) {
 	for _, tx := range body.Transactions {
 		bytes, err := tx.Transaction.MarshalJSON()
 		if err != nil {
-			return nil, errors.Wrap(err, "fail to unmarshal tx from block")
+			return nil, fmt.Errorf("fail to unmarshal tx from block: %w", err)
 		}
 		txs = append(txs, string(bytes))
 	}
@@ -281,7 +281,7 @@ func (e *BlockScanner) fromTxToTxIn(encodedTx string) (*stypes.TxInItem, error) 
 	asset, err := common.NewAsset("ETH.ETH")
 	if err != nil {
 		e.errCounter.WithLabelValues("fail_create_ticker", "ETH").Inc()
-		return nil, errors.Wrap(err, "fail to create asset, ETH is not valid")
+		return nil, fmt.Errorf("fail to create asset, ETH is not valid: %w", err)
 	}
 	txInItem.Coins = append(txInItem.Coins, common.NewCoin(asset, sdk.NewUint(tx.Value().Uint64())))
 	txInItem.Gas = common.GetETHGasFee(e.gasPrice)

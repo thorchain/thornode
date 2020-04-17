@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -16,7 +17,6 @@ import (
 	bmsg "github.com/binance-chain/go-sdk/types/msg"
 	"github.com/binance-chain/go-sdk/types/tx"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -76,7 +76,7 @@ func (b *BinanceBlockScanner) getTxHash(encodedTx string) (string, error) {
 	decodedTx, err := base64.StdEncoding.DecodeString(encodedTx)
 	if err != nil {
 		b.errCounter.WithLabelValues("fail_decode_tx", encodedTx).Inc()
-		return "", errors.Wrap(err, "fail to decode tx")
+		return "", fmt.Errorf("fail to decode tx: %w", err)
 	}
 	return fmt.Sprintf("%X", sha256.Sum256(decodedTx)), nil
 }
@@ -139,7 +139,7 @@ func (b *BinanceBlockScanner) processBlock(block blockscanner.Block) (stypes.TxI
 	strBlock := strconv.FormatInt(block.Height, 10)
 	if err := b.db.SetBlockScanStatus(block, blockscanner.Processing); err != nil {
 		b.errCounter.WithLabelValues("fail_set_block_status", strBlock).Inc()
-		return txIn, errors.Wrapf(err, "fail to set block scan status for block %d", block.Height)
+		return txIn, fmt.Errorf("fail to set block scan status for block %d: %w", block.Height, err)
 	}
 
 	b.logger.Debug().Int64("block", block.Height).Int("txs", len(block.Txs)).Msg("txs")
@@ -160,7 +160,7 @@ func (b *BinanceBlockScanner) processBlock(block blockscanner.Block) (stypes.TxI
 		if err != nil {
 			b.errCounter.WithLabelValues("fail_get_tx_hash", strBlock).Inc()
 			b.logger.Error().Err(err).Str("tx", txn).Msg("fail to get tx hash from raw data")
-			return txIn, errors.Wrap(err, "fail to get tx hash from tx raw data")
+			return txIn, fmt.Errorf("fail to get tx hash from tx raw data: %w", err)
 		}
 
 		txItemIns, err := b.fromTxToTxIn(hash, txn)
@@ -169,7 +169,7 @@ func (b *BinanceBlockScanner) processBlock(block blockscanner.Block) (stypes.TxI
 			b.logger.Error().Err(err).Str("hash", hash).Msg("fail to get one tx from server")
 			// if THORNode fail to get one tx hash from server, then THORNode should bail, because THORNode might miss tx
 			// if THORNode bail here, then THORNode should retry later
-			return txIn, errors.Wrap(err, "fail to get one tx from server")
+			return txIn, fmt.Errorf("fail to get one tx from server: %w", err)
 		}
 		if len(txItemIns) > 0 {
 			txIn.TxArray = append(txIn.TxArray, txItemIns...)
@@ -193,12 +193,12 @@ func (b *BinanceBlockScanner) getFromHttp(url string) ([]byte, error) {
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		b.errCounter.WithLabelValues("fail_create_http_request", url).Inc()
-		return nil, errors.Wrap(err, "fail to create http request")
+		return nil, fmt.Errorf("fail to create http request: %w", err)
 	}
 	resp, err := b.http.Do(req)
 	if err != nil {
 		b.errCounter.WithLabelValues("fail_send_http_request", url).Inc()
-		return nil, errors.Wrapf(err, "fail to get from %s ", url)
+		return nil, fmt.Errorf("fail to get from %s: %w", url, err)
 	}
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
@@ -208,7 +208,7 @@ func (b *BinanceBlockScanner) getFromHttp(url string) ([]byte, error) {
 
 	if resp.StatusCode != http.StatusOK {
 		b.errCounter.WithLabelValues("unexpected_status_code", resp.Status).Inc()
-		return nil, errors.Errorf("unexpected status code:%d from %s", resp.StatusCode, url)
+		return nil, fmt.Errorf("unexpected status code:%d from %s", resp.StatusCode, url)
 	}
 	buf, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
@@ -282,7 +282,7 @@ func (b *BinanceBlockScanner) UnmarshalBlock(buf []byte) ([]string, error) {
 	var block btypes.BlockResult
 	err := json.Unmarshal(buf, &block)
 	if err != nil {
-		return nil, errors.Wrap(err, "fail to unmarshal body to rpcBlock")
+		return nil, fmt.Errorf("fail to unmarshal body to rpcBlock: %w", err)
 	}
 
 	return block.Result.Block.Data.Txs, nil
@@ -322,7 +322,7 @@ func (b *BinanceBlockScanner) getCoinsForTxIn(outputs []bmsg.Output) (common.Coi
 			asset, err := common.NewAsset(fmt.Sprintf("BNB.%s", c.Denom))
 			if err != nil {
 				b.errCounter.WithLabelValues("fail_create_ticker", c.Denom).Inc()
-				return nil, errors.Wrapf(err, "fail to create asset, %s is not valid", c.Denom)
+				return nil, fmt.Errorf("fail to create asset, %s is not valid: %w", c.Denom, err)
 			}
 			amt := sdk.NewUint(uint64(c.Amount))
 			cc = append(cc, common.NewCoin(asset, amt))
@@ -338,12 +338,12 @@ func (b *BinanceBlockScanner) fromTxToTxIn(hash, encodedTx string) ([]stypes.TxI
 	buf, err := base64.StdEncoding.DecodeString(encodedTx)
 	if err != nil {
 		b.errCounter.WithLabelValues("fail_decode_tx", hash).Inc()
-		return nil, errors.Wrap(err, "fail to decode tx")
+		return nil, fmt.Errorf("fail to decode tx: %w", err)
 	}
 	var t tx.StdTx
 	if err := tx.Cdc.UnmarshalBinaryLengthPrefixed(buf, &t); err != nil {
 		b.errCounter.WithLabelValues("fail_unmarshal_tx", hash).Inc()
-		return nil, errors.Wrap(err, "fail to unmarshal tx.StdTx")
+		return nil, fmt.Errorf("fail to unmarshal tx.StdTx: %w", err)
 	}
 
 	return b.fromStdTx(hash, t)
@@ -371,7 +371,7 @@ func (b *BinanceBlockScanner) fromStdTx(hash string, stdTx tx.StdTx) ([]stypes.T
 			txInItem.To = receiver.Address.String()
 			txInItem.Coins, err = b.getCoinsForTxIn(sendMsg.Outputs)
 			if err != nil {
-				return nil, errors.Wrap(err, "fail to convert coins")
+				return nil, fmt.Errorf("fail to convert coins: %w", err)
 			}
 
 			// Calculate gas for this tx
