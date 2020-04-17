@@ -21,8 +21,9 @@ Binance themselves provide documentation. Please follow their
 Alternatively, you can use a pre made [docker
 image](https://github.com/varnav/binance-node-docker) to simplfy it. 
 
-We've provided a ready to use command to start Binance. It is recommended that
-this is run on a separate server to THORNode
+We've provided a ready to use command to start Binance. It is required that
+this is run on a separate server to THORNode, due to they both use the same
+ports.
 ```bash
 make -C build/docker run-testnet-binance
 ```
