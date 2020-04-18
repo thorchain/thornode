@@ -48,7 +48,7 @@ func (h ErrataTxHandler) validateV1(ctx sdk.Context, msg MsgErrataTx) sdk.Error 
 		return err
 	}
 
-	if !isSignedByActiveObserver(ctx, h.keeper, msg.GetSigners()) {
+	if !isSignedByActiveNodeAccounts(ctx, h.keeper, msg.GetSigners()) {
 		return sdk.ErrUnauthorized(notAuthorized.Error())
 	}
 
@@ -78,9 +78,8 @@ func (h ErrataTxHandler) handleV1(ctx sdk.Context, msg MsgErrataTx) sdk.Result {
 	for _, id := range eventIDs {
 		event, err := h.keeper.GetEvent(ctx, id)
 		if err != nil {
-			errMsg := fmt.Sprintf("fail to get event(%d)", id)
-			ctx.Logger().Error(errMsg, "error", err)
-			return sdk.ErrInternal(errMsg).Result()
+			ctx.Logger().Error("fail to get event", "id", id, "error", err)
+			continue
 		}
 
 		if event.Empty() {

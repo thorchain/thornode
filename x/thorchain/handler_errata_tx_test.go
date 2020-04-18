@@ -1,0 +1,98 @@
+package thorchain
+
+import (
+	"github.com/blang/semver"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"gitlab.com/thorchain/thornode/common"
+	"gitlab.com/thorchain/thornode/constants"
+	. "gopkg.in/check.v1"
+)
+
+var _ = Suite(&HandlerErrataTxSuite{})
+
+type HandlerErrataTxSuite struct{}
+
+type TestErrataTxKeeper struct {
+	KVStoreDummy
+	event Event
+	pool  Pool
+	na    NodeAccount
+}
+
+func (k *TestErrataTxKeeper) GetNodeAccount(_ sdk.Context, _ sdk.AccAddress) (NodeAccount, error) {
+	return k.na, nil
+}
+
+func (k *TestErrataTxKeeper) GetEventsIDByTxHash(_ sdk.Context, _ common.TxID) ([]int64, error) {
+	return []int64{1}, nil
+}
+
+func (k *TestErrataTxKeeper) GetEvent(_ sdk.Context, _ int64) (Event, error) {
+	return k.event, nil
+}
+
+func (k *TestErrataTxKeeper) GetPool(_ sdk.Context, _ common.Asset) (Pool, error) {
+	return k.pool, nil
+}
+
+func (k *TestErrataTxKeeper) SetPool(_ sdk.Context, pool Pool) error {
+	k.pool = pool
+	return nil
+}
+
+func (s *HandlerErrataTxSuite) TestValidate(c *C) {
+	ctx, _ := setupKeeperForTest(c)
+
+	keeper := &TestErrataTxKeeper{
+		na: GetRandomNodeAccount(NodeActive),
+	}
+
+	handler := NewErrataTxHandler(keeper)
+	// happy path
+	ver := constants.SWVersion
+	msg := NewMsgErrataTx(GetRandomTxHash(), common.BNBChain, keeper.na.NodeAddress)
+	err := handler.validate(ctx, msg, ver)
+	c.Assert(err, IsNil)
+
+	// invalid version
+	err = handler.validate(ctx, msg, semver.Version{})
+	c.Assert(err, Equals, errBadVersion)
+
+	// invalid msg
+	msg = MsgErrataTx{}
+	err = handler.validate(ctx, msg, ver)
+	c.Assert(err, NotNil)
+}
+
+func (s *HandlerErrataTxSuite) TestHandle(c *C) {
+	ctx, _ := setupKeeperForTest(c)
+	ver := constants.SWVersion
+
+	txID := GetRandomTxHash()
+
+	keeper := &TestErrataTxKeeper{
+		pool: Pool{
+			Asset:        common.BNBAsset,
+			BalanceRune:  sdk.NewUint(100 * common.One),
+			BalanceAsset: sdk.NewUint(100 * common.One),
+		},
+		event: Event{
+			InTx: common.Tx{
+				ID:    txID,
+				Chain: common.BNBChain,
+				Coins: common.Coins{
+					common.NewCoin(common.RuneAsset(), sdk.NewUint(30*common.One)),
+				},
+				Memo: "SWAP:BNB.BNB",
+			},
+		},
+	}
+
+	handler := NewErrataTxHandler(keeper)
+
+	msg := NewMsgErrataTx(txID, common.BNBChain, GetRandomBech32Addr())
+	result := handler.handle(ctx, msg, ver)
+	c.Assert(result.IsOK(), Equals, true)
+	c.Check(keeper.pool.BalanceRune.Equal(sdk.NewUint(70*common.One)), Equals, true)
+	c.Check(keeper.pool.BalanceAsset.Equal(sdk.NewUint(100*common.One)), Equals, true)
+}
