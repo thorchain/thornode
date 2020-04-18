@@ -17,27 +17,36 @@ type TestErrataTxKeeper struct {
 	event Event
 	pool  Pool
 	na    NodeAccount
+	err   error
+}
+
+func (k *TestErrataTxKeeper) ListActiveNodeAccounts(_ sdk.Context) (NodeAccounts, error) {
+	return NodeAccounts{k.na}, k.err
 }
 
 func (k *TestErrataTxKeeper) GetNodeAccount(_ sdk.Context, _ sdk.AccAddress) (NodeAccount, error) {
-	return k.na, nil
+	return k.na, k.err
 }
 
 func (k *TestErrataTxKeeper) GetEventsIDByTxHash(_ sdk.Context, _ common.TxID) ([]int64, error) {
-	return []int64{1}, nil
+	return []int64{1}, k.err
 }
 
 func (k *TestErrataTxKeeper) GetEvent(_ sdk.Context, _ int64) (Event, error) {
-	return k.event, nil
+	return k.event, k.err
 }
 
 func (k *TestErrataTxKeeper) GetPool(_ sdk.Context, _ common.Asset) (Pool, error) {
-	return k.pool, nil
+	return k.pool, k.err
 }
 
 func (k *TestErrataTxKeeper) SetPool(_ sdk.Context, pool Pool) error {
 	k.pool = pool
-	return nil
+	return k.err
+}
+
+func (k *TestErrataTxKeeper) GetErrataTxVoter(_ sdk.Context, txID common.TxID, chain common.Chain) (ErrataTxVoter, error) {
+	return NewErrataTxVoter(txID, chain), k.err
 }
 
 func (s *HandlerErrataTxSuite) TestValidate(c *C) {
@@ -69,8 +78,10 @@ func (s *HandlerErrataTxSuite) TestHandle(c *C) {
 	ver := constants.SWVersion
 
 	txID := GetRandomTxHash()
+	na := GetRandomNodeAccount(NodeActive)
 
 	keeper := &TestErrataTxKeeper{
+		na: na,
 		pool: Pool{
 			Asset:        common.BNBAsset,
 			BalanceRune:  sdk.NewUint(100 * common.One),
@@ -90,7 +101,7 @@ func (s *HandlerErrataTxSuite) TestHandle(c *C) {
 
 	handler := NewErrataTxHandler(keeper)
 
-	msg := NewMsgErrataTx(txID, common.BNBChain, GetRandomBech32Addr())
+	msg := NewMsgErrataTx(txID, common.BNBChain, na.NodeAddress)
 	result := handler.handle(ctx, msg, ver)
 	c.Assert(result.IsOK(), Equals, true)
 	c.Check(keeper.pool.BalanceRune.Equal(sdk.NewUint(70*common.One)), Equals, true)

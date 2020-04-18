@@ -91,6 +91,42 @@ func (h ErrataTxHandler) fetchEvents(ctx sdk.Context, msg MsgErrataTx) Events {
 }
 
 func (h ErrataTxHandler) handleV1(ctx sdk.Context, msg MsgErrataTx) sdk.Result {
+	active, err := h.keeper.ListActiveNodeAccounts(ctx)
+	if err != nil {
+		err = wrapError(ctx, err, "fail to get list of active node accounts")
+		return sdk.ErrInternal(err.Error()).Result()
+	}
+
+	voter, err := h.keeper.GetErrataTxVoter(ctx, msg.TxID, msg.Chain)
+	if err != nil {
+		return sdk.ErrInternal(err.Error()).Result()
+	}
+
+	voter.Sign(msg.Signer)
+	h.keeper.SetErrataTxVoter(ctx, voter)
+	// doesn't have consensus yet
+	if !voter.HasConsensus(active) {
+		ctx.Logger().Info("not having consensus yet, return")
+		fmt.Println("FOO 1")
+		return sdk.Result{
+			Code:      sdk.CodeOK,
+			Codespace: DefaultCodespace,
+		}
+	}
+
+	if voter.BlockHeight > 0 {
+		// errata tx already processed
+		fmt.Println("FOO 2")
+		return sdk.Result{
+			Code:      sdk.CodeOK,
+			Codespace: DefaultCodespace,
+		}
+	}
+
+	voter.BlockHeight = ctx.BlockHeight()
+	h.keeper.SetErrataTxVoter(ctx, voter)
+
+	// fetch events
 	events := h.fetchEvents(ctx, msg)
 
 	// revert each in tx
