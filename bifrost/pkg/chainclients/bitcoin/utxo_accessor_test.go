@@ -20,7 +20,6 @@ func (s *BitcoinUTXOAccessor) TestNewUTXOAccessor(c *C) {
 	utxoAccessor, err := NewLevelDBUTXOAccessor(db)
 	c.Assert(err, IsNil)
 	c.Assert(utxoAccessor, NotNil)
-
 }
 
 func (s *BitcoinUTXOAccessor) TestUTXOAccessor(c *C) {
