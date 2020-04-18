@@ -1,7 +1,6 @@
 package thorchain
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"github.com/blang/semver"
@@ -90,8 +89,6 @@ func (h ErrataTxHandler) handleV1(ctx sdk.Context, msg MsgErrataTx) sdk.Result {
 		events = append(events, event)
 	}
 
-	mods := make(PoolMods, 0)
-
 	// revert each in tx
 	for _, event := range events {
 		tx := event.InTx
@@ -128,30 +125,10 @@ func (h ErrataTxHandler) handleV1(ctx sdk.Context, msg MsgErrataTx) sdk.Result {
 
 		pool.BalanceRune = common.SafeSub(pool.BalanceRune, runeAmt)
 		pool.BalanceAsset = common.SafeSub(pool.BalanceAsset, assetAmt)
-		mods = append(
-			mods,
-			NewPoolMod(pool.Asset, runeAmt, false, assetAmt, false),
-		)
 
 		if err := h.keeper.SetPool(ctx, pool); err != nil {
 			ctx.Logger().Error("fail to save pool", "error", err)
 		}
-	}
-
-	eventErrata := NewEventErrata(mods)
-	errataBuf, err := json.Marshal(eventErrata)
-	if err != nil {
-		ctx.Logger().Error("fail to marshal errata event to buf", "error", err)
-	}
-	event := NewEvent(
-		eventErrata.Type(),
-		ctx.BlockHeight(),
-		common.Tx{ID: msg.TxID},
-		errataBuf,
-		EventSuccess,
-	)
-	if err := h.keeper.UpsertEvent(ctx, event); err != nil {
-		ctx.Logger().Error("fail to save errata event", "error", err)
 	}
 
 	return sdk.Result{
