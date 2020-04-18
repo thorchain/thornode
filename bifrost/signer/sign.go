@@ -44,7 +44,6 @@ type Signer struct {
 	m                     *metrics.Metrics
 	errCounter            *prometheus.CounterVec
 	tssKeygen             *tss.KeyGen
-	thorKeys              *thorclient.Keys
 	pubkeyMgr             pubkeymanager.PubKeyValidator
 }
 
