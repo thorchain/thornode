@@ -129,10 +129,9 @@ func (h ErrataTxHandler) handleV1(ctx sdk.Context, msg MsgErrataTx) sdk.Result {
 
 		pool.BalanceRune = common.SafeSub(pool.BalanceRune, runeAmt)
 		pool.BalanceAsset = common.SafeSub(pool.BalanceAsset, assetAmt)
-		mods = append(mods, NewPoolMod(
-			pool.Asset,
-			-int64(runeAmt.Uint64()),
-			-int64(assetAmt.Uint64())),
+		mods = append(
+			mods,
+			NewPoolMod(pool.Asset, runeAmt, false, assetAmt, false),
 		)
 
 		if err := h.keeper.SetPool(ctx, pool); err != nil {

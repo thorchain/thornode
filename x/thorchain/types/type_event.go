@@ -36,6 +36,26 @@ const (
 	ErrataEventType      = `errata`
 )
 
+type PoolMod struct {
+	Asset    common.Asset `json:"asset"`
+	RuneAmt  sdk.Uint     `json:"rune_amt"`
+	RuneAdd  bool         `json:"add"`
+	AssetAmt sdk.Uint     `json:"asset_amt"`
+	AssetAdd bool         `json:"add"`
+}
+
+type PoolMods []PoolMod
+
+func NewPoolMod(asset common.Asset, runeAmt sdk.Uint, runeAdd bool, assetAmt sdk.Uint, assetAdd bool) PoolMod {
+	return PoolMod{
+		Asset:    asset,
+		RuneAmt:  runeAmt,
+		RuneAdd:  runeAdd,
+		AssetAmt: assetAmt,
+		AssetAdd: assetAdd,
+	}
+}
+
 // NewEvent create a new  event
 func NewEvent(typ string, ht int64, inTx common.Tx, evt json.RawMessage, status EventStatus) Event {
 	return Event{
@@ -333,22 +353,6 @@ func NewEventSlash(pool common.Asset, slashAmount []PoolAmt) EventSlash {
 // Type return slash event type
 func (e EventSlash) Type() string {
 	return SlashEventType
-}
-
-type PoolMod struct {
-	Asset    common.Asset `json:"asset"`
-	RuneAmt  int64        `json:"rune_amt"`
-	AssetAmt int64        `json:"asset_amt"`
-}
-
-type PoolMods []PoolMod
-
-func NewPoolMod(asset common.Asset, runeAmt, assetAmt int64) PoolMod {
-	return PoolMod{
-		Asset:    asset,
-		RuneAmt:  runeAmt,
-		AssetAmt: assetAmt,
-	}
 }
 
 // EventErrata represent a change in pool balance which caused by an errata transaction
