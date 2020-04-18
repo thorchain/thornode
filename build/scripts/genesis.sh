@@ -1,7 +1,5 @@
 #!/bin/sh
 
-set -ex
-
 . $(dirname "$0")/core.sh
 
 SIGNER_NAME="${SIGNER_NAME:=thorchain}"
