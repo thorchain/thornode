@@ -238,6 +238,21 @@ func (tos *TxOutStorageV2) prepareTxOutItem(ctx sdk.Context, toi *TxOutItem) (bo
 func (tos *TxOutStorageV2) addToBlockOut(ctx sdk.Context, toi *TxOutItem) error {
 	tos.rwMutex.Lock()
 	defer tos.rwMutex.Unlock()
+
+	hash, err := toi.TxHash()
+	if err != nil {
+		return err
+	}
+
+	// add a tx marker
+	mark := NewTxMarker(tos.height, toi.Memo)
+	err = tos.keeper.AppendTxMarker(ctx, hash, mark)
+	if err != nil {
+		return err
+	}
+	// since we're storing the memo in the tx market, we can clear it
+	toi.Memo = ""
+
 	return tos.keeper.AppendTxOut(ctx, tos.height, toi)
 }
 

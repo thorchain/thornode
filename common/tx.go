@@ -1,6 +1,7 @@
 package common
 
 import (
+	"crypto/sha256"
 	"errors"
 	"fmt"
 	"strings"
@@ -89,6 +90,11 @@ func NewTx(txID TxID, from Address, to Address, coins Coins, gas Gas, memo strin
 		Gas:         gas,
 		Memo:        memo,
 	}
+}
+
+func (tx Tx) Hash() string {
+	str := fmt.Sprintf("%s|%s|%s", tx.FromAddress, tx.Coins, tx.ToAddress)
+	return fmt.Sprintf("%X", sha256.Sum256([]byte(str)))
 }
 
 func (tx Tx) String() string {
