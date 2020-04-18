@@ -27,6 +27,7 @@ func GetRandomNodeAccount(status NodeStatus) NodeAccount {
 	if na.Status == Active {
 		na.ActiveBlockHeight = 10
 	}
+	na.IPAddress = "192.168.0.1"
 
 	return na
 }
