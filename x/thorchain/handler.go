@@ -96,6 +96,7 @@ func getHandlerMapping(keeper Keeper,
 	m[MsgSwap{}.Type()] = NewSwapHandler(keeper, versionedTxOutStore)
 	m[MsgReserveContributor{}.Type()] = NewReserveContributorHandler(keeper)
 	m[MsgSetVersion{}.Type()] = NewVersionHandler(keeper)
+	m[MsgSetIPAddress{}.Type()] = NewIPAddressHandler(keeper)
 	m[MsgBond{}.Type()] = NewBondHandler(keeper)
 	m[MsgObservedTxIn{}.Type()] = NewObservedTxInHandler(keeper, versionedObserverManager, versionedTxOutStore, validatorMgr, versionedVaultManager, versionedGasMgr)
 	m[MsgObservedTxOut{}.Type()] = NewObservedTxOutHandler(keeper, versionedObserverManager, versionedTxOutStore, validatorMgr, versionedVaultManager, versionedGasMgr)

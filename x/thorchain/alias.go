@@ -91,6 +91,7 @@ var (
 	NewMsgBond                     = types.NewMsgBond
 	NewMsgLeave                    = types.NewMsgLeave
 	NewMsgSetVersion               = types.NewMsgSetVersion
+	NewMsgSetIPAddress             = types.NewMsgSetIPAddress
 	GetPoolStatus                  = types.GetPoolStatus
 	GetRandomVault                 = types.GetRandomVault
 	GetRandomTx                    = types.GetRandomTx
@@ -118,6 +119,7 @@ type (
 	MsgRefundTx                 = types.MsgRefundTx
 	MsgSwap                     = types.MsgSwap
 	MsgSetVersion               = types.MsgSetVersion
+	MsgSetIPAddress             = types.MsgSetIPAddress
 	MsgSetNodeKeys              = types.MsgSetNodeKeys
 	MsgEndPool                  = types.MsgEndPool
 	MsgLeave                    = types.MsgLeave

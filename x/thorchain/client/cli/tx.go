@@ -30,9 +30,29 @@ func GetTxCmd(storeKey string, cdc *codec.Codec) *cobra.Command {
 		GetCmdSetNodeKeys(cdc),
 		GetCmdEndPool(cdc),
 		GetCmdSetVersion(cdc),
+		GetCmdSetIPAddress(cdc),
 	)...)
 
 	return thorchainTxCmd
+}
+
+// GetCmdSetIPAddress command to set a node accounts IP Address
+func GetCmdSetIPAddress(cdc *codec.Codec) *cobra.Command {
+	return &cobra.Command{
+		Use:   "set-ip-address [ip address]",
+		Short: "update registered ip address",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx := context.NewCLIContext().WithCodec(cdc)
+			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
+
+			msg := types.NewMsgSetIPAddress(args[0], cliCtx.GetFromAddress())
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
+		},
+	}
 }
 
 // GetCmdSetVersion command to set an admin config
