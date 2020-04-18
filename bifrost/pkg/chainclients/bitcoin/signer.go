@@ -6,7 +6,9 @@ import (
 	"fmt"
 
 	"github.com/btcsuite/btcd/btcec"
+	"github.com/btcsuite/btcd/btcjson"
 	"github.com/btcsuite/btcd/chaincfg"
+	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
 	"github.com/btcsuite/btcutil/txsort"
@@ -70,8 +72,8 @@ func (c *Client) SignTx(tx stypes.TxOutItem, height int64) ([]byte, error) {
 
 	redeemTx := wire.NewMsgTx(wire.TxVersion)
 	totalAmt := float64(0)
-	individualAmounts := make([]btcutil.Amount, len(txes))
-	for idx, item := range txes {
+	individualAmounts := make(map[chainhash.Hash]btcutil.Amount, len(txes))
+	for _, item := range txes {
 		// double check that the utxo is still valid
 		outputPoint := wire.NewOutPoint(&item.TxID, item.N)
 		sourceTxIn := wire.NewTxIn(outputPoint, nil, nil)
@@ -81,7 +83,7 @@ func (c *Client) SignTx(tx stypes.TxOutItem, height int64) ([]byte, error) {
 		if err != nil {
 			return nil, fmt.Errorf("fail to parse amount(%f): %w", item.Value, err)
 		}
-		individualAmounts[idx] = amt
+		individualAmounts[item.TxID] = amt
 	}
 
 	outputAddr, err := btcutil.DecodeAddress(tx.ToAddress.String(), c.getChainCfg())
@@ -119,11 +121,12 @@ func (c *Client) SignTx(tx stypes.TxOutItem, height int64) ([]byte, error) {
 	}
 
 	redeemTx.AddTxOut(wire.NewTxOut(balance, sourceScript))
-
-	for idx := range redeemTx.TxIn {
+	txsort.InPlaceSort(redeemTx)
+	for idx, txIn := range redeemTx.TxIn {
 		sigHashes := txscript.NewTxSigHashes(redeemTx)
 		sig := c.ksWrapper.GetSignable(tx.VaultPubKey)
-		witness, err := txscript.WitnessSignature(redeemTx, sigHashes, idx, int64(individualAmounts[idx]), sourceScript, txscript.SigHashAll, sig, true)
+		outputAmount := int64(individualAmounts[txIn.PreviousOutPoint.Hash])
+		witness, err := txscript.WitnessSignature(redeemTx, sigHashes, idx, outputAmount, sourceScript, txscript.SigHashAll, sig, true)
 		if err != nil {
 			var keysignError tss.KeysignError
 			if errors.As(err, &keysignError) {
@@ -147,7 +150,7 @@ func (c *Client) SignTx(tx stypes.TxOutItem, height int64) ([]byte, error) {
 
 		redeemTx.TxIn[idx].Witness = witness
 		flag := txscript.StandardVerifyFlags
-		engine, err := txscript.NewEngine(sourceScript, redeemTx, idx, flag, nil, nil, int64(individualAmounts[idx]))
+		engine, err := txscript.NewEngine(sourceScript, redeemTx, idx, flag, nil, nil, outputAmount)
 		if err != nil {
 			return nil, fmt.Errorf("fail to create engine: %w", err)
 		}
@@ -203,6 +206,11 @@ func (c *Client) BroadcastTx(txOut stypes.TxOutItem, payload []byte) error {
 	}
 	txHash, err := c.client.SendRawTransaction(redeemTx, true)
 	if err != nil {
+
+		if rpcErr, ok := err.(*btcjson.RPCError); ok && rpcErr.Code == btcjson.ErrRPCTxAlreadyInChain {
+			// this means the tx had been broadcast to chain, it must be another signer finished quicker then us
+			return nil
+		}
 		return fmt.Errorf("fail to broadcast transaction to chain: %w", err)
 	}
 	c.logger.Info().Str("hash", txHash.String()).Msg("broadcast to BTC chain successfully")
