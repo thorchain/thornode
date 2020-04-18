@@ -2,6 +2,8 @@ package bitcoin
 
 import (
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
+	"github.com/syndtr/goleveldb/leveldb"
+	"github.com/syndtr/goleveldb/leveldb/storage"
 	. "gopkg.in/check.v1"
 )
 
@@ -12,19 +14,19 @@ var _ = Suite(
 )
 
 func (s *BitcoinUTXOAccessor) TestNewUTXOAccessor(c *C) {
-	tmpdir := "/tmp/utxo_accessor"
-	utxoAccessor, err := NewUTXOAccessor(tmpdir)
+	memStorage := storage.NewMemStorage()
+	db, err := leveldb.Open(memStorage, nil)
 	c.Assert(err, IsNil)
-	c.Assert(utxoAccessor, NotNil)
-
-	// in memory storage
-	utxoAccessor, err = NewUTXOAccessor("")
+	utxoAccessor, err := NewLevelDBUTXOAccessor(db)
 	c.Assert(err, IsNil)
 	c.Assert(utxoAccessor, NotNil)
 }
 
 func (s *BitcoinUTXOAccessor) TestUTXOAccessor(c *C) {
-	utxoAccessor, err := NewUTXOAccessor("")
+	memStorage := storage.NewMemStorage()
+	db, err := leveldb.Open(memStorage, nil)
+	c.Assert(err, IsNil)
+	utxoAccessor, err := NewLevelDBUTXOAccessor(db)
 	c.Assert(err, IsNil)
 	c.Assert(utxoAccessor, NotNil)
 

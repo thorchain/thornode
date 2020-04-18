@@ -78,11 +78,9 @@ func NewClient(thorKeys *thorclient.Keys, cfg config.ChainConfiguration, server 
 		bridge:     bridge,
 	}
 
-	var path string             // if not set later, will in memory storage
-	var pathUTXOAccessor string // if not set later, will in memory storage
+	var path string // if not set later, will in memory storage
 	if len(c.cfg.BlockScanner.DBPath) > 0 {
 		path = fmt.Sprintf("%s/%s", c.cfg.BlockScanner.DBPath, c.cfg.BlockScanner.ChainID)
-		pathUTXOAccessor = fmt.Sprintf("%s-utxos", path)
 	}
 	storage, err := blockscanner.NewBlockScannerStorage(path)
 	if err != nil {
@@ -94,7 +92,7 @@ func NewClient(thorKeys *thorclient.Keys, cfg config.ChainConfiguration, server 
 		return c, fmt.Errorf("fail to create block scanner: %w", err)
 	}
 
-	c.utxoAccessor, err = NewUTXOAccessor(pathUTXOAccessor)
+	c.utxoAccessor, err = NewLevelDBUTXOAccessor(storage.GetInternalDb())
 	if err != nil {
 		return c, fmt.Errorf("fail to create utxo accessor: %w", err)
 	}
