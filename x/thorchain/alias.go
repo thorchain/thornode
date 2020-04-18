@@ -89,6 +89,7 @@ var (
 	NewMsgYggdrasil                = types.NewMsgYggdrasil
 	NewMsgReserveContributor       = types.NewMsgReserveContributor
 	NewMsgBond                     = types.NewMsgBond
+	NewMsgErrataTx                 = types.NewMsgErrataTx
 	NewMsgLeave                    = types.NewMsgLeave
 	NewMsgSetVersion               = types.NewMsgSetVersion
 	GetPoolStatus                  = types.GetPoolStatus
@@ -116,6 +117,7 @@ type (
 	MsgMigrate                  = types.MsgMigrate
 	MsgRagnarok                 = types.MsgRagnarok
 	MsgRefundTx                 = types.MsgRefundTx
+	MsgErrataTx                 = types.MsgErrataTx
 	MsgSwap                     = types.MsgSwap
 	MsgSetVersion               = types.MsgSetVersion
 	MsgSetNodeKeys              = types.MsgSetNodeKeys
