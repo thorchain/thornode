@@ -1,8 +1,9 @@
 package thorchain
 
 import (
+	"fmt"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/pkg/errors"
 )
 
 type KeeperTxMarker interface {
@@ -46,7 +47,7 @@ func (k KVStore) SetTxMarkers(ctx sdk.Context, hash string, orig TxMarkers) erro
 
 func (k KVStore) AppendTxMarker(ctx sdk.Context, hash string, mark TxMarker) error {
 	if mark.IsEmpty() {
-		return dbError(ctx, "unable to save tx marker:", errors.New("is empty"))
+		return dbError(ctx, "unable to save tx marker:", fmt.Errorf("is empty"))
 	}
 	marks, err := k.ListTxMarker(ctx, hash)
 	if err != nil {
