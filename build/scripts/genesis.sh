@@ -77,6 +77,10 @@ if [ "$SEED" != "$(hostname)" ]; then
         echo "NODE ID: $NODE_ID"
         peer_list $NODE_ID $SEED
 
+        sleep 15
+        myip="$(dig +short myip.opendns.com @resolver1.opendns.com)"
+        echo $SIGNER_PASSWD | thorcli tx thorchain set-ip-address --node tcp://$PEER:26657 --from $SIGNER_NAME --yes
+
         cat ~/.thord/config/genesis.json
     fi
 fi
