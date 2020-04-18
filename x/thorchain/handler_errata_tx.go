@@ -65,12 +65,12 @@ func (h ErrataTxHandler) handle(ctx sdk.Context, msg MsgErrataTx, version semver
 	}
 }
 
-func (h ErrataTxHandler) handleV1(ctx sdk.Context, msg MsgErrataTx) sdk.Result {
+func (h ErrataTxHandler) fetchEvents(ctx sdk.Context, msg MsgErrataTx) Events {
+
 	eventIDs, err := h.keeper.GetEventsIDByTxHash(ctx, msg.TxID)
 	if err != nil {
 		errMsg := fmt.Sprintf("fail to get event ids by txhash(%s)", msg.TxID.String())
 		ctx.Logger().Error(errMsg, "error", err)
-		return sdk.ErrInternal(errMsg).Result()
 	}
 
 	// collect events with the given hash
@@ -88,6 +88,12 @@ func (h ErrataTxHandler) handleV1(ctx sdk.Context, msg MsgErrataTx) sdk.Result {
 		events = append(events, event)
 	}
 
+	return events
+}
+
+func (h ErrataTxHandler) handleV1(ctx sdk.Context, msg MsgErrataTx) sdk.Result {
+	events := h.fetchEvents(ctx, msg)
+
 	// revert each in tx
 	for _, event := range events {
 		tx := event.InTx
@@ -98,7 +104,6 @@ func (h ErrataTxHandler) handleV1(ctx sdk.Context, msg MsgErrataTx) sdk.Result {
 		}
 
 		memo, _ := ParseMemo(tx.Memo)
-
 		if !memo.IsType(txSwap) {
 			// must be a swap transaction
 			continue
