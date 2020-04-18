@@ -1,6 +1,7 @@
 package thorchain
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/blang/semver"
@@ -166,6 +167,27 @@ func (h ErrataTxHandler) handleV1(ctx sdk.Context, msg MsgErrataTx) sdk.Result {
 
 	if err := h.keeper.SetPool(ctx, pool); err != nil {
 		ctx.Logger().Error("fail to save pool", "error", err)
+	}
+
+	// send errata event
+	mods := PoolMods{
+		NewPoolMod(pool.Asset, runeAmt, false, assetAmt, false),
+	}
+
+	eventErrata := NewEventErrata(mods)
+	errataBuf, err := json.Marshal(eventErrata)
+	if err != nil {
+		ctx.Logger().Error("fail to marshal errata event to buf", "error", err)
+	}
+	evt := NewEvent(
+		eventErrata.Type(),
+		ctx.BlockHeight(),
+		common.Tx{ID: msg.TxID},
+		errataBuf,
+		EventSuccess,
+	)
+	if err := h.keeper.UpsertEvent(ctx, evt); err != nil {
+		ctx.Logger().Error("fail to save errata event", "error", err)
 	}
 
 	return sdk.Result{
