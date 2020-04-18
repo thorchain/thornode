@@ -33,6 +33,7 @@ const (
 	GasEventType         = `gas`
 	ReserveEventType     = `reserve`
 	SlashEventType       = `slash`
+	ErrataEventType      = `errata`
 )
 
 // NewEvent create a new  event
@@ -332,4 +333,36 @@ func NewEventSlash(pool common.Asset, slashAmount []PoolAmt) EventSlash {
 // Type return slash event type
 func (e EventSlash) Type() string {
 	return SlashEventType
+}
+
+type PoolMod struct {
+	Asset    common.Asset `json:"asset"`
+	RuneAmt  int64        `json:"rune_amt"`
+	AssetAmt int64        `json:"asset_amt"`
+}
+
+type PoolMods []PoolMod
+
+func NewPoolMod(asset common.Asset, runeAmt, assetAmt int64) PoolMod {
+	return PoolMod{
+		Asset:    asset,
+		RuneAmt:  runeAmt,
+		AssetAmt: assetAmt,
+	}
+}
+
+// EventErrata represent a change in pool balance which caused by an errata transaction
+type EventErrata struct {
+	Pools PoolMods `json:"pools"`
+}
+
+func NewEventErrata(pools PoolMods) EventErrata {
+	return EventErrata{
+		Pools: pools,
+	}
+}
+
+// Type return slash event type
+func (e EventErrata) Type() string {
+	return ErrataEventType
 }

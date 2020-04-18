@@ -87,14 +87,6 @@ func (h UnstakeHandler) validateV1(ctx sdk.Context, msg MsgSetUnStake) sdk.Error
 }
 
 func (h UnstakeHandler) handle(ctx sdk.Context, msg MsgSetUnStake, version semver.Version) ([]byte, sdk.Error) {
-	// Get rune (if any) and donate it to the reserve
-	coin := msg.Tx.Coins.GetCoin(common.RuneAsset())
-	if !coin.IsEmpty() {
-		if err := h.keeper.AddFeeToReserve(ctx, coin.Amount); err != nil {
-			// Add to reserve
-			ctx.Logger().Error("fail to add fee to reserve", "error", err)
-		}
-	}
 
 	poolStaker, err := h.keeper.GetPoolStaker(ctx, msg.Asset)
 	if err != nil {
@@ -178,6 +170,15 @@ func (h UnstakeHandler) handle(ctx sdk.Context, msg MsgSetUnStake, version semve
 	if err != nil {
 		ctx.Logger().Error("fail to prepare outbound tx", "error", err)
 		return nil, sdk.NewError(DefaultCodespace, CodeFailAddOutboundTx, "fail to prepare outbound tx")
+	}
+
+	// Get rune (if any) and donate it to the reserve
+	coin := msg.Tx.Coins.GetCoin(common.RuneAsset())
+	if !coin.IsEmpty() {
+		if err := h.keeper.AddFeeToReserve(ctx, coin.Amount); err != nil {
+			// Add to reserve
+			ctx.Logger().Error("fail to add fee to reserve", "error", err)
+		}
 	}
 
 	return res, nil
