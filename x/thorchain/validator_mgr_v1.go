@@ -3,6 +3,7 @@ package thorchain
 import (
 	"errors"
 	"fmt"
+	"net"
 	"sort"
 
 	"github.com/blang/semver"
@@ -914,6 +915,11 @@ func (vm *validatorMgrV1) markReadyActors(ctx sdk.Context, constAccessor constan
 
 		// Check if they've requested to leave
 		if na.RequestedToLeave {
+			na.UpdateStatus(NodeStandby, ctx.BlockHeight())
+		}
+
+		// Check that the node account has an IP address
+		if net.ParseIP(na.IPAddress) == nil {
 			na.UpdateStatus(NodeStandby, ctx.BlockHeight())
 		}
 
