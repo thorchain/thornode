@@ -35,8 +35,9 @@ if [ ! -f ~/.thord/config/genesis.json ]; then
         # set node keys
         echo $SIGNER_PASSWD | thorcli tx thorchain set-node-keys $(thorcli keys show thorchain --pubkey) $(thorcli keys show thorchain --pubkey) $(thord tendermint show-validator) --node tcp://$PEER:26657 --from $SIGNER_NAME --yes
 
-        myip="$(dig +short myip.opendns.com @resolver1.opendns.com)"
-        echo $SIGNER_PASSWD | thorcli tx thorchain set-ip-address --node tcp://$PEER:26657 --from $SIGNER_NAME --yes
+        # add IP address
+        echo $SIGNER_PASSWD | thorcli tx thorchain set-ip-address $(curl -s http://whatismyip.akamai.com) --node tcp://$PEER:26657 --from $SIGNER_NAME --yes
+
     elif [[ "$NET" == "testnet" ]]; then
         # create a binance wallet
         gen_bnb_address
