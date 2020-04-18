@@ -168,6 +168,7 @@ type (
 	EventStake                  = types.EventStake
 	EventStatus                 = types.EventStatus
 	EventRewards                = types.EventRewards
+	EventErrata                 = types.EventErrata
 	PoolAmt                     = types.PoolAmt
 	PoolMod                     = types.PoolMod
 	PoolMods                    = types.PoolMods
