@@ -67,7 +67,6 @@ func (h ErrataTxHandler) handle(ctx sdk.Context, msg MsgErrataTx, version semver
 }
 
 func (h ErrataTxHandler) handleV1(ctx sdk.Context, msg MsgErrataTx) sdk.Result {
-
 	eventIDs, err := h.keeper.GetEventsIDByTxHash(ctx, msg.TxID)
 	if err != nil {
 		errMsg := fmt.Sprintf("fail to get event ids by txhash(%s)", msg.TxID.String())

@@ -87,7 +87,6 @@ func (h UnstakeHandler) validateV1(ctx sdk.Context, msg MsgSetUnStake) sdk.Error
 }
 
 func (h UnstakeHandler) handle(ctx sdk.Context, msg MsgSetUnStake, version semver.Version) ([]byte, sdk.Error) {
-
 	poolStaker, err := h.keeper.GetPoolStaker(ctx, msg.Asset)
 	if err != nil {
 		ctx.Logger().Error("fail to get pool staker", "error", err)
