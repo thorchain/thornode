@@ -21,6 +21,7 @@ type ScannerStorage interface {
 	io.Closer
 }
 
+// BlockScannerStorage
 type BlockScannerStorage struct {
 	*LevelDBScannerStorage
 	db *leveldb.DB
@@ -50,4 +51,8 @@ func NewBlockScannerStorage(levelDbFolder string) (*BlockScannerStorage, error) 
 		LevelDBScannerStorage: levelDbStorage,
 		db:                    db,
 	}, nil
+}
+
+func (s *BlockScannerStorage) GetInternalDb() *leveldb.DB {
+	return s.db
 }
