@@ -2,6 +2,7 @@ package ethereum
 
 import (
 	"context"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -20,6 +21,7 @@ import (
 	"gitlab.com/thorchain/thornode/bifrost/pkg/chainclients/ethereum/types"
 	"gitlab.com/thorchain/thornode/bifrost/thorclient"
 	stypes "gitlab.com/thorchain/thornode/bifrost/thorclient/types"
+	"gitlab.com/thorchain/thornode/bifrost/tss"
 	"gitlab.com/thorchain/thornode/common"
 )
 
@@ -31,12 +33,20 @@ type Client struct {
 	isTestNet       bool
 	pk              common.PubKey
 	client          *ethclient.Client
+	kw              *KeySignWrapper
+	ethScanner      *BlockScanner
+	accts           *EthereumMetaDataStore
 	thorchainBridge *thorclient.ThorchainBridge
 	blockScanner    *blockscanner.BlockScanner
 }
 
 // NewClient create new instance of Ethereum client
 func NewClient(thorKeys *thorclient.Keys, cfg config.ChainConfiguration, server *tssp.TssServer, thorchainBridge *thorclient.ThorchainBridge, m *metrics.Metrics) (*Client, error) {
+	tssKm, err := tss.NewKeySign(server)
+	if err != nil {
+		return nil, fmt.Errorf("fail to create tss signer: %w", err)
+	}
+
 	priv, err := thorKeys.GetPrivateKey()
 	if err != nil {
 		return nil, fmt.Errorf("fail to get private key: %w", err)
@@ -46,8 +56,21 @@ func NewClient(thorKeys *thorclient.Keys, cfg config.ChainConfiguration, server 
 	if err != nil {
 		return nil, fmt.Errorf("fail to get pub key: %w", err)
 	}
+
 	if thorchainBridge == nil {
 		return nil, errors.New("thorchain bridge is nil")
+	}
+
+	ethPrivateKey, err := getETHPrivateKey(priv)
+	if err != nil {
+		return nil, err
+	}
+
+	keysignWrapper := &KeySignWrapper{
+		privKey:       ethPrivateKey,
+		pubKey:        pk,
+		tssKeyManager: tssKm,
+		logger:        log.With().Str("module", "local_signer").Str("chain", common.ETHChain.String()).Logger(),
 	}
 
 	ctx := context.Background()
@@ -61,6 +84,8 @@ func NewClient(thorKeys *thorclient.Keys, cfg config.ChainConfiguration, server 
 		cfg:             cfg,
 		client:          ethClient,
 		pk:              pk,
+		accts:           NewEthereumMetaDataStore(),
+		kw:              keysignWrapper,
 		thorchainBridge: thorchainBridge,
 	}
 
@@ -75,12 +100,12 @@ func NewClient(thorKeys *thorclient.Keys, cfg config.ChainConfiguration, server 
 		return c, fmt.Errorf("fail to create blockscanner storage: %w", err)
 	}
 
-	ethScanner, err := NewBlockScanner(c.cfg.BlockScanner, storage, c.isTestNet, c.client, m)
+	c.ethScanner, err = NewBlockScanner(c.cfg.BlockScanner, storage, c.isTestNet, c.client, m)
 	if err != nil {
 		return c, fmt.Errorf("fail to create eth block scanner: %w", err)
 	}
 
-	c.blockScanner, err = blockscanner.NewBlockScanner(c.cfg.BlockScanner, storage, m, c.thorchainBridge, ethScanner)
+	c.blockScanner, err = blockscanner.NewBlockScanner(c.cfg.BlockScanner, storage, m, c.thorchainBridge, c.ethScanner)
 	if err != nil {
 		return c, fmt.Errorf("fail to create block scanner: %w", err)
 	}
@@ -137,30 +162,114 @@ func (c *Client) GetAddress(poolPubKey common.PubKey) string {
 	return addr.String()
 }
 
+func (c *Client) GetGasFee(count uint64) common.Gas {
+	return common.GetETHGasFee(big.NewInt(int64(count)))
+}
+
 func (c *Client) GetGasPrice() (*big.Int, error) {
 	ctx := context.Background()
 	return c.client.SuggestGasPrice(ctx)
 }
 
-func (c *Client) GetGasFee(count uint64) common.Gas {
-	return common.GetETHGasFee(big.NewInt(int64(count)))
+func (c *Client) GetNonce(addr string) (uint64, error) {
+	ctx := context.Background()
+	nonce, err := c.client.NonceAt(ctx, ecommon.HexToAddress(addr), nil)
+	if err != nil {
+		return 0, fmt.Errorf("fail to get account nonce: %w", err)
+	}
+	return nonce, nil
 }
 
 func (c *Client) ValidateMetadata(inter interface{}) bool {
-	return true
+	meta := inter.(EthereumMetadata)
+	acct := c.accts.GetByAccount(meta.Address)
+	return acct.Address == meta.Address && acct.Nonce == meta.Nonce
 }
 
 // SignTx sign the the given TxArrayItem
 func (c *Client) SignTx(tx stypes.TxOutItem, height int64) ([]byte, error) {
-	return nil, nil
+	toAddr := tx.ToAddress.String()
+
+	value := uint64(0)
+	for _, coin := range tx.Coins {
+		value += coin.Amount.Uint64()
+	}
+	if len(toAddr) == 0 || value == 0 {
+		c.logger.Error().Msg("invalid tx params")
+		return nil, nil
+	}
+	fromAddr := c.GetAddress(tx.VaultPubKey)
+
+	currentHeight, err := c.GetHeight()
+	if err != nil {
+		c.logger.Error().Err(err).Msg("fail to get current Ethereum block height")
+		return nil, err
+	}
+	meta := c.accts.Get(tx.VaultPubKey)
+	if currentHeight > meta.BlockHeight {
+		nonce, err := c.GetNonce(fromAddr)
+		if err != nil {
+			return nil, err
+		}
+		c.accts.Set(tx.VaultPubKey, EthereumMetadata{
+			Address:     fromAddr,
+			Nonce:       nonce,
+			BlockHeight: currentHeight,
+		})
+	}
+	meta = c.accts.Get(tx.VaultPubKey)
+	c.logger.Info().Uint64("nonce", meta.Nonce).Msg("account info")
+
+	gasPrice := c.ethScanner.GetGasPrice()
+	encodedData := []byte(hex.EncodeToString([]byte("ETH.ETH")))
+
+	createdTx := etypes.NewTransaction(meta.Nonce, ecommon.HexToAddress(toAddr), big.NewInt(int64(value)), ETHTransferGas, gasPrice, encodedData)
+
+	rawTx, err := c.sign(createdTx, fromAddr, tx.VaultPubKey, currentHeight, tx)
+	if err != nil || len(rawTx) == 0 {
+		return nil, fmt.Errorf("fail to sign message: %w", err)
+	}
+	return rawTx, nil
+}
+
+// sign is design to sign a given message with keysign party and keysign wrapper
+func (c *Client) sign(tx *etypes.Transaction, from string, poolPubKey common.PubKey, height int64, txOutItem stypes.TxOutItem) ([]byte, error) {
+	keySignParty, err := c.thorchainBridge.GetKeysignParty(poolPubKey)
+	if err != nil {
+		c.logger.Error().Err(err).Msg("fail to get keysign party")
+		return nil, err
+	}
+	rawBytes, err := c.kw.Sign(tx, poolPubKey, keySignParty)
+	if err == nil && rawBytes != nil {
+		return rawBytes, nil
+	}
+	var keysignError tss.KeysignError
+	if errors.As(err, &keysignError) {
+		if len(keysignError.Blame.BlameNodes) == 0 {
+			// TSS doesn't know which node to blame
+			return nil, err
+		}
+
+		// key sign error forward the keysign blame to thorchain
+		txID, err := c.thorchainBridge.PostKeysignFailure(keysignError.Blame, height, txOutItem.Memo, txOutItem.Coins)
+		if err != nil {
+			c.logger.Error().Err(err).Msg("fail to post keysign failure to thorchain")
+			return nil, err
+		} else {
+			c.logger.Info().Str("tx_id", txID.String()).Msgf("post keysign failure to thorchain")
+			return nil, fmt.Errorf("sent keysign failure to thorchain")
+		}
+	}
+	c.logger.Error().Err(err).Msg("fail to sign tx")
+	return nil, err
 }
 
 // GetAccount gets account by address in eth client
 func (c *Client) GetAccount(addr string) (common.Account, error) {
 	ctx := context.Background()
-	nonce, err := c.client.NonceAt(ctx, ecommon.HexToAddress(addr), nil)
+	nonce, err := c.GetNonce(addr)
 	if err != nil {
-		return common.Account{}, fmt.Errorf("fail to get account nonce: %w", err)
+		return common.Account{}, err
 	}
 	balance, err := c.client.BalanceAt(ctx, ecommon.HexToAddress(addr), nil)
 	if err != nil {
@@ -171,11 +280,15 @@ func (c *Client) GetAccount(addr string) (common.Account, error) {
 }
 
 // BroadcastTx decodes tx using rlp and broadcasts too Ethereum chain
-func (e *Client) BroadcastTx(stx stypes.TxOutItem, hexTx []byte) error {
+func (c *Client) BroadcastTx(stx stypes.TxOutItem, hexTx []byte) error {
 	var tx *etypes.Transaction = &etypes.Transaction{}
 	if err := json.Unmarshal(hexTx, tx); err != nil {
 		return err
 	}
 	ctx := context.Background()
-	return e.client.SendTransaction(ctx, tx)
+	if err := c.client.SendTransaction(ctx, tx); err != nil {
+		return err
+	}
+	c.accts.NonceInc(stx.VaultPubKey)
+	return nil
 }

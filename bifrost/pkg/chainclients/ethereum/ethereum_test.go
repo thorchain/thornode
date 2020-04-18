@@ -59,11 +59,49 @@ func (s *EthereumSuite) SetUpSuite(c *C) {
 	ns := strconv.Itoa(time.Now().Nanosecond())
 	types2.SetupConfigForTest()
 	c.Assert(os.Setenv("NET", "testnet"), IsNil)
-
 	s.thordir = filepath.Join(os.TempDir(), ns, ".thorcli")
+
+	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		c.Logf("requestUri:%s", req.RequestURI)
+		if strings.HasPrefix(req.RequestURI, "/thorchain/keysign") {
+			_, err := rw.Write([]byte(`{
+			"chains": {
+				"ETH": {
+					"chain": "ETH",
+					"hash": "",
+					"height": "1",
+					"tx_array": [
+						{
+							"chain": "ETH",
+							"coin": {
+								"amount": "194765912",
+								"asset": "ETH.ETH"
+							},
+							"in_hash": "",
+							"memo": "",
+							"out_hash": "",
+							"to": "0xde0b295669a9fd93d5f28d9ec85e40f4cb697bae",
+							"vault_pubkey": "thorpub1addwnpepqflvfv08t6qt95lmttd6wpf3ss8wx63e9vf6fvyuj2yy6nnyna5763e2kck"
+						}]
+					}
+				}
+			}
+			`))
+			c.Assert(err, IsNil)
+		} else if strings.HasSuffix(req.RequestURI, "/signers") {
+			_, err := rw.Write([]byte(`[
+				"thorpub1addwnpepqflvfv08t6qt95lmttd6wpf3ss8wx63e9vf6fvyuj2yy6nnyna5763e2kck",
+				"thorpub1addwnpepq2flfr96skc5lkwdv0n5xjsnhmuju20x3zndgu42zd8dtkrud9m2v0zl2qu",
+				"thorpub1addwnpepqwhnus6xs4208d4ynm05lv493amz3fexfjfx4vptntedd7k0ajlcup0pzgk"
+			]`))
+			c.Assert(err, IsNil)
+		}
+	}))
+	splitted := strings.SplitAfter(server.URL, ":")
+
 	cfg := config.ClientConfiguration{
 		ChainID:         "thorchain",
-		ChainHost:       "localhost",
+		ChainHost:       "localhost:" + splitted[len(splitted)-1],
 		SignerName:      "bob",
 		SignerPasswd:    "password",
 		ChainHomeFolder: s.thordir,
@@ -75,6 +113,7 @@ func (s *EthereumSuite) SetUpSuite(c *C) {
 	c.Assert(err, IsNil)
 	s.thorKeys, err = thorclient.NewKeys(cfg.ChainHomeFolder, cfg.SignerName, cfg.SignerPasswd)
 	c.Assert(err, IsNil)
+
 	s.bridge, err = thorclient.NewThorchainBridge(cfg, s.m)
 	c.Assert(err, IsNil)
 }
@@ -89,7 +128,7 @@ func (s *EthereumSuite) TearDownSuite(c *C) {
 
 var account = "0xde0b295669a9fd93d5f28d9ec85e40f4cb697bae"
 
-func (s *EthereumSuite) TestNewClient(c *C) {
+func (s *EthereumSuite) TestClient(c *C) {
 	e, err := NewClient(s.thorKeys, config.ChainConfiguration{}, nil, s.bridge, s.m)
 	c.Assert(e, IsNil)
 	c.Assert(err, NotNil)
@@ -191,4 +230,26 @@ func (s *EthereumSuite) TestNewClient(c *C) {
 		"s":"0x4ba69724e8f69de52f0125ad8b3c5c2cef33019bac3249e2c0a2192766d1721c"
 	}`))
 	c.Assert(err, IsNil)
+
+	input := []byte(`{ "height": "1", "hash": "", "tx_array": [ { "vault_pubkey":"thorpub1addwnpepq2jgpsw2lalzuk7sgtmyakj7l6890f5cfpwjyfp8k4y4t7cw2vk8vcglsjy","seq_no":"0","to":"0xde0b295669a9fd93d5f28d9ec85e40f4cb697bae", "coin": { "asset": "ETH", "amount": "194765912" }  } ]}`)
+	var txOut stypes.TxOut
+	err = json.Unmarshal(input, &txOut)
+	c.Check(err, IsNil)
+
+	txOut.TxArray[0].VaultPubKey = e2.kw.GetPubKey()
+	c.Logf(txOut.TxArray[0].VaultPubKey.String())
+	c.Logf(e2.kw.GetPubKey().String())
+	out := txOut.TxArray[0].TxOutItem()
+
+	r, err := e2.SignTx(out, 1)
+	c.Assert(err, IsNil)
+	c.Assert(r, NotNil)
+
+	err = e2.BroadcastTx(out, r)
+	c.Assert(err, IsNil)
+	meta := e2.accts.Get(out.VaultPubKey)
+	addr = e2.GetAddress(out.VaultPubKey)
+	c.Assert(err, IsNil)
+	c.Check(meta.Address, Equals, addr)
+	c.Check(meta.Nonce, Equals, uint64(1))
 }
