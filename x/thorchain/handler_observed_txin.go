@@ -143,7 +143,7 @@ func (h ObservedTxInHandler) handleV1(ctx sdk.Context, version semver.Version, m
 			}
 			continue
 		}
-		ctx.Logger().Info("handleMsgObservedTxIn request", "Tx:", msg.Txs[0].String())
+		ctx.Logger().Info("handleMsgObservedTxIn request", "Tx:", tx.String())
 
 		txIn := voter.GetTx(activeNodeAccounts)
 		vault, err := h.keeper.GetVault(ctx, tx.ObservedPubKey)

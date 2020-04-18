@@ -44,6 +44,19 @@ func (toi TxOutItem) Valid() error {
 	return nil
 }
 
+func (toi TxOutItem) TxHash() (string, error) {
+	fromAddr, err := toi.VaultPubKey.GetAddress(toi.Chain)
+	if err != nil {
+		return "", err
+	}
+	tx := common.Tx{
+		FromAddress: fromAddr,
+		ToAddress:   toi.ToAddress,
+		Coins:       common.Coins{toi.Coin},
+	}
+	return tx.Hash(), nil
+}
+
 func (toi TxOutItem) Equals(toi2 TxOutItem) bool {
 	if !toi.Chain.Equals(toi2.Chain) {
 		return false
