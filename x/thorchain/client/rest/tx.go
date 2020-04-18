@@ -13,6 +13,42 @@ import (
 	"gitlab.com/thorchain/thornode/x/thorchain/types"
 )
 
+type newErrataTx struct {
+	BaseReq rest.BaseReq `json:"base_req"`
+	TxID    common.TxID  `json:"txid"`
+	Chain   common.Chain `json:"chain"`
+}
+
+func newErrataTxHandler(cliCtx context.CLIContext) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var req newErrataTx
+
+		if !rest.ReadRESTReq(w, r, cliCtx.Codec, &req) {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, "failed to parse request")
+			return
+		}
+
+		baseReq := req.BaseReq.Sanitize()
+		if !baseReq.ValidateBasic(w) {
+			return
+		}
+		baseReq.Gas = "auto"
+		addr, err := sdk.AccAddressFromBech32(req.BaseReq.From)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+		msg := types.NewMsgErrataTx(req.TxID, req.Chain, addr)
+		err = msg.ValidateBasic()
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		utils.WriteGenerateStdTxResponse(w, cliCtx, baseReq, []sdk.Msg{msg})
+	}
+}
+
 type newTssPool struct {
 	BaseReq      rest.BaseReq     `json:"base_req"`
 	InputPubKeys common.PubKeys   `json:"input_pubkeys"`
