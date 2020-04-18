@@ -4,8 +4,9 @@ import (
 	"sort"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"gitlab.com/thorchain/thornode/common"
 	. "gopkg.in/check.v1"
+
+	"gitlab.com/thorchain/thornode/common"
 )
 
 type ObserverManagerTestSuite struct{}
@@ -38,5 +39,7 @@ func (ObserverManagerTestSuite) TestObserverManager(c *C) {
 	c.Check(addrs, HasLen, 2)
 	// sort alphabetically
 	sort.SliceStable(addrs, func(i, j int) bool { return addrs[i].String() > addrs[j].String() })
-	c.Check(addrs, DeepEquals, []sdk.AccAddress{a1, a2})
+	expected := []sdk.AccAddress{a1, a2}
+	sort.SliceStable(expected, func(i, j int) bool { return addrs[i].String() > addrs[j].String() })
+	c.Check(addrs, DeepEquals, expected)
 }

@@ -78,7 +78,7 @@ func (s *VaultSuite) TestPendingTxBlockHeights(c *C) {
 	constAccessor := constants.GetConstantValues(version)
 	vault.AppendPendingTxBlockHeights(1, constAccessor)
 	c.Assert(vault.LenPendingTxBlockHeights(2, constAccessor), Equals, 1)
-	c.Assert(vault.LenPendingTxBlockHeights(102, constAccessor), Equals, 0)
+	c.Assert(vault.LenPendingTxBlockHeights(302, constAccessor), Equals, 0)
 	for i := 0; i < 100; i++ {
 		vault.AppendPendingTxBlockHeights(int64(i), constAccessor)
 	}

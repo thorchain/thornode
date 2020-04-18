@@ -392,7 +392,7 @@ func (s *SlashingSuite) TestNotSigningSlash(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(slasher.LackSigning(ctx, constAccessor, txOutStore), IsNil)
 
-	c.Check(keeper.na.SlashPoints, Equals, int64(200), Commentf("%+v\n", na))
+	c.Check(keeper.na.SlashPoints, Equals, int64(600), Commentf("%+v\n", na))
 
 	outItems, err := txOutStore.GetOutboundItems(ctx)
 	c.Assert(err, IsNil)

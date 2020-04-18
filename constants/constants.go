@@ -46,7 +46,7 @@ func NewConstantValue010() *ConstantValue010 {
 			BadValidatorRate:                51840,               // rate to mark a validator to be rotated out for bad behavior
 			OldValidatorRate:                51840,               // rate to mark a validator to be rotated out for age
 			LackOfObservationPenalty:        2,                   // add two slash point for each block where a node does not observe
-			SigningTransactionPeriod:        100,                 // how many blocks before a request to sign a tx by yggdrasil pool, is counted as delinquent.
+			SigningTransactionPeriod:        300,                 // how many blocks before a request to sign a tx by yggdrasil pool, is counted as delinquent.
 			MinimumBondInRune:               100_000_000_000_000, // 1 million rune
 			WhiteListGasAsset:               1000,                // thor coins we will be given to the validator
 			FailKeygenSlashPoints:           720,                 // slash for 720 blocks , which equals 1 hour
