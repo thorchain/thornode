@@ -39,9 +39,9 @@ const (
 type PoolMod struct {
 	Asset    common.Asset `json:"asset"`
 	RuneAmt  sdk.Uint     `json:"rune_amt"`
-	RuneAdd  bool         `json:"add"`
+	RuneAdd  bool         `json:"rune_add"`
 	AssetAmt sdk.Uint     `json:"asset_amt"`
-	AssetAdd bool         `json:"add"`
+	AssetAdd bool         `json:"asset_add"`
 }
 
 type PoolMods []PoolMod
