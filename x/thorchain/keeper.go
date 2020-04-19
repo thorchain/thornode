@@ -29,7 +29,6 @@ type Keeper interface {
 	KeeperTxOut
 	KeeperLiquidityFees
 	KeeperEvents
-	KeeperChains
 	KeeperVault
 	KeeperReserveContributors
 	KeeperVaultData

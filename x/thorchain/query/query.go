@@ -33,7 +33,6 @@ func (q Query) Path(args ...string) string {
 
 // query endpoints supported by the thorchain Querier
 var (
-	QueryChains             = Query{Key: "chains", EndpointTemplate: "/%s/chains"}
 	QueryPool               = Query{Key: "pool", EndpointTemplate: "/%s/pool/{%s}"}
 	QueryPools              = Query{Key: "pools", EndpointTemplate: "/%s/pools"}
 	QueryPoolStakers        = Query{Key: "poolstakers", EndpointTemplate: "/%s/pool/{%s}/stakers"}
@@ -58,7 +57,6 @@ var (
 	QueryVaultsAsgard       = Query{Key: "vaultsasgard", EndpointTemplate: "/%s/vaults/asgard"}
 	QueryVaultsYggdrasil    = Query{Key: "vaultsyggdrasil", EndpointTemplate: "/%s/vaults/yggdrasil"}
 	QueryVaultPubkeys       = Query{Key: "vaultpubkeys", EndpointTemplate: "/%s/vaults/pubkeys"}
-	QueryVaultAddresses     = Query{Key: "vaultaddresses", EndpointTemplate: "/%s/vaults/addresses"}
 	QueryTSSSigners         = Query{Key: "tsssigner", EndpointTemplate: "/%s/vaults/{%s}/signers"}
 	QueryConstantValues     = Query{Key: "constants", EndpointTemplate: "/%s/constants"}
 )
@@ -67,7 +65,6 @@ var (
 var Queries = []Query{
 	QueryPool,
 	QueryPools,
-	QueryChains,
 	QueryPoolStakers,
 	QueryStakerPools,
 	QuerySwapRecord,
@@ -90,7 +87,6 @@ var Queries = []Query{
 	QueryVaultsYggdrasil,
 	QueryVaultPubkeys,
 	QueryKeygensPubkey,
-	QueryVaultAddresses,
 	QueryTSSSigners,
 	QueryConstantValues,
 }

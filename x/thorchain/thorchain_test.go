@@ -243,9 +243,6 @@ func (s *ThorchainSuite) TestRagnarok(c *C) {
 	asgard := GetRandomVault()
 	c.Assert(keeper.SetVault(ctx, asgard), IsNil)
 
-	// create chains
-	keeper.SetChains(ctx, common.Chains{common.BNBChain})
-
 	// create pools
 	pool := NewPool()
 	pool.Asset = common.BNBAsset
@@ -433,9 +430,6 @@ func (s *ThorchainSuite) TestRagnarokNoOneLeave(c *C) {
 	// create active asgard vault
 	asgard := GetRandomVault()
 	c.Assert(keeper.SetVault(ctx, asgard), IsNil)
-
-	// create chains
-	keeper.SetChains(ctx, common.Chains{common.BNBChain})
 
 	// create pools
 	pool := NewPool()

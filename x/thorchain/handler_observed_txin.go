@@ -209,14 +209,6 @@ func (h ObservedTxInHandler) handleV1(ctx sdk.Context, version semver.Version, m
 			return sdk.ErrInternal(err.Error()).Result()
 		}
 
-		// add this chain to our list of supported chains
-		chains, err := h.keeper.GetChains(ctx)
-		if err != nil {
-			return sdk.ErrInternal(err.Error()).Result()
-		}
-		chains = append(chains, tx.Tx.Chain)
-		h.keeper.SetChains(ctx, chains)
-
 		// add addresses to observing addresses. This is used to detect
 		// active/inactive observing node accounts
 		obMgr.AppendObserver(tx.Tx.Chain, txIn.Signers)

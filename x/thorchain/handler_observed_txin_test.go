@@ -127,7 +127,6 @@ type TestObservedTxInHandleKeeper struct {
 	voter     ObservedTxVoter
 	yggExists bool
 	height    int64
-	chains    common.Chains
 	pool      Pool
 	observing []sdk.AccAddress
 	vault     Vault
@@ -148,14 +147,6 @@ func (k *TestObservedTxInHandleKeeper) SetObservedTxVoter(_ sdk.Context, voter O
 
 func (k *TestObservedTxInHandleKeeper) VaultExists(_ sdk.Context, _ common.PubKey) bool {
 	return k.yggExists
-}
-
-func (k *TestObservedTxInHandleKeeper) GetChains(_ sdk.Context) (common.Chains, error) {
-	return k.chains, nil
-}
-
-func (k *TestObservedTxInHandleKeeper) SetChains(_ sdk.Context, chains common.Chains) {
-	k.chains = chains
 }
 
 func (k *TestObservedTxInHandleKeeper) SetLastChainHeight(_ sdk.Context, _ common.Chain, height int64) error {
@@ -270,8 +261,6 @@ func (s *HandlerObservedTxInSuite) TestHandle(c *C) {
 	c.Check(items, HasLen, 1)
 	c.Check(keeper.observing, HasLen, 1)
 	c.Check(keeper.height, Equals, int64(12))
-	c.Check(keeper.chains, HasLen, 1)
-	c.Check(keeper.chains[0].Equals(common.BNBChain), Equals, true)
 	bnbCoin := keeper.vault.Coins.GetCoin(common.BNBAsset)
 	c.Assert(bnbCoin.Amount.Equal(sdk.OneUint()), Equals, true)
 }
