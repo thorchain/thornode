@@ -223,7 +223,8 @@ func (b *MockChainClient) GetPubKey() crypto.PubKey {
 	return nil
 }
 
-func (b *MockChainClient) Start(globalTxsQueue chan stypes.TxIn) {}
+func (b *MockChainClient) Start(globalTxsQueue chan stypes.TxIn, globalErrataQueue chan stypes.ErrataBlock) {
+}
 
 func (b *MockChainClient) Stop() {}
 

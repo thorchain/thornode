@@ -103,6 +103,16 @@ func MakeCodec() *codec.Codec {
 	return cdc
 }
 
+func makeStdTx(msgs []sdk.Msg) *authtypes.StdTx {
+	stdTx := authtypes.NewStdTx(
+		msgs,
+		authtypes.NewStdFee(100000000, nil), // fee
+		nil,                                 // signatures
+		"",                                  // memo
+	)
+	return &stdTx
+}
+
 func (b *ThorchainBridge) getWithPath(path string) ([]byte, int, error) {
 	return b.get(b.getThorChainURL(path))
 }
@@ -212,6 +222,18 @@ func (b *ThorchainBridge) PostKeysignFailure(blame tssCommon.Blame, height int64
 	return b.Broadcast(stdTx, types.TxSync)
 }
 
+// GetErrataStdTx get errata tx from params
+func (b *ThorchainBridge) GetErrataStdTx(txID common.TxID, chain common.Chain) (*authtypes.StdTx, error) {
+	start := time.Now()
+	defer func() {
+		b.m.GetHistograms(metrics.SignToThorchainDuration).Observe(time.Since(start).Seconds())
+	}()
+
+	msg := stypes.NewMsgErrataTx(txID, chain, b.keys.GetSignerInfo().GetAddress())
+
+	return makeStdTx([]sdk.Msg{msg}), nil
+}
+
 // GetKeygenStdTx get keygen tx from params
 func (b *ThorchainBridge) GetKeygenStdTx(poolPubKey common.PubKey, blame tssCommon.Blame, inputPks common.PubKeys, keygenType stypes.KeygenType, height int64) (*authtypes.StdTx, error) {
 	start := time.Now()
@@ -220,14 +242,7 @@ func (b *ThorchainBridge) GetKeygenStdTx(poolPubKey common.PubKey, blame tssComm
 	}()
 	msg := stypes.NewMsgTssPool(inputPks, poolPubKey, keygenType, height, blame, b.keys.GetSignerInfo().GetAddress())
 
-	stdTx := authtypes.NewStdTx(
-		[]sdk.Msg{msg},
-		authtypes.NewStdFee(100000000, nil), // fee
-		nil,                                 // signatures
-		"",                                  // memo
-	)
-
-	return &stdTx, nil
+	return makeStdTx([]sdk.Msg{msg}), nil
 }
 
 // GetObservationsStdTx get observations tx from txIns
@@ -272,14 +287,7 @@ func (b *ThorchainBridge) GetObservationsStdTx(txIns stypes.ObservedTxs) (*autht
 		msgs = append(msgs, stypes.NewMsgObservedTxOut(outbound, b.keys.GetSignerInfo().GetAddress()))
 	}
 
-	stdTx := authtypes.NewStdTx(
-		msgs,
-		authtypes.NewStdFee(100000000, nil), // fee
-		nil,                                 // signatures
-		"",                                  // memo
-	)
-
-	return &stdTx, nil
+	return makeStdTx(msgs), nil
 }
 
 // EnsureNodeWhitelistedWithTimeout check node is whitelisted with timeout retry

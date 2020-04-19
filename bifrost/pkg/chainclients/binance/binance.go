@@ -109,7 +109,7 @@ func NewBinance(thorKeys *thorclient.Keys, cfg config.ChainConfiguration, server
 	return b, nil
 }
 
-func (b *Binance) Start(globalTxsQueue chan stypes.TxIn) {
+func (b *Binance) Start(globalTxsQueue chan stypes.TxIn, globalErrataQueue chan stypes.ErrataBlock) {
 	b.blockScanner.Start(globalTxsQueue)
 }
 

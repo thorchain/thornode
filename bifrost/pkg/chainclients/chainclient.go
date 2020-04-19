@@ -27,6 +27,6 @@ type ChainClient interface {
 	GetChain() common.Chain
 	GetGasFee(count uint64) common.Gas
 	ValidateMetadata(_ interface{}) bool
-	Start(globalTxsQueue chan stypes.TxIn)
+	Start(globalTxsQueue chan stypes.TxIn, globalErrataQueue chan stypes.ErrataBlock)
 	Stop()
 }
