@@ -381,7 +381,6 @@ func (s *Signer) handleYggReturn(tx types.TxOutItem) (types.TxOutItem, error) {
 		return tx, err
 	}
 	tx.Coins = make(common.Coins, 0)
-	gas := chain.GetGasFee(uint64(len(acct.Coins)))
 	for _, coin := range acct.Coins {
 		asset, err := common.NewAsset(coin.Denom)
 		if err != nil {
@@ -389,9 +388,6 @@ func (s *Signer) handleYggReturn(tx types.TxOutItem) (types.TxOutItem, error) {
 			return tx, err
 		}
 		amount := sdk.NewUint(coin.Amount)
-		if asset.Equals(gas[0].Asset) {
-			amount = common.SafeSub(amount, gas[0].Amount)
-		}
 		tx.Coins = append(tx.Coins, common.NewCoin(asset, amount))
 	}
 

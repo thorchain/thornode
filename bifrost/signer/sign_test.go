@@ -246,7 +246,7 @@ func (s *SignSuite) TestHandleYggReturn_Success_FeeSingleton(c *C) {
 
 	newItem, err := sign.handleYggReturn(item)
 	c.Assert(err, IsNil)
-	c.Check(newItem.Coins[0].Amount.Uint64(), Equals, uint64(962500))
+	c.Check(newItem.Coins[0].Amount.Uint64(), Equals, uint64(1000000))
 }
 
 func (s *SignSuite) TestHandleYggReturn_Success_FeeMulti(c *C) {
@@ -269,7 +269,7 @@ func (s *SignSuite) TestHandleYggReturn_Success_FeeMulti(c *C) {
 
 	newItem, err := sign.handleYggReturn(item)
 	c.Assert(err, IsNil)
-	c.Check(newItem.Coins[0].Amount.Uint64(), Equals, uint64(940000))
+	c.Check(newItem.Coins[0].Amount.Uint64(), Equals, uint64(1000000))
 }
 
 func (s *SignSuite) TestHandleYggReturn_Success_NotEnough(c *C) {

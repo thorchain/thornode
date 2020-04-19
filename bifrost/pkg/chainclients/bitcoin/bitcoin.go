@@ -120,11 +120,6 @@ func (c *Client) GetHeight() (int64, error) {
 	return c.client.GetBlockCount()
 }
 
-// GetGasFee returns gas fee
-func (c *Client) GetGasFee(count uint64) common.Gas {
-	return common.Gas{} // TODO not implemented yet
-}
-
 // ValidateMetadata validates metadata
 func (c *Client) ValidateMetadata(inter interface{}) bool {
 	return true // TODO not implemented yet
