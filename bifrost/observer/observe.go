@@ -26,6 +26,7 @@ type Observer struct {
 	stopChan        chan struct{}
 	pubkeyMgr       pubkeymanager.PubKeyValidator
 	globalTxsQueue  chan types.TxIn
+	globalErrataQueue chan types.ErrataBlock
 	m               *metrics.Metrics
 	errCounter      *prometheus.CounterVec
 	thorchainBridge *thorclient.ThorchainBridge
@@ -202,6 +203,69 @@ func (o *Observer) isAddrWithMemo(chain common.Chain, addr, memo, targetMemo str
 		return true
 	}
 	return false
+}
+
+func (o *Observer) processTxIns() {
+	for {
+		select {
+		case <-o.stopChan:
+			return
+		case txIn := <-o.globalTxsQueue:
+			txIn.TxArray = o.filterObservations(txIn.Chain, txIn.TxArray)
+			if err := o.signAndSendToThorchain(txIn); err != nil {
+				o.logger.Error().Err(err).Msg("fail to send to thorchain")
+				o.errCounter.WithLabelValues("fail_send_to_thorchain", txIn.BlockHeight).Inc()
+			}
+			// check if chain client has OnObservedTxIn method then call it
+			chainClient, err := o.getChain(txIn.Chain)
+			if err != nil {
+				o.logger.Error().Err(err).Msg("fail to retrieve chain client")
+				continue
+			}
+			i, ok := chainClient.(interface{ OnObservedTxIn(txIn types.TxIn) })
+			if ok {
+				i.OnObservedTxIn(txIn)
+			}
+		}
+	}
+}
+
+
+func (o *Observer) processErrataTx() {
+	for {
+		select {
+		case <-s.stopChan:
+			return
+		case errataBlock, more := <-o.globalErrataQueue:
+			if !more {
+				return
+			}
+			s.logger.Info().Msgf("Received a errata block %+v from the Thorchain", errataBlock.Height)
+			for _, errataTx := range errataBlock.Txs {
+				if err := s.sendErrataTxToThorchain(errataTx.Height, errataTx.TxID, errataTx.Chain); err != nil {
+					s.errCounter.WithLabelValues("fail_to_broadcast_errata_tx", "").Inc()
+					s.logger.Error().Err(err).Msg("fail to broadcast errata tx")
+				}
+			}
+		}
+	}
+}
+*/
+
+func (o *Observer) sendErrataTxToThorchain(height int64, txID common.TxID, chain common.Chain) error {
+	stdTx, err := o.thorchainBridge.GetErrataStdTx(txID, chain)
+	strHeight := strconv.FormatInt(height, 10)
+	if err != nil {
+		o.errCounter.WithLabelValues("fail_to_sign", strHeight).Inc()
+		return fmt.Errorf("fail to sign the tx: %w", err)
+	}
+	txID, err = o.thorchainBridge.Broadcast(*stdTx, types.TxSync)
+	if err != nil {
+		o.errCounter.WithLabelValues("fail_to_send_to_thorchain", strHeight).Inc()
+		return fmt.Errorf("fail to send the tx to thorchain: %w", err)
+	}
+	o.logger.Info().Int64("block", height).Str("thorchain hash", txID.String()).Msg("sign and send to thorchain successfully")
+	return nil
 }
 
 func (o *Observer) signAndSendToThorchain(txIn types.TxIn) error {
