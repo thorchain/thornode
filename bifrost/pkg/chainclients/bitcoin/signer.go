@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/btcsuite/btcd/btcjson"
@@ -12,6 +13,7 @@ import (
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
 	"github.com/btcsuite/btcutil/txsort"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/secp256k1"
 	"gitlab.com/thorchain/txscript"
@@ -19,6 +21,7 @@ import (
 	stypes "gitlab.com/thorchain/thornode/bifrost/thorclient/types"
 	"gitlab.com/thorchain/thornode/bifrost/tss"
 	"gitlab.com/thorchain/thornode/common"
+	"gitlab.com/thorchain/thornode/x/thorchain"
 )
 
 func getBTCPrivateKey(key crypto.PrivKey) (*btcec.PrivateKey, error) {
@@ -44,6 +47,11 @@ func (c *Client) getChainCfg() *chaincfg.Params {
 }
 
 func getGasCoin(tx stypes.TxOutItem) common.Coin {
+	// for yggdrasil
+	if strings.HasPrefix(strings.ToLower(tx.Memo), thorchain.YggdrasilReturnMemo{}.GetType().String()) {
+		// for yggdrasil , usually it is one input and one output, so estimate 200 sat will be ok
+		return common.NewCoin(common.BTCAsset, sdk.NewUint(200))
+	}
 	return tx.MaxGas.ToCoins().GetCoin(common.BTCAsset)
 }
 
