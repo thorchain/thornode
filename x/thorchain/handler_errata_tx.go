@@ -177,6 +177,7 @@ func (h ErrataTxHandler) handleV1(ctx sdk.Context, msg MsgErrataTx) sdk.Result {
 		pool.PoolUnits = common.SafeSub(pool.PoolUnits, su.Units)
 		ps.TotalUnits = pool.PoolUnits
 		su.Units = sdk.ZeroUint()
+		su.Height = ctx.BlockHeight()
 
 		ps.UpsertStakerUnit(su)
 		h.keeper.SetPoolStaker(ctx, ps)

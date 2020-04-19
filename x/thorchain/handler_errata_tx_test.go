@@ -95,14 +95,18 @@ func (s *HandlerErrataTxSuite) TestHandle(c *C) {
 
 	txID := GetRandomTxHash()
 	na := GetRandomNodeAccount(NodeActive)
-	ps := NewPoolStaker(common.BNBAsset, sdk.NewUint(1000))
+	ps := NewPoolStaker(common.BNBAsset, sdk.NewUint(1600))
 	addr := GetRandomBNBAddress()
 	ps.Stakers = []StakerUnit{
 		StakerUnit{
-			RuneAddress:  addr,
-			AssetAddress: addr,
-			Height:       23,
-			Units:        ps.TotalUnits,
+			RuneAddress: addr,
+			Height:      5,
+			Units:       ps.TotalUnits.QuoUint64(2),
+		},
+		StakerUnit{
+			RuneAddress: GetRandomBNBAddress(),
+			Height:      10,
+			Units:       ps.TotalUnits.QuoUint64(2),
 		},
 	}
 
@@ -135,7 +139,9 @@ func (s *HandlerErrataTxSuite) TestHandle(c *C) {
 	c.Assert(result.IsOK(), Equals, true)
 	c.Check(keeper.pool.BalanceRune.Equal(sdk.NewUint(70*common.One)), Equals, true)
 	c.Check(keeper.pool.BalanceAsset.Equal(sdk.NewUint(100*common.One)), Equals, true)
-	c.Check(keeper.ps.TotalUnits.IsZero(), Equals, true)
+	c.Check(keeper.ps.TotalUnits.Equal(sdk.NewUint(800)), Equals, true)
+	c.Check(keeper.ps.Stakers[0].Units.IsZero(), Equals, true)
+	c.Check(keeper.ps.Stakers[0].Height, Equals, int64(18))
 
 	c.Assert(keeper.event.Type, Equals, "errata")
 	var evt EventErrata
