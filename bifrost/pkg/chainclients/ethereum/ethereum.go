@@ -113,7 +113,7 @@ func NewClient(thorKeys *thorclient.Keys, cfg config.ChainConfiguration, server 
 	return c, nil
 }
 
-func (c *Client) Start(globalTxsQueue chan stypes.TxIn) {
+func (c *Client) Start(globalTxsQueue chan stypes.TxIn, globalErrataQueue chan stypes.ErrataBlock) {
 	c.blockScanner.Start(globalTxsQueue)
 }
 
