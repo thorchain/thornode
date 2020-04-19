@@ -17,6 +17,7 @@ import (
 	tssp "gitlab.com/thorchain/tss/go-tss/tss"
 
 	"gitlab.com/thorchain/thornode/bifrost/blockscanner"
+	btypes "gitlab.com/thorchain/thornode/bifrost/blockscanner/types"
 	"gitlab.com/thorchain/thornode/bifrost/config"
 	"gitlab.com/thorchain/thornode/bifrost/metrics"
 	"gitlab.com/thorchain/thornode/bifrost/thorclient"
@@ -169,6 +170,10 @@ func (c *Client) FetchTxs(height int64) (types.TxIn, error) {
 	block, err := c.getBlock(height)
 	if err != nil {
 		time.Sleep(300 * time.Millisecond)
+		if rpcErr, ok := err.(*btcjson.RPCError); ok && rpcErr.Code == btcjson.ErrRPCInvalidParameter {
+			// this means the tx had been broadcast to chain, it must be another signer finished quicker then us
+			return types.TxIn{}, btypes.UnavailableBlock
+		}
 		return types.TxIn{}, fmt.Errorf("fail to get block: %w", err)
 	}
 	txs, err := c.extractTxs(block)
