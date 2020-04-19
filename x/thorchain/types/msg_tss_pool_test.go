@@ -25,4 +25,11 @@ func (s *MsgTssPoolSuite) TestMsgTssPool(c *C) {
 	c.Check(NewMsgTssPool(nil, pk, AsgardKeygen, 1, tssCommon.NoBlame, common.Chains{common.BNBChain}, addr).ValidateBasic(), NotNil)
 	c.Check(NewMsgTssPool(pks, "", AsgardKeygen, 1, tssCommon.NoBlame, common.Chains{common.BNBChain}, addr).ValidateBasic(), NotNil)
 	c.Check(NewMsgTssPool(pks, "bogusPubkey", AsgardKeygen, 1, tssCommon.NoBlame, common.Chains{common.BNBChain}, addr).ValidateBasic(), NotNil)
+
+	// fails on empty chain list
+	msg = NewMsgTssPool(pks, pk, AsgardKeygen, 1, tssCommon.NoBlame, common.Chains{}, addr)
+	c.Check(msg.ValidateBasic(), NotNil)
+	// fails on duplicates in chain list
+	msg = NewMsgTssPool(pks, pk, AsgardKeygen, 1, tssCommon.NoBlame, common.Chains{common.BNBChain, common.BNBChain}, addr)
+	c.Check(msg.ValidateBasic(), NotNil)
 }

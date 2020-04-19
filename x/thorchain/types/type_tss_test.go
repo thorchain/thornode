@@ -39,3 +39,31 @@ func (s *TypeTssSuite) TestVoter(c *C) {
 	}
 	c.Check(tss.HasConsensus(nas), Equals, true)
 }
+
+func (s *TypeTssSuite) TestChainConsensus(c *C) {
+	// create 4 fake "active" accounts
+	nas := NodeAccounts{
+		NodeAccount{},
+		NodeAccount{},
+		NodeAccount{},
+		NodeAccount{},
+	}
+
+	voter := TssVoter{
+		Chains: common.Chains{
+			common.BNBChain, // 4 BNB chains
+			common.BNBChain,
+			common.BNBChain,
+			common.BNBChain,
+			common.BTCChain, // 3 BTC chains
+			common.BTCChain,
+			common.BTCChain,
+			common.ETHChain, // 2 ETH chains
+			common.ETHChain,
+			common.THORChain, // 1 THOR chain and partridge in a pear tree
+		},
+	}
+
+	chains := voter.ConsensusChains(nas)
+	c.Check(chains, DeepEquals, common.Chains{common.BNBChain, common.BTCChain})
+}
