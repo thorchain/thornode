@@ -27,6 +27,7 @@ func RegisterCodec(cdc *codec.Codec) {
 	cdc.RegisterConcrete(MsgNoOp{}, "thorchain/MsgNoOp", nil)
 	cdc.RegisterConcrete(MsgOutboundTx{}, "thorchain/MsgOutboundTx", nil)
 	cdc.RegisterConcrete(MsgSetVersion{}, "thorchain/MsgSetVersion", nil)
+	cdc.RegisterConcrete(MsgSetIPAddress{}, "thorchain/MsgSetIPAddress", nil)
 	cdc.RegisterConcrete(MsgYggdrasil{}, "thorchain/MsgYggdrasil", nil)
 	cdc.RegisterConcrete(MsgReserveContributor{}, "thorchain/MsgReserveContributor", nil)
 }

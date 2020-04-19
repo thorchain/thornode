@@ -32,9 +32,8 @@ const (
 	DefaultObserverLevelDBFolder = `observer_data`
 	GasPriceUpdateInterval       = 100
 	DefaultGasPrice              = 1
+	ETHTransferGas               = uint64(21000)
 )
-
-var eipSigner = etypes.NewEIP155Signer(big.NewInt(1))
 
 // BlockScanner is to scan the blocks
 type BlockScanner struct {
@@ -77,6 +76,11 @@ func GetTxHash(encodedTx string) (string, error) {
 		return "", err
 	}
 	return fmt.Sprintf("%s", tx.Hash().Hex()), nil
+}
+
+// GetGasPrice returns current gas price
+func (e *BlockScanner) GetGasPrice() *big.Int {
+	return e.gasPrice
 }
 
 // processBlock extracts transactions from block
