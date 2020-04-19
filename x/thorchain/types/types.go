@@ -39,7 +39,7 @@ func HasSuperMajority(signers, total int) bool {
 }
 
 // HasMajority return true when it has more than 1/2
-func HasMajority(signers, total int) bool {
+func HasSimpleMajority(signers, total int) bool {
 	if signers > total {
 		return false // will not have majority if THORNode have more signers than node accounts. This shouldn't be possible
 	}

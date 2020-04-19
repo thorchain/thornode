@@ -47,13 +47,13 @@ func (s TypesSuite) TestHasSuperMajority(c *C) {
 	c.Check(HasSuperMajority(3, 0), Equals, false)
 }
 
-func (TypesSuite) TestHasMajority(c *C) {
-	c.Check(HasMajority(3, 4), Equals, true)
-	c.Check(HasMajority(2, 3), Equals, true)
-	c.Check(HasMajority(1, 2), Equals, true)
-	c.Check(HasMajority(1, 3), Equals, false)
-	c.Check(HasMajority(2, 4), Equals, true)
-	c.Check(HasMajority(100000, 3000000), Equals, false)
+func (TypesSuite) TestHasSimpleMajority(c *C) {
+	c.Check(HasSimpleMajority(3, 4), Equals, true)
+	c.Check(HasSimpleMajority(2, 3), Equals, true)
+	c.Check(HasSimpleMajority(1, 2), Equals, true)
+	c.Check(HasSimpleMajority(1, 3), Equals, false)
+	c.Check(HasSimpleMajority(2, 4), Equals, true)
+	c.Check(HasSimpleMajority(100000, 3000000), Equals, false)
 }
 
 func (TypesSuite) TestGetThreshold(c *C) {
