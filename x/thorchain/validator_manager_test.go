@@ -3,6 +3,7 @@ package thorchain
 import (
 	. "gopkg.in/check.v1"
 
+	"gitlab.com/thorchain/thornode/common"
 	"gitlab.com/thorchain/thornode/constants"
 )
 
@@ -94,7 +95,7 @@ func (vts *ValidatorManagerTestSuite) TestRagnarokForChaosnet(c *C) {
 		ctx = ctx.WithBlockHeight(startBlockHeight)
 		c.Assert(vMgr.BeginBlock(ctx, constAccessor), IsNil)
 		// assume keygen success
-		vault := NewVault(ctx.BlockHeight(), ActiveVault, AsgardVault, GetRandomPubKey())
+		vault := NewVault(ctx.BlockHeight(), ActiveVault, AsgardVault, GetRandomPubKey(), common.Chains{common.BNBChain})
 		for _, item := range versionedVaultMgrDummy.vaultMgrDummy.nas {
 			vault.Membership = append(vault.Membership, item.PubKeySet.Secp256k1)
 		}
@@ -109,7 +110,7 @@ func (vts *ValidatorManagerTestSuite) TestRagnarokForChaosnet(c *C) {
 	// trigger ragnarok
 	ctx = ctx.WithBlockHeight(startBlockHeight)
 	c.Assert(vMgr.BeginBlock(ctx, constAccessor), IsNil)
-	vault := NewVault(ctx.BlockHeight(), ActiveVault, AsgardVault, GetRandomPubKey())
+	vault := NewVault(ctx.BlockHeight(), ActiveVault, AsgardVault, GetRandomPubKey(), common.Chains{common.BNBChain})
 	for _, item := range versionedVaultMgrDummy.vaultMgrDummy.nas {
 		vault.Membership = append(vault.Membership, item.PubKeySet.Secp256k1)
 	}

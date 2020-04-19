@@ -85,7 +85,7 @@ func GetRandomPubKeySet() common.PubKeySet {
 }
 
 func GetRandomVault() Vault {
-	return NewVault(32, ActiveVault, AsgardVault, GetRandomPubKey())
+	return NewVault(32, ActiveVault, AsgardVault, GetRandomPubKey(), common.Chains{common.BNBChain})
 }
 
 func GetRandomPubKey() common.PubKey {

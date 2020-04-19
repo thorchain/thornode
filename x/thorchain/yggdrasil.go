@@ -73,7 +73,7 @@ func Fund(ctx sdk.Context, keeper Keeper, txOutStore TxOutStore, constAccessor c
 		if !errors.Is(err, ErrVaultNotFound) {
 			return fmt.Errorf("fail to get yggdrasil: %w", err)
 		}
-		ygg = NewVault(ctx.BlockHeight(), ActiveVault, YggdrasilVault, na.PubKeySet.Secp256k1)
+		ygg = NewVault(ctx.BlockHeight(), ActiveVault, YggdrasilVault, na.PubKeySet.Secp256k1, nil)
 		ygg.Membership = append(ygg.Membership, na.PubKeySet.Secp256k1)
 
 		if err := keeper.SetVault(ctx, ygg); err != nil {

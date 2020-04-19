@@ -112,7 +112,7 @@ func newTssHandlerTestHelper(c *C) tssHandlerTestHelper {
 		_ = keeper.SetNodeAccount(ctx, na)
 	}
 
-	asgardVault := NewVault(ctx.BlockHeight(), ActiveVault, AsgardVault, GetRandomPubKey())
+	asgardVault := NewVault(ctx.BlockHeight(), ActiveVault, AsgardVault, GetRandomPubKey(), common.Chains{common.BNBChain})
 	c.Assert(keeper.SetVault(ctx, asgardVault), IsNil)
 	return tssHandlerTestHelper{
 		ctx:           ctx,
