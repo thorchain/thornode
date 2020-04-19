@@ -65,7 +65,6 @@ const (
 	prefixLastSignedHeight   dbPrefix = "last_signed_height/"
 	prefixNodeAccount        dbPrefix = "node_account/"
 	prefixActiveObserver     dbPrefix = "active_observer/"
-	prefixSupportedChains    dbPrefix = "supported_chains/"
 	prefixVaultPool          dbPrefix = "vault/"
 	prefixVaultAsgardIndex   dbPrefix = "vault_asgard_index/"
 	prefixVaultData          dbPrefix = "vault_data/"
