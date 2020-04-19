@@ -33,6 +33,7 @@ const (
 	GasEventType         = `gas`
 	ReserveEventType     = `reserve`
 	SlashEventType       = `slash`
+	ErrataEventType      = `errata`
 )
 
 // NewEvent create a new  event

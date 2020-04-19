@@ -252,6 +252,9 @@ func getMsgSwapFromMemo(memo SwapMemo, tx ObservedTx, signer sdk.AccAddress) (sd
 }
 
 func getMsgUnstakeFromMemo(memo UnstakeMemo, tx ObservedTx, signer sdk.AccAddress) (sdk.Msg, error) {
+	if !tx.Tx.FromAddress.IsChain(common.RuneAsset().Chain) {
+		return nil, errors.New("only unstake transactions from rune's chain are allowed")
+	}
 	withdrawAmount := sdk.NewUint(MaxUnstakeBasisPoints)
 	if len(memo.GetAmount()) > 0 {
 		withdrawAmount = sdk.NewUintFromString(memo.GetAmount())
