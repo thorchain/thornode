@@ -8,7 +8,6 @@ type ErrataBlock struct {
 }
 
 type ErrataTx struct {
-	Height int64
-	TxID   common.TxID
-	Chain  common.Chain
+	TxID  common.TxID
+	Chain common.Chain
 }

@@ -218,7 +218,7 @@ func (o *Observer) processErrataTx() {
 			}
 			o.logger.Info().Msgf("Received a errata block %+v from the Thorchain", errataBlock.Height)
 			for _, errataTx := range errataBlock.Txs {
-				if err := o.sendErrataTxToThorchain(errataTx.Height, errataTx.TxID, errataTx.Chain); err != nil {
+				if err := o.sendErrataTxToThorchain(errataBlock.Height, errataTx.TxID, errataTx.Chain); err != nil {
 					o.errCounter.WithLabelValues("fail_to_broadcast_errata_tx", "").Inc()
 					o.logger.Error().Err(err).Msg("fail to broadcast errata tx")
 				}
