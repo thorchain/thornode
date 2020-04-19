@@ -65,29 +65,23 @@ func (h ErrataTxHandler) handle(ctx sdk.Context, msg MsgErrataTx, version semver
 	}
 }
 
-func (h ErrataTxHandler) fetchEvents(ctx sdk.Context, msg MsgErrataTx) Events {
+func (h ErrataTxHandler) fetchEvents(ctx sdk.Context, msg MsgErrataTx) (Event, error) {
 	eventIDs, err := h.keeper.GetEventsIDByTxHash(ctx, msg.TxID)
 	if err != nil {
 		errMsg := fmt.Sprintf("fail to get event ids by txhash(%s)", msg.TxID.String())
 		ctx.Logger().Error(errMsg, "error", err)
 	}
 
-	// collect events with the given hash
-	events := make(Events, 0)
-	for _, id := range eventIDs {
-		event, err := h.keeper.GetEvent(ctx, id)
-		if err != nil {
-			ctx.Logger().Error("fail to get event", "id", id, "error", err)
-			continue
-		}
-
-		if event.Empty() {
-			continue
-		}
-		events = append(events, event)
+	if len(eventIDs) == 0 {
+		return Event{}, fmt.Errorf("no event found for transaction id: %s", msg.TxID.String())
 	}
 
-	return events
+	event, err := h.keeper.GetEvent(ctx, eventIDs[0])
+	if err != nil {
+		ctx.Logger().Error("fail to get event", "id", msg.TxID, "error", err)
+	}
+
+	return event, err
 }
 
 func (h ErrataTxHandler) handleV1(ctx sdk.Context, msg MsgErrataTx) sdk.Result {
@@ -125,47 +119,53 @@ func (h ErrataTxHandler) handleV1(ctx sdk.Context, msg MsgErrataTx) sdk.Result {
 	h.keeper.SetErrataTxVoter(ctx, voter)
 
 	// fetch events
-	events := h.fetchEvents(ctx, msg)
+	event, err := h.fetchEvents(ctx, msg)
+	if err != nil {
+		return sdk.ErrInternal(err.Error()).Result()
+	}
 
-	// revert each in tx
-	for _, event := range events {
-		tx := event.InTx
+	tx := event.InTx
 
-		if !tx.Chain.Equals(msg.Chain) {
-			// does not match chain
-			continue
+	if !tx.Chain.Equals(msg.Chain) {
+		// does not match chain
+		return sdk.Result{
+			Code:      sdk.CodeOK,
+			Codespace: DefaultCodespace,
 		}
+	}
 
-		memo, _ := ParseMemo(tx.Memo)
-		if !memo.IsType(txSwap) {
-			// must be a swap transaction
-			continue
+	memo, _ := ParseMemo(tx.Memo)
+	if !memo.IsType(txSwap) {
+		// must be a swap transaction
+		return sdk.Result{
+			Code:      sdk.CodeOK,
+			Codespace: DefaultCodespace,
 		}
+	}
 
-		// fetch pool from memo
-		pool, err := h.keeper.GetPool(ctx, memo.GetAsset())
-		if err != nil {
-			ctx.Logger().Error("fail to get pool for errata tx", "error", err)
-			continue
+	// fetch pool from memo
+	pool, err := h.keeper.GetPool(ctx, memo.GetAsset())
+	if err != nil {
+		ctx.Logger().Error("fail to get pool for errata tx", "error", err)
+		return sdk.ErrInternal(err.Error()).Result()
+	}
+
+	// subtract amounts from pool balances
+	runeAmt := sdk.ZeroUint()
+	assetAmt := sdk.ZeroUint()
+	for _, coin := range tx.Coins {
+		if coin.Asset.IsRune() {
+			runeAmt = coin.Amount
+		} else {
+			assetAmt = coin.Amount
 		}
+	}
 
-		// subtract amounts from pool balances
-		runeAmt := sdk.ZeroUint()
-		assetAmt := sdk.ZeroUint()
-		for _, coin := range tx.Coins {
-			if coin.Asset.IsRune() {
-				runeAmt = coin.Amount
-			} else {
-				assetAmt = coin.Amount
-			}
-		}
+	pool.BalanceRune = common.SafeSub(pool.BalanceRune, runeAmt)
+	pool.BalanceAsset = common.SafeSub(pool.BalanceAsset, assetAmt)
 
-		pool.BalanceRune = common.SafeSub(pool.BalanceRune, runeAmt)
-		pool.BalanceAsset = common.SafeSub(pool.BalanceAsset, assetAmt)
-
-		if err := h.keeper.SetPool(ctx, pool); err != nil {
-			ctx.Logger().Error("fail to save pool", "error", err)
-		}
+	if err := h.keeper.SetPool(ctx, pool); err != nil {
+		ctx.Logger().Error("fail to save pool", "error", err)
 	}
 
 	return sdk.Result{
