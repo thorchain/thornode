@@ -264,7 +264,15 @@ func (s *Signer) processKeygen(ch <-chan ttypes.KeygenBlock) {
 }
 
 func (s *Signer) sendKeygenToThorchain(height int64, poolPk common.PubKey, blame tssCommon.Blame, input common.PubKeys, keygenType ttypes.KeygenType) error {
-	stdTx, err := s.thorchainBridge.GetKeygenStdTx(poolPk, blame, input, keygenType, height)
+	// collect supported chains in the configuration
+	chains := make(common.Chains, 0)
+	for name, chain := range s.chains {
+		if !chain.GetConfig().OptToRetire {
+			chains = append(chains, name)
+		}
+	}
+
+	stdTx, err := s.thorchainBridge.GetKeygenStdTx(poolPk, blame, input, keygenType, chains, height)
 	strHeight := strconv.FormatInt(height, 10)
 	if err != nil {
 		s.errCounter.WithLabelValues("fail_to_sign", strHeight).Inc()

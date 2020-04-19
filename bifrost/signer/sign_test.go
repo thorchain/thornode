@@ -186,6 +186,10 @@ func (b *MockChainClient) SignTx(tai stypes.TxOutItem, height int64) ([]byte, er
 	return nil, nil
 }
 
+func (b *MockChainClient) GetConfig() config.ChainConfiguration {
+	return config.ChainConfiguration{}
+}
+
 func (b *MockChainClient) GetHeight() (int64, error) {
 	return 0, nil
 }

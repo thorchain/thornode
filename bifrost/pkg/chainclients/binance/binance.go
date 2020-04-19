@@ -117,6 +117,10 @@ func (b *Binance) Stop() {
 	b.blockScanner.Stop()
 }
 
+func (b *Binance) GetConfig() config.ChainConfiguration {
+	return b.cfg
+}
+
 // IsTestNet determinate whether we are running on test net by checking the status
 func (b *Binance) checkIsTestNet() error {
 	// Cached data after first call

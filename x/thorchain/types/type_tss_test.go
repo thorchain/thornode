@@ -22,13 +22,16 @@ func (s *TypeTssSuite) TestVoter(c *C) {
 	)
 	c.Check(tss.Empty(), Equals, false)
 
+	chains := common.Chains{common.BNBChain, common.BTCChain}
+
 	addr := GetRandomBech32Addr()
 	c.Check(tss.HasSigned(addr), Equals, false)
-	tss.Sign(addr)
+	tss.Sign(addr, chains)
 	c.Check(tss.Signers, HasLen, 1)
 	c.Check(tss.HasSigned(addr), Equals, true)
-	tss.Sign(addr) // ensure signing twice doesn't duplicate
+	tss.Sign(addr, chains) // ensure signing twice doesn't duplicate
 	c.Check(tss.Signers, HasLen, 1)
+	c.Check(tss.Chains, HasLen, 2)
 
 	c.Check(tss.HasConsensus(nil), Equals, false)
 	nas := NodeAccounts{

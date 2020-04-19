@@ -298,7 +298,7 @@ func queryPoolAddresses(ctx sdk.Context, path []string, req abci.RequestQuery, k
 		// we've observed at least one transaction. But we can't send a
 		// transaction until we get the address of the pool on the chain
 		if len(chains) == 0 {
-			chains = common.Chains{common.BNBChain}
+			chains = common.Chains{common.RuneAsset().Chain}
 		}
 
 		for _, chain := range chains {

@@ -110,6 +110,11 @@ func (c *Client) Stop() {
 	c.blockScanner.Stop()
 }
 
+// GetConfig - get the chain configuration
+func (c *Client) GetConfig() config.ChainConfiguration {
+	return c.cfg
+}
+
 // GetChain returns BTC Chain
 func (c *Client) GetChain() common.Chain {
 	return common.BTCChain
