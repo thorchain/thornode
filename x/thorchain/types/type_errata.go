@@ -46,7 +46,7 @@ func (errata *ErrataTxVoter) HasConsensus(nas NodeAccounts) bool {
 			count += 1
 		}
 	}
-	if HasMajority(count, len(nas)) {
+	if HasSuperMajority(count, len(nas)) {
 		return true
 	}
 
