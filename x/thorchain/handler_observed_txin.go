@@ -155,7 +155,7 @@ func (h ObservedTxInHandler) handleV1(ctx sdk.Context, version semver.Version, m
 		vault.AddFunds(tx.Tx.Coins)
 		vault.InboundTxCount += 1
 		memo, _ := ParseMemo(tx.Tx.Memo) // ignore err
-		if vault.IsYggdrasil() && memo.IsType(txYggdrasilFund) {
+		if vault.IsYggdrasil() && memo.IsType(TxYggdrasilFund) {
 			vault.RemovePendingTxBlockHeights(memo.GetBlockHeight())
 		}
 		if err := h.keeper.SetVault(ctx, vault); err != nil {

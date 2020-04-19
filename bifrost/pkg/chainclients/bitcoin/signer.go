@@ -47,7 +47,7 @@ func (c *Client) getChainCfg() *chaincfg.Params {
 }
 
 func getGasCoin(tx stypes.TxOutItem) common.Coin {
-	if strings.HasPrefix(strings.ToLower(tx.Memo), thorchain.YggdrasilReturnMemoPrefix) {
+	if strings.HasPrefix(strings.ToLower(tx.Memo), thorchain.TxYggdrasilReturn.String()) {
 		// for yggdrasil , usually it is one input and one output, so estimate 200 sat will be ok
 		return common.NewCoin(common.BTCAsset, sdk.NewUint(200))
 	}
