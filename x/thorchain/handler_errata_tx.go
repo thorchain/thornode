@@ -175,6 +175,7 @@ func (h ErrataTxHandler) handleV1(ctx sdk.Context, msg MsgErrataTx) sdk.Result {
 		// since this address is being malicious, zero their staking units
 		su := ps.GetStakerUnit(tx.FromAddress)
 		pool.PoolUnits = common.SafeSub(pool.PoolUnits, su.Units)
+		ps.TotalUnits = pool.PoolUnits
 		su.Units = sdk.ZeroUint()
 
 		ps.UpsertStakerUnit(su)
