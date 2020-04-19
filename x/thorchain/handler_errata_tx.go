@@ -107,7 +107,6 @@ func (h ErrataTxHandler) handleV1(ctx sdk.Context, msg MsgErrataTx) sdk.Result {
 	// doesn't have consensus yet
 	if !voter.HasConsensus(active) {
 		ctx.Logger().Info("not having consensus yet, return")
-		fmt.Println("FOO 1")
 		return sdk.Result{
 			Code:      sdk.CodeOK,
 			Codespace: DefaultCodespace,
@@ -116,7 +115,6 @@ func (h ErrataTxHandler) handleV1(ctx sdk.Context, msg MsgErrataTx) sdk.Result {
 
 	if voter.BlockHeight > 0 {
 		// errata tx already processed
-		fmt.Println("FOO 2")
 		return sdk.Result{
 			Code:      sdk.CodeOK,
 			Codespace: DefaultCodespace,
