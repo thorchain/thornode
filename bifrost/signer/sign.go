@@ -312,7 +312,7 @@ func (s *Signer) signAndBroadcast(item TxOutStoreItem) error {
 
 	// Check if we're sending all funds back (memo "yggdrasil-")
 	// In this scenario, we should chose the coins to send ourselves
-	if strings.HasPrefix(strings.ToLower(tx.Memo), thorchain.YggdrasilReturnMemo{}.GetType().String()) && tx.Coins.IsEmpty() {
+	if strings.HasPrefix(strings.ToLower(tx.Memo), thorchain.YggdrasilReturnMemoPrefix) && tx.Coins.IsEmpty() {
 		tx, err = s.handleYggReturn(tx)
 		if err != nil {
 			s.logger.Error().Err(err).Msg("failed to handle yggdrasil return")

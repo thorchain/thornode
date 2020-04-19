@@ -18,6 +18,7 @@ type (
 	adminType uint8
 )
 
+const YggdrasilReturnMemoPrefix = `yggdrasil-`
 const (
 	txUnknown TxType = iota
 	txStake
@@ -36,28 +37,28 @@ const (
 )
 
 var stringToTxTypeMap = map[string]TxType{
-	"stake":      txStake,
-	"st":         txStake,
-	"+":          txStake,
-	"withdraw":   txUnstake,
-	"unstake":    txUnstake,
-	"wd":         txUnstake,
-	"-":          txUnstake,
-	"swap":       txSwap,
-	"s":          txSwap,
-	"=":          txSwap,
-	"outbound":   txOutbound,
-	"add":        txAdd,
-	"a":          txAdd,
-	"%":          txAdd,
-	"bond":       txBond,
-	"leave":      txLeave,
-	"yggdrasil+": txYggdrasilFund,
-	"yggdrasil-": txYggdrasilReturn,
-	"reserve":    txReserve,
-	"refund":     txRefund,
-	"migrate":    txMigrate,
-	"ragnarok":   txRagnarok,
+	"stake":                   txStake,
+	"st":                      txStake,
+	"+":                       txStake,
+	"withdraw":                txUnstake,
+	"unstake":                 txUnstake,
+	"wd":                      txUnstake,
+	"-":                       txUnstake,
+	"swap":                    txSwap,
+	"s":                       txSwap,
+	"=":                       txSwap,
+	"outbound":                txOutbound,
+	"add":                     txAdd,
+	"a":                       txAdd,
+	"%":                       txAdd,
+	"bond":                    txBond,
+	"leave":                   txLeave,
+	"yggdrasil+":              txYggdrasilFund,
+	YggdrasilReturnMemoPrefix: txYggdrasilReturn,
+	"reserve":                 txReserve,
+	"refund":                  txRefund,
+	"migrate":                 txMigrate,
+	"ragnarok":                txRagnarok,
 }
 
 var txToStringMap = map[TxType]string{
@@ -70,7 +71,7 @@ var txToStringMap = map[TxType]string{
 	txBond:            "bond",
 	txLeave:           "leave",
 	txYggdrasilFund:   "yggdrasil+",
-	txYggdrasilReturn: "yggdrasil-",
+	txYggdrasilReturn: YggdrasilReturnMemoPrefix,
 	txReserve:         "reserve",
 	txMigrate:         "migrate",
 	txRagnarok:        "ragnarok",
