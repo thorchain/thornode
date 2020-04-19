@@ -72,6 +72,8 @@ var (
 	NewEventGas                    = types.NewEventGas
 	NewEventSlash                  = types.NewEventSlash
 	NewEventReserve                = types.NewEventReserve
+	NewEventErrata                 = types.NewEventErrata
+	NewPoolMod                     = types.NewPoolMod
 	NewMsgRefundTx                 = types.NewMsgRefundTx
 	NewMsgOutboundTx               = types.NewMsgOutboundTx
 	NewMsgMigrate                  = types.NewMsgMigrate
@@ -166,7 +168,10 @@ type (
 	EventStake                  = types.EventStake
 	EventStatus                 = types.EventStatus
 	EventRewards                = types.EventRewards
+	EventErrata                 = types.EventErrata
 	PoolAmt                     = types.PoolAmt
+	PoolMod                     = types.PoolMod
+	PoolMods                    = types.PoolMods
 	ReserveContributor          = types.ReserveContributor
 	ReserveContributors         = types.ReserveContributors
 	Vault                       = types.Vault

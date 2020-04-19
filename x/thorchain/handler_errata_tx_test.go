@@ -1,6 +1,8 @@
 package thorchain
 
 import (
+	"encoding/json"
+
 	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"gitlab.com/thorchain/thornode/common"
@@ -34,6 +36,11 @@ func (k *TestErrataTxKeeper) GetEventsIDByTxHash(_ sdk.Context, _ common.TxID) (
 
 func (k *TestErrataTxKeeper) GetEvent(_ sdk.Context, _ int64) (Event, error) {
 	return k.event, k.err
+}
+
+func (k *TestErrataTxKeeper) UpsertEvent(_ sdk.Context, evt Event) error {
+	k.event = evt
+	return nil
 }
 
 func (k *TestErrataTxKeeper) GetPool(_ sdk.Context, _ common.Asset) (Pool, error) {
@@ -106,4 +113,13 @@ func (s *HandlerErrataTxSuite) TestHandle(c *C) {
 	c.Assert(result.IsOK(), Equals, true)
 	c.Check(keeper.pool.BalanceRune.Equal(sdk.NewUint(70*common.One)), Equals, true)
 	c.Check(keeper.pool.BalanceAsset.Equal(sdk.NewUint(100*common.One)), Equals, true)
+	c.Assert(keeper.event.Type, Equals, "errata")
+	var evt EventErrata
+	c.Assert(json.Unmarshal(keeper.event.Event, &evt), IsNil)
+	c.Check(evt.Pools, HasLen, 1)
+	c.Check(evt.Pools[0].Asset.Equals(common.BNBAsset), Equals, true)
+	c.Check(evt.Pools[0].RuneAmt.Equal(sdk.NewUint(30*common.One)), Equals, true)
+	c.Check(evt.Pools[0].RuneAdd, Equals, false)
+	c.Check(evt.Pools[0].AssetAmt.IsZero(), Equals, true)
+	c.Check(evt.Pools[0].AssetAdd, Equals, false)
 }
