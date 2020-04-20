@@ -83,7 +83,6 @@ cat <<EOF > /opt/${THORNODE_ENV}/churn-bootstrap
 #!/bin/sh
 
 start_stack () {
-    sudo su -
     cd $GIT_PATH/build/docker
     docker pull registry.gitlab.com/thorchain/thornode:${THORNODE_ENV}
     export TAG=${THORNODE_ENV} && \
