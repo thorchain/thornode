@@ -95,7 +95,7 @@ start_the_stack () {
     echo "waiting for server to be ready"
     sleep 60 # give setup script enough time install required packages
     eval $(docker-machine env ${DOCKER_SERVER} --shell bash)
-    docker-machine ssh ${DOCKER_SERVER} sudo bash $BOOTSTRAP
+    docker-machine ssh ${DOCKER_SERVER} sudo -u root bash $BOOTSTRAP
 }
 
 # checks if there is are any standby/ready nodes, exits if there are
