@@ -369,6 +369,13 @@ func newAddGasFeeTestHelper(c *C) addGasFeeTestHelper {
 	pool.Status = PoolEnabled
 	c.Assert(k.SetPool(ctx, pool), IsNil)
 
+	poolBTC := NewPool()
+	poolBTC.Asset = common.BTCAsset
+	poolBTC.BalanceAsset = sdk.NewUint(100 * common.One)
+	poolBTC.BalanceRune = sdk.NewUint(100 * common.One)
+	poolBTC.Status = PoolEnabled
+	c.Assert(k.SetPool(ctx, poolBTC), IsNil)
+
 	na := GetRandomNodeAccount(NodeActive)
 	c.Assert(k.SetNodeAccount(ctx, na), IsNil)
 	yggVault := NewVault(ctx.BlockHeight(), ActiveVault, YggdrasilVault, na.PubKeySet.Secp256k1)
@@ -476,6 +483,42 @@ func (s *HelperSuite) TestAddGasFees(c *C) {
 				c.Assert(err, IsNil)
 				expectedBNB := sdk.NewUint(100 * common.One).Sub(BNBGasFeeSingleton[0].Amount)
 				c.Assert(bnbPool.BalanceAsset.Equal(expectedBNB), Equals, true)
+			},
+		},
+		{
+			name: "normal BTC gas",
+			txCreator: func(helper addGasFeeTestHelper) ObservedTx {
+				tx := ObservedTx{
+					Tx: common.Tx{
+						ID:          GetRandomTxHash(),
+						Chain:       common.BTCChain,
+						FromAddress: GetRandomBTCAddress(),
+						ToAddress:   GetRandomBTCAddress(),
+						Coins: common.Coins{
+							common.NewCoin(common.BTCAsset, sdk.NewUint(5*common.One)),
+						},
+						Gas: common.Gas{
+							common.NewCoin(common.BTCAsset, sdk.NewUint(2000)),
+						},
+						Memo: "",
+					},
+					Status:         types.Done,
+					OutHashes:      nil,
+					BlockHeight:    helper.ctx.BlockHeight(),
+					Signers:        []sdk.AccAddress{helper.na.NodeAddress},
+					ObservedPubKey: helper.na.PubKeySet.Secp256k1,
+				}
+				return tx
+			},
+			runner: func(helper addGasFeeTestHelper, tx ObservedTx) error {
+				return AddGasFees(helper.ctx, helper.k, tx, helper.gasManager)
+			},
+			expectError: false,
+			validator: func(helper addGasFeeTestHelper, c *C) {
+				btcPool, err := helper.k.GetPool(helper.ctx, common.BTCAsset)
+				c.Assert(err, IsNil)
+				expectedBTC := sdk.NewUint(100 * common.One).Sub(sdk.NewUint(2000))
+				c.Assert(btcPool.BalanceAsset.Equal(expectedBTC), Equals, true)
 			},
 		},
 	}
