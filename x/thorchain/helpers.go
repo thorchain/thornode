@@ -432,7 +432,11 @@ func AddGasFees(ctx sdk.Context, keeper Keeper, tx ObservedTx, gasManager GasMan
 		gasInfo, err := keeper.GetGas(ctx, gasAsset)
 		if err == nil {
 			gasInfo = common.UpdateGasPrice(tx.Tx, gasAsset, gasInfo)
-			keeper.SetGas(ctx, gasAsset, gasInfo)
+			if gasInfo != nil {
+				keeper.SetGas(ctx, gasAsset, gasInfo)
+			} else {
+				ctx.Logger().Error(fmt.Sprintf("fail to update gas price for chain: %s", gasAsset))
+			}
 		}
 	}
 
