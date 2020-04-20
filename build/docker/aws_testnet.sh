@@ -1,6 +1,6 @@
 #!/bin/sh
 
-set -ex
+set -x
 
 export USER=$(hostname -s)
 export DOCKER_SERVER="${THORNODE_ENV}-${THORNODE_SERVICE}-$(date +%s)" # must be unique
