@@ -19,6 +19,7 @@ type TestErrataTxKeeper struct {
 	event Event
 	pool  Pool
 	na    NodeAccount
+	ps    PoolStaker
 	err   error
 }
 
@@ -50,6 +51,14 @@ func (k *TestErrataTxKeeper) GetPool(_ sdk.Context, _ common.Asset) (Pool, error
 func (k *TestErrataTxKeeper) SetPool(_ sdk.Context, pool Pool) error {
 	k.pool = pool
 	return k.err
+}
+
+func (k *TestErrataTxKeeper) GetPoolStaker(_ sdk.Context, _ common.Asset) (PoolStaker, error) {
+	return k.ps, k.err
+}
+
+func (k *TestErrataTxKeeper) SetPoolStaker(_ sdk.Context, ps PoolStaker) {
+	k.ps = ps
 }
 
 func (k *TestErrataTxKeeper) GetErrataTxVoter(_ sdk.Context, txID common.TxID, chain common.Chain) (ErrataTxVoter, error) {
@@ -86,22 +95,39 @@ func (s *HandlerErrataTxSuite) TestHandle(c *C) {
 
 	txID := GetRandomTxHash()
 	na := GetRandomNodeAccount(NodeActive)
+	ps := NewPoolStaker(common.BNBAsset, sdk.NewUint(1600))
+	addr := GetRandomBNBAddress()
+	ps.Stakers = []StakerUnit{
+		StakerUnit{
+			RuneAddress: addr,
+			Height:      5,
+			Units:       ps.TotalUnits.QuoUint64(2),
+		},
+		StakerUnit{
+			RuneAddress: GetRandomBNBAddress(),
+			Height:      10,
+			Units:       ps.TotalUnits.QuoUint64(2),
+		},
+	}
 
 	keeper := &TestErrataTxKeeper{
 		na: na,
+		ps: ps,
 		pool: Pool{
 			Asset:        common.BNBAsset,
+			PoolUnits:    ps.TotalUnits,
 			BalanceRune:  sdk.NewUint(100 * common.One),
 			BalanceAsset: sdk.NewUint(100 * common.One),
 		},
 		event: Event{
 			InTx: common.Tx{
-				ID:    txID,
-				Chain: common.BNBChain,
+				ID:          txID,
+				Chain:       common.BNBChain,
+				FromAddress: addr,
 				Coins: common.Coins{
 					common.NewCoin(common.RuneAsset(), sdk.NewUint(30*common.One)),
 				},
-				Memo: "SWAP:BNB.BNB",
+				Memo: "STAKE:BNB.BNB",
 			},
 		},
 	}
@@ -113,6 +139,10 @@ func (s *HandlerErrataTxSuite) TestHandle(c *C) {
 	c.Assert(result.IsOK(), Equals, true)
 	c.Check(keeper.pool.BalanceRune.Equal(sdk.NewUint(70*common.One)), Equals, true)
 	c.Check(keeper.pool.BalanceAsset.Equal(sdk.NewUint(100*common.One)), Equals, true)
+	c.Check(keeper.ps.TotalUnits.Equal(sdk.NewUint(800)), Equals, true)
+	c.Check(keeper.ps.Stakers[0].Units.IsZero(), Equals, true)
+	c.Check(keeper.ps.Stakers[0].Height, Equals, int64(18))
+
 	c.Assert(keeper.event.Type, Equals, "errata")
 	var evt EventErrata
 	c.Assert(json.Unmarshal(keeper.event.Event, &evt), IsNil)

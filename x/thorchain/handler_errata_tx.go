@@ -136,7 +136,7 @@ func (h ErrataTxHandler) handleV1(ctx sdk.Context, msg MsgErrataTx) sdk.Result {
 	}
 
 	memo, _ := ParseMemo(tx.Memo)
-	if !memo.IsType(TxSwap) {
+	if !memo.IsType(TxSwap) && !memo.IsType(TxStake) {
 		// must be a swap transaction
 		return sdk.Result{
 			Code:      sdk.CodeOK,
@@ -164,6 +164,24 @@ func (h ErrataTxHandler) handleV1(ctx sdk.Context, msg MsgErrataTx) sdk.Result {
 
 	pool.BalanceRune = common.SafeSub(pool.BalanceRune, runeAmt)
 	pool.BalanceAsset = common.SafeSub(pool.BalanceAsset, assetAmt)
+
+	if memo.IsType(TxStake) {
+		ps, err := h.keeper.GetPoolStaker(ctx, memo.GetAsset())
+		if err != nil {
+			ctx.Logger().Error("fail to get pool staker record", "error", err)
+			return sdk.ErrInternal(err.Error()).Result()
+		}
+
+		// since this address is being malicious, zero their staking units
+		su := ps.GetStakerUnit(tx.FromAddress)
+		pool.PoolUnits = common.SafeSub(pool.PoolUnits, su.Units)
+		ps.TotalUnits = pool.PoolUnits
+		su.Units = sdk.ZeroUint()
+		su.Height = ctx.BlockHeight()
+
+		ps.UpsertStakerUnit(su)
+		h.keeper.SetPoolStaker(ctx, ps)
+	}
 
 	if err := h.keeper.SetPool(ctx, pool); err != nil {
 		ctx.Logger().Error("fail to save pool", "error", err)
