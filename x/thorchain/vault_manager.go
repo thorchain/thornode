@@ -246,8 +246,89 @@ func (vm *VaultMgr) RotateVault(ctx sdk.Context, vault Vault) error {
 	if err := vm.k.SetVault(ctx, vault); err != nil {
 		return err
 	}
+
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(EventTypeActiveVault,
 			sdk.NewAttribute("add new asgard vault", vault.PubKey.String())))
+	return nil
+}
+
+func (vm *VaultMgr) ragnarokRetiredChains(ctx sdk.Context, constAccessor constants.ConstantValues) error {
+	nas, err := vm.k.ListActiveNodeAccounts(ctx)
+	if err != nil {
+		ctx.Logger().Error("can't get active nodes", "error", err)
+		return err
+	}
+	if len(nas) == 0 {
+		return fmt.Errorf("can't find any active nodes")
+	}
+	na := nas[0]
+
+	// ragnarok any retiring chains
+	active, err := vm.k.GetAsgardVaultsByStatus(ctx, ActiveVault)
+	if err != nil {
+		return err
+	}
+
+	retiring, err := vm.k.GetAsgardVaultsByStatus(ctx, RetiringVault)
+	if err != nil {
+		return err
+	}
+
+	activeChains := make(common.Chains, 0)
+	for _, v := range active {
+		activeChains = append(activeChains, v.Chains...)
+	}
+	activeChains = activeChains.Distinct()
+
+	retiringChains := make(common.Chains, 0)
+	for _, v := range retiring {
+		retiringChains = append(retiringChains, v.Chains...)
+	}
+	retiringChains = retiringChains.Distinct()
+
+	for _, chain := range retiringChains {
+		if !activeChains.Has(chain) {
+			// rangarok this chain
+			pools, err := vm.k.GetPools(ctx)
+			if err != nil {
+				return err
+			}
+			for _, pool := range pools {
+				if !pool.Asset.Chain.Equals(chain) {
+					continue
+				}
+
+				poolStaker, err := vm.k.GetPoolStaker(ctx, pool.Asset)
+				if err != nil {
+					return err
+				}
+
+				// everyone withdraw
+				for i := len(poolStaker.Stakers) - 1; i >= 0; i-- { // iterate backwards
+					item := poolStaker.Stakers[i]
+					if item.Units.IsZero() {
+						continue
+					}
+
+					unstakeMsg := NewMsgSetUnStake(
+						common.GetRagnarokTx(pool.Asset.Chain, item.RuneAddress, item.RuneAddress),
+						item.RuneAddress,
+						sdk.NewUint(uint64(10000)),
+						pool.Asset,
+						na.NodeAddress,
+					)
+
+					version := vm.k.GetLowestActiveVersion(ctx)
+					unstakeHandler := NewUnstakeHandler(vm.k, vm.versionedTxOutStore)
+					result := unstakeHandler.Run(ctx, unstakeMsg, version, constAccessor)
+					if !result.IsOK() {
+						ctx.Logger().Error("fail to unstake", "staker", item.RuneAddress, "error", result.Log)
+					}
+				}
+			}
+		}
+	}
+
 	return nil
 }
