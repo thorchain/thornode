@@ -158,8 +158,8 @@ func (tos *TxOutStorageV2) prepareTxOutItem(ctx sdk.Context, toi *TxOutItem) (bo
 	}
 
 	// Deduct TransactionFee from TOI and add to Reserve
-	memo, _ := ParseMemo(toi.Memo) // ignore err
-	if err == nil && !memo.IsType(txYggdrasilFund) && !memo.IsType(txYggdrasilReturn) && !memo.IsType(txMigrate) && !memo.IsType(txRagnarok) {
+	memo, err := ParseMemo(toi.Memo) // ignore err
+	if err == nil && !memo.IsType(TxYggdrasilFund) && !memo.IsType(TxYggdrasilReturn) && !memo.IsType(TxMigrate) && !memo.IsType(TxRagnarok) {
 		var runeFee sdk.Uint
 		if toi.Coin.Asset.IsRune() {
 			if toi.Coin.Amount.LTE(sdk.NewUint(uint64(transactionFee))) {
@@ -219,7 +219,7 @@ func (tos *TxOutStorageV2) prepareTxOutItem(ctx sdk.Context, toi *TxOutItem) (bo
 	// When we request Yggdrasil pool to return the fund, the coin field is actually empty
 	// Signer when it sees an tx out item with memo "yggdrasil-" it will query the account on relevant chain
 	// and coin field will be filled there, thus we have to let this one go
-	if toi.Coin.IsEmpty() && !memo.IsType(txYggdrasilReturn) {
+	if toi.Coin.IsEmpty() && !memo.IsType(TxYggdrasilReturn) {
 		ctx.Logger().Info("tx out item has zero coin", toi.String())
 		return false, nil
 	}

@@ -192,7 +192,7 @@ func (h ObservedTxOutHandler) handleV1(ctx sdk.Context, version semver.Version, 
 		}
 		vault.SubFunds(tx.Tx.Coins)
 		vault.OutboundTxCount += 1
-		if vault.IsAsgard() && memo.IsType(txMigrate) {
+		if vault.IsAsgard() && memo.IsType(TxMigrate) {
 			// only remove the block height that had been specified in the memo
 			vault.RemovePendingTxBlockHeights(memo.GetBlockHeight())
 		}

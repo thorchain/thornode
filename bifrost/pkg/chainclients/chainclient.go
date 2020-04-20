@@ -25,7 +25,6 @@ type ChainClient interface {
 	GetAddress(poolPubKey common.PubKey) string
 	GetAccount(addr string) (common.Account, error)
 	GetChain() common.Chain
-	GetGasFee(count uint64) common.Gas
 	ValidateMetadata(_ interface{}) bool
 	Start(globalTxsQueue chan stypes.TxIn, globalErrataQueue chan stypes.ErrataBlock)
 	Stop()
