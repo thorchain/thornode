@@ -258,13 +258,13 @@ func (s *BinancechainSuite) TestGetGasFee(c *C) {
 		multiFee:  30000,
 	}
 
-	gas := b2.GetGasFee(0)
+	gas := b2.getGasFee(0)
 	c.Check(gas, HasLen, 0)
 
-	gas = b2.GetGasFee(1)
+	gas = b2.getGasFee(1)
 	c.Check(gas[0].Amount.Equal(sdk.NewUint(37500)), Equals, true)
 
-	gas = b2.GetGasFee(2)
+	gas = b2.getGasFee(2)
 	c.Check(gas[0].Amount.Equal(sdk.NewUint(60000)), Equals, true)
 }
 

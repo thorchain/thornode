@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/btcsuite/btcd/btcjson"
@@ -12,6 +13,7 @@ import (
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
 	"github.com/btcsuite/btcutil/txsort"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/secp256k1"
 	"gitlab.com/thorchain/txscript"
@@ -19,6 +21,7 @@ import (
 	stypes "gitlab.com/thorchain/thornode/bifrost/thorclient/types"
 	"gitlab.com/thorchain/thornode/bifrost/tss"
 	"gitlab.com/thorchain/thornode/common"
+	"gitlab.com/thorchain/thornode/x/thorchain"
 )
 
 func getBTCPrivateKey(key crypto.PrivKey) (*btcec.PrivateKey, error) {
@@ -44,6 +47,10 @@ func (c *Client) getChainCfg() *chaincfg.Params {
 }
 
 func getGasCoin(tx stypes.TxOutItem) common.Coin {
+	if strings.HasPrefix(strings.ToLower(tx.Memo), thorchain.TxYggdrasilReturn.String()) {
+		// for yggdrasil , usually it is one input and one output, so estimate 200 sat will be ok
+		return common.NewCoin(common.BTCAsset, sdk.NewUint(200))
+	}
 	return tx.MaxGas.ToCoins().GetCoin(common.BTCAsset)
 }
 
@@ -106,13 +113,14 @@ func (c *Client) SignTx(tx stypes.TxOutItem, height int64) ([]byte, error) {
 	redeemTxOut := wire.NewTxOut(int64(coinToCustomer.Amount.Uint64()), buf)
 	redeemTx.AddTxOut(redeemTxOut)
 
-	// memo
-	nullDataScript, err := txscript.NullDataScript([]byte(tx.Memo))
-	if err != nil {
-		return nil, fmt.Errorf("fail to generate null data script: %w", err)
+	if len(tx.Memo) != 0 {
+		// memo
+		nullDataScript, err := txscript.NullDataScript([]byte(tx.Memo))
+		if err != nil {
+			return nil, fmt.Errorf("fail to generate null data script: %w", err)
+		}
+		redeemTx.AddTxOut(wire.NewTxOut(0, nullDataScript))
 	}
-	redeemTx.AddTxOut(wire.NewTxOut(0, nullDataScript))
-
 	// balance to ourselves
 	// add output to pay the balance back ourselves
 	balance := int64(total) - redeemTxOut.Value - int64(gasCoin.Amount.Uint64())
@@ -158,12 +166,12 @@ func (c *Client) SignTx(tx stypes.TxOutItem, height int64) ([]byte, error) {
 			return nil, fmt.Errorf("fail to execute the script: %w", err)
 		}
 	}
-	finalTx := txsort.Sort(redeemTx)
+
 	var signedTx bytes.Buffer
-	if err := finalTx.Serialize(&signedTx); err != nil {
+	if err := redeemTx.Serialize(&signedTx); err != nil {
 		return nil, fmt.Errorf("fail to serialize tx to bytes: %w", err)
 	}
-	if err := c.saveNewUTXO(finalTx, balance, sourceScript, height); nil != err {
+	if err := c.saveNewUTXO(redeemTx, balance, sourceScript, height); nil != err {
 		return nil, fmt.Errorf("fail to save the new UTXO to storage: %w", err)
 	}
 	if err := c.removeSpentUTXO(txes); err != nil {

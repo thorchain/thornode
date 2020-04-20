@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 
 	"github.com/binance-chain/go-sdk/common/types"
 	ctypes "github.com/binance-chain/go-sdk/common/types"
@@ -29,6 +30,7 @@ import (
 	stypes "gitlab.com/thorchain/thornode/bifrost/thorclient/types"
 	"gitlab.com/thorchain/thornode/bifrost/tss"
 	"gitlab.com/thorchain/thornode/common"
+	"gitlab.com/thorchain/thornode/x/thorchain"
 )
 
 // Binance is a structure to sign and broadcast tx to binance chain used by signer mostly
@@ -269,8 +271,7 @@ func (b *Binance) GetAddress(poolPubKey common.PubKey) string {
 	return addr.String()
 }
 
-func (b *Binance) GetGasFee(count uint64) common.Gas {
-	// TODO: remove GetGasFee entirely
+func (b *Binance) getGasFee(count uint64) common.Gas {
 	coins := make(common.Coins, count)
 	gasInfo := []sdk.Uint{
 		sdk.NewUint(b.bnbScanner.singleFee),
@@ -294,8 +295,22 @@ func (b *Binance) SignTx(tx stypes.TxOutItem, height int64) ([]byte, error) {
 		return nil, fmt.Errorf("fail to parse account address(%s) :%w", tx.ToAddress.String(), err)
 	}
 
+	var gasCoin common.Coins
+
+	// for yggdrasil, need to left some coin to pay for fee, this logic is per chain, given different chain charge fees differently
+	if strings.HasPrefix(strings.ToLower(tx.Memo), thorchain.TxYggdrasilReturn.String()) {
+		gas := b.getGasFee(uint64(len(tx.Coins)))
+		gasCoin = gas.ToCoins()
+	}
 	var coins types.Coins
 	for _, coin := range tx.Coins {
+		// deduct gas coin
+		for _, gc := range gasCoin {
+			if coin.Asset.Equals(gc.Asset) {
+				coin.Amount = common.SafeSub(coin.Amount, gc.Amount)
+			}
+		}
+
 		coins = append(coins, types.Coin{
 			Denom:  coin.Asset.Symbol.String(),
 			Amount: int64(coin.Amount.Uint64()),
