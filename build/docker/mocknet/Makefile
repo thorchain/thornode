@@ -7,7 +7,7 @@ else
     uname_S := $(shell uname -s)
 endif
 
-run-mocknet-standalone:
+run-mocknet-standalone: init
 	TAG=mocknet NET=mocknet docker-compose -p thornode -f ${path}../components/standalone.base.yml -f ${path}../components/frontend.yml -f ${path}../components/midgard.yml -f ${path}../components/midgard.${uname_S}.yml -f ${path}../components/mock-binance.yml -f ${path}../components/bitcoin-regtest.yml -f ${path}../mocknet/standalone.yml -f ${path}../components/standalone.${uname_S}.yml up --force-recreate --remove-orphans -d
 
 reset-mocknet-standalone: stop clean run-mocknet-standalone
@@ -28,7 +28,7 @@ run-mocknet-genesis-churn-logs:
 
 reset-mocknet-genesis-churn: stop clean run-mocknet-genesis-churn
 
-run-mocknet-validator:
+run-mocknet-validator: init
 	TAG=mocknet NET=mocknet docker-compose -p thornode -f ${path}../components/frontend.yml -f ${path}../components/midgard.yml -f ${path}../components/midgard.${uname_S}.yml -f ${path}../components/validator.yml -f ${path}../components/validator.${uname_S}.yml up --force-recreate --remove-orphans -d
 
 reset-mocknet-validator: stop clean run-mocknet-validator
