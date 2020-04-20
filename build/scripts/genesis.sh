@@ -11,8 +11,17 @@ SEED="${SEED:=thor-daemon}" # the hostname of the master node
 gen_bnb_address
 ADDRESS=$(cat ~/.bond/address.txt)
 
-# create thorchain user
-thorcli keys show $SIGNER_NAME || echo $SIGNER_PASSWD | thorcli --trace keys add $SIGNER_NAME 2>&1
+# create thorchain user, if it doesn't already
+thorcli keys show $SIGNER_NAME
+if [ $? -gt 0 ]; then
+    if [ -f ~/.recovery.txt ]; then
+        echo "$SIGNER_PASSWD\n$(tail -1 ~/.recovery.txt)" | thorcli keys add $SIGNER_NAME --recover
+    else
+        echo $SIGNER_PASSWD | thorcli --trace keys add $SIGNER_NAME &> ~/.recovery.txt
+    fi
+fi
+
+
 
 VALIDATOR=$(thord tendermint show-validator)
 NODE_ADDRESS=$(thorcli keys show thorchain -a)

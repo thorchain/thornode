@@ -12,7 +12,14 @@ if [ ! -f ~/.thord/config/genesis.json ]; then
         exit 1
     fi
 
-    thorcli keys show $SIGNER_NAME || echo $SIGNER_PASSWD | thorcli --trace keys add $SIGNER_NAME 2>&1
+    thorcli keys show $SIGNER_NAME
+    if [ $? -gt 0 ]; then
+        if [ -f ~/.recovery.txt ]; then
+            echo "$SIGNER_PASSWD\n$(tail -1 ~/.recovery.txt)" | thorcli keys add $SIGNER_NAME --recover
+        else
+            echo $SIGNER_PASSWD | thorcli --trace keys add $SIGNER_NAME &> ~/.recovery.txt
+        fi
+    fi
 
     NODE_ADDRESS=$(thorcli keys show $SIGNER_NAME -a)
     init_chain $NODE_ADDRESS
