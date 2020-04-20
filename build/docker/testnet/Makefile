@@ -8,7 +8,7 @@ else
 endif
 
 
-run-testnet-standalone:
+run-testnet-standalone: init
 	TAG=${TAG} NET=testnet docker-compose -p thornode -f ${path}../components/standalone.base.yml -f ${path}../components/midgard.yml -f ${path}../components/midgard.${uname_S}.yml -f ${path}../components/standalone.${uname_S}.yml up --force-recreate --remove-orphans --no-build -d
 
 reset-testnet-standalone: stop clean run-testnet-standalone
@@ -26,10 +26,10 @@ run-testnet-genesis-churn:
 
 reset-testnet-genesis-churn: stop clean run-testnet-genesis-churn
 
-run-testnet-validator:
+run-testnet-validator: init
 	TAG=${TAG} NET=testnet PEER=$(shell curl -sL testnet-seed.thorchain.info/node_ip_list.json | jq -r .[] | shuf -n 1) docker-compose -p thornode -f ${path}../components/midgard.yml -f ${path}../components/midgard.${uname_S}.yml -f ${path}../components/validator.yml -f ${path}../components/validator.${uname_S}.yml up --force-recreate --remove-orphans --no-build -d
 
-run-testnet-validator-ci:
+run-testnet-validator-ci: init
 	TAG=testnet NET=testnet docker-compose -p thornode -f ${path}../components/frontend.yml -f ${path}../components/midgard.yml -f ${path}../components/midgard.ci.yml -f ${path}../components/validator.yml -f ${path}../components/validator.Darwin.yml up --force-recreate --remove-orphans -d
 
 reset-testnet-validator: stop clean run-testnet-validator

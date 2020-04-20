@@ -22,6 +22,16 @@ clean:
 	@mkdir ~/.thornode/genesis_4
 	@mkdir ~/.thornode/validator
 
+init:
+	@mkdir ~/.thornode
+	@mkdir ~/.thornode/standalone
+	@mkdir ~/.thornode/tss
+	@mkdir ~/.thornode/genesis_1
+	@mkdir ~/.thornode/genesis_2
+	@mkdir ~/.thornode/genesis_3
+	@mkdir ~/.thornode/genesis_4
+	@mkdir ~/.thornode/validator
+
 clean-validator:
 	@rm -rf ~/.thornode/validator
 	@mkdir -p ~/.thornode/validator
