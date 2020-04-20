@@ -83,13 +83,14 @@ cat <<EOF > /opt/${THORNODE_ENV}/churn-bootstrap
 #!/bin/sh
 
 start_stack () {
+    sudo su -
     cd $GIT_PATH/build/docker
-    sudo -u root docker pull registry.gitlab.com/thorchain/thornode:${THORNODE_ENV}
+    docker pull registry.gitlab.com/thorchain/thornode:${THORNODE_ENV}
     export TAG=${THORNODE_ENV} && \
     export SIGNER_PASSWD=${THORNODE_PASSWD} && \
     export BINANCE_HOST="http://testnet-binance.thorchain.info:26657" && \
     export PEER=\$(curl -sL testnet-seed.thorchain.info/node_ip_list.json | jq -r .[] | shuf -n 1) && \
-    sudo -u root make run-${THORNODE_ENV}-validator >> $LOGFILE
+    make run-${THORNODE_ENV}-validator >> $LOGFILE
 }
 
 # install binance cli
