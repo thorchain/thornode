@@ -287,44 +287,47 @@ func (vm *VaultMgr) ragnarokRetiredChains(ctx sdk.Context, constAccessor constan
 	}
 	retiringChains = retiringChains.Distinct()
 
+	pools, err := vm.k.GetPools(ctx)
+	if err != nil {
+		return err
+	}
+	version := vm.k.GetLowestActiveVersion(ctx)
+	unstakeHandler := NewUnstakeHandler(vm.k, vm.versionedTxOutStore)
+
 	for _, chain := range retiringChains {
-		if !activeChains.Has(chain) {
-			// rangarok this chain
-			pools, err := vm.k.GetPools(ctx)
+		if activeChains.Has(chain) {
+			continue
+		}
+
+		// rangarok this chain
+		for _, pool := range pools {
+			if !pool.Asset.Chain.Equals(chain) {
+				continue
+			}
+
+			poolStaker, err := vm.k.GetPoolStaker(ctx, pool.Asset)
 			if err != nil {
 				return err
 			}
-			for _, pool := range pools {
-				if !pool.Asset.Chain.Equals(chain) {
+
+			// everyone withdraw
+			for i := len(poolStaker.Stakers) - 1; i >= 0; i-- { // iterate backwards
+				item := poolStaker.Stakers[i]
+				if item.Units.IsZero() {
 					continue
 				}
 
-				poolStaker, err := vm.k.GetPoolStaker(ctx, pool.Asset)
-				if err != nil {
-					return err
-				}
+				unstakeMsg := NewMsgSetUnStake(
+					common.GetRagnarokTx(pool.Asset.Chain, item.RuneAddress, item.RuneAddress),
+					item.RuneAddress,
+					sdk.NewUint(uint64(MaxUnstakeBasisPoints)),
+					pool.Asset,
+					na.NodeAddress,
+				)
 
-				// everyone withdraw
-				for i := len(poolStaker.Stakers) - 1; i >= 0; i-- { // iterate backwards
-					item := poolStaker.Stakers[i]
-					if item.Units.IsZero() {
-						continue
-					}
-
-					unstakeMsg := NewMsgSetUnStake(
-						common.GetRagnarokTx(pool.Asset.Chain, item.RuneAddress, item.RuneAddress),
-						item.RuneAddress,
-						sdk.NewUint(uint64(10000)),
-						pool.Asset,
-						na.NodeAddress,
-					)
-
-					version := vm.k.GetLowestActiveVersion(ctx)
-					unstakeHandler := NewUnstakeHandler(vm.k, vm.versionedTxOutStore)
-					result := unstakeHandler.Run(ctx, unstakeMsg, version, constAccessor)
-					if !result.IsOK() {
-						ctx.Logger().Error("fail to unstake", "staker", item.RuneAddress, "error", result.Log)
-					}
+				result := unstakeHandler.Run(ctx, unstakeMsg, version, constAccessor)
+				if !result.IsOK() {
+					ctx.Logger().Error("fail to unstake", "staker", item.RuneAddress, "error", result.Log)
 				}
 			}
 		}
