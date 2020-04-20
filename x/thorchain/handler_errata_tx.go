@@ -136,7 +136,7 @@ func (h ErrataTxHandler) handleV1(ctx sdk.Context, msg MsgErrataTx) sdk.Result {
 	}
 
 	memo, _ := ParseMemo(tx.Memo)
-	if !memo.IsType(txSwap) {
+	if !memo.IsType(TxSwap) {
 		// must be a swap transaction
 		return sdk.Result{
 			Code:      sdk.CodeOK,
