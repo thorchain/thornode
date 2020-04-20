@@ -100,6 +100,7 @@ start_the_stack () {
 
 # checks if there is are any standby/ready nodes, exits if there are
 check_for_slots() {
+    PEER=$(curl -sL testnet-seed.thorchain.info/node_ip_list.json | jq -r .[] | shuf -n 1)
     echo "PEER: $PEER"
     curl -s $PEER:1317/thorchain/nodeaccounts
     if [ $? -gt 0 ]; then
