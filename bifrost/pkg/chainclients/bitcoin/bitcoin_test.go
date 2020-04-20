@@ -456,6 +456,37 @@ func (s *BitcoinSuite) TestGetGas(c *C) {
 	gas, err := s.client.getGas(&tx)
 	c.Assert(err, IsNil)
 	c.Assert(gas.Equals(common.Gas{common.NewCoin(common.BTCAsset, sdk.NewUint(7244430))}), Equals, true)
+
+	tx = btcjson.TxRawResult{
+		Vin: []btcjson.Vin{
+			btcjson.Vin{
+				Txid: "24ed2d26fd5d4e0e8fa86633e40faf1bdfc8d1903b1cd02855286312d48818a2",
+				Vout: 3,
+			},
+		},
+		Vout: []btcjson.Vout{
+			btcjson.Vout{
+				Value: 0.00195384,
+				ScriptPubKey: btcjson.ScriptPubKeyResult{
+					Addresses: []string{"tb1qkq7weysjn6ljc2ywmjmwp8ttcckg8yyxjdz5k6"},
+				},
+			},
+			btcjson.Vout{
+				Value: 1.49655603,
+				ScriptPubKey: btcjson.ScriptPubKeyResult{
+					Addresses: []string{"tb1qkq7weysjn6ljc2ywmjmwp8ttcckg8yyxjdz5k6"},
+				},
+			},
+			btcjson.Vout{
+				ScriptPubKey: btcjson.ScriptPubKeyResult{
+					Asm: "OP_RETURN 74686f72636861696e3a636f6e736f6c6964617465",
+				},
+			},
+		},
+	}
+	gas, err = s.client.getGas(&tx)
+	c.Assert(err, IsNil)
+	c.Assert(gas.Equals(common.Gas{common.NewCoin(common.BTCAsset, sdk.NewUint(149013))}), Equals, true)
 }
 
 func (s *BitcoinSuite) TestGetChain(c *C) {

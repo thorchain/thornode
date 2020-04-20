@@ -308,7 +308,7 @@ func (c *Client) getMemo(tx *btcjson.TxRawResult) (string, error) {
 
 // getGas returns gas for a btc tx (sum vin - sum vout)
 func (c *Client) getGas(tx *btcjson.TxRawResult) (common.Gas, error) {
-	var sumVin float64 = 0
+	var sumVin uint64 = 0
 	for _, vin := range tx.Vin {
 		txHash, err := chainhash.NewHashFromStr(tx.Vin[0].Txid)
 		if err != nil {
@@ -318,13 +318,13 @@ func (c *Client) getGas(tx *btcjson.TxRawResult) (common.Gas, error) {
 		if err != nil {
 			return common.Gas{}, fmt.Errorf("fail to query raw tx from btcd")
 		}
-		sumVin += vinTx.Vout[vin.Vout].Value
+		sumVin += uint64(vinTx.Vout[vin.Vout].Value * common.One)
 	}
-	var sumVout float64 = 0
+	var sumVout uint64 = 0
 	for _, vout := range tx.Vout {
-		sumVout += vout.Value
+		sumVout += uint64(vout.Value * common.One)
 	}
-	totalGas := uint64((sumVin - sumVout) * common.One)
+	totalGas := sumVin - sumVout
 	return common.Gas{
 		common.NewCoin(common.BTCAsset, sdk.NewUint(totalGas)),
 	}, nil

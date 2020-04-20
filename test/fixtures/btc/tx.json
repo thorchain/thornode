@@ -33,7 +33,7 @@
             },
             {
                 "value": 0.19590108,
-                "n": 0,
+                "n": 1,
                 "scriptPubKey": {
                     "asm": "OP_DUP OP_HASH160 f3b40cad194d48398755b45036421b1a645bbdcc OP_EQUALVERIFY OP_CHECKSIG",
                     "hex": "76a914f3b40cad194d48398755b45036421b1a645bbdcc88ac",
@@ -46,7 +46,7 @@
             },
             {
                 "value": 0.19590108,
-                "n": 0,
+                "n": 2,
                 "scriptPubKey": {
                     "asm": "OP_DUP OP_HASH160 f3b40cad194d48398755b45036421b1a645bbdcc OP_EQUALVERIFY OP_CHECKSIG",
                     "hex": "76a914f3b40cad194d48398755b45036421b1a645bbdcc88ac",
@@ -58,8 +58,8 @@
                 }
             },
             {
-                "value": 0.19590108,
-                "n": 0,
+                "value": 1.5,
+                "n": 3,
                 "scriptPubKey": {
                     "asm": "OP_DUP OP_HASH160 f3b40cad194d48398755b45036421b1a645bbdcc OP_EQUALVERIFY OP_CHECKSIG",
                     "hex": "76a914f3b40cad194d48398755b45036421b1a645bbdcc88ac",
