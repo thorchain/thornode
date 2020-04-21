@@ -235,12 +235,12 @@ func (b *ThorchainBridge) GetErrataStdTx(txID common.TxID, chain common.Chain) (
 }
 
 // GetKeygenStdTx get keygen tx from params
-func (b *ThorchainBridge) GetKeygenStdTx(poolPubKey common.PubKey, blame tssCommon.Blame, inputPks common.PubKeys, keygenType stypes.KeygenType, height int64) (*authtypes.StdTx, error) {
+func (b *ThorchainBridge) GetKeygenStdTx(poolPubKey common.PubKey, blame tssCommon.Blame, inputPks common.PubKeys, keygenType stypes.KeygenType, chains common.Chains, height int64) (*authtypes.StdTx, error) {
 	start := time.Now()
 	defer func() {
 		b.m.GetHistograms(metrics.SignToThorchainDuration).Observe(time.Since(start).Seconds())
 	}()
-	msg := stypes.NewMsgTssPool(inputPks, poolPubKey, keygenType, height, blame, b.keys.GetSignerInfo().GetAddress())
+	msg := stypes.NewMsgTssPool(inputPks, poolPubKey, keygenType, height, blame, chains, b.keys.GetSignerInfo().GetAddress())
 
 	return makeStdTx([]sdk.Msg{msg}), nil
 }

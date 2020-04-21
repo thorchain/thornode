@@ -10,6 +10,7 @@ type TssVoter struct {
 	PoolPubKey  common.PubKey    `json:"pool_pub_key"`
 	PubKeys     common.PubKeys   `json:"pubkeys"`
 	BlockHeight int64            `json:"block_height"`
+	Chains      common.Chains    `json:"chains"`
 	Signers     []sdk.AccAddress `json:"signers"`
 }
 
@@ -32,10 +33,31 @@ func (tss TssVoter) HasSigned(signer sdk.AccAddress) bool {
 }
 
 // Sign this voter with given signer address
-func (tss *TssVoter) Sign(signer sdk.AccAddress) {
+func (tss *TssVoter) Sign(signer sdk.AccAddress, chains common.Chains) {
 	if !tss.HasSigned(signer) {
 		tss.Signers = append(tss.Signers, signer)
+		tss.Chains = append(tss.Chains, chains...)
 	}
+}
+
+// ConsensusChains - get a list o chains that have 2/3rds majority
+func (tss *TssVoter) ConsensusChains(nas NodeAccounts) common.Chains {
+	chainCount := make(map[common.Chain]int, 0)
+	for _, chain := range tss.Chains {
+		if _, ok := chainCount[chain]; !ok {
+			chainCount[chain] = 0
+		}
+		chainCount[chain]++
+	}
+
+	chains := make(common.Chains, 0)
+	for chain, count := range chainCount {
+		if HasSuperMajority(count, len(nas)) {
+			chains = append(chains, chain)
+		}
+	}
+
+	return chains
 }
 
 // Determine if this tss pool has enough signers

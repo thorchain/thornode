@@ -207,7 +207,7 @@ func (s *HandlerObservedTxOutSuite) TestHandle(c *C) {
 
 	versionedTxOutStoreDummy := NewVersionedTxOutStoreDummy()
 
-	ygg := NewVault(ctx.BlockHeight(), ActiveVault, YggdrasilVault, pk)
+	ygg := NewVault(ctx.BlockHeight(), ActiveVault, YggdrasilVault, pk, common.Chains{common.BNBChain})
 	ygg.Coins = common.Coins{
 		common.NewCoin(common.RuneAsset(), sdk.NewUint(500)),
 		common.NewCoin(common.BNBAsset, sdk.NewUint(200*common.One)),
@@ -267,7 +267,7 @@ func (s *HandlerObservedTxOutSuite) TestGasUpdate(c *C) {
 
 	versionedTxOutStoreDummy := NewVersionedTxOutStoreDummy()
 
-	ygg := NewVault(ctx.BlockHeight(), ActiveVault, YggdrasilVault, pk)
+	ygg := NewVault(ctx.BlockHeight(), ActiveVault, YggdrasilVault, pk, common.Chains{common.BNBChain})
 	ygg.Coins = common.Coins{
 		common.NewCoin(common.RuneAsset(), sdk.NewUint(500)),
 		common.NewCoin(common.BNBAsset, sdk.NewUint(200*common.One)),
@@ -324,7 +324,7 @@ func (s *HandlerObservedTxOutSuite) TestHandleStolenFunds(c *C) {
 
 	versionedTxOutStoreDummy := NewVersionedTxOutStoreDummy()
 
-	ygg := NewVault(ctx.BlockHeight(), ActiveVault, YggdrasilVault, pk)
+	ygg := NewVault(ctx.BlockHeight(), ActiveVault, YggdrasilVault, pk, common.Chains{common.BNBChain})
 	ygg.Coins = common.Coins{
 		common.NewCoin(common.RuneAsset(), sdk.NewUint(500*common.One)),
 		common.NewCoin(common.BNBAsset, sdk.NewUint(200*common.One)),

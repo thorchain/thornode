@@ -163,7 +163,7 @@ func (s *ThorchainSuite) TestChurn(c *C) {
 
 	// generate a tss keygen handler event
 	newVaultPk := GetRandomPubKey()
-	msg := NewMsgTssPool(keygen.Members, newVaultPk, AsgardKeygen, ctx.BlockHeight(), tssCommon.NoBlame, addresses[0])
+	msg := NewMsgTssPool(keygen.Members, newVaultPk, AsgardKeygen, ctx.BlockHeight(), tssCommon.NoBlame, common.Chains{common.BNBChain}, addresses[0])
 	tssHandler := NewTssHandler(keeper, versionedVaultMgr)
 
 	voter := NewTssVoter(msg.ID, msg.PubKeys, msg.PoolPubKey)

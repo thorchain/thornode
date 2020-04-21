@@ -85,7 +85,7 @@ func (h TssHandler) handleV1(ctx sdk.Context, msg MsgTssPool, version semver.Ver
 		voter.PubKeys = msg.PubKeys
 	}
 
-	voter.Sign(msg.Signer)
+	voter.Sign(msg.Signer, msg.Chains)
 	h.keeper.SetTssVoter(ctx, voter)
 	// doesn't have consensus yet
 	if !voter.HasConsensus(active) {
@@ -104,7 +104,7 @@ func (h TssHandler) handleV1(ctx sdk.Context, msg MsgTssPool, version semver.Ver
 			if msg.KeygenType == AsgardKeygen {
 				vaultType = AsgardVault
 			}
-			vault := NewVault(ctx.BlockHeight(), ActiveVault, vaultType, voter.PoolPubKey)
+			vault := NewVault(ctx.BlockHeight(), ActiveVault, vaultType, voter.PoolPubKey, voter.ConsensusChains(active))
 			vault.Membership = voter.PubKeys
 			if err := h.keeper.SetVault(ctx, vault); err != nil {
 				ctx.Logger().Error("fail to save vault", "error", err)

@@ -112,7 +112,7 @@ func newTssHandlerTestHelper(c *C) tssHandlerTestHelper {
 		_ = keeper.SetNodeAccount(ctx, na)
 	}
 
-	asgardVault := NewVault(ctx.BlockHeight(), ActiveVault, AsgardVault, GetRandomPubKey())
+	asgardVault := NewVault(ctx.BlockHeight(), ActiveVault, AsgardVault, GetRandomPubKey(), common.Chains{common.BNBChain})
 	c.Assert(keeper.SetVault(ctx, asgardVault), IsNil)
 	return tssHandlerTestHelper{
 		ctx:           ctx,
@@ -146,7 +146,7 @@ func (s *HandlerTssSuite) TestTssHandler(c *C) {
 		{
 			name: "bad version should return an error",
 			messageCreator: func(helper tssHandlerTestHelper) sdk.Msg {
-				return NewMsgTssPool(helper.members, GetRandomPubKey(), AsgardKeygen, helper.ctx.BlockHeight(), tssCommon.NoBlame, helper.nodeAccount.NodeAddress)
+				return NewMsgTssPool(helper.members, GetRandomPubKey(), AsgardKeygen, helper.ctx.BlockHeight(), tssCommon.NoBlame, common.Chains{common.BNBChain}, helper.nodeAccount.NodeAddress)
 			},
 			runner: func(handler TssHandler, msg sdk.Msg, helper tssHandlerTestHelper) sdk.Result {
 				return handler.Run(helper.ctx, msg, semver.MustParse("0.0.1"), helper.constAccessor)
@@ -156,7 +156,7 @@ func (s *HandlerTssSuite) TestTssHandler(c *C) {
 		{
 			name: "Not signed by an active account should return an error",
 			messageCreator: func(helper tssHandlerTestHelper) sdk.Msg {
-				return NewMsgTssPool(helper.members, GetRandomPubKey(), AsgardKeygen, helper.ctx.BlockHeight(), tssCommon.NoBlame, GetRandomNodeAccount(NodeActive).NodeAddress)
+				return NewMsgTssPool(helper.members, GetRandomPubKey(), AsgardKeygen, helper.ctx.BlockHeight(), tssCommon.NoBlame, common.Chains{common.BNBChain}, GetRandomNodeAccount(NodeActive).NodeAddress)
 			},
 			runner: func(handler TssHandler, msg sdk.Msg, helper tssHandlerTestHelper) sdk.Result {
 				return handler.Run(helper.ctx, msg, constants.SWVersion, helper.constAccessor)
@@ -166,7 +166,7 @@ func (s *HandlerTssSuite) TestTssHandler(c *C) {
 		{
 			name: "empty signer should return an error",
 			messageCreator: func(helper tssHandlerTestHelper) sdk.Msg {
-				return NewMsgTssPool(helper.members, GetRandomPubKey(), AsgardKeygen, helper.ctx.BlockHeight(), tssCommon.NoBlame, sdk.AccAddress{})
+				return NewMsgTssPool(helper.members, GetRandomPubKey(), AsgardKeygen, helper.ctx.BlockHeight(), tssCommon.NoBlame, common.Chains{common.BNBChain}, sdk.AccAddress{})
 			},
 			runner: func(handler TssHandler, msg sdk.Msg, helper tssHandlerTestHelper) sdk.Result {
 				return handler.Run(helper.ctx, msg, constants.SWVersion, helper.constAccessor)
@@ -176,7 +176,7 @@ func (s *HandlerTssSuite) TestTssHandler(c *C) {
 		{
 			name: "empty id should return an error",
 			messageCreator: func(helper tssHandlerTestHelper) sdk.Msg {
-				tssMsg := NewMsgTssPool(helper.members, GetRandomPubKey(), AsgardKeygen, helper.ctx.BlockHeight(), tssCommon.NoBlame, helper.nodeAccount.NodeAddress)
+				tssMsg := NewMsgTssPool(helper.members, GetRandomPubKey(), AsgardKeygen, helper.ctx.BlockHeight(), tssCommon.NoBlame, common.Chains{common.BNBChain}, helper.nodeAccount.NodeAddress)
 				tssMsg.ID = ""
 				return tssMsg
 			},
@@ -188,7 +188,7 @@ func (s *HandlerTssSuite) TestTssHandler(c *C) {
 		{
 			name: "empty member pubkeys should return an error",
 			messageCreator: func(helper tssHandlerTestHelper) sdk.Msg {
-				tssMsg := NewMsgTssPool(common.PubKeys{}, GetRandomPubKey(), AsgardKeygen, helper.ctx.BlockHeight(), tssCommon.NoBlame, helper.nodeAccount.NodeAddress)
+				tssMsg := NewMsgTssPool(common.PubKeys{}, GetRandomPubKey(), AsgardKeygen, helper.ctx.BlockHeight(), tssCommon.NoBlame, common.Chains{common.BNBChain}, helper.nodeAccount.NodeAddress)
 				return tssMsg
 			},
 			runner: func(handler TssHandler, msg sdk.Msg, helper tssHandlerTestHelper) sdk.Result {
@@ -199,7 +199,7 @@ func (s *HandlerTssSuite) TestTssHandler(c *C) {
 		{
 			name: "less than two member pubkeys should return an error",
 			messageCreator: func(helper tssHandlerTestHelper) sdk.Msg {
-				tssMsg := NewMsgTssPool(common.PubKeys{GetRandomPubKey()}, GetRandomPubKey(), AsgardKeygen, helper.ctx.BlockHeight(), tssCommon.NoBlame, helper.nodeAccount.NodeAddress)
+				tssMsg := NewMsgTssPool(common.PubKeys{GetRandomPubKey()}, GetRandomPubKey(), AsgardKeygen, helper.ctx.BlockHeight(), tssCommon.NoBlame, common.Chains{common.BNBChain}, helper.nodeAccount.NodeAddress)
 				return tssMsg
 			},
 			runner: func(handler TssHandler, msg sdk.Msg, helper tssHandlerTestHelper) sdk.Result {
@@ -210,7 +210,7 @@ func (s *HandlerTssSuite) TestTssHandler(c *C) {
 		{
 			name: "there are empty pubkeys in member pubkey should return an error",
 			messageCreator: func(helper tssHandlerTestHelper) sdk.Msg {
-				tssMsg := NewMsgTssPool(common.PubKeys{GetRandomPubKey(), GetRandomPubKey(), common.EmptyPubKey}, GetRandomPubKey(), AsgardKeygen, helper.ctx.BlockHeight(), tssCommon.NoBlame, helper.nodeAccount.NodeAddress)
+				tssMsg := NewMsgTssPool(common.PubKeys{GetRandomPubKey(), GetRandomPubKey(), common.EmptyPubKey}, GetRandomPubKey(), AsgardKeygen, helper.ctx.BlockHeight(), tssCommon.NoBlame, common.Chains{common.BNBChain}, helper.nodeAccount.NodeAddress)
 				return tssMsg
 			},
 			runner: func(handler TssHandler, msg sdk.Msg, helper tssHandlerTestHelper) sdk.Result {
@@ -221,7 +221,7 @@ func (s *HandlerTssSuite) TestTssHandler(c *C) {
 		{
 			name: "success while pool pub key is empty should return error",
 			messageCreator: func(helper tssHandlerTestHelper) sdk.Msg {
-				tssMsg := NewMsgTssPool(helper.members, common.EmptyPubKey, AsgardKeygen, helper.ctx.BlockHeight(), tssCommon.NoBlame, helper.nodeAccount.NodeAddress)
+				tssMsg := NewMsgTssPool(helper.members, common.EmptyPubKey, AsgardKeygen, helper.ctx.BlockHeight(), tssCommon.NoBlame, common.Chains{common.BNBChain}, helper.nodeAccount.NodeAddress)
 				return tssMsg
 			},
 			runner: func(handler TssHandler, msg sdk.Msg, helper tssHandlerTestHelper) sdk.Result {
@@ -232,7 +232,7 @@ func (s *HandlerTssSuite) TestTssHandler(c *C) {
 		{
 			name: "invalid pool pub key should return error",
 			messageCreator: func(helper tssHandlerTestHelper) sdk.Msg {
-				tssMsg := NewMsgTssPool(helper.members, "whatever", AsgardKeygen, helper.ctx.BlockHeight(), tssCommon.NoBlame, helper.nodeAccount.NodeAddress)
+				tssMsg := NewMsgTssPool(helper.members, "whatever", AsgardKeygen, helper.ctx.BlockHeight(), tssCommon.NoBlame, common.Chains{common.BNBChain}, helper.nodeAccount.NodeAddress)
 				return tssMsg
 			},
 			runner: func(handler TssHandler, msg sdk.Msg, helper tssHandlerTestHelper) sdk.Result {
@@ -243,7 +243,7 @@ func (s *HandlerTssSuite) TestTssHandler(c *C) {
 		{
 			name: "fail to list active node accounts should return an error",
 			messageCreator: func(helper tssHandlerTestHelper) sdk.Msg {
-				tssMsg := NewMsgTssPool(helper.members, GetRandomPubKey(), AsgardKeygen, helper.ctx.BlockHeight(), tssCommon.NoBlame, helper.nodeAccount.NodeAddress)
+				tssMsg := NewMsgTssPool(helper.members, GetRandomPubKey(), AsgardKeygen, helper.ctx.BlockHeight(), tssCommon.NoBlame, common.Chains{common.BNBChain}, helper.nodeAccount.NodeAddress)
 				return tssMsg
 			},
 			runner: func(handler TssHandler, msg sdk.Msg, helper tssHandlerTestHelper) sdk.Result {
@@ -255,7 +255,7 @@ func (s *HandlerTssSuite) TestTssHandler(c *C) {
 		{
 			name: "fail to get tss voter should return an error",
 			messageCreator: func(helper tssHandlerTestHelper) sdk.Msg {
-				tssMsg := NewMsgTssPool(helper.members, GetRandomPubKey(), AsgardKeygen, helper.ctx.BlockHeight(), tssCommon.NoBlame, helper.nodeAccount.NodeAddress)
+				tssMsg := NewMsgTssPool(helper.members, GetRandomPubKey(), AsgardKeygen, helper.ctx.BlockHeight(), tssCommon.NoBlame, common.Chains{common.BNBChain}, helper.nodeAccount.NodeAddress)
 				return tssMsg
 			},
 			runner: func(handler TssHandler, msg sdk.Msg, helper tssHandlerTestHelper) sdk.Result {
@@ -267,7 +267,7 @@ func (s *HandlerTssSuite) TestTssHandler(c *C) {
 		{
 			name: "fail to save vault should return an error",
 			messageCreator: func(helper tssHandlerTestHelper) sdk.Msg {
-				tssMsg := NewMsgTssPool(helper.members, GetRandomPubKey(), AsgardKeygen, helper.ctx.BlockHeight(), tssCommon.NoBlame, helper.nodeAccount.NodeAddress)
+				tssMsg := NewMsgTssPool(helper.members, GetRandomPubKey(), AsgardKeygen, helper.ctx.BlockHeight(), tssCommon.NoBlame, common.Chains{common.BNBChain}, helper.nodeAccount.NodeAddress)
 				return tssMsg
 			},
 			runner: func(handler TssHandler, msg sdk.Msg, helper tssHandlerTestHelper) sdk.Result {
@@ -279,7 +279,7 @@ func (s *HandlerTssSuite) TestTssHandler(c *C) {
 		{
 			name: "not having consensus should not perform any actions",
 			messageCreator: func(helper tssHandlerTestHelper) sdk.Msg {
-				tssMsg := NewMsgTssPool(helper.members, GetRandomPubKey(), AsgardKeygen, helper.ctx.BlockHeight(), tssCommon.NoBlame, helper.nodeAccount.NodeAddress)
+				tssMsg := NewMsgTssPool(helper.members, GetRandomPubKey(), AsgardKeygen, helper.ctx.BlockHeight(), tssCommon.NoBlame, common.Chains{common.BNBChain}, helper.nodeAccount.NodeAddress)
 				return tssMsg
 			},
 			runner: func(handler TssHandler, msg sdk.Msg, helper tssHandlerTestHelper) sdk.Result {
@@ -294,7 +294,7 @@ func (s *HandlerTssSuite) TestTssHandler(c *C) {
 		{
 			name: "normal success",
 			messageCreator: func(helper tssHandlerTestHelper) sdk.Msg {
-				tssMsg := NewMsgTssPool(helper.members, GetRandomPubKey(), AsgardKeygen, helper.ctx.BlockHeight(), tssCommon.NoBlame, helper.nodeAccount.NodeAddress)
+				tssMsg := NewMsgTssPool(helper.members, GetRandomPubKey(), AsgardKeygen, helper.ctx.BlockHeight(), tssCommon.NoBlame, common.Chains{common.BNBChain}, helper.nodeAccount.NodeAddress)
 				return tssMsg
 			},
 			runner: func(handler TssHandler, msg sdk.Msg, helper tssHandlerTestHelper) sdk.Result {
@@ -314,7 +314,7 @@ func (s *HandlerTssSuite) TestTssHandler(c *C) {
 						"whatever",
 					},
 				}
-				return NewMsgTssPool(helper.members, GetRandomPubKey(), AsgardKeygen, helper.ctx.BlockHeight(), b, helper.nodeAccount.NodeAddress)
+				return NewMsgTssPool(helper.members, GetRandomPubKey(), AsgardKeygen, helper.ctx.BlockHeight(), b, common.Chains{common.BNBChain}, helper.nodeAccount.NodeAddress)
 			},
 			runner: func(handler TssHandler, msg sdk.Msg, helper tssHandlerTestHelper) sdk.Result {
 				ctx := helper.ctx.WithBlockHeight(60000)
@@ -338,7 +338,7 @@ func (s *HandlerTssSuite) TestTssHandler(c *C) {
 						helper.members[3].String(),
 					},
 				}
-				return NewMsgTssPool(helper.members, GetRandomPubKey(), AsgardKeygen, helper.ctx.BlockHeight(), b, helper.nodeAccount.NodeAddress)
+				return NewMsgTssPool(helper.members, GetRandomPubKey(), AsgardKeygen, helper.ctx.BlockHeight(), b, common.Chains{common.BNBChain}, helper.nodeAccount.NodeAddress)
 			},
 			runner: func(handler TssHandler, msg sdk.Msg, helper tssHandlerTestHelper) sdk.Result {
 				ctx := helper.ctx.WithBlockHeight(60000)
@@ -365,7 +365,7 @@ func (s *HandlerTssSuite) TestTssHandler(c *C) {
 						helper.members[3].String(),
 					},
 				}
-				return NewMsgTssPool(helper.members, GetRandomPubKey(), AsgardKeygen, helper.ctx.BlockHeight(), b, helper.nodeAccount.NodeAddress)
+				return NewMsgTssPool(helper.members, GetRandomPubKey(), AsgardKeygen, helper.ctx.BlockHeight(), b, common.Chains{common.BNBChain}, helper.nodeAccount.NodeAddress)
 			},
 			runner: func(handler TssHandler, msg sdk.Msg, helper tssHandlerTestHelper) sdk.Result {
 				ctx := helper.ctx.WithBlockHeight(60000)
@@ -386,7 +386,7 @@ func (s *HandlerTssSuite) TestTssHandler(c *C) {
 						helper.members[3].String(),
 					},
 				}
-				return NewMsgTssPool(helper.members, GetRandomPubKey(), AsgardKeygen, helper.ctx.BlockHeight(), b, helper.nodeAccount.NodeAddress)
+				return NewMsgTssPool(helper.members, GetRandomPubKey(), AsgardKeygen, helper.ctx.BlockHeight(), b, common.Chains{common.BNBChain}, helper.nodeAccount.NodeAddress)
 			},
 			runner: func(handler TssHandler, msg sdk.Msg, helper tssHandlerTestHelper) sdk.Result {
 				ctx := helper.ctx.WithBlockHeight(60000)
@@ -418,7 +418,7 @@ func (s *HandlerTssSuite) TestTssHandler(c *C) {
 						helper.members[3].String(),
 					},
 				}
-				return NewMsgTssPool(helper.members, GetRandomPubKey(), AsgardKeygen, helper.ctx.BlockHeight(), b, helper.nodeAccount.NodeAddress)
+				return NewMsgTssPool(helper.members, GetRandomPubKey(), AsgardKeygen, helper.ctx.BlockHeight(), b, common.Chains{common.BNBChain}, helper.nodeAccount.NodeAddress)
 			},
 			runner: func(handler TssHandler, msg sdk.Msg, helper tssHandlerTestHelper) sdk.Result {
 				ctx := helper.ctx.WithBlockHeight(60000)
@@ -441,7 +441,7 @@ func (s *HandlerTssSuite) TestTssHandler(c *C) {
 						helper.members[3].String(),
 					},
 				}
-				return NewMsgTssPool(helper.members, GetRandomPubKey(), AsgardKeygen, helper.ctx.BlockHeight(), b, helper.nodeAccount.NodeAddress)
+				return NewMsgTssPool(helper.members, GetRandomPubKey(), AsgardKeygen, helper.ctx.BlockHeight(), b, common.Chains{common.BNBChain}, helper.nodeAccount.NodeAddress)
 			},
 			runner: func(handler TssHandler, msg sdk.Msg, helper tssHandlerTestHelper) sdk.Result {
 				helper.keeper.errFailGetNodeAccount = true
@@ -459,7 +459,7 @@ func (s *HandlerTssSuite) TestTssHandler(c *C) {
 						helper.members[3].String(),
 					},
 				}
-				return NewMsgTssPool(helper.members, GetRandomPubKey(), AsgardKeygen, helper.ctx.BlockHeight(), b, helper.nodeAccount.NodeAddress)
+				return NewMsgTssPool(helper.members, GetRandomPubKey(), AsgardKeygen, helper.ctx.BlockHeight(), b, common.Chains{common.BNBChain}, helper.nodeAccount.NodeAddress)
 			},
 			runner: func(handler TssHandler, msg sdk.Msg, helper tssHandlerTestHelper) sdk.Result {
 				helper.keeper.errFailSetNodeAccount = true

@@ -50,6 +50,7 @@ type ChainConfiguration struct {
 	DisableTLS   bool                      `json:"disable_tls" mapstructure:"disable_tls"`       // Bitcoin core does not provide TLS by default
 	BlockScanner BlockScannerConfiguration `json:"block_scanner" mapstructure:"block_scanner"`
 	BackOff      BackOff
+	OptToRetire  bool `json:"opt_to_retire" mapstructure:"opt_to_retire"` // don't emit support for this chain during keygen process
 }
 
 // TSSConfiguration

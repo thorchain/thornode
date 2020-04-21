@@ -19,7 +19,7 @@ func (s *VaultSuite) TestVault(c *C) {
 	c.Check(vault.IsEmpty(), Equals, true)
 	c.Check(vault.IsValid(), NotNil)
 
-	vault = NewVault(12, ActiveVault, YggdrasilVault, pk)
+	vault = NewVault(12, ActiveVault, YggdrasilVault, pk, common.Chains{common.BNBChain})
 	c.Check(vault.PubKey.Equals(pk), Equals, true)
 	c.Check(vault.HasFunds(), Equals, false)
 	c.Check(vault.IsEmpty(), Equals, false)
@@ -51,7 +51,7 @@ func (s *VaultSuite) TestVault(c *C) {
 }
 
 func (s *VaultSuite) TestGetTssSigners(c *C) {
-	vault := NewVault(12, ActiveVault, AsgardVault, GetRandomPubKey())
+	vault := NewVault(12, ActiveVault, AsgardVault, GetRandomPubKey(), common.Chains{common.BNBChain})
 	nodeAccounts := NodeAccounts{}
 	memberShip := common.PubKeys{}
 	for i := 0; i < 10; i++ {
@@ -72,7 +72,7 @@ func (s *VaultSuite) TestGetTssSigners(c *C) {
 }
 
 func (s *VaultSuite) TestPendingTxBlockHeights(c *C) {
-	vault := NewVault(12, ActiveVault, AsgardVault, GetRandomPubKey())
+	vault := NewVault(12, ActiveVault, AsgardVault, GetRandomPubKey(), common.Chains{common.BNBChain})
 
 	version := constants.SWVersion
 	constAccessor := constants.GetConstantValues(version)

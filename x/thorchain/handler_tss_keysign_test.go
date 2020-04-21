@@ -90,7 +90,7 @@ func newTssKeysignHandlerTestHelper(c *C) tssKeysignFailHandlerTestHelper {
 		FailReason: "whatever",
 		BlameNodes: members,
 	}
-	asgardVault := NewVault(ctx.BlockHeight(), ActiveVault, AsgardVault, GetRandomPubKey())
+	asgardVault := NewVault(ctx.BlockHeight(), ActiveVault, AsgardVault, GetRandomPubKey(), common.Chains{common.BNBChain})
 	c.Assert(keeper.SetVault(ctx, asgardVault), IsNil)
 	return tssKeysignFailHandlerTestHelper{
 		ctx:           ctx,

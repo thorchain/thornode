@@ -286,19 +286,10 @@ func queryPoolAddresses(ctx sdk.Context, path []string, req abci.RequestQuery, k
 	if len(active) > 0 {
 		// select vault with lowest amount of rune
 		vault := active.SelectByMinCoin(common.RuneAsset())
+		chains := vault.Chains
 
-		chains, err := keeper.GetChains(ctx)
-		if err != nil {
-			ctx.Logger().Error("fail to get chains", "error", err)
-			return nil, sdk.ErrInternal("fail to get chains")
-		}
-
-		// if no chains yet, assume BNB chain is available
-		// TODO: This is a chicken/egg problem. We can't add the chain until
-		// we've observed at least one transaction. But we can't send a
-		// transaction until we get the address of the pool on the chain
 		if len(chains) == 0 {
-			chains = common.Chains{common.BNBChain}
+			chains = common.Chains{common.RuneAsset().Chain}
 		}
 
 		for _, chain := range chains {

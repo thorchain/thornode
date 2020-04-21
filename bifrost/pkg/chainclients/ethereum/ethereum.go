@@ -121,6 +121,10 @@ func (c *Client) Stop() {
 	c.blockScanner.Stop()
 }
 
+func (c *Client) GetConfig() config.ChainConfiguration {
+	return c.cfg
+}
+
 // IsTestNet determinate whether we are running on test net by checking the status
 func (c *Client) CheckIsTestNet() bool {
 	// Cached data after first call

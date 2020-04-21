@@ -61,7 +61,7 @@ func (k *TestRefundBondKeeper) SetPool(_ sdk.Context, p Pool) error {
 
 func (k *TestRefundBondKeeper) DeleteVault(_ sdk.Context, key common.PubKey) error {
 	if k.ygg.PubKey.Equals(key) {
-		k.ygg = NewVault(1, InactiveVault, AsgardVault, GetRandomPubKey())
+		k.ygg = NewVault(1, InactiveVault, AsgardVault, GetRandomPubKey(), common.Chains{common.BNBChain})
 	}
 	return nil
 }
@@ -171,13 +171,13 @@ func (s *HelperSuite) TestRefundBondError(c *C) {
 	c.Assert(refundBond(ctx, tx, na, keeper1, txOut), NotNil)
 
 	// if the vault is not a yggdrasil pool , it should return an error
-	ygg := NewVault(ctx.BlockHeight(), ActiveVault, AsgardVault, pk)
+	ygg := NewVault(ctx.BlockHeight(), ActiveVault, AsgardVault, pk, common.Chains{common.BNBChain})
 	ygg.Coins = common.Coins{}
 	keeper1.ygg = ygg
 	c.Assert(refundBond(ctx, tx, na, keeper1, txOut), NotNil)
 
 	// fail to get pool should fail
-	ygg = NewVault(ctx.BlockHeight(), ActiveVault, YggdrasilVault, pk)
+	ygg = NewVault(ctx.BlockHeight(), ActiveVault, YggdrasilVault, pk, common.Chains{common.BNBChain})
 	ygg.Coins = common.Coins{
 		common.NewCoin(common.RuneAsset(), sdk.NewUint(27*common.One)),
 		common.NewCoin(common.BNBAsset, sdk.NewUint(27*common.One)),
@@ -205,7 +205,7 @@ func (s *HelperSuite) TestRefundBondHappyPath(c *C) {
 	txOut := NewTxStoreDummy()
 	pk := GetRandomPubKey()
 	na.PubKeySet.Secp256k1 = pk
-	ygg := NewVault(ctx.BlockHeight(), ActiveVault, YggdrasilVault, pk)
+	ygg := NewVault(ctx.BlockHeight(), ActiveVault, YggdrasilVault, pk, common.Chains{common.BNBChain})
 
 	ygg.Coins = common.Coins{
 		common.NewCoin(common.RuneAsset(), sdk.NewUint(3946*common.One)),
@@ -378,7 +378,7 @@ func newAddGasFeeTestHelper(c *C) addGasFeeTestHelper {
 
 	na := GetRandomNodeAccount(NodeActive)
 	c.Assert(k.SetNodeAccount(ctx, na), IsNil)
-	yggVault := NewVault(ctx.BlockHeight(), ActiveVault, YggdrasilVault, na.PubKeySet.Secp256k1)
+	yggVault := NewVault(ctx.BlockHeight(), ActiveVault, YggdrasilVault, na.PubKeySet.Secp256k1, common.Chains{common.BNBChain})
 	c.Assert(k.SetVault(ctx, yggVault), IsNil)
 	return addGasFeeTestHelper{
 		ctx:        ctx,

@@ -302,7 +302,7 @@ func getMsgStakeFromMemo(ctx sdk.Context, memo StakeMemo, tx ObservedTx, signer 
 	// the stake operation by sending in two asymmetric stake tx, one tx on BTC chain with memo stake:BTC:<RUNE address> ,
 	// and another one on Binance chain with stake:BTC , with only RUNE as the coin
 	// Thorchain will use the <RUNE address> to match these two together , and consider it as one stake.
-	if !runeAddr.IsChain(common.BNBChain) {
+	if !runeAddr.IsChain(common.RuneAsset().Chain) {
 		runeAddr = memo.GetDestination()
 		assetAddr = tx.Tx.FromAddress
 	} else {
