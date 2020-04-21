@@ -373,6 +373,7 @@ func (vm *VaultMgr) recallChainFunds(ctx sdk.Context, chain common.Chain) error 
 		}
 		ygg, err := vm.k.GetVault(ctx, node.PubKeySet.Secp256k1)
 		if err != nil {
+			ctx.Logger().Error("fail to get ygg vault", "error", err)
 			continue
 		}
 		if ygg.IsAsgard() {
