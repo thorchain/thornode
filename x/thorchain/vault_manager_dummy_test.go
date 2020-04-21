@@ -44,7 +44,7 @@ func (vm *VaultMgrDummy) TriggerKeygen(_ sdk.Context, nas NodeAccounts) error {
 	return nil
 }
 
-func (vm *VaultMgrDummy) RotateVault(ctx sdk.Context, vault Vault) error {
+func (vm *VaultMgrDummy) RotateVault(ctx sdk.Context, vault Vault, constAccessor constants.ConstantValues) error {
 	vm.vault = vault
 	return nil
 }

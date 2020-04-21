@@ -15,7 +15,7 @@ type VersionedVaultManager interface {
 // VaultManager interface define the contract of Vault Manager
 type VaultManager interface {
 	TriggerKeygen(ctx sdk.Context, nas NodeAccounts) error
-	RotateVault(ctx sdk.Context, vault Vault) error
+	RotateVault(ctx sdk.Context, vault Vault, constAccessor constants.ConstantValues) error
 	EndBlock(ctx sdk.Context, version semver.Version, constAccessor constants.ConstantValues) error
 }
 

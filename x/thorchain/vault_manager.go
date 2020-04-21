@@ -208,7 +208,7 @@ func (vm *VaultMgr) TriggerKeygen(ctx sdk.Context, nas NodeAccounts) error {
 	return vm.k.SetKeygenBlock(ctx, keygenBlock)
 }
 
-func (vm *VaultMgr) RotateVault(ctx sdk.Context, vault Vault) error {
+func (vm *VaultMgr) RotateVault(ctx sdk.Context, vault Vault, constAccessor constants.ConstantValues) error {
 	active, err := vm.k.GetAsgardVaultsByStatus(ctx, ActiveVault)
 	if err != nil {
 		return err
@@ -244,6 +244,10 @@ func (vm *VaultMgr) RotateVault(ctx sdk.Context, vault Vault) error {
 	}
 
 	if err := vm.k.SetVault(ctx, vault); err != nil {
+		return err
+	}
+
+	if err := vm.ragnarokRetiredChains(ctx, constAccessor); err != nil {
 		return err
 	}
 

@@ -63,6 +63,8 @@ func (h TssHandler) handle(ctx sdk.Context, msg MsgTssPool, version semver.Versi
 
 // Handle a message to observe inbound tx (v0.1.0)
 func (h TssHandler) handleV1(ctx sdk.Context, msg MsgTssPool, version semver.Version) sdk.Result {
+	constAccessor := constants.GetConstantValues(version)
+
 	active, err := h.keeper.ListActiveNodeAccounts(ctx)
 	if err != nil {
 		err = wrapError(ctx, err, "fail to get list of active node accounts")
@@ -115,12 +117,11 @@ func (h TssHandler) handleV1(ctx sdk.Context, msg MsgTssPool, version semver.Ver
 				ctx.Logger().Error("fail to get a valid vault manager", "error", err)
 				return sdk.ErrInternal(err.Error()).Result()
 			}
-			if err := vaultMgr.RotateVault(ctx, vault); err != nil {
+			if err := vaultMgr.RotateVault(ctx, vault, constAccessor); err != nil {
 				return sdk.ErrInternal(err.Error()).Result()
 			}
 		} else {
 			// if a node fail to join the keygen, thus hold off the network from churning then it will be slashed accordingly
-			constAccessor := constants.GetConstantValues(version)
 			slashPoints := constAccessor.GetInt64Value(constants.FailKeygenSlashPoints)
 			reserveVault, err := h.keeper.GetVaultData(ctx)
 			if err != nil {
