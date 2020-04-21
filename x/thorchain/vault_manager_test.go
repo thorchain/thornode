@@ -160,7 +160,7 @@ func (s *ValidatorManagerTestSuite) TestRagnarokChain(c *C) {
 	err := vaultMgr.ragnarokRetiredChains(ctx, constAccessor)
 	c.Assert(err, IsNil)
 	c.Check(keeper.pools[1].Asset.Equals(common.BTCAsset), Equals, true)
-	c.Check(keeper.pools[1].PoolUnits.IsZero(), Equals, true)
+	c.Check(keeper.pools[1].PoolUnits.IsZero(), Equals, true, Commentf("%d\n", keeper.pools[1].PoolUnits.Uint64()))
 	c.Check(keeper.pools[0].PoolUnits.Equal(sdk.NewUint(1600)), Equals, true)
 	c.Check(keeper.ps.Stakers, HasLen, 0)
 }

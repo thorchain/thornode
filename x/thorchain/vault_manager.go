@@ -184,6 +184,11 @@ func (vm *VaultMgr) EndBlock(ctx sdk.Context, version semver.Version, constAcces
 		}
 	}
 
+	if ctx.BlockHeight()%migrateInterval == 0 {
+		if err := vm.ragnarokRetiredChains(ctx, constAccessor); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -208,7 +213,7 @@ func (vm *VaultMgr) TriggerKeygen(ctx sdk.Context, nas NodeAccounts) error {
 	return vm.k.SetKeygenBlock(ctx, keygenBlock)
 }
 
-func (vm *VaultMgr) RotateVault(ctx sdk.Context, vault Vault, constAccessor constants.ConstantValues) error {
+func (vm *VaultMgr) RotateVault(ctx sdk.Context, vault Vault) error {
 	active, err := vm.k.GetAsgardVaultsByStatus(ctx, ActiveVault)
 	if err != nil {
 		return err
@@ -247,10 +252,6 @@ func (vm *VaultMgr) RotateVault(ctx sdk.Context, vault Vault, constAccessor cons
 		return err
 	}
 
-	if err := vm.ragnarokRetiredChains(ctx, constAccessor); err != nil {
-		return err
-	}
-
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(EventTypeActiveVault,
 			sdk.NewAttribute("add new asgard vault", vault.PubKey.String())))
@@ -273,10 +274,16 @@ func (vm *VaultMgr) ragnarokRetiredChains(ctx sdk.Context, constAccessor constan
 	if err != nil {
 		return err
 	}
-
 	retiring, err := vm.k.GetAsgardVaultsByStatus(ctx, RetiringVault)
 	if err != nil {
 		return err
+	}
+
+	var latestHeight int64
+	for _, vault := range append(active, retiring...) {
+		if vault.StatusSince > latestHeight {
+			latestHeight = vault.StatusSince
+		}
 	}
 
 	activeChains := make(common.Chains, 0)
@@ -321,10 +328,16 @@ func (vm *VaultMgr) ragnarokRetiredChains(ctx sdk.Context, constAccessor constan
 					continue
 				}
 
+				migrateInterval := constAccessor.GetInt64Value(constants.FundMigrationInterval)
+				nth := (ctx.BlockHeight()-latestHeight)/migrateInterval + 1
+				if nth > 10 {
+					nth = 10
+				}
+
 				unstakeMsg := NewMsgSetUnStake(
 					common.GetRagnarokTx(pool.Asset.Chain, item.RuneAddress, item.RuneAddress),
 					item.RuneAddress,
-					sdk.NewUint(uint64(MaxUnstakeBasisPoints)),
+					sdk.NewUint(uint64(MaxUnstakeBasisPoints/100*(nth*10))),
 					pool.Asset,
 					na.NodeAddress,
 				)
