@@ -20,8 +20,6 @@ import (
 func NewQuerier(keeper Keeper, validatorMgr VersionedValidatorManager) sdk.Querier {
 	return func(ctx sdk.Context, path []string, req abci.RequestQuery) (res []byte, err sdk.Error) {
 		switch path[0] {
-		case q.QueryChains.Key:
-			return queryChains(ctx, req, keeper)
 		case q.QueryPool.Key:
 			return queryPool(ctx, path[1:], req, keeper)
 		case q.QueryPools.Key:
@@ -66,8 +64,6 @@ func NewQuerier(keeper Keeper, validatorMgr VersionedValidatorManager) sdk.Queri
 			return queryYggdrasilVaults(ctx, keeper)
 		case q.QueryVaultPubkeys.Key:
 			return queryVaultsPubkeys(ctx, keeper)
-		case q.QueryVaultAddresses.Key:
-			return queryVaultsAddresses(ctx, keeper)
 		case q.QueryTSSSigners.Key:
 			return queryTSSSigners(ctx, path[1:], req, keeper)
 		case q.QueryConstantValues.Key:
@@ -169,43 +165,6 @@ func queryYggdrasilVaults(ctx sdk.Context, keeper Keeper) ([]byte, sdk.Error) {
 	return res, nil
 }
 
-func queryVaultsAddresses(ctx sdk.Context, keeper Keeper) ([]byte, sdk.Error) {
-	chains, err := keeper.GetChains(ctx)
-	if err != nil {
-		ctx.Logger().Error("fail to get chains", "error", err)
-		return nil, sdk.ErrInternal("fail to get chains")
-	}
-
-	active, err := keeper.GetAsgardVaultsByStatus(ctx, ActiveVault)
-	if err != nil {
-		ctx.Logger().Error("fail to get active asgards", "error", err)
-		return nil, sdk.ErrInternal("fail to get active asgards")
-	}
-
-	var resp struct {
-		Chains map[common.Chain][]common.Address `json:"chains"`
-	}
-	resp.Chains = make(map[common.Chain][]common.Address, 0)
-
-	for _, chain := range chains {
-		for _, vault := range active {
-			addr, err := vault.PubKey.GetAddress(chain)
-			if err != nil {
-				ctx.Logger().Error("fail to get active asgards", "error", err)
-				return nil, sdk.ErrInternal("fail to get active asgards")
-			}
-			resp.Chains[chain] = append(resp.Chains[chain], addr)
-		}
-	}
-
-	res, err := codec.MarshalJSONIndent(keeper.Cdc(), resp)
-	if err != nil {
-		ctx.Logger().Error("fail to marshal pubkeys response to json", "error", err)
-		return nil, sdk.ErrInternal("fail to marshal response to json")
-	}
-	return res, nil
-}
-
 func queryVaultsPubkeys(ctx sdk.Context, keeper Keeper) ([]byte, sdk.Error) {
 	var resp struct {
 		Asgard    common.PubKeys `json:"asgard"`
@@ -248,21 +207,6 @@ func queryVaultData(ctx sdk.Context, keeper Keeper) ([]byte, sdk.Error) {
 		ctx.Logger().Error("fail to marshal vault data to json", "error", err)
 		return nil, sdk.ErrInternal("fail to marshal response to json")
 	}
-	return res, nil
-}
-
-func queryChains(ctx sdk.Context, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
-	chains, err := keeper.GetChains(ctx)
-	if err != nil {
-		ctx.Logger().Error("fail to get chains", "error", err)
-		return nil, sdk.ErrInternal("fail to get chains")
-	}
-	res, err := codec.MarshalJSONIndent(keeper.Cdc(), chains)
-	if err != nil {
-		ctx.Logger().Error("fail to marshal current chains to json", "error", err)
-		return nil, sdk.ErrInternal("fail to marshal chains to json")
-	}
-
 	return res, nil
 }
 
