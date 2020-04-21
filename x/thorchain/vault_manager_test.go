@@ -3,11 +3,13 @@ package thorchain
 import (
 	"errors"
 
+	. "gopkg.in/check.v1"
+
 	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	"gitlab.com/thorchain/thornode/common"
 	"gitlab.com/thorchain/thornode/constants"
-	. "gopkg.in/check.v1"
 )
 
 type VaultManagerTestSuite struct{}
