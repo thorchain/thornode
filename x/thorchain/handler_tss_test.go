@@ -341,6 +341,15 @@ func (s *HandlerTssSuite) TestTssHandler(c *C) {
 				return NewMsgTssPool(helper.members, GetRandomPubKey(), AsgardKeygen, helper.ctx.BlockHeight(), b, common.Chains{common.BNBChain}, helper.nodeAccount.NodeAddress)
 			},
 			runner: func(handler TssHandler, msg sdk.Msg, helper tssHandlerTestHelper) sdk.Result {
+				m, _ := msg.(MsgTssPool)
+				voter, _ := helper.keeper.GetTssVoter(helper.ctx, m.ID)
+				if voter.PoolPubKey.IsEmpty() {
+					voter.PoolPubKey = m.PoolPubKey
+					voter.PubKeys = m.PubKeys
+				}
+				addr, _ := helper.members[3].GetThorAddress()
+				voter.Sign(addr, common.Chains{common.BNBChain})
+				helper.keeper.SetTssVoter(helper.ctx, voter)
 				ctx := helper.ctx.WithBlockHeight(60000)
 				return handler.Run(ctx, msg, constants.SWVersion, helper.constAccessor)
 			},
