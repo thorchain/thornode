@@ -29,6 +29,10 @@ type TestRagnarokChainKeeper struct {
 	err         error
 }
 
+func (k *TestRagnarokChainKeeper) ListNodeAccounts(_ sdk.Context) (NodeAccounts, error) {
+	return NodeAccounts{k.na}, k.err
+}
+
 func (k *TestRagnarokChainKeeper) ListActiveNodeAccounts(_ sdk.Context) (NodeAccounts, error) {
 	return NodeAccounts{k.na}, k.err
 }
