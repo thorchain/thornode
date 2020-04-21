@@ -232,7 +232,7 @@ func subtractGas(ctx sdk.Context, keeper Keeper, val sdk.Uint, gas common.Gas, g
 			return sdk.ZeroUint(), nil, fmt.Errorf("fail to get pool(%s): %w", coin.Asset, err)
 		}
 		// if the asset pool is not enabled, then THORNode will have no way to figure out the RUNE value of the asset, thus can't subsidise the pool for the gas spent
-		if pool.IsEnabled() {
+		if !pool.IsEnabled() {
 			continue
 		}
 		runeGas := pool.AssetValueInRune(coin.Amount) // Convert to Rune (gas will never be RUNE)
