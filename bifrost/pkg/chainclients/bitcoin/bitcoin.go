@@ -174,7 +174,7 @@ func (c *Client) OnObservedTxIn(txIn types.TxIn) {
 func (c *Client) FetchTxs(height int64) (types.TxIn, error) {
 	block, err := c.getBlock(height)
 	if err != nil {
-		time.Sleep(300 * time.Millisecond)
+		time.Sleep(c.cfg.BlockScanner.BlockHeightDiscoverBackoff)
 		if rpcErr, ok := err.(*btcjson.RPCError); ok && rpcErr.Code == btcjson.ErrRPCInvalidParameter {
 			// this means the tx had been broadcast to chain, it must be another signer finished quicker then us
 			return types.TxIn{}, btypes.UnavailableBlock

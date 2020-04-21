@@ -41,7 +41,7 @@ if [ ! -f /etc/bifrost/config.json ]; then
             \"rpc_host\": \"$BINANCE_HOST\",
             \"enforce_block_height\": false,
             \"block_scan_processors\": 1,
-            \"block_height_discover_back_off\": \"1s\",
+            \"block_height_discover_back_off\": \"0.3s\",
             \"block_retry_interval\": \"10s\",
             \"chain_id\": \"BNB\",
             \"http_request_timeout\": \"30s\",
@@ -63,7 +63,7 @@ if [ ! -f /etc/bifrost/config.json ]; then
             \"rpc_host\": \"$BTC_HOST\",
             \"enforce_block_height\": false,
             \"block_scan_processors\": 1,
-            \"block_height_discover_back_off\": \"1s\",
+            \"block_height_discover_back_off\": \"5s\",
             \"block_retry_interval\": \"10s\",
             \"chain_id\": \"BTC\",
             \"http_request_timeout\": \"30s\",
@@ -90,7 +90,7 @@ if [ ! -f /etc/bifrost/config.json ]; then
           \"start_block_height\": $START_BLOCK_HEIGHT,
           \"enforce_block_height\": false,
           \"block_scan_processors\": 1,
-          \"block_height_discover_back_off\": \"1s\",
+          \"block_height_discover_back_off\": \"5s\",
           \"block_retry_interval\": \"10s\",
           \"scheme\": \"http\"
         }
