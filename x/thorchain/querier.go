@@ -433,7 +433,7 @@ func queryPools(ctx sdk.Context, req abci.RequestQuery, keeper Keeper) ([]byte, 
 			return nil, sdk.ErrInternal("Unmarshl: Pool")
 		}
 
-		// ignore pool is no stake units
+		// ignore pool if no stake units
 		if pool.PoolUnits.IsZero() {
 			continue
 		}
