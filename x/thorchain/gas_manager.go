@@ -39,6 +39,7 @@ func (gm *GasMgr) AddGasAsset(gas common.Gas) {
 		if g.IsEmpty() {
 			continue
 		}
+
 		gasPool := GasPool{
 			Asset:    g.Asset,
 			AssetAmt: g.Amount,
@@ -50,6 +51,9 @@ func (gm *GasMgr) AddGasAsset(gas common.Gas) {
 
 //  AddRune to the gas event
 func (gm *GasMgr) AddRune(asset common.Asset, amt sdk.Uint) {
+	if amt.Equal(sdk.ZeroUint()) {
+		return
+	}
 	gasPool := GasPool{
 		Asset:    asset,
 		AssetAmt: sdk.ZeroUint(),
@@ -68,9 +72,7 @@ func (gm *GasMgr) EndBlock(ctx sdk.Context, keeper Keeper) {
 		ctx.Logger().Error("fail to marshal gas event", "error", err)
 		return
 	}
-	evt := NewEvent(gm.gasEvent.Type(), ctx.BlockHeight(),
-		common.Tx{ID: common.BlankTxID},
-		buf, EventSuccess)
+	evt := NewEvent(gm.gasEvent.Type(), ctx.BlockHeight(), common.Tx{ID: common.BlankTxID}, buf, EventSuccess)
 	if err := keeper.UpsertEvent(ctx, evt); err != nil {
 		ctx.Logger().Error("fail to upsert event", "error", err)
 	}
