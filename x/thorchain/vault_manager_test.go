@@ -2,6 +2,7 @@ package thorchain
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -22,6 +23,7 @@ type TestRagnarokChainKeeper struct {
 	KVStoreDummy
 	activeVault Vault
 	retireVault Vault
+	yggVault    Vault
 	pools       Pools
 	ps          PoolStaker
 	sp          StakerPool
@@ -42,6 +44,14 @@ func (k *TestRagnarokChainKeeper) GetAsgardVaultsByStatus(_ sdk.Context, vt Vaul
 		return Vaults{k.activeVault}, k.err
 	}
 	return Vaults{k.retireVault}, k.err
+}
+
+func (k *TestRagnarokChainKeeper) VaultExists(_ sdk.Context, _ common.PubKey) bool {
+	return true
+}
+
+func (k *TestRagnarokChainKeeper) GetVault(_ sdk.Context, _ common.PubKey) (Vault, error) {
+	return k.yggVault, k.err
 }
 
 func (k *TestRagnarokChainKeeper) GetPools(_ sdk.Context) (Pools, error) {
@@ -118,6 +128,12 @@ func (s *ValidatorManagerTestSuite) TestRagnarokChain(c *C) {
 	activeVault := GetRandomVault()
 	retireVault := GetRandomVault()
 	retireVault.Chains = common.Chains{common.BNBChain, common.BTCChain}
+	yggVault := GetRandomVault()
+	yggVault.Type = YggdrasilVault
+	yggVault.Coins = common.Coins{
+		common.NewCoin(common.BTCAsset, sdk.NewUint(3*common.One)),
+		common.NewCoin(common.RuneAsset(), sdk.NewUint(300*common.One)),
+	}
 
 	btcPool := NewPool()
 	btcPool.Asset = common.BTCAsset
@@ -153,6 +169,7 @@ func (s *ValidatorManagerTestSuite) TestRagnarokChain(c *C) {
 		na:          GetRandomNodeAccount(NodeActive),
 		activeVault: activeVault,
 		retireVault: retireVault,
+		yggVault:    yggVault,
 		pools:       Pools{bnbPool, btcPool},
 		ps:          ps,
 		sp:          sp,
@@ -161,10 +178,22 @@ func (s *ValidatorManagerTestSuite) TestRagnarokChain(c *C) {
 	versionedTxOutStoreDummy := NewVersionedTxOutStoreDummy()
 	vaultMgr := NewVaultMgr(keeper, versionedTxOutStoreDummy)
 
-	err := vaultMgr.ragnarokRetiredChains(ctx, constAccessor)
+	fmt.Println("!!!!!!!!!!!!!!!!")
+	err := vaultMgr.manageChains(ctx, constAccessor)
 	c.Assert(err, IsNil)
 	c.Check(keeper.pools[1].Asset.Equals(common.BTCAsset), Equals, true)
 	c.Check(keeper.pools[1].PoolUnits.IsZero(), Equals, true, Commentf("%d\n", keeper.pools[1].PoolUnits.Uint64()))
 	c.Check(keeper.pools[0].PoolUnits.Equal(sdk.NewUint(1600)), Equals, true)
 	c.Check(keeper.ps.Stakers, HasLen, 0)
+
+	// ensure we have requested for ygg funds to be returned
+	txOutStore, err := versionedTxOutStoreDummy.GetTxOutStore(keeper, constants.SWVersion)
+	c.Assert(err, IsNil)
+	items, err := txOutStore.GetOutboundItems(ctx)
+	c.Assert(err, IsNil)
+
+	// 1 ygg return + 4 unstakes
+	c.Check(items, HasLen, 5, Commentf("Len %d", items))
+	c.Check(items[0].Memo, Equals, NewYggdrasilReturn(ctx.BlockHeight()).String())
+	c.Check(items[0].Chain.Equals(common.BTCChain), Equals, true)
 }

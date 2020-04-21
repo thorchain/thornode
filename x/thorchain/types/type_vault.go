@@ -110,6 +110,16 @@ func (v Vault) HasFunds() bool {
 	return false
 }
 
+// HasFundsForChain check whether the vault pool has funds for a specific chain
+func (v Vault) HasFundsForChain(chain common.Chain) bool {
+	for _, coin := range v.Coins {
+		if coin.Asset.Chain.Equals(chain) && !coin.Amount.IsZero() {
+			return true
+		}
+	}
+	return false
+}
+
 // CoinLength - counts the number of coins this vault has
 func (v Vault) CoinLength() (count int) {
 	for _, coin := range v.Coins {
