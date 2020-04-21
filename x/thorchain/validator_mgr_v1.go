@@ -3,6 +3,7 @@ package thorchain
 import (
 	"errors"
 	"fmt"
+	"net"
 	"sort"
 
 	"github.com/blang/semver"
@@ -626,15 +627,22 @@ func (vm *validatorMgrV1) RequestYggReturn(ctx sdk.Context, node NodeAccount) er
 		return nil
 	}
 
-	chains, err := vm.k.GetChains(ctx)
-	if err != nil {
-		return err
-	}
+	chains := make(common.Chains, 0)
 
 	active, err := vm.k.GetAsgardVaultsByStatus(ctx, ActiveVault)
 	if err != nil {
 		return err
 	}
+
+	retiring, err := vm.k.GetAsgardVaultsByStatus(ctx, RetiringVault)
+	if err != nil {
+		return err
+	}
+
+	for _, v := range append(active, retiring...) {
+		chains = append(chains, v.Chains...)
+	}
+	chains = chains.Distinct()
 
 	vault := active.SelectByMinCoin(common.RuneAsset())
 	if vault.IsEmpty() {
@@ -914,6 +922,11 @@ func (vm *validatorMgrV1) markReadyActors(ctx sdk.Context, constAccessor constan
 
 		// Check if they've requested to leave
 		if na.RequestedToLeave {
+			na.UpdateStatus(NodeStandby, ctx.BlockHeight())
+		}
+
+		// Check that the node account has an IP address
+		if net.ParseIP(na.IPAddress) == nil {
 			na.UpdateStatus(NodeStandby, ctx.BlockHeight())
 		}
 

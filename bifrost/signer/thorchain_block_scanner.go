@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/prometheus/client_golang/prometheus"
@@ -70,9 +71,11 @@ func (b *ThorchainBlockScan) GetKeygenMessages() <-chan ttypes.KeygenBlock {
 
 func (b *ThorchainBlockScan) FetchTxs(height int64) (stypes.TxIn, error) {
 	if err := b.processTxOutBlock(height); err != nil {
+		time.Sleep(b.cfg.BlockHeightDiscoverBackoff)
 		return stypes.TxIn{}, err
 	}
 	if err := b.processKeygenBlock(height); err != nil {
+		time.Sleep(b.cfg.BlockHeightDiscoverBackoff)
 		return stypes.TxIn{}, err
 	}
 	return stypes.TxIn{}, nil

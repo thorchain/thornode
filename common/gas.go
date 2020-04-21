@@ -64,6 +64,14 @@ func UpdateGasPrice(tx Tx, asset Asset, units []sdk.Uint) []sdk.Uint {
 		} else if lenCoins > 1 {
 			units[1] = gasCoin.Amount.QuoUint64(lenCoins)
 		}
+	case BTCAsset, ETHAsset:
+		// BTC chain there is only one coin, which is bitcoin, gas is paid in bitcoin as well
+		gasCoin := tx.Gas.ToCoins().GetCoin(asset)
+		if nil == units {
+			return []sdk.Uint{gasCoin.Amount}
+		}
+		units[0] = gasCoin.Amount
+
 	}
 	return units
 }

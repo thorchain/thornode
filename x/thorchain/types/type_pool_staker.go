@@ -86,7 +86,7 @@ func (ps PoolStaker) String() string {
 
 func (ps *PoolStaker) GetStakerUnit(addr common.Address) StakerUnit {
 	for _, item := range ps.Stakers {
-		if item.RuneAddress == addr {
+		if item.RuneAddress.Equals(addr) || item.AssetAddress.Equals(addr) {
 			return item
 		}
 	}
@@ -97,10 +97,10 @@ func (ps *PoolStaker) GetStakerUnit(addr common.Address) StakerUnit {
 }
 
 // RemoveStakerUnit will remove the stakerunit with given staker id from the struct
-func (ps *PoolStaker) RemoveStakerUnit(runeAddr common.Address) {
+func (ps *PoolStaker) RemoveStakerUnit(addr common.Address) {
 	deleteIdx := -1
 	for idx, item := range ps.Stakers {
-		if item.RuneAddress == runeAddr {
+		if item.RuneAddress.Equals(addr) || item.AssetAddress.Equals(addr) {
 			deleteIdx = idx
 		}
 	}

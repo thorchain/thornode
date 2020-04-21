@@ -29,6 +29,7 @@ import (
 	"gitlab.com/thorchain/thornode/bifrost/thorclient"
 	"gitlab.com/thorchain/thornode/bifrost/thorclient/types"
 	"gitlab.com/thorchain/thornode/common"
+	"gitlab.com/thorchain/thornode/x/thorchain"
 	types2 "gitlab.com/thorchain/thornode/x/thorchain/types"
 )
 
@@ -123,6 +124,9 @@ func (s *ObserverSuite) SetUpSuite(c *C) {
 	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		c.Logf("requestUri:%s", req.RequestURI)
 		if strings.HasPrefix(req.RequestURI, "/txs") {
+			_, err := rw.Write([]byte(`{ "jsonrpc": "2.0", "id": "", "result": { "height": "1", "txhash": "AAAA000000000000000000000000000000000000000000000000000000000000", "logs": [{"success": "true", "log": ""}] } }`))
+			c.Assert(err, IsNil)
+		} else if strings.HasPrefix(req.RequestURI, "/errata") {
 			_, err := rw.Write([]byte(`{ "jsonrpc": "2.0", "id": "", "result": { "height": "1", "txhash": "AAAA000000000000000000000000000000000000000000000000000000000000", "logs": [{"success": "true", "log": ""}] } }`))
 			c.Assert(err, IsNil)
 		} else if strings.HasPrefix(req.RequestURI, "/thorchain/lastblock/BNB") {
@@ -233,4 +237,11 @@ func getTxOutFromJsonInput(input string, c *C) types.TxOut {
 	err := json.Unmarshal([]byte(input), &txOut)
 	c.Check(err, IsNil)
 	return txOut
+}
+
+func (s *ObserverSuite) TestErrataTx(c *C) {
+	obs, err := NewObserver(pubkeymanager.NewMockPoolAddressValidator(), nil, s.bridge, s.m)
+	c.Assert(obs, NotNil)
+	c.Assert(err, IsNil)
+	c.Assert(obs.sendErrataTxToThorchain(25, thorchain.GetRandomTxHash(), common.BNBChain), IsNil)
 }

@@ -264,7 +264,15 @@ func (s *Signer) processKeygen(ch <-chan ttypes.KeygenBlock) {
 }
 
 func (s *Signer) sendKeygenToThorchain(height int64, poolPk common.PubKey, blame tssCommon.Blame, input common.PubKeys, keygenType ttypes.KeygenType) error {
-	stdTx, err := s.thorchainBridge.GetKeygenStdTx(poolPk, blame, input, keygenType, height)
+	// collect supported chains in the configuration
+	chains := make(common.Chains, 0)
+	for name, chain := range s.chains {
+		if !chain.GetConfig().OptToRetire {
+			chains = append(chains, name)
+		}
+	}
+
+	stdTx, err := s.thorchainBridge.GetKeygenStdTx(poolPk, blame, input, keygenType, chains, height)
 	strHeight := strconv.FormatInt(height, 10)
 	if err != nil {
 		s.errCounter.WithLabelValues("fail_to_sign", strHeight).Inc()
@@ -312,7 +320,7 @@ func (s *Signer) signAndBroadcast(item TxOutStoreItem) error {
 
 	// Check if we're sending all funds back (memo "yggdrasil-")
 	// In this scenario, we should chose the coins to send ourselves
-	if strings.HasPrefix(strings.ToLower(tx.Memo), thorchain.YggdrasilReturnMemo{}.GetType().String()) && tx.Coins.IsEmpty() {
+	if strings.HasPrefix(strings.ToLower(tx.Memo), thorchain.TxYggdrasilReturn.String()) && tx.Coins.IsEmpty() {
 		tx, err = s.handleYggReturn(tx)
 		if err != nil {
 			s.logger.Error().Err(err).Msg("failed to handle yggdrasil return")
@@ -381,7 +389,6 @@ func (s *Signer) handleYggReturn(tx types.TxOutItem) (types.TxOutItem, error) {
 		return tx, err
 	}
 	tx.Coins = make(common.Coins, 0)
-	gas := chain.GetGasFee(uint64(len(acct.Coins)))
 	for _, coin := range acct.Coins {
 		asset, err := common.NewAsset(coin.Denom)
 		if err != nil {
@@ -389,9 +396,6 @@ func (s *Signer) handleYggReturn(tx types.TxOutItem) (types.TxOutItem, error) {
 			return tx, err
 		}
 		amount := sdk.NewUint(coin.Amount)
-		if asset.Equals(gas[0].Asset) {
-			amount = common.SafeSub(amount, gas[0].Amount)
-		}
 		tx.Coins = append(tx.Coins, common.NewCoin(asset, amount))
 	}
 

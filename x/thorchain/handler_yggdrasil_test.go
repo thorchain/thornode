@@ -361,7 +361,7 @@ func (s *HandlerYggdrasilSuite) TestYggdrasilHandler(c *C) {
 			messageCreator: func(helper yggdrasilHandlerTestHelper) sdk.Msg {
 				na := GetRandomNodeAccount(NodeStandby)
 				helper.keeper.SetNodeAccount(helper.ctx, na)
-				vault := NewVault(10, ActiveVault, YggdrasilVault, na.PubKeySet.Secp256k1)
+				vault := NewVault(10, ActiveVault, YggdrasilVault, na.PubKeySet.Secp256k1, common.Chains{common.BNBChain})
 				helper.keeper.SetVault(helper.ctx, vault)
 				fromAddr, _ := vault.PubKey.GetAddress(common.BNBChain)
 				coins := common.Coins{

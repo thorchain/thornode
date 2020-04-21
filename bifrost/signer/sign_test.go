@@ -186,6 +186,10 @@ func (b *MockChainClient) SignTx(tai stypes.TxOutItem, height int64) ([]byte, er
 	return nil, nil
 }
 
+func (b *MockChainClient) GetConfig() config.ChainConfiguration {
+	return config.ChainConfiguration{}
+}
+
 func (b *MockChainClient) GetHeight() (int64, error) {
 	return 0, nil
 }
@@ -223,7 +227,8 @@ func (b *MockChainClient) GetPubKey() crypto.PubKey {
 	return nil
 }
 
-func (b *MockChainClient) Start(globalTxsQueue chan stypes.TxIn) {}
+func (b *MockChainClient) Start(globalTxsQueue chan stypes.TxIn, globalErrataQueue chan stypes.ErrataBlock) {
+}
 
 func (b *MockChainClient) Stop() {}
 
@@ -246,7 +251,7 @@ func (s *SignSuite) TestHandleYggReturn_Success_FeeSingleton(c *C) {
 
 	newItem, err := sign.handleYggReturn(item)
 	c.Assert(err, IsNil)
-	c.Check(newItem.Coins[0].Amount.Uint64(), Equals, uint64(962500))
+	c.Check(newItem.Coins[0].Amount.Uint64(), Equals, uint64(1000000))
 }
 
 func (s *SignSuite) TestHandleYggReturn_Success_FeeMulti(c *C) {
@@ -269,7 +274,7 @@ func (s *SignSuite) TestHandleYggReturn_Success_FeeMulti(c *C) {
 
 	newItem, err := sign.handleYggReturn(item)
 	c.Assert(err, IsNil)
-	c.Check(newItem.Coins[0].Amount.Uint64(), Equals, uint64(940000))
+	c.Check(newItem.Coins[0].Amount.Uint64(), Equals, uint64(1000000))
 }
 
 func (s *SignSuite) TestHandleYggReturn_Success_NotEnough(c *C) {

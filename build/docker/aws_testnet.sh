@@ -21,7 +21,8 @@ export CHAIN_ID=Binance-Chain-Nile
 export SIGNER_NAME=thorchain
 export BOND_AMOUNT=100000000:RUNE-A1F
 export GAS_FEE=75001
-export DISK_SIZE=100
+export DISK_SIZE=${DISK_SIZE:=100}
+export AWS_INSTANCE_TYPE=${AWS_INSTANCE_TYPE:=c5.2xlarge}
 
 cleanup () {
     echo "performing cleanup"
@@ -92,14 +93,20 @@ create_server() {
 
 start_the_stack () {
     echo "waiting for server to be ready"
-    sleep 30
+    sleep 60 # give setup script enough time install required packages
     eval $(docker-machine env ${DOCKER_SERVER} --shell bash)
     docker-machine ssh ${DOCKER_SERVER} sudo bash $BOOTSTRAP
 }
 
 # checks if there is are any standby/ready nodes, exits if there are
 check_for_slots() {
-    standy=$(curl -s $PEER:1317/thorchain/nodeaccounts | jq -r '.[] | select(.status | inside("standby ready")) | select(.bond | contains("100000000")) | .status')
+    echo "PEER: $PEER"
+    curl -s $PEER:1317/thorchain/nodeaccounts
+    if [ $? -gt 0 ]; then
+      echo "unable to detect if we should add a new node"
+      exit 0
+    fi
+    standby=$(curl -s $PEER:1317/thorchain/nodeaccounts | jq -r '.[] | select(.status | inside("standby ready")) | select(.bond | contains("100000000")) | .status')
     if [[ $(echo $standby | sed '/^$/d' | wc -l) -gt 0 ]]; then
         echo "A node is already waiting to be churned in.... exiting"
         exit 0

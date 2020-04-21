@@ -214,3 +214,9 @@ func (k KVStoreDummy) ListTxMarker(_ sdk.Context, _ string) (TxMarkers, error) {
 }
 func (k KVStoreDummy) SetTxMarkers(_ sdk.Context, _ string, _ TxMarkers) error  { return kaboom }
 func (k KVStoreDummy) AppendTxMarker(_ sdk.Context, _ string, _ TxMarker) error { return kaboom }
+
+func (k KVStoreDummy) SetErrataTxVoter(_ sdk.Context, _ ErrataTxVoter)     {}
+func (k KVStoreDummy) GetErrataTxVoterIterator(_ sdk.Context) sdk.Iterator { return nil }
+func (k KVStoreDummy) GetErrataTxVoter(_ sdk.Context, _ common.TxID, _ common.Chain) (ErrataTxVoter, error) {
+	return ErrataTxVoter{}, kaboom
+}

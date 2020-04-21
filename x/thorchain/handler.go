@@ -96,6 +96,7 @@ func getHandlerMapping(keeper Keeper,
 	m[MsgSwap{}.Type()] = NewSwapHandler(keeper, versionedTxOutStore)
 	m[MsgReserveContributor{}.Type()] = NewReserveContributorHandler(keeper)
 	m[MsgSetVersion{}.Type()] = NewVersionHandler(keeper)
+	m[MsgSetIPAddress{}.Type()] = NewIPAddressHandler(keeper)
 	m[MsgBond{}.Type()] = NewBondHandler(keeper)
 	m[MsgObservedTxIn{}.Type()] = NewObservedTxInHandler(keeper, versionedObserverManager, versionedTxOutStore, validatorMgr, versionedVaultManager, versionedGasMgr)
 	m[MsgObservedTxOut{}.Type()] = NewObservedTxOutHandler(keeper, versionedObserverManager, versionedTxOutStore, validatorMgr, versionedVaultManager, versionedGasMgr)
@@ -301,7 +302,7 @@ func getMsgStakeFromMemo(ctx sdk.Context, memo StakeMemo, tx ObservedTx, signer 
 	// the stake operation by sending in two asymmetric stake tx, one tx on BTC chain with memo stake:BTC:<RUNE address> ,
 	// and another one on Binance chain with stake:BTC , with only RUNE as the coin
 	// Thorchain will use the <RUNE address> to match these two together , and consider it as one stake.
-	if !runeAddr.IsChain(common.BNBChain) {
+	if !runeAddr.IsChain(common.RuneAsset().Chain) {
 		runeAddr = memo.GetDestination()
 		assetAddr = tx.Tx.FromAddress
 	} else {

@@ -53,6 +53,7 @@ type TxArrayItem struct {
 	VaultPubKey common.PubKey  `json:"vault_pubkey"`
 	Coin        common.Coin    `json:"coin"`
 	Memo        string         `json:"memo"`
+	MaxGas      common.Gas     `json:"max_gas"`
 	InHash      common.TxID    `json:"in_hash"`
 	OutHash     common.TxID    `json:"out_hash"`
 }
@@ -64,6 +65,7 @@ func (tx TxArrayItem) TxOutItem() TxOutItem {
 		VaultPubKey: tx.VaultPubKey,
 		Coins:       common.Coins{tx.Coin},
 		Memo:        tx.Memo,
+		MaxGas:      tx.MaxGas,
 		InHash:      tx.InHash,
 		OutHash:     tx.OutHash,
 	}

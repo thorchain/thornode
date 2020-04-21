@@ -3,7 +3,9 @@
 set -x
 
 USER=$(hostname)
-DISK_SIZE=100
+export DISK_SIZE=${DISK_SIZE:=100}
+export AWS_INSTANCE_TYPE=${AWS_INSTANCE_TYPE:=c5.xlarge}
+
 cd ../../
 LOCAL_VOLUME=$(pwd)
 

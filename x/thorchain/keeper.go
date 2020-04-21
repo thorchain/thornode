@@ -29,7 +29,6 @@ type Keeper interface {
 	KeeperTxOut
 	KeeperLiquidityFees
 	KeeperEvents
-	KeeperChains
 	KeeperVault
 	KeeperReserveContributors
 	KeeperVaultData
@@ -39,6 +38,7 @@ type Keeper interface {
 	KeeperRagnarok
 	KeeperGas
 	KeeperTxMarker
+	KeeperErrataTx
 }
 
 // NOTE: Always end a dbPrefix with a slash ("/"). This is to ensure that there
@@ -65,7 +65,6 @@ const (
 	prefixLastSignedHeight   dbPrefix = "last_signed_height/"
 	prefixNodeAccount        dbPrefix = "node_account/"
 	prefixActiveObserver     dbPrefix = "active_observer/"
-	prefixSupportedChains    dbPrefix = "supported_chains/"
 	prefixVaultPool          dbPrefix = "vault/"
 	prefixVaultAsgardIndex   dbPrefix = "vault_asgard_index/"
 	prefixVaultData          dbPrefix = "vault_data/"
@@ -76,6 +75,7 @@ const (
 	prefixRagnarok           dbPrefix = "ragnarok/"
 	prefixGas                dbPrefix = "gas/"
 	prefixSupportedTxMarker  dbPrefix = "marker/"
+	prefixErrataTx           dbPrefix = "errata/"
 )
 
 func dbError(ctx sdk.Context, wrapper string, err error) error {

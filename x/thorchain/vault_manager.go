@@ -51,7 +51,7 @@ func (vm *VaultMgr) processGenesisSetup(ctx sdk.Context) error {
 		return errors.New("no active accounts,cannot proceed")
 	}
 	if len(active) == 1 {
-		vault := NewVault(0, ActiveVault, AsgardVault, active[0].PubKeySet.Secp256k1)
+		vault := NewVault(0, ActiveVault, AsgardVault, active[0].PubKeySet.Secp256k1, common.Chains{common.RuneAsset().Chain})
 		vault.Membership = common.PubKeys{active[0].PubKeySet.Secp256k1}
 		if err := vm.k.SetVault(ctx, vault); err != nil {
 			return fmt.Errorf("fail to save vault: %w", err)

@@ -76,7 +76,6 @@ type TestObservedTxOutHandleKeeper struct {
 	yggExists  bool
 	ygg        Vault
 	height     int64
-	chains     common.Chains
 	pool       Pool
 	txOutStore TxOutStore
 	observing  []sdk.AccAddress
@@ -127,14 +126,6 @@ func (k *TestObservedTxOutHandleKeeper) GetVaultData(_ sdk.Context) (VaultData, 
 
 func (k *TestObservedTxOutHandleKeeper) SetVaultData(_ sdk.Context, _ VaultData) error {
 	return nil
-}
-
-func (k *TestObservedTxOutHandleKeeper) GetChains(_ sdk.Context) (common.Chains, error) {
-	return k.chains, nil
-}
-
-func (k *TestObservedTxOutHandleKeeper) SetChains(_ sdk.Context, chains common.Chains) {
-	k.chains = chains
 }
 
 func (k *TestObservedTxOutHandleKeeper) SetLastChainHeight(_ sdk.Context, _ common.Chain, height int64) error {
@@ -207,7 +198,7 @@ func (s *HandlerObservedTxOutSuite) TestHandle(c *C) {
 
 	versionedTxOutStoreDummy := NewVersionedTxOutStoreDummy()
 
-	ygg := NewVault(ctx.BlockHeight(), ActiveVault, YggdrasilVault, pk)
+	ygg := NewVault(ctx.BlockHeight(), ActiveVault, YggdrasilVault, pk, common.Chains{common.BNBChain})
 	ygg.Coins = common.Coins{
 		common.NewCoin(common.RuneAsset(), sdk.NewUint(500)),
 		common.NewCoin(common.BNBAsset, sdk.NewUint(200*common.One)),
@@ -267,7 +258,7 @@ func (s *HandlerObservedTxOutSuite) TestGasUpdate(c *C) {
 
 	versionedTxOutStoreDummy := NewVersionedTxOutStoreDummy()
 
-	ygg := NewVault(ctx.BlockHeight(), ActiveVault, YggdrasilVault, pk)
+	ygg := NewVault(ctx.BlockHeight(), ActiveVault, YggdrasilVault, pk, common.Chains{common.BNBChain})
 	ygg.Coins = common.Coins{
 		common.NewCoin(common.RuneAsset(), sdk.NewUint(500)),
 		common.NewCoin(common.BNBAsset, sdk.NewUint(200*common.One)),
@@ -324,7 +315,7 @@ func (s *HandlerObservedTxOutSuite) TestHandleStolenFunds(c *C) {
 
 	versionedTxOutStoreDummy := NewVersionedTxOutStoreDummy()
 
-	ygg := NewVault(ctx.BlockHeight(), ActiveVault, YggdrasilVault, pk)
+	ygg := NewVault(ctx.BlockHeight(), ActiveVault, YggdrasilVault, pk, common.Chains{common.BNBChain})
 	ygg.Coins = common.Coins{
 		common.NewCoin(common.RuneAsset(), sdk.NewUint(500*common.One)),
 		common.NewCoin(common.BNBAsset, sdk.NewUint(200*common.One)),

@@ -21,11 +21,12 @@ type MsgTssPool struct {
 	PubKeys    common.PubKeys  `json:"pubkeys"`
 	Height     int64           `json:"height"`
 	Blame      tssCommon.Blame `json:"blame"`
+	Chains     common.Chains   `json:"chains"`
 	Signer     sdk.AccAddress  `json:"signer"`
 }
 
 // NewMsgTssPool is a constructor function for MsgTssPool
-func NewMsgTssPool(pks common.PubKeys, poolpk common.PubKey, KeygenType KeygenType, height int64, blame tssCommon.Blame, signer sdk.AccAddress) MsgTssPool {
+func NewMsgTssPool(pks common.PubKeys, poolpk common.PubKey, KeygenType KeygenType, height int64, blame tssCommon.Blame, chains common.Chains, signer sdk.AccAddress) MsgTssPool {
 	return MsgTssPool{
 		ID:         getTssID(pks, poolpk, height),
 		PubKeys:    pks,
@@ -33,6 +34,7 @@ func NewMsgTssPool(pks common.PubKeys, poolpk common.PubKey, KeygenType KeygenTy
 		Height:     height,
 		KeygenType: KeygenType,
 		Blame:      blame,
+		Chains:     chains,
 		Signer:     signer,
 	}
 }
@@ -85,6 +87,33 @@ func (msg MsgTssPool) ValidateBasic() sdk.Error {
 	if _, err := common.NewPubKey(msg.PoolPubKey.String()); err != nil {
 		return sdk.ErrUnknownRequest(err.Error())
 	}
+
+	// ensure we have rune chain
+	found := false
+	for _, chain := range msg.Chains {
+		if chain.Equals(common.RuneAsset().Chain) {
+			found = true
+			break
+		}
+	}
+	if !found {
+		return sdk.ErrUnknownRequest("must support rune asset chain")
+	}
+
+	// ensure there are no duplicate chains
+	chainDup := make(map[common.Chain]int, 0)
+	for _, chain := range msg.Chains {
+		if _, ok := chainDup[chain]; !ok {
+			chainDup[chain] = 0
+		}
+		chainDup[chain]++
+	}
+	for k, v := range chainDup {
+		if v > 1 {
+			return sdk.ErrUnknownRequest(fmt.Sprintf("cannot have duplicate chains (%s)", k.String()))
+		}
+	}
+
 	return nil
 }
 
