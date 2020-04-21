@@ -433,6 +433,11 @@ func queryPools(ctx sdk.Context, req abci.RequestQuery, keeper Keeper) ([]byte, 
 			return nil, sdk.ErrInternal("Unmarshl: Pool")
 		}
 
+		// ignore pool if no stake units
+		if pool.PoolUnits.IsZero() {
+			continue
+		}
+
 		vault := active.SelectByMinCoin(pool.Asset)
 		if vault.IsEmpty() {
 			return nil, sdk.ErrInternal("Could not find active asgard vault")
