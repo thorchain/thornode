@@ -340,7 +340,6 @@ func (vm *VaultMgr) findChainsToRetire(ctx sdk.Context) (common.Chains, error) {
 // recallChainFunds - sends a message to bifrost nodes to send back all funds
 // associated with given chain
 func (vm *VaultMgr) recallChainFunds(ctx sdk.Context, chain common.Chain) error {
-	fmt.Println("FOO 1")
 	version := vm.k.GetLowestActiveVersion(ctx)
 	allNodes, err := vm.k.ListNodeAccounts(ctx)
 	if err != nil {
@@ -366,32 +365,24 @@ func (vm *VaultMgr) recallChainFunds(ctx sdk.Context, chain common.Chain) error 
 	if err != nil {
 		return err
 	}
-	fmt.Println("FOO 2")
 
 	// get yggdrasil to return funds back to asgard
 	for _, node := range allNodes {
-		fmt.Println("FOO 3")
 		if !vm.k.VaultExists(ctx, node.PubKeySet.Secp256k1) {
 			continue
 		}
-		fmt.Println("FOO 4")
 		ygg, err := vm.k.GetVault(ctx, node.PubKeySet.Secp256k1)
 		if err != nil {
 			continue
 		}
-		fmt.Println("FOO 5")
 		if ygg.IsAsgard() {
 			continue
 		}
 
-		fmt.Println("FOO 6")
-		fmt.Println(chain)
-		fmt.Printf("Vault: %+v\n", ygg)
 		if !ygg.HasFundsForChain(chain) {
 			continue
 		}
 
-		fmt.Println("FOO 7")
 		if !toAddr.IsEmpty() {
 			txOutItem := &TxOutItem{
 				Chain:       chain,
@@ -405,7 +396,6 @@ func (vm *VaultMgr) recallChainFunds(ctx sdk.Context, chain common.Chain) error 
 			// TxOutItem that has memo "yggdrasil-" it will query the chain
 			// and find out all the remaining assets , and fill in the
 			// field
-			fmt.Printf("YGG RETURN: %+v\n", txOutItem)
 			if err := txOutStore.UnSafeAddTxOutItem(ctx, txOutItem); err != nil {
 				return err
 			}
