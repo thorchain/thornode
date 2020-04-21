@@ -184,6 +184,12 @@ func (vm *VaultMgr) EndBlock(ctx sdk.Context, version semver.Version, constAcces
 		}
 	}
 
+	if ctx.BlockHeight()%migrateInterval == 0 {
+		// checks to see if we need to ragnarok a chain, and ragnaroks them
+		if err := vm.manageChains(ctx, constAccessor); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -246,8 +252,221 @@ func (vm *VaultMgr) RotateVault(ctx sdk.Context, vault Vault) error {
 	if err := vm.k.SetVault(ctx, vault); err != nil {
 		return err
 	}
+
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(EventTypeActiveVault,
 			sdk.NewAttribute("add new asgard vault", vault.PubKey.String())))
+	return nil
+}
+
+// manageChains - checks to see if we have any chains that we are ragnaroking,
+// and ragnaroks them
+func (vm *VaultMgr) manageChains(ctx sdk.Context, constAccessor constants.ConstantValues) error {
+	chains, err := vm.findChainsToRetire(ctx)
+	if err != nil {
+		return err
+	}
+
+	active, err := vm.k.GetAsgardVaultsByStatus(ctx, ActiveVault)
+	if err != nil {
+		return err
+	}
+	vault := active.SelectByMinCoin(common.RuneAsset())
+	if vault.IsEmpty() {
+		return fmt.Errorf("unable to determine asgard vault")
+	}
+
+	migrateInterval := constAccessor.GetInt64Value(constants.FundMigrationInterval)
+	nth := (ctx.BlockHeight()-vault.StatusSince)/migrateInterval + 1
+	if nth > 10 {
+		nth = 10
+	}
+
+	for _, chain := range chains {
+		if err := vm.recallChainFunds(ctx, chain); err != nil {
+			return err
+		}
+
+		// only refund after the first nth. This gives yggs time to send funds
+		// back to asgard
+		if nth > 1 {
+			if err := vm.ragnarokChain(ctx, chain, nth, constAccessor); err != nil {
+				continue
+			}
+		}
+	}
+	return nil
+}
+
+// findChainsToRetire - evaluates the chains associated with active asgard
+// vaults vs retiring asgard vaults to detemine if any chains need to be
+// ragnarok'ed
+func (vm *VaultMgr) findChainsToRetire(ctx sdk.Context) (common.Chains, error) {
+	chains := make(common.Chains, 0)
+
+	active, err := vm.k.GetAsgardVaultsByStatus(ctx, ActiveVault)
+	if err != nil {
+		return chains, err
+	}
+	retiring, err := vm.k.GetAsgardVaultsByStatus(ctx, RetiringVault)
+	if err != nil {
+		return chains, err
+	}
+
+	// collect all chains for active vaults
+	activeChains := make(common.Chains, 0)
+	for _, v := range active {
+		activeChains = append(activeChains, v.Chains...)
+	}
+	activeChains = activeChains.Distinct()
+
+	// collect all chains for retiring vaults
+	retiringChains := make(common.Chains, 0)
+	for _, v := range retiring {
+		retiringChains = append(retiringChains, v.Chains...)
+	}
+	retiringChains = retiringChains.Distinct()
+
+	for _, chain := range retiringChains {
+		// skip chain if its in active and retiring
+		if activeChains.Has(chain) {
+			continue
+		}
+		chains = append(chains, chain)
+	}
+	return chains, nil
+}
+
+// recallChainFunds - sends a message to bifrost nodes to send back all funds
+// associated with given chain
+func (vm *VaultMgr) recallChainFunds(ctx sdk.Context, chain common.Chain) error {
+	version := vm.k.GetLowestActiveVersion(ctx)
+	allNodes, err := vm.k.ListNodeAccounts(ctx)
+	if err != nil {
+		return fmt.Errorf("fail to list all node accounts: %w", err)
+	}
+
+	txOutStore, err := vm.versionedTxOutStore.GetTxOutStore(vm.k, version)
+	if err != nil {
+		ctx.Logger().Error("can't get tx out store", "error", err)
+		return err
+	}
+
+	active, err := vm.k.GetAsgardVaultsByStatus(ctx, ActiveVault)
+	if err != nil {
+		return err
+	}
+
+	vault := active.SelectByMinCoin(common.RuneAsset())
+	if vault.IsEmpty() {
+		return fmt.Errorf("unable to determine asgard vault")
+	}
+	toAddr, err := vault.PubKey.GetAddress(chain)
+	if err != nil {
+		return err
+	}
+
+	// get yggdrasil to return funds back to asgard
+	for _, node := range allNodes {
+		if !vm.k.VaultExists(ctx, node.PubKeySet.Secp256k1) {
+			continue
+		}
+		ygg, err := vm.k.GetVault(ctx, node.PubKeySet.Secp256k1)
+		if err != nil {
+			ctx.Logger().Error("fail to get ygg vault", "error", err)
+			continue
+		}
+		if ygg.IsAsgard() {
+			continue
+		}
+
+		if !ygg.HasFundsForChain(chain) {
+			continue
+		}
+
+		if !toAddr.IsEmpty() {
+			txOutItem := &TxOutItem{
+				Chain:       chain,
+				ToAddress:   toAddr,
+				InHash:      common.BlankTxID,
+				VaultPubKey: ygg.PubKey,
+				Coin:        common.NewCoin(common.RuneAsset(), sdk.ZeroUint()),
+				Memo:        NewYggdrasilReturn(ctx.BlockHeight()).String(),
+			}
+			// yggdrasil- will not set coin field here, when signer see a
+			// TxOutItem that has memo "yggdrasil-" it will query the chain
+			// and find out all the remaining assets , and fill in the
+			// field
+			if err := txOutStore.UnSafeAddTxOutItem(ctx, txOutItem); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+// ragnarokChain - ends a chain by unstaking all stakers of any pool that's
+// asset is on the given chain
+func (vm *VaultMgr) ragnarokChain(ctx sdk.Context, chain common.Chain, nth int64, constAccessor constants.ConstantValues) error {
+	version := vm.k.GetLowestActiveVersion(ctx)
+	nas, err := vm.k.ListActiveNodeAccounts(ctx)
+	if err != nil {
+		ctx.Logger().Error("can't get active nodes", "error", err)
+		return err
+	}
+	if len(nas) == 0 {
+		return fmt.Errorf("can't find any active nodes")
+	}
+	na := nas[0]
+
+	pools, err := vm.k.GetPools(ctx)
+	if err != nil {
+		return err
+	}
+	unstakeHandler := NewUnstakeHandler(vm.k, vm.versionedTxOutStore)
+
+	active, err := vm.k.GetAsgardVaultsByStatus(ctx, ActiveVault)
+	if err != nil {
+		return err
+	}
+	vault := active.SelectByMinCoin(common.RuneAsset())
+	if vault.IsEmpty() {
+		return fmt.Errorf("unable to determine asgard vault")
+	}
+
+	// rangarok this chain
+	for _, pool := range pools {
+		if !pool.Asset.Chain.Equals(chain) || pool.PoolUnits.IsZero() {
+			continue
+		}
+
+		poolStaker, err := vm.k.GetPoolStaker(ctx, pool.Asset)
+		if err != nil {
+			return err
+		}
+
+		// everyone withdraw
+		for i := len(poolStaker.Stakers) - 1; i >= 0; i-- { // iterate backwards
+			item := poolStaker.Stakers[i]
+			if item.Units.IsZero() {
+				continue
+			}
+
+			unstakeMsg := NewMsgSetUnStake(
+				common.GetRagnarokTx(pool.Asset.Chain, item.RuneAddress, item.RuneAddress),
+				item.RuneAddress,
+				sdk.NewUint(uint64(MaxUnstakeBasisPoints/100*(nth*10))),
+				pool.Asset,
+				na.NodeAddress,
+			)
+
+			result := unstakeHandler.Run(ctx, unstakeMsg, version, constAccessor)
+			if !result.IsOK() {
+				ctx.Logger().Error("fail to unstake", "staker", item.RuneAddress, "error", result.Log)
+			}
+		}
+	}
+
 	return nil
 }

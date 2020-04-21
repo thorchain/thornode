@@ -151,11 +151,13 @@ func (h UnstakeHandler) handle(ctx sdk.Context, msg MsgSetUnStake, version semve
 		Coin:      common.NewCoin(common.RuneAsset(), runeAmt),
 		Memo:      memo,
 	}
-	_, err = txOutStore.TryAddTxOutItem(ctx, toi)
+	ok, err := txOutStore.TryAddTxOutItem(ctx, toi)
 	if err != nil {
 		ctx.Logger().Error("fail to prepare outbound tx", "error", err)
 		return nil, sdk.NewError(DefaultCodespace, CodeFailAddOutboundTx, "fail to prepare outbound tx")
-
+	}
+	if !ok {
+		return nil, sdk.NewError(DefaultCodespace, CodeFailAddOutboundTx, "prepare outbound tx not successful")
 	}
 
 	toi = &TxOutItem{
@@ -165,10 +167,13 @@ func (h UnstakeHandler) handle(ctx sdk.Context, msg MsgSetUnStake, version semve
 		Coin:      common.NewCoin(msg.Asset, assetAmount),
 		Memo:      memo,
 	}
-	_, err = txOutStore.TryAddTxOutItem(ctx, toi)
+	ok, err = txOutStore.TryAddTxOutItem(ctx, toi)
 	if err != nil {
 		ctx.Logger().Error("fail to prepare outbound tx", "error", err)
 		return nil, sdk.NewError(DefaultCodespace, CodeFailAddOutboundTx, "fail to prepare outbound tx")
+	}
+	if !ok {
+		return nil, sdk.NewError(DefaultCodespace, CodeFailAddOutboundTx, "prepare outbound tx not successful")
 	}
 
 	// Get rune (if any) and donate it to the reserve

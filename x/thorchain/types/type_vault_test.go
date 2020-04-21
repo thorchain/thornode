@@ -32,6 +32,8 @@ func (s *VaultSuite) TestVault(c *C) {
 
 	vault.AddFunds(coins)
 	c.Check(vault.HasFunds(), Equals, true)
+	c.Check(vault.HasFundsForChain(common.BNBChain), Equals, true)
+	c.Check(vault.HasFundsForChain(common.ETHChain), Equals, false)
 	c.Check(vault.GetCoin(common.BNBAsset).Amount.Equal(sdk.NewUint(500*common.One)), Equals, true)
 	c.Check(vault.GetCoin(common.BTCAsset).Amount.Equal(sdk.NewUint(400*common.One)), Equals, true)
 	vault.AddFunds(coins)
