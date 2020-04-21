@@ -2,7 +2,6 @@ package thorchain
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -178,7 +177,6 @@ func (s *ValidatorManagerTestSuite) TestRagnarokChain(c *C) {
 	versionedTxOutStoreDummy := NewVersionedTxOutStoreDummy()
 	vaultMgr := NewVaultMgr(keeper, versionedTxOutStoreDummy)
 
-	fmt.Println("!!!!!!!!!!!!!!!!")
 	err := vaultMgr.manageChains(ctx, constAccessor)
 	c.Assert(err, IsNil)
 	c.Check(keeper.pools[1].Asset.Equals(common.BTCAsset), Equals, true)
