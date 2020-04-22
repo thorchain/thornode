@@ -287,7 +287,13 @@ func queryNodeAccounts(ctx sdk.Context, path []string, req abci.RequestQuery, ke
 	if err != nil {
 		return nil, sdk.ErrInternal("fail to get node accounts")
 	}
-	res, err := codec.MarshalJSONIndent(keeper.Cdc(), nodeAccounts)
+	result := NodeAccounts{}
+	for _, node := range nodeAccounts {
+		if !node.Bond.IsZero() {
+			result = append(result, node)
+		}
+	}
+	res, err := codec.MarshalJSONIndent(keeper.Cdc(), result)
 	if err != nil {
 		ctx.Logger().Error("fail to marshal observers to json", "error", err)
 		return nil, sdk.ErrInternal("fail to marshal observers to json")
