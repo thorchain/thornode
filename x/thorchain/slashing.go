@@ -64,7 +64,7 @@ func (s *Slasher) HandleDoubleSign(ctx sdk.Context, addr crypto.Address, infract
 		if addr.String() == pk.Address().String() {
 			// take 5% of their bond
 			if na.Bond.IsZero() {
-				return fmt.Errorf("found account to slash, but did not have any bond to slash: %s", addr)
+				return fmt.Errorf("found account to slash for double signing, but did not have any bond to slash: %s", addr)
 			}
 			na.Bond = na.Bond.MulUint64(95).QuoUint64(100)
 			return s.keeper.SetNodeAccount(ctx, na)
