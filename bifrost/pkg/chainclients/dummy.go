@@ -25,6 +25,5 @@ func (DummyChain) GetAccount(addr string) (common.Account, error) {
 }
 func (DummyChain) GetChain() common.Chain                { return "" }
 func (DummyChain) GetGasFee(count uint64) common.Gas     { return nil }
-func (DummyChain) ValidateMetadata(_ interface{}) bool   { return false }
 func (DummyChain) Start(globalTxsQueue chan stypes.TxIn) {}
 func (DummyChain) Stop()                                 {}

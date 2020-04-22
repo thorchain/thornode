@@ -65,11 +65,6 @@ var _ = Suite(&SignSuite{})
 
 type MockCheckTransactionChain struct {
 	chainclients.DummyChain
-	validateMetaData bool
-}
-
-func (m *MockCheckTransactionChain) ValidateMetadata(_ interface{}) bool {
-	return m.validateMetaData
 }
 
 func (s *SignSuite) SetUpSuite(c *C) {
@@ -205,10 +200,6 @@ func (b *MockChainClient) CheckIsTestNet() (string, bool) {
 
 func (b *MockChainClient) GetChain() common.Chain {
 	return common.BNBChain
-}
-
-func (b *MockChainClient) ValidateMetadata(inter interface{}) bool {
-	return true
 }
 
 func (b *MockChainClient) BroadcastTx(_ stypes.TxOutItem, tx []byte) error {
