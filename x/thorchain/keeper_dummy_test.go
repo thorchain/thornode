@@ -220,3 +220,52 @@ func (k KVStoreDummy) GetErrataTxVoterIterator(_ sdk.Context) sdk.Iterator { ret
 func (k KVStoreDummy) GetErrataTxVoter(_ sdk.Context, _ common.TxID, _ common.Chain) (ErrataTxVoter, error) {
 	return ErrataTxVoter{}, kaboom
 }
+
+// a mock sdk.Iterator implementation for testing purposes
+type DummyIterator struct {
+	sdk.Iterator
+	placeholder int
+	keys        [][]byte
+	values      [][]byte
+	err         error
+}
+
+func NewDummyIterator() *DummyIterator {
+	return &DummyIterator{
+		keys:   make([][]byte, 0),
+		values: make([][]byte, 0),
+	}
+}
+
+func (iter *DummyIterator) AddItem(key []byte, value []byte) {
+	iter.keys = append(iter.keys, key)
+	iter.values = append(iter.values, value)
+}
+
+func (iter *DummyIterator) Next() {
+	iter.placeholder++
+}
+
+func (iter *DummyIterator) Valid() bool {
+	return iter.placeholder < len(iter.keys)
+}
+
+func (iter *DummyIterator) Key() []byte {
+	return iter.keys[iter.placeholder]
+}
+
+func (iter *DummyIterator) Value() []byte {
+	return iter.values[iter.placeholder]
+}
+
+func (iter *DummyIterator) Close() {
+	iter.placeholder = 0
+}
+
+func (iter *DummyIterator) Error() error {
+	return iter.err
+}
+
+func (iter *DummyIterator) Domain() (start []byte, end []byte) {
+	return nil, nil
+}
