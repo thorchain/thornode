@@ -32,14 +32,14 @@ func NewSlasher(keeper Keeper, version semver.Version) (*Slasher, error) {
 	return nil, errBadVersion
 }
 
-func (s *Slasher) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
+func (s *Slasher) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock, constAccessor constants.ConstantValues) {
 	// Iterate through any newly discovered evidence of infraction
 	// Slash any validators (and since-unbonded stake within the unbonding period)
 	// who contributed to valid infractions
 	for _, evidence := range req.ByzantineValidators {
 		switch evidence.Type {
 		case tmtypes.ABCIEvidenceTypeDuplicateVote:
-			s.HandleDoubleSign(ctx, evidence.Validator.Address, evidence.Height, evidence.Time, evidence.Validator.Power)
+			s.HandleDoubleSign(ctx, evidence.Validator.Address, evidence.Height, evidence.Time, evidence.Validator.Power, constAccessor)
 		default:
 			ctx.Logger().Error(fmt.Sprintf("ignored unknown evidence type: %s", evidence.Type))
 		}
@@ -49,12 +49,23 @@ func (s *Slasher) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 // HandleDoubleSign - slashes a validator for singing two blocks at the same
 // block height
 // https://blog.cosmos.network/consensus-compare-casper-vs-tendermint-6df154ad56ae
-func (s *Slasher) HandleDoubleSign(ctx sdk.Context, addr crypto.Address, infractionHeight int64, timestamp time.Time, power int64) error {
+func (s *Slasher) HandleDoubleSign(ctx sdk.Context, addr crypto.Address, infractionHeight int64, timestamp time.Time, power int64, constAccessor constants.ConstantValues) error {
+	// check if we're recent enough to slash for this behavior
+	maxAge := constAccessor.GetInt64Value(constants.DoubleSignMaxAge)
+	if (ctx.BlockHeight() - infractionHeight) > maxAge {
+		ctx.Logger().Info("double sign detected but too old to be slashed", "infraction height", fmt.Sprintf("%d", infractionHeight), "address", addr.String())
+		return nil
+	}
+
 	iterator := s.keeper.GetNodeAccountIterator(ctx)
 	defer iterator.Close()
 	for ; iterator.Valid(); iterator.Next() {
 		var na NodeAccount
 		s.keeper.Cdc().MustUnmarshalBinaryBare(iterator.Value(), &na)
+
+		if na.Status != NodeActive {
+			return nil
+		}
 
 		pk, err := sdk.GetConsPubKeyBech32(na.ValidatorConsPubKey)
 		if err != nil {
@@ -62,11 +73,22 @@ func (s *Slasher) HandleDoubleSign(ctx sdk.Context, addr crypto.Address, infract
 		}
 
 		if addr.String() == pk.Address().String() {
-			// take 5% of their bond
 			if na.Bond.IsZero() {
 				return fmt.Errorf("found account to slash for double signing, but did not have any bond to slash: %s", addr)
 			}
-			na.Bond = na.Bond.MulUint64(95).QuoUint64(100)
+			// take 5% of their bond, and put it into the reserve
+			slashAmount := na.Bond.MulUint64(5).QuoUint64(100)
+			na.Bond = common.SafeSub(na.Bond, slashAmount)
+
+			vaultData, err := s.keeper.GetVaultData(ctx)
+			if err != nil {
+				return fmt.Errorf("fail to get vault data: %w", err)
+			}
+			vaultData.TotalReserve = vaultData.TotalReserve.Add(slashAmount)
+			if err := s.keeper.SetVaultData(ctx, vaultData); err != nil {
+				return fmt.Errorf("fail to save vault data: %w", err)
+			}
+
 			return s.keeper.SetNodeAccount(ctx, na)
 		}
 	}
