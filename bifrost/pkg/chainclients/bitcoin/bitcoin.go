@@ -11,6 +11,7 @@ import (
 	"github.com/btcsuite/btcd/btcjson"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/rpcclient"
+	"github.com/btcsuite/btcutil"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -128,7 +129,7 @@ func (c *Client) GetHeight() (int64, error) {
 
 // ValidateMetadata validates metadata
 func (c *Client) ValidateMetadata(inter interface{}) bool {
-	return true // TODO not implemented yet
+	return true
 }
 
 // GetAddress returns address from pubkey
@@ -143,7 +144,25 @@ func (c *Client) GetAddress(poolPubKey common.PubKey) string {
 
 // GetAccount returns account with balance for an address
 func (c *Client) GetAccount(addr string) (common.Account, error) {
-	return common.Account{}, fmt.Errorf("not implemented")
+	acct := common.Account{}
+	utxoes, err := c.utxoAccessor.GetUTXOs()
+	if err != nil {
+		return acct, fmt.Errorf("fail to get UTXO: %w", err)
+	}
+	total := 0.0
+	for _, item := range utxoes {
+		total += item.Value
+	}
+	totalAmt, err := btcutil.NewAmount(total)
+	if err != nil {
+		return acct, fmt.Errorf("fail to convert total amount: %w", err)
+	}
+	return common.NewAccount(0, 0, common.AccountCoins{
+		common.AccountCoin{
+			Amount: uint64(totalAmt),
+			Denom:  common.BTCAsset.String(),
+		},
+	}), nil
 }
 
 // OnObservedTxIn gets called from observer when we have a valid observation

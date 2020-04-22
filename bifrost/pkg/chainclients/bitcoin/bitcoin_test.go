@@ -508,12 +508,33 @@ func (s *BitcoinSuite) TestGetHeight(c *C) {
 }
 
 func (s *BitcoinSuite) TestGetAccount(c *C) {
-	c.Skip("wallet not implemented")
 	acct, err := s.client.GetAccount("bc1q2gjc0rnhy4nrxvuklk6ptwkcs9kcr59mcl2q9j")
 	c.Assert(err, IsNil)
-	c.Assert(acct.AccountNumber, Equals, 0)
-	c.Assert(acct.Sequence, Equals, 0)
-	c.Assert(acct.Coins[0].Amount, Equals, 10)
+	c.Assert(acct.AccountNumber, Equals, int64(0))
+	c.Assert(acct.Sequence, Equals, int64(0))
+	c.Assert(acct.Coins[0].Amount, Equals, uint64(0))
+	h1, _ := chainhash.NewHashFromStr("65379c0c158d96d37faf808fdeb65cb1cd5635fdbe0855ca3e92c6f709fe78f4")
+	utxo := UnspentTransactionOutput{
+		TxID:        *h1,
+		N:           0,
+		Value:       10,
+		BlockHeight: 0,
+	}
+	s.client.utxoAccessor.AddUTXO(utxo)
+	defer s.client.utxoAccessor.RemoveUTXO(utxo.GetKey())
+	h2, _ := chainhash.NewHashFromStr("819e927b0377feae269e5bcdca3b194eb4bae60d6b5c32004bd878326efd31e4")
+	utxo1 := UnspentTransactionOutput{
+		TxID:        *h2,
+		N:           0,
+		Value:       1000,
+		BlockHeight: 1,
+	}
+	s.client.utxoAccessor.AddUTXO(utxo1)
+	defer s.client.utxoAccessor.RemoveUTXO(utxo1.GetKey())
+	acct1, err := s.client.GetAccount("")
+	c.Assert(err, IsNil)
+	c.Assert(acct1.Coins, HasLen, 1)
+	c.Assert(acct1.Coins[0].Amount, Equals, uint64(101000000000))
 }
 
 func (s *BitcoinSuite) TestOnObservedTxIn(c *C) {
