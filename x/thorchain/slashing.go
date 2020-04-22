@@ -3,11 +3,12 @@ package thorchain
 import (
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	evi "github.com/cosmos/cosmos-sdk/x/evidence"
 	abci "github.com/tendermint/tendermint/abci/types"
+	"github.com/tendermint/tendermint/crypto"
 	tmtypes "github.com/tendermint/tendermint/types"
 
 	"gitlab.com/thorchain/thornode/common"
@@ -32,18 +33,20 @@ func NewSlasher(keeper Keeper, version semver.Version) (*Slasher, error) {
 }
 
 func (s *Slasher) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
-	for _, tmEvidence := range req.ByzantineValidators {
-		switch tmEvidence.Type {
+	// Iterate through any newly discovered evidence of infraction
+	// Slash any validators (and since-unbonded stake within the unbonding period)
+	// who contributed to valid infractions
+	for _, evidence := range req.ByzantineValidators {
+		switch evidence.Type {
 		case tmtypes.ABCIEvidenceTypeDuplicateVote:
-			evidence := evi.ConvertDuplicateVoteEvidence(tmEvidence)
-			s.HandleDoubleSign(ctx, evidence.(Equivocation))
+			s.HandleDoubleSign(ctx, evidence.Validator.Address, evidence.Height, evidence.Time, evidence.Validator.Power)
 		default:
-			ctx.Logger().Error(fmt.Sprintf("ignored unknown evidence type: %s", tmEvidence.Type))
+			ctx.Logger().Error(fmt.Sprintf("ignored unknown evidence type: %s", evidence.Type))
 		}
 	}
 }
 
-func (s *Slasher) HandleDoubleSign(ctx sdk.Context, evidence types.Equivocation) error {
+func (s *Slasher) HandleDoubleSign(ctx sdk.Context, addr crypto.Address, infractionHeight int64, timestamp time.Time, power int64) {
 }
 
 // LackObserving Slash node accounts that didn't observe a single inbound txn
