@@ -46,7 +46,32 @@ func (s *Slasher) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 	}
 }
 
-func (s *Slasher) HandleDoubleSign(ctx sdk.Context, addr crypto.Address, infractionHeight int64, timestamp time.Time, power int64) {
+// HandleDoubleSign - slashes a validator for singing two blocks at the same
+// block height
+// https://blog.cosmos.network/consensus-compare-casper-vs-tendermint-6df154ad56ae
+func (s *Slasher) HandleDoubleSign(ctx sdk.Context, addr crypto.Address, infractionHeight int64, timestamp time.Time, power int64) error {
+	iterator := s.keeper.GetNodeAccountIterator(ctx)
+	defer iterator.Close()
+	for ; iterator.Valid(); iterator.Next() {
+		var na NodeAccount
+		s.keeper.Cdc().MustUnmarshalBinaryBare(iterator.Value(), &na)
+
+		pk, err := sdk.GetConsPubKeyBech32(na.ValidatorConsPubKey)
+		if err != nil {
+			return err
+		}
+
+		if addr.String() == pk.Address().String() {
+			// take 5% of their bond
+			if na.Bond.IsZero() {
+				return fmt.Errorf("found account to slash, but did not have any bond to slash: %s", addr)
+			}
+			na.Bond = na.Bond.MulUint64(95).QuoUint64(100)
+			return s.keeper.SetNodeAccount(ctx, na)
+		}
+	}
+
+	return fmt.Errorf("could not find node account with validator address: %s", addr)
 }
 
 // LackObserving Slash node accounts that didn't observe a single inbound txn
