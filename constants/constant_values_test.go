@@ -28,6 +28,7 @@ func (ConstantsTestSuite) TestConstantName_String(c *C) {
 		OldValidatorRate,
 		LackOfObservationPenalty,
 		SigningTransactionPeriod,
+		DoubleSignMaxAge,
 		MinimumBondInRune,
 	}
 	for _, item := range constantNames {
