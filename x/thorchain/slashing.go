@@ -6,6 +6,9 @@ import (
 
 	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	evi "github.com/cosmos/cosmos-sdk/x/evidence"
+	abci "github.com/tendermint/tendermint/abci/types"
+	tmtypes "github.com/tendermint/tendermint/types"
 
 	"gitlab.com/thorchain/thornode/common"
 	"gitlab.com/thorchain/thornode/constants"
@@ -26,6 +29,21 @@ func NewSlasher(keeper Keeper, version semver.Version) (*Slasher, error) {
 		}, nil
 	}
 	return nil, errBadVersion
+}
+
+func (s *Slasher) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
+	for _, tmEvidence := range req.ByzantineValidators {
+		switch tmEvidence.Type {
+		case tmtypes.ABCIEvidenceTypeDuplicateVote:
+			evidence := evi.ConvertDuplicateVoteEvidence(tmEvidence)
+			s.HandleDoubleSign(ctx, evidence.(Equivocation))
+		default:
+			ctx.Logger().Error(fmt.Sprintf("ignored unknown evidence type: %s", tmEvidence.Type))
+		}
+	}
+}
+
+func (s *Slasher) HandleDoubleSign(ctx sdk.Context, evidence types.Equivocation) error {
 }
 
 // LackObserving Slash node accounts that didn't observe a single inbound txn
