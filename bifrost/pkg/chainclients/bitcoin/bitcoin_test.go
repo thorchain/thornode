@@ -521,6 +521,7 @@ func (s *BitcoinSuite) TestGetAccount(c *C) {
 		BlockHeight: 0,
 	}
 	s.client.utxoAccessor.AddUTXO(utxo)
+	defer s.client.utxoAccessor.RemoveUTXO(utxo.GetKey())
 	h2, _ := chainhash.NewHashFromStr("819e927b0377feae269e5bcdca3b194eb4bae60d6b5c32004bd878326efd31e4")
 	utxo1 := UnspentTransactionOutput{
 		TxID:        *h2,
@@ -529,6 +530,7 @@ func (s *BitcoinSuite) TestGetAccount(c *C) {
 		BlockHeight: 1,
 	}
 	s.client.utxoAccessor.AddUTXO(utxo1)
+	defer s.client.utxoAccessor.RemoveUTXO(utxo1.GetKey())
 	acct1, err := s.client.GetAccount("")
 	c.Assert(err, IsNil)
 	c.Assert(acct1.Coins, HasLen, 1)
