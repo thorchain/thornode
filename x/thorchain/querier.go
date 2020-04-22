@@ -14,7 +14,6 @@ import (
 	"gitlab.com/thorchain/thornode/common"
 	"gitlab.com/thorchain/thornode/constants"
 	q "gitlab.com/thorchain/thornode/x/thorchain/query"
-	"gitlab.com/thorchain/thornode/x/thorchain/types"
 )
 
 // NewQuerier is the module level router for state queries
@@ -288,7 +287,7 @@ func queryNodeAccounts(ctx sdk.Context, path []string, req abci.RequestQuery, ke
 	if err != nil {
 		return nil, sdk.ErrInternal("fail to get node accounts")
 	}
-	result := types.NodeAccounts{}
+	result := NodeAccounts{}
 	for _, node := range nodeAccounts {
 		if !node.Bond.IsZero() {
 			result = append(result, node)
