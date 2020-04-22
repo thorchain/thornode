@@ -129,7 +129,7 @@ func (c *Client) GetHeight() (int64, error) {
 
 // ValidateMetadata validates metadata
 func (c *Client) ValidateMetadata(inter interface{}) bool {
-	return true // TODO not implemented yet
+	return true
 }
 
 // GetAddress returns address from pubkey
