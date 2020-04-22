@@ -39,7 +39,9 @@ func (s *Slasher) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock, constA
 	for _, evidence := range req.ByzantineValidators {
 		switch evidence.Type {
 		case tmtypes.ABCIEvidenceTypeDuplicateVote:
-			s.HandleDoubleSign(ctx, evidence.Validator.Address, evidence.Height, evidence.Time, evidence.Validator.Power, constAccessor)
+			if err := s.HandleDoubleSign(ctx, evidence.Validator.Address, evidence.Height, evidence.Time, evidence.Validator.Power, constAccessor); err != nil {
+				ctx.Logger().Error("fail to slash for double signing a block", "error", err)
+			}
 		default:
 			ctx.Logger().Error(fmt.Sprintf("ignored unknown evidence type: %s", evidence.Type))
 		}
