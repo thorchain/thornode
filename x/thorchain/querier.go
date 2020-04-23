@@ -68,6 +68,8 @@ func NewQuerier(keeper Keeper, validatorMgr VersionedValidatorManager) sdk.Queri
 			return queryTSSSigners(ctx, path[1:], req, keeper)
 		case q.QueryConstantValues.Key:
 			return queryConstantValues(ctx, path[1:], req, keeper)
+		case q.QueryBan.Key:
+			return queryBan(ctx, path[1:], req, keeper)
 		default:
 			return nil, sdk.ErrUnknownRequest(
 				fmt.Sprintf("unknown thorchain query endpoint: %s", path[0]),
@@ -834,6 +836,27 @@ func queryConstantValues(ctx sdk.Context, path []string, req abci.RequestQuery, 
 	if err != nil {
 		ctx.Logger().Error("fail to marshal constant values to json", "error", err)
 		return nil, sdk.ErrInternal("fail to marshal constant values to json")
+	}
+	return res, nil
+}
+
+func queryBan(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
+	addr, err := sdk.AccAddressFromBech32(path[0])
+	if err != nil {
+		ctx.Logger().Error("invalid node address", "error", err)
+		return nil, sdk.ErrInternal("invalid node address")
+	}
+
+	ban, err := keeper.GetBanVoter(ctx, addr)
+	if err != nil {
+		ctx.Logger().Error("fail to get ban voter", "error", err)
+		return nil, sdk.ErrInternal("fail to get ban voter")
+	}
+
+	res, err := codec.MarshalJSONIndent(keeper.Cdc(), ban)
+	if err != nil {
+		ctx.Logger().Error("fail to marshal ban voter to json", "error", err)
+		return nil, sdk.ErrInternal("fail to ban voter to json")
 	}
 	return res, nil
 }
