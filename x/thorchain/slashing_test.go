@@ -3,16 +3,13 @@ package thorchain
 import (
 	"encoding/json"
 	"errors"
-	"time"
 
 	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/tendermint/go-amino"
 	. "gopkg.in/check.v1"
 
 	"gitlab.com/thorchain/thornode/common"
 	"gitlab.com/thorchain/thornode/constants"
-	"gitlab.com/thorchain/thornode/x/thorchain/types"
 )
 
 type SlashingSuite struct{}
@@ -425,11 +422,10 @@ type TestDoubleSlashKeeper struct {
 	KVStoreDummy
 	na        NodeAccount
 	vaultData VaultData
-	iterator  sdk.Iterator
 }
 
-func (k *TestDoubleSlashKeeper) GetNodeAccountIterator(ctx sdk.Context) sdk.Iterator {
-	return k.iterator
+func (k *TestDoubleSlashKeeper) ListActiveNodeAccounts(ctx sdk.Context) (NodeAccounts, error) {
+	return NodeAccounts{k.na}, nil
 }
 
 func (k *TestDoubleSlashKeeper) SetNodeAccount(ctx sdk.Context, na NodeAccount) error {
@@ -453,15 +449,8 @@ func (s *SlashingSuite) TestDoubleSign(c *C) {
 	na := GetRandomNodeAccount(NodeActive)
 	na.Bond = sdk.NewUint(100 * common.One)
 
-	iterator := NewDummyIterator()
-	cdc := amino.NewCodec()
-	types.RegisterCodec(cdc)
-	val := cdc.MustMarshalBinaryBare(na)
-	iterator.AddItem([]byte("key"), val)
-
 	keeper := &TestDoubleSlashKeeper{
 		na:        na,
-		iterator:  iterator,
 		vaultData: NewVaultData(),
 	}
 	slasher, err := NewSlasher(keeper, constants.SWVersion)
@@ -469,7 +458,7 @@ func (s *SlashingSuite) TestDoubleSign(c *C) {
 
 	pk, err := sdk.GetConsPubKeyBech32(na.ValidatorConsPubKey)
 	c.Assert(err, IsNil)
-	err = slasher.HandleDoubleSign(ctx, pk.Address(), 0, time.Time{}, 0, constAccessor)
+	err = slasher.HandleDoubleSign(ctx, pk.Address(), 0, constAccessor)
 	c.Assert(err, IsNil)
 
 	c.Check(keeper.na.Bond.Equal(sdk.NewUint(9995000000)), Equals, true, Commentf("%d", keeper.na.Bond.Uint64()))

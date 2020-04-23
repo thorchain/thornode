@@ -144,6 +144,13 @@ func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 		ctx.Logger().Error(fmt.Sprintf("constants for version(%s) is not available", version))
 		return
 	}
+
+	slasher, err := NewSlasher(am.keeper, version)
+	if err != nil {
+		ctx.Logger().Error("fail to create slasher", "error", err)
+	}
+	slasher.BeginBlock(ctx, req, constantValues)
+
 	if err := am.validatorMgr.BeginBlock(ctx, version, constantValues); err != nil {
 		ctx.Logger().Error("Fail to begin block on validator", "error", err)
 	}

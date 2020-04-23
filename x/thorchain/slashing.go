@@ -3,7 +3,6 @@ package thorchain
 import (
 	"encoding/json"
 	"fmt"
-	"time"
 
 	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -39,7 +38,7 @@ func (s *Slasher) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock, constA
 	for _, evidence := range req.ByzantineValidators {
 		switch evidence.Type {
 		case tmtypes.ABCIEvidenceTypeDuplicateVote:
-			if err := s.HandleDoubleSign(ctx, evidence.Validator.Address, evidence.Height, evidence.Time, evidence.Validator.Power, constAccessor); err != nil {
+			if err := s.HandleDoubleSign(ctx, evidence.Validator.Address, evidence.Height, constAccessor); err != nil {
 				ctx.Logger().Error("fail to slash for double signing a block", "error", err)
 			}
 		default:
@@ -51,7 +50,7 @@ func (s *Slasher) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock, constA
 // HandleDoubleSign - slashes a validator for singing two blocks at the same
 // block height
 // https://blog.cosmos.network/consensus-compare-casper-vs-tendermint-6df154ad56ae
-func (s *Slasher) HandleDoubleSign(ctx sdk.Context, addr crypto.Address, infractionHeight int64, timestamp time.Time, power int64, constAccessor constants.ConstantValues) error {
+func (s *Slasher) HandleDoubleSign(ctx sdk.Context, addr crypto.Address, infractionHeight int64, constAccessor constants.ConstantValues) error {
 	// check if we're recent enough to slash for this behavior
 	maxAge := constAccessor.GetInt64Value(constants.DoubleSignMaxAge)
 	if (ctx.BlockHeight() - infractionHeight) > maxAge {
@@ -59,16 +58,12 @@ func (s *Slasher) HandleDoubleSign(ctx sdk.Context, addr crypto.Address, infract
 		return nil
 	}
 
-	iterator := s.keeper.GetNodeAccountIterator(ctx)
-	defer iterator.Close()
-	for ; iterator.Valid(); iterator.Next() {
-		var na NodeAccount
-		s.keeper.Cdc().MustUnmarshalBinaryBare(iterator.Value(), &na)
+	nas, err := s.keeper.ListActiveNodeAccounts(ctx)
+	if err != nil {
+		return err
+	}
 
-		if na.Status != NodeActive {
-			return nil
-		}
-
+	for _, na := range nas {
 		pk, err := sdk.GetConsPubKeyBech32(na.ValidatorConsPubKey)
 		if err != nil {
 			return err
