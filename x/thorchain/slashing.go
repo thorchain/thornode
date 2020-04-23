@@ -78,8 +78,9 @@ func (s *Slasher) HandleDoubleSign(ctx sdk.Context, addr crypto.Address, infract
 			if na.Bond.IsZero() {
 				return fmt.Errorf("found account to slash for double signing, but did not have any bond to slash: %s", addr)
 			}
-			// take 5% of their bond, and put it into the reserve
-			slashAmount := na.Bond.MulUint64(5).QuoUint64(100)
+			// take 5% of the minimum bond, and put it into the reserve
+			minBond := constAccessor.GetInt64Value(constants.MinimumBondInRune)
+			slashAmount := sdk.NewUint(uint64(minBond)).MulUint64(5).QuoUint64(100)
 			na.Bond = common.SafeSub(na.Bond, slashAmount)
 
 			vaultData, err := s.keeper.GetVaultData(ctx)

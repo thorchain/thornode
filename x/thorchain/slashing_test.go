@@ -472,6 +472,6 @@ func (s *SlashingSuite) TestDoubleSign(c *C) {
 	err = slasher.HandleDoubleSign(ctx, pk.Address(), 0, time.Time{}, 0, constAccessor)
 	c.Assert(err, IsNil)
 
-	c.Check(keeper.na.Bond.Equal(sdk.NewUint(95*common.One)), Equals, true)
-	c.Check(keeper.vaultData.TotalReserve.Equal(sdk.NewUint(5*common.One)), Equals, true)
+	c.Check(keeper.na.Bond.Equal(sdk.NewUint(9995000000)), Equals, true, Commentf("%d", keeper.na.Bond.Uint64()))
+	c.Check(keeper.vaultData.TotalReserve.Equal(sdk.NewUint(5000000)), Equals, true)
 }
