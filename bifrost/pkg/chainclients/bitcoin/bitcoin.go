@@ -239,6 +239,10 @@ func (c *Client) extractTxs(block *btcjson.GetBlockVerboseTxResult) (types.TxIn,
 		if err != nil {
 			return types.TxIn{}, fmt.Errorf("fail to get gas from tx: %w", err)
 		}
+		fee := btcutil.Amount(int64(gas[0].Amount.Uint64()))
+		if err := c.utxoAccessor.UpsertTransactionFee(fee.ToBTC(), tx.Vsize); err != nil {
+			return types.TxIn{}, fmt.Errorf("fail to save transactional fee to local storage: %w", err)
+		}
 		amount := uint64(tx.Vout[0].Value * common.One)
 		txItems = append(txItems, types.TxInItem{
 			Tx:     tx.Txid,
@@ -250,6 +254,7 @@ func (c *Client) extractTxs(block *btcjson.GetBlockVerboseTxResult) (types.TxIn,
 			Memo: memo,
 			Gas:  gas,
 		})
+
 	}
 	txIn.TxArray = txItems
 	txIn.Count = strconv.Itoa(len(txItems))

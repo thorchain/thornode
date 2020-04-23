@@ -10,6 +10,7 @@ import (
 	"github.com/btcsuite/btcd/btcjson"
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
+	"github.com/btcsuite/btcd/mempool"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
 	"github.com/btcsuite/btcutil/txsort"
@@ -23,6 +24,9 @@ import (
 	"gitlab.com/thorchain/thornode/common"
 	"gitlab.com/thorchain/thornode/x/thorchain"
 )
+
+// SatsPervBytes it should be enough , this one will only be used if signer can't find any previous UTXO , and fee info from local storage.
+const SatsPervBytes = 25
 
 func getBTCPrivateKey(key crypto.PrivKey) (*btcec.PrivateKey, error) {
 	priKey, ok := key.(secp256k1.PrivKeySecp256k1)
@@ -46,10 +50,21 @@ func (c *Client) getChainCfg() *chaincfg.Params {
 	return nil
 }
 
-func getGasCoin(tx stypes.TxOutItem) common.Coin {
+func (c *Client) getGasCoin(tx stypes.TxOutItem, vSize int64) common.Coin {
 	if strings.HasPrefix(strings.ToLower(tx.Memo), thorchain.TxYggdrasilReturn.String()) {
 		// for yggdrasil , usually it is one input and one output, so estimate 200 sat will be ok
-		return common.NewCoin(common.BTCAsset, sdk.NewUint(200))
+		fee, vBytes, err := c.utxoAccessor.GetTransactionFee()
+		if err != nil || fee == 0.0 || vBytes == 0 {
+			c.logger.Error().Err(err).Msg("fail to get previous transaction fee from local storage")
+			return common.NewCoin(common.BTCAsset, sdk.NewUint(uint64(vSize*SatsPervBytes)))
+		}
+		amt, err := btcutil.NewAmount(fee / float64(vBytes) * float64(vSize))
+		if err != nil {
+			c.logger.Error().Err(err).Msg("fail to ")
+			return common.NewCoin(common.BTCAsset, sdk.NewUint(uint64(vSize*SatsPervBytes)))
+		}
+		return common.NewCoin(common.BTCAsset, sdk.NewUint(uint64(amt)))
+
 	}
 	return tx.MaxGas.ToCoins().GetCoin(common.BTCAsset)
 }
@@ -106,7 +121,8 @@ func (c *Client) SignTx(tx stypes.TxOutItem, height int64) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("fail to parse total amount(%f),err: %w", totalAmt, err)
 	}
-	gasCoin := getGasCoin(tx)
+	vSize := mempool.GetTxVirtualSize(btcutil.NewTx(redeemTx))
+	gasCoin := c.getGasCoin(tx, vSize)
 	coinToCustomer := tx.Coins.GetCoin(common.BTCAsset)
 
 	// pay to customer

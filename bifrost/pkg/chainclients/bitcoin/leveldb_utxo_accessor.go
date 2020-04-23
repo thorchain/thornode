@@ -9,8 +9,10 @@ import (
 )
 
 // PrefixUTXOStorage declares prefix to use in leveldb to avoid conflicts
-const PrefixUTXOStorage = "utxo-"
-const TransactionFeeKey = "transactionfee"
+const (
+	PrefixUTXOStorage = "utxo-"
+	TransactionFeeKey = "transactionfee"
+)
 
 // LevelDBUTXOAccessor struct
 type LevelDBUTXOAccessor struct {
@@ -61,7 +63,7 @@ func (t *LevelDBUTXOAccessor) RemoveUTXO(key string) error {
 }
 
 // UpsertTransactionFee update the transaction fee in storage
-func (t *LevelDBUTXOAccessor) UpsertTransactionFee(fee float64, vSize int64) error {
+func (t *LevelDBUTXOAccessor) UpsertTransactionFee(fee float64, vSize int32) error {
 	transactionFee := TransactionFee{
 		Fee:   fee,
 		VSize: vSize,
@@ -74,7 +76,7 @@ func (t *LevelDBUTXOAccessor) UpsertTransactionFee(fee float64, vSize int64) err
 }
 
 // GetTransactionFee from db
-func (t *LevelDBUTXOAccessor) GetTransactionFee() (float64, int64, error) {
+func (t *LevelDBUTXOAccessor) GetTransactionFee() (float64, int32, error) {
 	buf, err := t.db.Get([]byte(TransactionFeeKey), nil)
 	if err != nil {
 		return 0.0, 0, fmt.Errorf("fail to get transaction fee from storage: %w", err)
@@ -83,5 +85,5 @@ func (t *LevelDBUTXOAccessor) GetTransactionFee() (float64, int64, error) {
 	if err := json.Unmarshal(buf, &transactionFee); err != nil {
 		return 0.0, 0, fmt.Errorf("fail to unmarshal transaction fee: %w", err)
 	}
-	return
+	return transactionFee.Fee, transactionFee.VSize, nil
 }
