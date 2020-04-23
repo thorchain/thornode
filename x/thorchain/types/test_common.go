@@ -27,6 +27,7 @@ func GetRandomNodeAccount(status NodeStatus) NodeAccount {
 	if na.Status == Active {
 		na.ActiveBlockHeight = 10
 	}
+	na.IPAddress = "192.168.0.1"
 
 	return na
 }
@@ -72,6 +73,12 @@ func GetRandomBNBAddress() common.Address {
 	return bnb
 }
 
+func GetRandomBTCAddress() common.Address {
+	pubKey := GetRandomPubKey()
+	addr, _ := pubKey.GetAddress(common.BTCChain)
+	return addr
+}
+
 // GetRandomTxHash create a random txHash used for test purpose
 func GetRandomTxHash() common.TxID {
 	txHash, _ := common.NewTxID(common.RandStringBytesMask(64))
@@ -84,7 +91,7 @@ func GetRandomPubKeySet() common.PubKeySet {
 }
 
 func GetRandomVault() Vault {
-	return NewVault(32, ActiveVault, AsgardVault, GetRandomPubKey())
+	return NewVault(32, ActiveVault, AsgardVault, GetRandomPubKey(), common.Chains{common.BNBChain})
 }
 
 func GetRandomPubKey() common.PubKey {

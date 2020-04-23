@@ -19,76 +19,76 @@ type (
 )
 
 const (
-	txUnknown TxType = iota
-	txStake
-	txUnstake
-	txSwap
-	txOutbound
-	txAdd
-	txBond
-	txLeave
-	txYggdrasilFund
-	txYggdrasilReturn
-	txReserve
-	txRefund
-	txMigrate
-	txRagnarok
+	TxUnknown TxType = iota
+	TxStake
+	TxUnstake
+	TxSwap
+	TxOutbound
+	TxAdd
+	TxBond
+	TxLeave
+	TxYggdrasilFund
+	TxYggdrasilReturn
+	TxReserve
+	TxRefund
+	TxMigrate
+	TxRagnarok
 )
 
 var stringToTxTypeMap = map[string]TxType{
-	"stake":      txStake,
-	"st":         txStake,
-	"+":          txStake,
-	"withdraw":   txUnstake,
-	"unstake":    txUnstake,
-	"wd":         txUnstake,
-	"-":          txUnstake,
-	"swap":       txSwap,
-	"s":          txSwap,
-	"=":          txSwap,
-	"outbound":   txOutbound,
-	"add":        txAdd,
-	"a":          txAdd,
-	"%":          txAdd,
-	"bond":       txBond,
-	"leave":      txLeave,
-	"yggdrasil+": txYggdrasilFund,
-	"yggdrasil-": txYggdrasilReturn,
-	"reserve":    txReserve,
-	"refund":     txRefund,
-	"migrate":    txMigrate,
-	"ragnarok":   txRagnarok,
+	"stake":      TxStake,
+	"st":         TxStake,
+	"+":          TxStake,
+	"withdraw":   TxUnstake,
+	"unstake":    TxUnstake,
+	"wd":         TxUnstake,
+	"-":          TxUnstake,
+	"swap":       TxSwap,
+	"s":          TxSwap,
+	"=":          TxSwap,
+	"outbound":   TxOutbound,
+	"add":        TxAdd,
+	"a":          TxAdd,
+	"%":          TxAdd,
+	"bond":       TxBond,
+	"leave":      TxLeave,
+	"yggdrasil+": TxYggdrasilFund,
+	"yggdrasil-": TxYggdrasilReturn,
+	"reserve":    TxReserve,
+	"refund":     TxRefund,
+	"migrate":    TxMigrate,
+	"ragnarok":   TxRagnarok,
 }
 
 var txToStringMap = map[TxType]string{
-	txStake:           "stake",
-	txUnstake:         "unstake",
-	txSwap:            "swap",
-	txOutbound:        "outbound",
-	txRefund:          "refund",
-	txAdd:             "add",
-	txBond:            "bond",
-	txLeave:           "leave",
-	txYggdrasilFund:   "yggdrasil+",
-	txYggdrasilReturn: "yggdrasil-",
-	txReserve:         "reserve",
-	txMigrate:         "migrate",
-	txRagnarok:        "ragnarok",
+	TxStake:           "stake",
+	TxUnstake:         "unstake",
+	TxSwap:            "swap",
+	TxOutbound:        "outbound",
+	TxRefund:          "refund",
+	TxAdd:             "add",
+	TxBond:            "bond",
+	TxLeave:           "leave",
+	TxYggdrasilFund:   "yggdrasil+",
+	TxYggdrasilReturn: "yggdrasil-",
+	TxReserve:         "reserve",
+	TxMigrate:         "migrate",
+	TxRagnarok:        "ragnarok",
 }
 
 // converts a string into a txType
-func stringToTxType(s string) (TxType, error) {
+func StringToTxType(s string) (TxType, error) {
 	// THORNode can support Abbreviated MEMOs , usually it is only one character
 	sl := strings.ToLower(s)
 	if t, ok := stringToTxTypeMap[sl]; ok {
 		return t, nil
 	}
-	return txUnknown, fmt.Errorf("invalid tx type: %s", s)
+	return TxUnknown, fmt.Errorf("invalid tx type: %s", s)
 }
 
 func (tx TxType) IsInbound() bool {
 	switch tx {
-	case txStake, txUnstake, txSwap, txAdd, txBond, txLeave:
+	case TxStake, TxUnstake, TxSwap, TxAdd, TxBond, TxLeave:
 		return true
 	default:
 		return false
@@ -97,7 +97,7 @@ func (tx TxType) IsInbound() bool {
 
 func (tx TxType) IsOutbound() bool {
 	switch tx {
-	case txOutbound, txRefund:
+	case TxOutbound, TxRefund:
 		return true
 	default:
 		return false
@@ -106,7 +106,7 @@ func (tx TxType) IsOutbound() bool {
 
 func (tx TxType) IsInternal() bool {
 	switch tx {
-	case txYggdrasilFund, txYggdrasilReturn, txReserve, txMigrate, txRagnarok:
+	case TxYggdrasilFund, TxYggdrasilReturn, TxReserve, TxMigrate, TxRagnarok:
 		return true
 	default:
 		return false
@@ -114,7 +114,7 @@ func (tx TxType) IsInternal() bool {
 }
 
 func (tx TxType) IsEmpty() bool {
-	return tx == txUnknown
+	return tx == TxUnknown
 }
 
 // Check if two txTypes are the same
@@ -234,67 +234,67 @@ type RagnarokMemo struct {
 
 func NewLeaveMemo() LeaveMemo {
 	return LeaveMemo{
-		MemoBase: MemoBase{TxType: txLeave},
+		MemoBase: MemoBase{TxType: TxLeave},
 	}
 }
 
 func NewAddMemo(asset common.Asset) AddMemo {
 	return AddMemo{
-		MemoBase: MemoBase{TxType: txAdd, Asset: asset},
+		MemoBase: MemoBase{TxType: TxAdd, Asset: asset},
 	}
 }
 
 func NewRagnarokMemo(blockHeight int64) RagnarokMemo {
 	return RagnarokMemo{
-		MemoBase:    MemoBase{TxType: txRagnarok},
+		MemoBase:    MemoBase{TxType: TxRagnarok},
 		BlockHeight: blockHeight,
 	}
 }
 
 func NewStakeMemo(asset common.Asset, addr common.Address) StakeMemo {
 	return StakeMemo{
-		MemoBase: MemoBase{TxType: txStake, Asset: asset},
+		MemoBase: MemoBase{TxType: TxStake, Asset: asset},
 		Address:  addr,
 	}
 }
 
 func NewUnstakeMemo(asset common.Asset, amt string) UnstakeMemo {
 	return UnstakeMemo{
-		MemoBase: MemoBase{TxType: txUnstake, Asset: asset},
+		MemoBase: MemoBase{TxType: TxUnstake, Asset: asset},
 		Amount:   amt,
 	}
 }
 
 func NewReserveMemo() ReserveMemo {
 	return ReserveMemo{
-		MemoBase: MemoBase{TxType: txReserve},
+		MemoBase: MemoBase{TxType: TxReserve},
 	}
 }
 
 func NewMigrateMemo(blockHeight int64) MigrateMemo {
 	return MigrateMemo{
-		MemoBase:    MemoBase{TxType: txMigrate},
+		MemoBase:    MemoBase{TxType: TxMigrate},
 		BlockHeight: blockHeight,
 	}
 }
 
 func NewYggdrasilFund(blockHeight int64) YggdrasilFundMemo {
 	return YggdrasilFundMemo{
-		MemoBase:    MemoBase{TxType: txYggdrasilFund},
+		MemoBase:    MemoBase{TxType: TxYggdrasilFund},
 		BlockHeight: blockHeight,
 	}
 }
 
 func NewYggdrasilReturn(blockHeight int64) YggdrasilReturnMemo {
 	return YggdrasilReturnMemo{
-		MemoBase:    MemoBase{TxType: txYggdrasilReturn},
+		MemoBase:    MemoBase{TxType: TxYggdrasilReturn},
 		BlockHeight: blockHeight,
 	}
 }
 
 func NewOutboundMemo(txID common.TxID) OutboundMemo {
 	return OutboundMemo{
-		MemoBase: MemoBase{TxType: txOutbound},
+		MemoBase: MemoBase{TxType: TxOutbound},
 		TxID:     txID,
 	}
 }
@@ -302,21 +302,21 @@ func NewOutboundMemo(txID common.TxID) OutboundMemo {
 // NewRefundMemo create a new RefundMemo
 func NewRefundMemo(txID common.TxID) RefundMemo {
 	return RefundMemo{
-		MemoBase: MemoBase{TxType: txRefund},
+		MemoBase: MemoBase{TxType: TxRefund},
 		TxID:     txID,
 	}
 }
 
 func NewBondMemo(addr sdk.AccAddress) BondMemo {
 	return BondMemo{
-		MemoBase:    MemoBase{TxType: txBond},
+		MemoBase:    MemoBase{TxType: TxBond},
 		NodeAddress: addr,
 	}
 }
 
 func NewSwapMemo(asset common.Asset, dest common.Address, slip sdk.Uint) SwapMemo {
 	return SwapMemo{
-		MemoBase:    MemoBase{TxType: txSwap, Asset: asset},
+		MemoBase:    MemoBase{TxType: TxSwap, Asset: asset},
 		Destination: dest,
 		SlipLimit:   slip,
 	}
@@ -329,16 +329,16 @@ func ParseMemo(memo string) (Memo, error) {
 		return noMemo, fmt.Errorf("memo can't be empty")
 	}
 	parts := strings.Split(memo, ":")
-	tx, err := stringToTxType(parts[0])
+	tx, err := StringToTxType(parts[0])
 	if err != nil {
 		return noMemo, err
 	}
 
 	// list of memo types that do not contain an asset in their memo
 	noAssetMemos := []TxType{
-		txOutbound, txBond, txLeave, txRefund,
-		txYggdrasilFund, txYggdrasilReturn, txReserve,
-		txMigrate, txRagnarok,
+		TxOutbound, TxBond, TxLeave, TxRefund,
+		TxYggdrasilFund, TxYggdrasilReturn, TxReserve,
+		TxMigrate, TxRagnarok,
 	}
 	hasAsset := true
 	for _, memoType := range noAssetMemos {
@@ -360,11 +360,11 @@ func ParseMemo(memo string) (Memo, error) {
 	}
 
 	switch tx {
-	case txLeave:
+	case TxLeave:
 		return NewLeaveMemo(), nil
-	case txAdd:
+	case TxAdd:
 		return NewAddMemo(asset), nil
-	case txStake:
+	case TxStake:
 		var addr common.Address
 		if !asset.Chain.IsBNB() {
 			if len(parts) < 3 {
@@ -379,7 +379,7 @@ func ParseMemo(memo string) (Memo, error) {
 		}
 		return NewStakeMemo(asset, addr), nil
 
-	case txUnstake:
+	case TxUnstake:
 		if len(parts) < 2 {
 			return noMemo, fmt.Errorf("invalid unstake memo")
 		}
@@ -396,7 +396,7 @@ func ParseMemo(memo string) (Memo, error) {
 		}
 		return NewUnstakeMemo(asset, withdrawAmount), nil
 
-	case txSwap:
+	case TxSwap:
 		if len(parts) < 2 {
 			return noMemo, fmt.Errorf("missing swap parameters: memo should in SWAP:SYMBOLXX-XXX:DESTADDR:TRADE-TARGET format")
 		}
@@ -421,19 +421,19 @@ func ParseMemo(memo string) (Memo, error) {
 			slip = amount
 		}
 		return NewSwapMemo(asset, destination, slip), nil
-	case txOutbound:
+	case TxOutbound:
 		if len(parts) < 2 {
 			return noMemo, fmt.Errorf("not enough parameters")
 		}
 		txID, err := common.NewTxID(parts[1])
 		return NewOutboundMemo(txID), err
-	case txRefund:
+	case TxRefund:
 		if len(parts) < 2 {
 			return noMemo, fmt.Errorf("not enough parameters")
 		}
 		txID, err := common.NewTxID(parts[1])
 		return NewRefundMemo(txID), err
-	case txBond:
+	case TxBond:
 		if len(parts) < 2 {
 			return noMemo, fmt.Errorf("not enough parameters")
 		}
@@ -442,7 +442,7 @@ func ParseMemo(memo string) (Memo, error) {
 			return noMemo, fmt.Errorf("%s is an invalid thorchain address: %w", parts[1], err)
 		}
 		return NewBondMemo(addr), nil
-	case txYggdrasilFund:
+	case TxYggdrasilFund:
 		if len(parts) < 2 {
 			return noMemo, errors.New("not enough parameters")
 		}
@@ -451,7 +451,7 @@ func ParseMemo(memo string) (Memo, error) {
 			return noMemo, fmt.Errorf("fail to convert (%s) to a valid block height: %w", parts[1], err)
 		}
 		return NewYggdrasilFund(blockHeight), nil
-	case txYggdrasilReturn:
+	case TxYggdrasilReturn:
 		if len(parts) < 2 {
 			return noMemo, errors.New("not enough parameters")
 		}
@@ -460,9 +460,9 @@ func ParseMemo(memo string) (Memo, error) {
 			return noMemo, fmt.Errorf("fail to convert (%s) to a valid block height: %w", parts[1], err)
 		}
 		return NewYggdrasilReturn(blockHeight), nil
-	case txReserve:
+	case TxReserve:
 		return NewReserveMemo(), nil
-	case txMigrate:
+	case TxMigrate:
 		if len(parts) < 2 {
 			return noMemo, errors.New("not enough parameters")
 		}
@@ -471,7 +471,7 @@ func ParseMemo(memo string) (Memo, error) {
 			return noMemo, fmt.Errorf("fail to convert (%s) to a valid block height: %w", parts[1], err)
 		}
 		return NewMigrateMemo(blockHeight), nil
-	case txRagnarok:
+	case TxRagnarok:
 		if len(parts) < 2 {
 			return noMemo, errors.New("not enough parameters")
 		}

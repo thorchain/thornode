@@ -21,6 +21,11 @@ type BlockScannerFetcher interface {
 	FetchTxs(height int64) (types.TxIn, error)
 }
 
+type Block struct {
+	Height int64
+	Txs    []string
+}
+
 // BlockScanner is used to discover block height
 type BlockScanner struct {
 	cfg             config.BlockScannerConfiguration
@@ -104,7 +109,7 @@ func (b *BlockScanner) scanBlocks() {
 			txIn, err := b.chainScanner.FetchTxs(currentBlock)
 			if err != nil {
 				// don't log an error if its because the block doesn't exist yet
-				if errors.Is(err, btypes.UnavailableBlock) {
+				if !errors.Is(err, btypes.UnavailableBlock) {
 					b.errorCounter.WithLabelValues("fail_get_block", "").Inc()
 					b.logger.Error().Err(err).Msg("fail to get RPCBlock")
 				}

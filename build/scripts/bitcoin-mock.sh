@@ -8,8 +8,11 @@ BLOCK_TIME=5
 bitcoind -regtest -txindex -rpcuser=$SIGNER_NAME -rpcpassword=$SIGNER_PASSWD -rpcallowip=0.0.0.0/0 -rpcbind=127.0.0.1 -rpcbind=$(hostname) &
 
 # give time to bitcoind to start
-sleep 5
-bitcoin-cli -regtest -rpcuser=$SIGNER_NAME -rpcpassword=$SIGNER_PASSWD generatetoaddress 500 $MASTER_ADDR
+while true
+do
+	bitcoin-cli -regtest -rpcuser=$SIGNER_NAME -rpcpassword=$SIGNER_PASSWD generatetoaddress 100 $MASTER_ADDR && break
+	sleep 5
+done
 
 # mine a new block every BLOCK_TIME
 while true

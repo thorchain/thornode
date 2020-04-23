@@ -26,6 +26,8 @@ services:
       - "../../scripts:/docker/scripts"
       - ${HOME}/.thornode/validator/.thord:/root/.thord
       - ${HOME}/.thornode/validator/.thorcli:/root/.thorcli
+      - ${HOME}/.thornode/validator/.bifrost/data:/var/data/bifrost
+      - ${HOME}/.thornode/validator/.bifrost/etc:/etc/bifrost
     command: ["bifrost", "-c", "/etc/bifrost/config.json"]
 
   thor-daemon:

@@ -41,9 +41,11 @@ const (
 
 var (
 	NewPool                        = types.NewPool
+	NewTxMarker                    = types.NewTxMarker
 	NewVaultData                   = types.NewVaultData
 	NewObservedTx                  = types.NewObservedTx
 	NewTssVoter                    = types.NewTssVoter
+	NewErrataTxVoter               = types.NewErrataTxVoter
 	NewObservedTxVoter             = types.NewObservedTxVoter
 	NewMsgTssPool                  = types.NewMsgTssPool
 	NewMsgTssKeysignFail           = types.NewMsgTssKeysignFail
@@ -70,6 +72,8 @@ var (
 	NewEventGas                    = types.NewEventGas
 	NewEventSlash                  = types.NewEventSlash
 	NewEventReserve                = types.NewEventReserve
+	NewEventErrata                 = types.NewEventErrata
+	NewPoolMod                     = types.NewPoolMod
 	NewMsgRefundTx                 = types.NewMsgRefundTx
 	NewMsgOutboundTx               = types.NewMsgOutboundTx
 	NewMsgMigrate                  = types.NewMsgMigrate
@@ -88,14 +92,17 @@ var (
 	NewMsgYggdrasil                = types.NewMsgYggdrasil
 	NewMsgReserveContributor       = types.NewMsgReserveContributor
 	NewMsgBond                     = types.NewMsgBond
+	NewMsgErrataTx                 = types.NewMsgErrataTx
 	NewMsgLeave                    = types.NewMsgLeave
 	NewMsgSetVersion               = types.NewMsgSetVersion
+	NewMsgSetIPAddress             = types.NewMsgSetIPAddress
 	GetPoolStatus                  = types.GetPoolStatus
 	GetRandomVault                 = types.GetRandomVault
 	GetRandomTx                    = types.GetRandomTx
 	GetRandomObservedTx            = types.GetRandomObservedTx
 	GetRandomNodeAccount           = types.GetRandomNodeAccount
 	GetRandomBNBAddress            = types.GetRandomBNBAddress
+	GetRandomBTCAddress            = types.GetRandomBTCAddress
 	GetRandomTxHash                = types.GetRandomTxHash
 	GetRandomBech32Addr            = types.GetRandomBech32Addr
 	GetRandomBech32ConsensusPubKey = types.GetRandomBech32ConsensusPubKey
@@ -115,8 +122,10 @@ type (
 	MsgMigrate                  = types.MsgMigrate
 	MsgRagnarok                 = types.MsgRagnarok
 	MsgRefundTx                 = types.MsgRefundTx
+	MsgErrataTx                 = types.MsgErrataTx
 	MsgSwap                     = types.MsgSwap
 	MsgSetVersion               = types.MsgSetVersion
+	MsgSetIPAddress             = types.MsgSetIPAddress
 	MsgSetNodeKeys              = types.MsgSetNodeKeys
 	MsgEndPool                  = types.MsgEndPool
 	MsgLeave                    = types.MsgLeave
@@ -145,6 +154,7 @@ type (
 	ObservedTxVoter             = types.ObservedTxVoter
 	ObservedTxVoters            = types.ObservedTxVoters
 	ObservedTxIndex             = types.ObservedTxIndex
+	ErrataTxVoter               = types.ErrataTxVoter
 	TssVoter                    = types.TssVoter
 	TssKeysignFailVoter         = types.TssKeysignFailVoter
 	TxOutItem                   = types.TxOutItem
@@ -159,7 +169,10 @@ type (
 	EventStake                  = types.EventStake
 	EventStatus                 = types.EventStatus
 	EventRewards                = types.EventRewards
+	EventErrata                 = types.EventErrata
 	PoolAmt                     = types.PoolAmt
+	PoolMod                     = types.PoolMod
+	PoolMods                    = types.PoolMods
 	ReserveContributor          = types.ReserveContributor
 	ReserveContributors         = types.ReserveContributors
 	Vault                       = types.Vault
@@ -173,4 +186,6 @@ type (
 	EventStatuses               = types.EventStatuses
 	GasPool                     = types.GasPool
 	EventGas                    = types.EventGas
+	TxMarker                    = types.TxMarker
+	TxMarkers                   = types.TxMarkers
 )

@@ -11,12 +11,14 @@ import (
 	"github.com/btcsuite/btcd/btcjson"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/rpcclient"
+	"github.com/btcsuite/btcutil"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	tssp "gitlab.com/thorchain/tss/go-tss/tss"
 
 	"gitlab.com/thorchain/thornode/bifrost/blockscanner"
+	btypes "gitlab.com/thorchain/thornode/bifrost/blockscanner/types"
 	"gitlab.com/thorchain/thornode/bifrost/config"
 	"gitlab.com/thorchain/thornode/bifrost/metrics"
 	"gitlab.com/thorchain/thornode/bifrost/thorclient"
@@ -78,11 +80,9 @@ func NewClient(thorKeys *thorclient.Keys, cfg config.ChainConfiguration, server 
 		bridge:     bridge,
 	}
 
-	var path string             // if not set later, will in memory storage
-	var pathUTXOAccessor string // if not set later, will in memory storage
+	var path string // if not set later, will in memory storage
 	if len(c.cfg.BlockScanner.DBPath) > 0 {
 		path = fmt.Sprintf("%s/%s", c.cfg.BlockScanner.DBPath, c.cfg.BlockScanner.ChainID)
-		pathUTXOAccessor = fmt.Sprintf("%s-utxos", path)
 	}
 	storage, err := blockscanner.NewBlockScannerStorage(path)
 	if err != nil {
@@ -94,7 +94,7 @@ func NewClient(thorKeys *thorclient.Keys, cfg config.ChainConfiguration, server 
 		return c, fmt.Errorf("fail to create block scanner: %w", err)
 	}
 
-	c.utxoAccessor, err = NewUTXOAccessor(pathUTXOAccessor)
+	c.utxoAccessor, err = NewLevelDBUTXOAccessor(storage.GetInternalDb())
 	if err != nil {
 		return c, fmt.Errorf("fail to create utxo accessor: %w", err)
 	}
@@ -103,13 +103,18 @@ func NewClient(thorKeys *thorclient.Keys, cfg config.ChainConfiguration, server 
 }
 
 // Start starts the block scanner
-func (c *Client) Start(globalTxsQueue chan types.TxIn) {
+func (c *Client) Start(globalTxsQueue chan types.TxIn, globalErrataQueue chan types.ErrataBlock) {
 	c.blockScanner.Start(globalTxsQueue)
 }
 
 // Stop stops the block scanner
 func (c *Client) Stop() {
 	c.blockScanner.Stop()
+}
+
+// GetConfig - get the chain configuration
+func (c *Client) GetConfig() config.ChainConfiguration {
+	return c.cfg
 }
 
 // GetChain returns BTC Chain
@@ -122,14 +127,9 @@ func (c *Client) GetHeight() (int64, error) {
 	return c.client.GetBlockCount()
 }
 
-// GetGasFee returns gas fee
-func (c *Client) GetGasFee(count uint64) common.Gas {
-	return common.Gas{} // TODO not implemented yet
-}
-
 // ValidateMetadata validates metadata
 func (c *Client) ValidateMetadata(inter interface{}) bool {
-	return true // TODO not implemented yet
+	return true
 }
 
 // GetAddress returns address from pubkey
@@ -144,7 +144,25 @@ func (c *Client) GetAddress(poolPubKey common.PubKey) string {
 
 // GetAccount returns account with balance for an address
 func (c *Client) GetAccount(addr string) (common.Account, error) {
-	return common.Account{}, fmt.Errorf("not implemented")
+	acct := common.Account{}
+	utxoes, err := c.utxoAccessor.GetUTXOs()
+	if err != nil {
+		return acct, fmt.Errorf("fail to get UTXO: %w", err)
+	}
+	total := 0.0
+	for _, item := range utxoes {
+		total += item.Value
+	}
+	totalAmt, err := btcutil.NewAmount(total)
+	if err != nil {
+		return acct, fmt.Errorf("fail to convert total amount: %w", err)
+	}
+	return common.NewAccount(0, 0, common.AccountCoins{
+		common.AccountCoin{
+			Amount: uint64(totalAmt),
+			Denom:  common.BTCAsset.String(),
+		},
+	}), nil
 }
 
 // OnObservedTxIn gets called from observer when we have a valid observation
@@ -175,7 +193,11 @@ func (c *Client) OnObservedTxIn(txIn types.TxIn) {
 func (c *Client) FetchTxs(height int64) (types.TxIn, error) {
 	block, err := c.getBlock(height)
 	if err != nil {
-		time.Sleep(300 * time.Millisecond)
+		time.Sleep(c.cfg.BlockScanner.BlockHeightDiscoverBackoff)
+		if rpcErr, ok := err.(*btcjson.RPCError); ok && rpcErr.Code == btcjson.ErrRPCInvalidParameter {
+			// this means the tx had been broadcast to chain, it must be another signer finished quicker then us
+			return types.TxIn{}, btypes.UnavailableBlock
+		}
 		return types.TxIn{}, fmt.Errorf("fail to get block: %w", err)
 	}
 	txs, err := c.extractTxs(block)
@@ -237,6 +259,7 @@ func (c *Client) extractTxs(block *btcjson.GetBlockVerboseTxResult) (types.TxIn,
 // ignoreTx checks if we can already ignore a tx according to preset rules
 //
 // we expect array of "vout" for a BTC to have this format
+// OP_RETURN is mandatory only on inbound tx
 // vout:0 is our vault
 // vout:1 is any any change back to themselves
 // vout:2 is OP_RETURN (first 80 bytes)
@@ -247,7 +270,6 @@ func (c *Client) extractTxs(block *btcjson.GetBlockVerboseTxResult) (types.TxIn,
 // - vout:0 doesn't have address
 // - count vouts > 4
 // - count vouts with coins (value) > 2
-// - no OP_RETURN presents in tx vouts
 //
 func (c *Client) ignoreTx(tx *btcjson.TxRawResult) bool {
 	if len(tx.Vin) == 0 || len(tx.Vout) == 0 || len(tx.Vout) > 4 {
@@ -260,17 +282,13 @@ func (c *Client) ignoreTx(tx *btcjson.TxRawResult) bool {
 	if len(tx.Vout[0].ScriptPubKey.Addresses) != 1 {
 		return true
 	}
-	countOPReturn := 0
 	countWithCoins := 0
 	for _, vout := range tx.Vout {
 		if vout.Value > 0 {
 			countWithCoins++
 		}
-		if strings.HasPrefix(vout.ScriptPubKey.Asm, "OP_RETURN") {
-			countOPReturn++
-		}
 	}
-	if countOPReturn == 0 || countOPReturn > 2 || countWithCoins > 2 {
+	if countWithCoins > 2 {
 		return true
 	}
 	return false
@@ -314,7 +332,7 @@ func (c *Client) getMemo(tx *btcjson.TxRawResult) (string, error) {
 
 // getGas returns gas for a btc tx (sum vin - sum vout)
 func (c *Client) getGas(tx *btcjson.TxRawResult) (common.Gas, error) {
-	var sumVin float64 = 0
+	var sumVin uint64 = 0
 	for _, vin := range tx.Vin {
 		txHash, err := chainhash.NewHashFromStr(tx.Vin[0].Txid)
 		if err != nil {
@@ -324,13 +342,13 @@ func (c *Client) getGas(tx *btcjson.TxRawResult) (common.Gas, error) {
 		if err != nil {
 			return common.Gas{}, fmt.Errorf("fail to query raw tx from btcd")
 		}
-		sumVin += vinTx.Vout[vin.Vout].Value
+		sumVin += uint64(vinTx.Vout[vin.Vout].Value * common.One)
 	}
-	var sumVout float64 = 0
+	var sumVout uint64 = 0
 	for _, vout := range tx.Vout {
-		sumVout += vout.Value
+		sumVout += uint64(vout.Value * common.One)
 	}
-	totalGas := uint64((sumVin - sumVout) * common.One)
+	totalGas := sumVin - sumVout
 	return common.Gas{
 		common.NewCoin(common.BTCAsset, sdk.NewUint(totalGas)),
 	}, nil

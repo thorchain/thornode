@@ -21,28 +21,30 @@ import (
 
 // Observer observer service
 type Observer struct {
-	logger          zerolog.Logger
-	chains          map[common.Chain]chainclients.ChainClient
-	stopChan        chan struct{}
-	pubkeyMgr       pubkeymanager.PubKeyValidator
-	globalTxsQueue  chan types.TxIn
-	m               *metrics.Metrics
-	errCounter      *prometheus.CounterVec
-	thorchainBridge *thorclient.ThorchainBridge
+	logger            zerolog.Logger
+	chains            map[common.Chain]chainclients.ChainClient
+	stopChan          chan struct{}
+	pubkeyMgr         pubkeymanager.PubKeyValidator
+	globalTxsQueue    chan types.TxIn
+	globalErrataQueue chan types.ErrataBlock
+	m                 *metrics.Metrics
+	errCounter        *prometheus.CounterVec
+	thorchainBridge   *thorclient.ThorchainBridge
 }
 
 // NewObserver create a new instance of Observer for chain
 func NewObserver(pubkeyMgr pubkeymanager.PubKeyValidator, chains map[common.Chain]chainclients.ChainClient, thorchainBridge *thorclient.ThorchainBridge, m *metrics.Metrics) (*Observer, error) {
 	logger := log.Logger.With().Str("module", "observer").Logger()
 	return &Observer{
-		logger:          logger,
-		chains:          chains,
-		stopChan:        make(chan struct{}),
-		m:               m,
-		pubkeyMgr:       pubkeyMgr,
-		globalTxsQueue:  make(chan types.TxIn),
-		errCounter:      m.GetCounterVec(metrics.ObserverError),
-		thorchainBridge: thorchainBridge,
+		logger:            logger,
+		chains:            chains,
+		stopChan:          make(chan struct{}),
+		m:                 m,
+		pubkeyMgr:         pubkeyMgr,
+		globalTxsQueue:    make(chan types.TxIn),
+		globalErrataQueue: make(chan types.ErrataBlock),
+		errCounter:        m.GetCounterVec(metrics.ObserverError),
+		thorchainBridge:   thorchainBridge,
 	}, nil
 }
 
@@ -57,9 +59,10 @@ func (o *Observer) getChain(chainID common.Chain) (chainclients.ChainClient, err
 
 func (o *Observer) Start() error {
 	for _, chain := range o.chains {
-		chain.Start(o.globalTxsQueue)
+		chain.Start(o.globalTxsQueue, o.globalErrataQueue)
 	}
 	go o.processTxIns()
+	go o.processErrataTx()
 	return nil
 }
 
@@ -202,6 +205,42 @@ func (o *Observer) isAddrWithMemo(chain common.Chain, addr, memo, targetMemo str
 		return true
 	}
 	return false
+}
+
+func (o *Observer) processErrataTx() {
+	for {
+		select {
+		case <-o.stopChan:
+			return
+		case errataBlock, more := <-o.globalErrataQueue:
+			if !more {
+				return
+			}
+			o.logger.Info().Msgf("Received a errata block %+v from the Thorchain", errataBlock.Height)
+			for _, errataTx := range errataBlock.Txs {
+				if err := o.sendErrataTxToThorchain(errataBlock.Height, errataTx.TxID, errataTx.Chain); err != nil {
+					o.errCounter.WithLabelValues("fail_to_broadcast_errata_tx", "").Inc()
+					o.logger.Error().Err(err).Msg("fail to broadcast errata tx")
+				}
+			}
+		}
+	}
+}
+
+func (o *Observer) sendErrataTxToThorchain(height int64, txID common.TxID, chain common.Chain) error {
+	stdTx, err := o.thorchainBridge.GetErrataStdTx(txID, chain)
+	strHeight := strconv.FormatInt(height, 10)
+	if err != nil {
+		o.errCounter.WithLabelValues("fail_to_sign", strHeight).Inc()
+		return fmt.Errorf("fail to sign the tx: %w", err)
+	}
+	txID, err = o.thorchainBridge.Broadcast(*stdTx, types.TxSync)
+	if err != nil {
+		o.errCounter.WithLabelValues("fail_to_send_to_thorchain", strHeight).Inc()
+		return fmt.Errorf("fail to send the tx to thorchain: %w", err)
+	}
+	o.logger.Info().Int64("block", height).Str("thorchain hash", txID.String()).Msg("sign and send to thorchain successfully")
+	return nil
 }
 
 func (o *Observer) signAndSendToThorchain(txIn types.TxIn) error {

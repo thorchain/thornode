@@ -50,6 +50,7 @@ type ChainConfiguration struct {
 	DisableTLS   bool                      `json:"disable_tls" mapstructure:"disable_tls"`       // Bitcoin core does not provide TLS by default
 	BlockScanner BlockScannerConfiguration `json:"block_scanner" mapstructure:"block_scanner"`
 	BackOff      BackOff
+	OptToRetire  bool `json:"opt_to_retire" mapstructure:"opt_to_retire"` // don't emit support for this chain during keygen process
 }
 
 // TSSConfiguration
@@ -143,7 +144,7 @@ func applyDefaultConfig() {
 	viper.SetDefault("metrics.listen_port", "9000")
 	viper.SetDefault("metrics.read_timeout", "30s")
 	viper.SetDefault("metrics.write_timeout", "30s")
-	viper.SetDefault("metrics.chains", common.Chains{common.BNBChain})
+	viper.SetDefault("metrics.chains", common.Chains{common.BNBChain, common.BTCChain, common.ETHChain})
 	viper.SetDefault("thorchain.chain_id", "thorchain")
 	viper.SetDefault("thorchain.chain_host", "localhost:1317")
 	viper.SetDefault("back_off.initial_interval", 500*time.Millisecond)

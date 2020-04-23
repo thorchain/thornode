@@ -96,6 +96,7 @@ func getHandlerMapping(keeper Keeper,
 	m[MsgSwap{}.Type()] = NewSwapHandler(keeper, versionedTxOutStore)
 	m[MsgReserveContributor{}.Type()] = NewReserveContributorHandler(keeper)
 	m[MsgSetVersion{}.Type()] = NewVersionHandler(keeper)
+	m[MsgSetIPAddress{}.Type()] = NewIPAddressHandler(keeper)
 	m[MsgBond{}.Type()] = NewBondHandler(keeper)
 	m[MsgObservedTxIn{}.Type()] = NewObservedTxInHandler(keeper, versionedObserverManager, versionedTxOutStore, validatorMgr, versionedVaultManager, versionedGasMgr)
 	m[MsgObservedTxOut{}.Type()] = NewObservedTxOutHandler(keeper, versionedObserverManager, versionedTxOutStore, validatorMgr, versionedVaultManager, versionedGasMgr)
@@ -110,10 +111,40 @@ func getHandlerMapping(keeper Keeper,
 	return m
 }
 
+func fetchMemo(ctx sdk.Context, constAccessor constants.ConstantValues, keeper Keeper, tx common.Tx) string {
+	if len(tx.Memo) > 0 {
+		return tx.Memo
+	}
+
+	var memo string
+	// attempt to pull memo from tx marker
+	hash := tx.Hash()
+	marks, _ := keeper.ListTxMarker(ctx, hash) // ignore err
+	if len(marks) > 0 {
+		// filter out expired tx markers
+		period := constAccessor.GetInt64Value(constants.SigningTransactionPeriod) * 3
+		marks = marks.FilterByMinHeight(ctx.BlockHeight() - period)
+
+		// if we still have a marker, add the memo
+		if len(marks) > 0 {
+			var mark TxMarker
+			mark, marks = marks.Pop()
+			memo = mark.Memo
+		}
+
+		// update our marker list
+		if err := keeper.SetTxMarkers(ctx, hash, marks); err != nil {
+			ctx.Logger().Error("fail to set tx markers", "error", err)
+		}
+	}
+	return memo
+}
+
 func processOneTxIn(ctx sdk.Context, keeper Keeper, tx ObservedTx, signer sdk.AccAddress) (sdk.Msg, sdk.Error) {
 	if len(tx.Tx.Coins) == 0 {
 		return nil, sdk.ErrUnknownRequest("no coin found")
 	}
+
 	memo, err := ParseMemo(tx.Tx.Memo)
 	if err != nil {
 		ctx.Logger().Error("fail to parse memo", "error", err)
@@ -271,7 +302,7 @@ func getMsgStakeFromMemo(ctx sdk.Context, memo StakeMemo, tx ObservedTx, signer 
 	// the stake operation by sending in two asymmetric stake tx, one tx on BTC chain with memo stake:BTC:<RUNE address> ,
 	// and another one on Binance chain with stake:BTC , with only RUNE as the coin
 	// Thorchain will use the <RUNE address> to match these two together , and consider it as one stake.
-	if !runeAddr.IsChain(common.BNBChain) {
+	if !runeAddr.IsChain(common.RuneAsset().Chain) {
 		runeAddr = memo.GetDestination()
 		assetAddr = tx.Tx.FromAddress
 	} else {

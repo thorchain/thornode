@@ -20,12 +20,13 @@ echo "password" | thorcli keys add thorchain
 VALIDATOR="$(thord tendermint show-validator)"
 NODE_ADDRESS="$(thorcli keys show thorchain -a)"
 NODE_PUB_KEY="$(thorcli keys show thorchain -p)"
+NODE_IP_ADDRESS=$(curl -s http://whatismyip.akamai.com/)
 
 init_chain $NODE_ADDRESS
 
 VERSION="$(thorcli query thorchain version | jq -r .version)"
 
-add_node_account $NODE_ADDRESS $VALIDATOR $NODE_PUB_KEY $VERSION $BOND_ADDRESS $POOL_PUB_KEY
+add_node_account $NODE_ADDRESS $VALIDATOR $NODE_PUB_KEY $VERSION $BOND_ADDRESS $NODE_IP_ADDRESS $POOL_PUB_KEY
 
 cat ~/.thord/config/genesis.json
 thord validate-genesis

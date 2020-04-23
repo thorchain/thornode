@@ -87,15 +87,6 @@ func (h UnstakeHandler) validateV1(ctx sdk.Context, msg MsgSetUnStake) sdk.Error
 }
 
 func (h UnstakeHandler) handle(ctx sdk.Context, msg MsgSetUnStake, version semver.Version) ([]byte, sdk.Error) {
-	// Get rune (if any) and donate it to the reserve
-	coin := msg.Tx.Coins.GetCoin(common.RuneAsset())
-	if !coin.IsEmpty() {
-		if err := h.keeper.AddFeeToReserve(ctx, coin.Amount); err != nil {
-			// Add to reserve
-			ctx.Logger().Error("fail to add fee to reserve", "error", err)
-		}
-	}
-
 	poolStaker, err := h.keeper.GetPoolStaker(ctx, msg.Asset)
 	if err != nil {
 		ctx.Logger().Error("fail to get pool staker", "error", err)
@@ -160,11 +151,13 @@ func (h UnstakeHandler) handle(ctx sdk.Context, msg MsgSetUnStake, version semve
 		Coin:      common.NewCoin(common.RuneAsset(), runeAmt),
 		Memo:      memo,
 	}
-	_, err = txOutStore.TryAddTxOutItem(ctx, toi)
+	ok, err := txOutStore.TryAddTxOutItem(ctx, toi)
 	if err != nil {
 		ctx.Logger().Error("fail to prepare outbound tx", "error", err)
 		return nil, sdk.NewError(DefaultCodespace, CodeFailAddOutboundTx, "fail to prepare outbound tx")
-
+	}
+	if !ok {
+		return nil, sdk.NewError(DefaultCodespace, CodeFailAddOutboundTx, "prepare outbound tx not successful")
 	}
 
 	toi = &TxOutItem{
@@ -174,10 +167,22 @@ func (h UnstakeHandler) handle(ctx sdk.Context, msg MsgSetUnStake, version semve
 		Coin:      common.NewCoin(msg.Asset, assetAmount),
 		Memo:      memo,
 	}
-	_, err = txOutStore.TryAddTxOutItem(ctx, toi)
+	ok, err = txOutStore.TryAddTxOutItem(ctx, toi)
 	if err != nil {
 		ctx.Logger().Error("fail to prepare outbound tx", "error", err)
 		return nil, sdk.NewError(DefaultCodespace, CodeFailAddOutboundTx, "fail to prepare outbound tx")
+	}
+	if !ok {
+		return nil, sdk.NewError(DefaultCodespace, CodeFailAddOutboundTx, "prepare outbound tx not successful")
+	}
+
+	// Get rune (if any) and donate it to the reserve
+	coin := msg.Tx.Coins.GetCoin(common.RuneAsset())
+	if !coin.IsEmpty() {
+		if err := h.keeper.AddFeeToReserve(ctx, coin.Amount); err != nil {
+			// Add to reserve
+			ctx.Logger().Error("fail to add fee to reserve", "error", err)
+		}
 	}
 
 	return res, nil

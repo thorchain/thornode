@@ -9,7 +9,6 @@ require (
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/btcsuite/btcd v0.20.1-beta.0.20200414114020-8b54b0b96418
 	github.com/btcsuite/btcutil v1.0.2
-	github.com/btcsuite/goleveldb v1.0.0 // indirect
 	github.com/cosmos/cosmos-sdk v0.37.7
 	github.com/cosmos/ledger-cosmos-go v0.11.1 // indirect
 	github.com/didip/tollbooth v4.0.2+incompatible
@@ -20,7 +19,6 @@ require (
 	github.com/hashicorp/go-retryablehttp v0.6.4
 	github.com/ipfs/go-datastore v0.4.4 // indirect
 	github.com/ipfs/go-log v1.0.2
-	github.com/kkdai/bstream v1.0.0 // indirect
 	github.com/libp2p/go-libp2p-kad-dht v0.5.0 // indirect
 	github.com/multiformats/go-multiaddr v0.2.1
 	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
@@ -42,7 +40,7 @@ require (
 	github.com/tendermint/tendermint v0.32.9
 	github.com/tendermint/tm-db v0.2.0
 	github.com/zondax/ledger-go v0.11.0 // indirect
-	gitlab.com/thorchain/tss/go-tss v0.0.0-20200415203509-b4003b73c39a
+	gitlab.com/thorchain/tss/go-tss v0.0.0-20200417204539-1af5be2c05a1
 	gitlab.com/thorchain/txscript v0.0.0-20200413023754-8aaf3443d92b
 	go.uber.org/multierr v1.5.0 // indirect
 	golang.org/x/crypto v0.0.0-20200414173820-0848c9571904 // indirect
@@ -53,7 +51,6 @@ require (
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15
 	gopkg.in/ini.v1 v1.52.0 // indirect
 	gopkg.in/yaml.v2 v2.2.8 // indirect
-	mvdan.cc/gofumpt v0.0.0-20200412215918-a91da47f375c // indirect
 )
 
 replace github.com/tendermint/go-amino => github.com/binance-chain/bnc-go-amino v0.14.1-binance.1

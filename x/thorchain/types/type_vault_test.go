@@ -19,7 +19,7 @@ func (s *VaultSuite) TestVault(c *C) {
 	c.Check(vault.IsEmpty(), Equals, true)
 	c.Check(vault.IsValid(), NotNil)
 
-	vault = NewVault(12, ActiveVault, YggdrasilVault, pk)
+	vault = NewVault(12, ActiveVault, YggdrasilVault, pk, common.Chains{common.BNBChain})
 	c.Check(vault.PubKey.Equals(pk), Equals, true)
 	c.Check(vault.HasFunds(), Equals, false)
 	c.Check(vault.IsEmpty(), Equals, false)
@@ -32,6 +32,8 @@ func (s *VaultSuite) TestVault(c *C) {
 
 	vault.AddFunds(coins)
 	c.Check(vault.HasFunds(), Equals, true)
+	c.Check(vault.HasFundsForChain(common.BNBChain), Equals, true)
+	c.Check(vault.HasFundsForChain(common.ETHChain), Equals, false)
 	c.Check(vault.GetCoin(common.BNBAsset).Amount.Equal(sdk.NewUint(500*common.One)), Equals, true)
 	c.Check(vault.GetCoin(common.BTCAsset).Amount.Equal(sdk.NewUint(400*common.One)), Equals, true)
 	vault.AddFunds(coins)
@@ -51,7 +53,7 @@ func (s *VaultSuite) TestVault(c *C) {
 }
 
 func (s *VaultSuite) TestGetTssSigners(c *C) {
-	vault := NewVault(12, ActiveVault, AsgardVault, GetRandomPubKey())
+	vault := NewVault(12, ActiveVault, AsgardVault, GetRandomPubKey(), common.Chains{common.BNBChain})
 	nodeAccounts := NodeAccounts{}
 	memberShip := common.PubKeys{}
 	for i := 0; i < 10; i++ {
@@ -72,13 +74,13 @@ func (s *VaultSuite) TestGetTssSigners(c *C) {
 }
 
 func (s *VaultSuite) TestPendingTxBlockHeights(c *C) {
-	vault := NewVault(12, ActiveVault, AsgardVault, GetRandomPubKey())
+	vault := NewVault(12, ActiveVault, AsgardVault, GetRandomPubKey(), common.Chains{common.BNBChain})
 
 	version := constants.SWVersion
 	constAccessor := constants.GetConstantValues(version)
 	vault.AppendPendingTxBlockHeights(1, constAccessor)
 	c.Assert(vault.LenPendingTxBlockHeights(2, constAccessor), Equals, 1)
-	c.Assert(vault.LenPendingTxBlockHeights(102, constAccessor), Equals, 0)
+	c.Assert(vault.LenPendingTxBlockHeights(302, constAccessor), Equals, 0)
 	for i := 0; i < 100; i++ {
 		vault.AppendPendingTxBlockHeights(int64(i), constAccessor)
 	}

@@ -1,6 +1,7 @@
 package chainclients
 
 import (
+	"gitlab.com/thorchain/thornode/bifrost/config"
 	stypes "gitlab.com/thorchain/thornode/bifrost/thorclient/types"
 	"gitlab.com/thorchain/thornode/common"
 )
@@ -16,6 +17,7 @@ import (
 // GetAccount   gets account from thorclient in cain
 // GetGasFee    calculates gas fee based on number of simple transfer sents
 // ValidateMetadata  checks if given metadata is correct or not
+// GetConfig	gets the chain configuration
 // Start
 // Stop
 type ChainClient interface {
@@ -25,8 +27,8 @@ type ChainClient interface {
 	GetAddress(poolPubKey common.PubKey) string
 	GetAccount(addr string) (common.Account, error)
 	GetChain() common.Chain
-	GetGasFee(count uint64) common.Gas
 	ValidateMetadata(_ interface{}) bool
-	Start(globalTxsQueue chan stypes.TxIn)
+	Start(globalTxsQueue chan stypes.TxIn, globalErrataQueue chan stypes.ErrataBlock)
+	GetConfig() config.ChainConfiguration
 	Stop()
 }

@@ -11,8 +11,17 @@ SEED="${SEED:=thor-daemon}" # the hostname of the master node
 gen_bnb_address
 ADDRESS=$(cat ~/.bond/address.txt)
 
-# create thorchain user
-thorcli keys show $SIGNER_NAME || echo $SIGNER_PASSWD | thorcli --trace keys add $SIGNER_NAME 2>&1
+# create thorchain user, if it doesn't already
+thorcli keys show $SIGNER_NAME
+if [ $? -gt 0 ]; then
+    if [ -f ~/.recovery.txt ]; then
+        echo "$SIGNER_PASSWD\n$(tail -1 ~/.recovery.txt)" | thorcli keys add $SIGNER_NAME --recover
+    else
+        echo $SIGNER_PASSWD | thorcli --trace keys add $SIGNER_NAME &> ~/.recovery.txt
+    fi
+fi
+
+
 
 VALIDATOR=$(thord tendermint show-validator)
 NODE_ADDRESS=$(thorcli keys show thorchain -a)
@@ -49,12 +58,14 @@ if [ "$SEED" = "$(hostname)" ]; then
             add_vault $VAULT_PUBKEY $(echo "$PUBKEYS" | sed -e 's/^,*//')
         fi
 
+        NODE_IP_ADDRESS=$(curl -s http://whatismyip.akamai.com/)
+
         # add node accounts to genesis file
         for f in /tmp/shared/node_*.json; do 
             if [ ! -z ${VAULT_PUBKEY+x} ]; then
-                add_node_account $(cat $f | awk '{print $1}') $(cat $f | awk '{print $2}') $(cat $f | awk '{print $3}') $(cat $f | awk '{print $4}') $(cat $f | awk '{print $5}') $VAULT_PUBKEY
+                add_node_account $(cat $f | awk '{print $1}') $(cat $f | awk '{print $2}') $(cat $f | awk '{print $3}') $(cat $f | awk '{print $4}') $(cat $f | awk '{print $5}') $NODE_IP_ADDRESS $VAULT_PUBKEY
             else
-                add_node_account $(cat $f | awk '{print $1}') $(cat $f | awk '{print $2}') $(cat $f | awk '{print $3}') $(cat $f | awk '{print $4}') $(cat $f | awk '{print $5}')
+                add_node_account $(cat $f | awk '{print $1}') $(cat $f | awk '{print $2}') $(cat $f | awk '{print $3}') $(cat $f | awk '{print $4}') $(cat $f | awk '{print $5}') $NODE_IP_ADDRESS
             fi
         done
 
@@ -80,6 +91,5 @@ if [ "$SEED" != "$(hostname)" ]; then
         cat ~/.thord/config/genesis.json
     fi
 fi
-
 
 exec "$@"

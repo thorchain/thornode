@@ -48,7 +48,7 @@ func (w *KeySignWrapper) GetPubKey() common.PubKey {
 
 func (w *KeySignWrapper) Sign(tx *etypes.Transaction, poolPubKey common.PubKey, signerPubKeys common.PubKeys) ([]byte, error) {
 	var err error
-	sig := make([]byte, 0)
+	var sig []byte
 	if w.pubKey.Equals(poolPubKey) {
 		sig, err = w.sign(tx)
 	} else {

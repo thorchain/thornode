@@ -45,7 +45,7 @@ func (tss *TssKeysignFailVoter) HasConsensus(nas NodeAccounts) bool {
 			count += 1
 		}
 	}
-	if HasMajority(count, len(nas)) {
+	if HasSimpleMajority(count, len(nas)) {
 		return true
 	}
 

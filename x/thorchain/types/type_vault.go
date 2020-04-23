@@ -40,6 +40,7 @@ type Vault struct {
 	Status                VaultStatus    `json:"status"`
 	StatusSince           int64          `json:"status_since"`
 	Membership            common.PubKeys `json:"membership"`
+	Chains                common.Chains  `json:"chains"`
 	InboundTxCount        int64          `json:"inbound_tx_count"`
 	OutboundTxCount       int64          `json:"outbound_tx_count"`
 	PendingTxBlockHeights []int64        `json:"pending_tx_heights"`
@@ -48,7 +49,7 @@ type Vault struct {
 type Vaults []Vault
 
 // NewVault create a new instance of vault
-func NewVault(height int64, status VaultStatus, vtype VaultType, pk common.PubKey) Vault {
+func NewVault(height int64, status VaultStatus, vtype VaultType, pk common.PubKey, chains common.Chains) Vault {
 	return Vault{
 		BlockHeight: height,
 		StatusSince: height,
@@ -56,6 +57,7 @@ func NewVault(height int64, status VaultStatus, vtype VaultType, pk common.PubKe
 		Coins:       make(common.Coins, 0),
 		Type:        vtype,
 		Status:      status,
+		Chains:      chains,
 	}
 }
 
@@ -102,6 +104,16 @@ func (v Vault) IsValid() error {
 func (v Vault) HasFunds() bool {
 	for _, coin := range v.Coins {
 		if !coin.Amount.IsZero() {
+			return true
+		}
+	}
+	return false
+}
+
+// HasFundsForChain check whether the vault pool has funds for a specific chain
+func (v Vault) HasFundsForChain(chain common.Chain) bool {
+	for _, coin := range v.Coins {
+		if coin.Asset.Chain.Equals(chain) && !coin.Amount.IsZero() {
 			return true
 		}
 	}

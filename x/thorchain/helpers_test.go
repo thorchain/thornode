@@ -61,7 +61,7 @@ func (k *TestRefundBondKeeper) SetPool(_ sdk.Context, p Pool) error {
 
 func (k *TestRefundBondKeeper) DeleteVault(_ sdk.Context, key common.PubKey) error {
 	if k.ygg.PubKey.Equals(key) {
-		k.ygg = NewVault(1, InactiveVault, AsgardVault, GetRandomPubKey())
+		k.ygg = NewVault(1, InactiveVault, AsgardVault, GetRandomPubKey(), common.Chains{common.BNBChain})
 	}
 	return nil
 }
@@ -171,13 +171,13 @@ func (s *HelperSuite) TestRefundBondError(c *C) {
 	c.Assert(refundBond(ctx, tx, na, keeper1, txOut), NotNil)
 
 	// if the vault is not a yggdrasil pool , it should return an error
-	ygg := NewVault(ctx.BlockHeight(), ActiveVault, AsgardVault, pk)
+	ygg := NewVault(ctx.BlockHeight(), ActiveVault, AsgardVault, pk, common.Chains{common.BNBChain})
 	ygg.Coins = common.Coins{}
 	keeper1.ygg = ygg
 	c.Assert(refundBond(ctx, tx, na, keeper1, txOut), NotNil)
 
 	// fail to get pool should fail
-	ygg = NewVault(ctx.BlockHeight(), ActiveVault, YggdrasilVault, pk)
+	ygg = NewVault(ctx.BlockHeight(), ActiveVault, YggdrasilVault, pk, common.Chains{common.BNBChain})
 	ygg.Coins = common.Coins{
 		common.NewCoin(common.RuneAsset(), sdk.NewUint(27*common.One)),
 		common.NewCoin(common.BNBAsset, sdk.NewUint(27*common.One)),
@@ -205,7 +205,7 @@ func (s *HelperSuite) TestRefundBondHappyPath(c *C) {
 	txOut := NewTxStoreDummy()
 	pk := GetRandomPubKey()
 	na.PubKeySet.Secp256k1 = pk
-	ygg := NewVault(ctx.BlockHeight(), ActiveVault, YggdrasilVault, pk)
+	ygg := NewVault(ctx.BlockHeight(), ActiveVault, YggdrasilVault, pk, common.Chains{common.BNBChain})
 
 	ygg.Coins = common.Coins{
 		common.NewCoin(common.RuneAsset(), sdk.NewUint(3946*common.One)),
@@ -369,9 +369,16 @@ func newAddGasFeeTestHelper(c *C) addGasFeeTestHelper {
 	pool.Status = PoolEnabled
 	c.Assert(k.SetPool(ctx, pool), IsNil)
 
+	poolBTC := NewPool()
+	poolBTC.Asset = common.BTCAsset
+	poolBTC.BalanceAsset = sdk.NewUint(100 * common.One)
+	poolBTC.BalanceRune = sdk.NewUint(100 * common.One)
+	poolBTC.Status = PoolEnabled
+	c.Assert(k.SetPool(ctx, poolBTC), IsNil)
+
 	na := GetRandomNodeAccount(NodeActive)
 	c.Assert(k.SetNodeAccount(ctx, na), IsNil)
-	yggVault := NewVault(ctx.BlockHeight(), ActiveVault, YggdrasilVault, na.PubKeySet.Secp256k1)
+	yggVault := NewVault(ctx.BlockHeight(), ActiveVault, YggdrasilVault, na.PubKeySet.Secp256k1, common.Chains{common.BNBChain})
 	c.Assert(k.SetVault(ctx, yggVault), IsNil)
 	return addGasFeeTestHelper{
 		ctx:        ctx,
@@ -476,6 +483,42 @@ func (s *HelperSuite) TestAddGasFees(c *C) {
 				c.Assert(err, IsNil)
 				expectedBNB := sdk.NewUint(100 * common.One).Sub(BNBGasFeeSingleton[0].Amount)
 				c.Assert(bnbPool.BalanceAsset.Equal(expectedBNB), Equals, true)
+			},
+		},
+		{
+			name: "normal BTC gas",
+			txCreator: func(helper addGasFeeTestHelper) ObservedTx {
+				tx := ObservedTx{
+					Tx: common.Tx{
+						ID:          GetRandomTxHash(),
+						Chain:       common.BTCChain,
+						FromAddress: GetRandomBTCAddress(),
+						ToAddress:   GetRandomBTCAddress(),
+						Coins: common.Coins{
+							common.NewCoin(common.BTCAsset, sdk.NewUint(5*common.One)),
+						},
+						Gas: common.Gas{
+							common.NewCoin(common.BTCAsset, sdk.NewUint(2000)),
+						},
+						Memo: "",
+					},
+					Status:         types.Done,
+					OutHashes:      nil,
+					BlockHeight:    helper.ctx.BlockHeight(),
+					Signers:        []sdk.AccAddress{helper.na.NodeAddress},
+					ObservedPubKey: helper.na.PubKeySet.Secp256k1,
+				}
+				return tx
+			},
+			runner: func(helper addGasFeeTestHelper, tx ObservedTx) error {
+				return AddGasFees(helper.ctx, helper.k, tx, helper.gasManager)
+			},
+			expectError: false,
+			validator: func(helper addGasFeeTestHelper, c *C) {
+				btcPool, err := helper.k.GetPool(helper.ctx, common.BTCAsset)
+				c.Assert(err, IsNil)
+				expectedBTC := sdk.NewUint(100 * common.One).Sub(sdk.NewUint(2000))
+				c.Assert(btcPool.BalanceAsset.Equal(expectedBTC), Equals, true)
 			},
 		},
 	}

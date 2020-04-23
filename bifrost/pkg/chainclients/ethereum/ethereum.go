@@ -113,12 +113,16 @@ func NewClient(thorKeys *thorclient.Keys, cfg config.ChainConfiguration, server 
 	return c, nil
 }
 
-func (c *Client) Start(globalTxsQueue chan stypes.TxIn) {
+func (c *Client) Start(globalTxsQueue chan stypes.TxIn, globalErrataQueue chan stypes.ErrataBlock) {
 	c.blockScanner.Start(globalTxsQueue)
 }
 
 func (c *Client) Stop() {
 	c.blockScanner.Stop()
+}
+
+func (c *Client) GetConfig() config.ChainConfiguration {
+	return c.cfg
 }
 
 // IsTestNet determinate whether we are running on test net by checking the status

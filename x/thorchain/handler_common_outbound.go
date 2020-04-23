@@ -67,7 +67,6 @@ func (h CommonOutboundTxHandler) handle(ctx sdk.Context, version semver.Version,
 		if txOutItem.InHash.Equals(inTxID) &&
 			txOutItem.OutHash.IsEmpty() &&
 			tx.Tx.Coins.Equals(common.Coins{txOutItem.Coin}) &&
-			tx.Tx.Memo == txOutItem.Memo &&
 			tx.Tx.Chain.Equals(txOutItem.Chain) &&
 			tx.Tx.ToAddress.Equals(txOutItem.ToAddress) &&
 			tx.ObservedPubKey.Equals(txOutItem.VaultPubKey) {
