@@ -51,22 +51,25 @@ func (c *Client) getChainCfg() *chaincfg.Params {
 }
 
 func (c *Client) getGasCoin(tx stypes.TxOutItem, vSize int64) common.Coin {
-	if strings.HasPrefix(strings.ToLower(tx.Memo), thorchain.TxYggdrasilReturn.String()) {
-		// for yggdrasil , usually it is one input and one output, so estimate 200 sat will be ok
-		fee, vBytes, err := c.utxoAccessor.GetTransactionFee()
-		if err != nil || fee == 0.0 || vBytes == 0 {
-			c.logger.Error().Err(err).Msg("fail to get previous transaction fee from local storage")
-			return common.NewCoin(common.BTCAsset, sdk.NewUint(uint64(vSize*SatsPervBytes)))
-		}
-		amt, err := btcutil.NewAmount(fee / float64(vBytes) * float64(vSize))
-		if err != nil {
-			c.logger.Error().Err(err).Msg("fail to ")
-			return common.NewCoin(common.BTCAsset, sdk.NewUint(uint64(vSize*SatsPervBytes)))
-		}
-		return common.NewCoin(common.BTCAsset, sdk.NewUint(uint64(amt)))
-
+	if !strings.HasPrefix(strings.ToLower(tx.Memo), thorchain.TxYggdrasilReturn.String()) {
+		return tx.MaxGas.ToCoins().GetCoin(common.BTCAsset)
 	}
-	return tx.MaxGas.ToCoins().GetCoin(common.BTCAsset)
+
+	gasRate := int64(SatsPervBytes)
+	fee, vBytes, err := c.utxoAccessor.GetTransactionFee()
+	if err != nil {
+		c.logger.Error().Err(err).Msg("fail to get previous transaction fee from local storage")
+		return common.NewCoin(common.BTCAsset, sdk.NewUint(uint64(vSize*gasRate)))
+	}
+	if fee != 0.0 && vSize != 0 {
+		amt, err := btcutil.NewAmount(fee)
+		if err != nil {
+			c.logger.Err(err).Msg("fail to convert amount from float64 to int64")
+		} else {
+			gasRate = int64(amt) / int64(vBytes) * vSize // sats per vbyte
+		}
+	}
+	return common.NewCoin(common.BTCAsset, sdk.NewUint(uint64(gasRate*vSize)))
 }
 
 // SignTx is going to generate the outbound transaction, and also sign it
