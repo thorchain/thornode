@@ -28,9 +28,11 @@ func (t *DummyUTXOAccessor) RemoveUTXO(key string) error {
 	delete(t.storage, key)
 	return nil
 }
+
 func (t *DummyUTXOAccessor) UpsertTransactionFee(fee float64, vSize int32) error {
 	return nil
 }
+
 func (t *DummyUTXOAccessor) GetTransactionFee() (float64, int32, error) {
 	return 0.00018385, 166, nil
 }
