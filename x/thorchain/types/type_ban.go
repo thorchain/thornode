@@ -8,6 +8,7 @@ import (
 
 type BanVoter struct {
 	NodeAddress sdk.AccAddress   `json:"node_address"`
+	BlockHeight int64            `json:"block_height"`
 	Signers     []sdk.AccAddress `json:"signers"` // node keys of node account saw this tx
 }
 
