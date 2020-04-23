@@ -64,6 +64,7 @@ func (k *TestBanKeeper) SetVaultData(ctx sdk.Context, data VaultData) error {
 	k.vaultData = data
 	return nil
 }
+
 func (k *TestBanKeeper) GetBanVoter(_ sdk.Context, addr sdk.AccAddress) (BanVoter, error) {
 	return k.ban, k.err
 }
