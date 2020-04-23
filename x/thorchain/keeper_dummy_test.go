@@ -220,6 +220,10 @@ func (k KVStoreDummy) GetErrataTxVoterIterator(_ sdk.Context) sdk.Iterator { ret
 func (k KVStoreDummy) GetErrataTxVoter(_ sdk.Context, _ common.TxID, _ common.Chain) (ErrataTxVoter, error) {
 	return ErrataTxVoter{}, kaboom
 }
+func (k KVStoreDummy) SetBanVoter(_ sdk.Context, _ BanVoter) {}
+func (k KVStoreDummy) GetBanVoter(_ sdk.Context, _ sdk.AccAddress) (BanVoter, error) {
+	return BanVoter{}, kaboom
+}
 
 // a mock sdk.Iterator implementation for testing purposes
 type DummyIterator struct {

@@ -45,6 +45,7 @@ var (
 	NewVaultData                   = types.NewVaultData
 	NewObservedTx                  = types.NewObservedTx
 	NewTssVoter                    = types.NewTssVoter
+	NewBanVoter                    = types.NewBanVoter
 	NewErrataTxVoter               = types.NewErrataTxVoter
 	NewObservedTxVoter             = types.NewObservedTxVoter
 	NewMsgTssPool                  = types.NewMsgTssPool
@@ -154,6 +155,7 @@ type (
 	ObservedTxVoter             = types.ObservedTxVoter
 	ObservedTxVoters            = types.ObservedTxVoters
 	ObservedTxIndex             = types.ObservedTxIndex
+	BanVoter                    = types.BanVoter
 	ErrataTxVoter               = types.ErrataTxVoter
 	TssVoter                    = types.TssVoter
 	TssKeysignFailVoter         = types.TssKeysignFailVoter
