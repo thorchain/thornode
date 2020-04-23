@@ -79,4 +79,15 @@ func (s *BitcoinUTXOAccessor) TestUTXOAccessor(c *C) {
 	c.Assert(utxos[0].GetKey(), Equals, "31f8699ce9028e9cd37f8a6d58a79e614a96e3fdd0f58be5fc36d2d95484716f:0")
 	c.Assert(utxos[0].Value, Equals, float64(1))
 	c.Assert(utxos[0].BlockHeight, Equals, int64(10))
+
+	fee, vSize, err := utxoAccessor.GetTransactionFee()
+	c.Assert(err, NotNil)
+	c.Assert(fee, Equals, 0.0)
+	c.Assert(vSize, Equals, int32(0))
+	// upsert transaction fee
+	c.Assert(utxoAccessor.UpsertTransactionFee(1.0, 1), IsNil)
+	fee, vSize, err = utxoAccessor.GetTransactionFee()
+	c.Assert(err, IsNil)
+	c.Assert(fee, Equals, 1.0)
+	c.Assert(vSize, Equals, int32(1))
 }
