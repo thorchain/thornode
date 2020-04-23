@@ -94,6 +94,7 @@ var (
 	NewMsgReserveContributor       = types.NewMsgReserveContributor
 	NewMsgBond                     = types.NewMsgBond
 	NewMsgErrataTx                 = types.NewMsgErrataTx
+	NewMsgBan                      = types.NewMsgBan
 	NewMsgLeave                    = types.NewMsgLeave
 	NewMsgSetVersion               = types.NewMsgSetVersion
 	NewMsgSetIPAddress             = types.NewMsgSetIPAddress
@@ -124,6 +125,7 @@ type (
 	MsgRagnarok                 = types.MsgRagnarok
 	MsgRefundTx                 = types.MsgRefundTx
 	MsgErrataTx                 = types.MsgErrataTx
+	MsgBan                      = types.MsgBan
 	MsgSwap                     = types.MsgSwap
 	MsgSetVersion               = types.MsgSetVersion
 	MsgSetIPAddress             = types.MsgSetIPAddress
