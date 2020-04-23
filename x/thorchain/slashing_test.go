@@ -417,3 +417,50 @@ func (s *SlashingSuite) TestNewSlasher(c *C) {
 	c.Assert(err, Equals, errBadVersion)
 	c.Assert(slasher, IsNil)
 }
+
+type TestDoubleSlashKeeper struct {
+	KVStoreDummy
+	na        NodeAccount
+	vaultData VaultData
+}
+
+func (k *TestDoubleSlashKeeper) ListActiveNodeAccounts(ctx sdk.Context) (NodeAccounts, error) {
+	return NodeAccounts{k.na}, nil
+}
+
+func (k *TestDoubleSlashKeeper) SetNodeAccount(ctx sdk.Context, na NodeAccount) error {
+	k.na = na
+	return nil
+}
+
+func (k *TestDoubleSlashKeeper) GetVaultData(ctx sdk.Context) (VaultData, error) {
+	return k.vaultData, nil
+}
+
+func (k *TestDoubleSlashKeeper) SetVaultData(ctx sdk.Context, data VaultData) error {
+	k.vaultData = data
+	return nil
+}
+
+func (s *SlashingSuite) TestDoubleSign(c *C) {
+	ctx, _ := setupKeeperForTest(c)
+	constAccessor := constants.GetConstantValues(constants.SWVersion)
+
+	na := GetRandomNodeAccount(NodeActive)
+	na.Bond = sdk.NewUint(100 * common.One)
+
+	keeper := &TestDoubleSlashKeeper{
+		na:        na,
+		vaultData: NewVaultData(),
+	}
+	slasher, err := NewSlasher(keeper, constants.SWVersion)
+	c.Assert(err, IsNil)
+
+	pk, err := sdk.GetConsPubKeyBech32(na.ValidatorConsPubKey)
+	c.Assert(err, IsNil)
+	err = slasher.HandleDoubleSign(ctx, pk.Address(), 0, constAccessor)
+	c.Assert(err, IsNil)
+
+	c.Check(keeper.na.Bond.Equal(sdk.NewUint(9995000000)), Equals, true, Commentf("%d", keeper.na.Bond.Uint64()))
+	c.Check(keeper.vaultData.TotalReserve.Equal(sdk.NewUint(5000000)), Equals, true)
+}
