@@ -29,7 +29,7 @@ func (h BanHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version, cons
 		return errInvalidMessage.Result()
 	}
 	if err := h.validate(ctx, msg, version); err != nil {
-		ctx.Logger().Error("msg set version failed validation", "error", err)
+		ctx.Logger().Error("msg ban failed validation", "error", err)
 		return err.Result()
 	}
 	return h.handle(ctx, msg, version, constAccessor)
@@ -90,7 +90,7 @@ func (h BanHandler) handleV1(ctx sdk.Context, msg MsgBan, constAccessor constant
 		err = wrapError(ctx, err, "fail to get banner node account")
 		return sdk.ErrInternal(err.Error()).Result()
 	}
-	if err := toBan.IsValid(); err != nil {
+	if err := banner.IsValid(); err != nil {
 		return sdk.ErrInternal(err.Error()).Result()
 	}
 
@@ -105,7 +105,7 @@ func (h BanHandler) handleV1(ctx sdk.Context, msg MsgBan, constAccessor constant
 		return sdk.ErrInternal(err.Error()).Result()
 	}
 
-	if !voter.HasSigned(msg.Signer) {
+	if !voter.HasSigned(msg.Signer) && voter.BlockHeight == 0 {
 		// take 0.1% of the minimum bond, and put it into the reserve
 		minBond := constAccessor.GetInt64Value(constants.MinimumBondInRune)
 		slashAmount := sdk.NewUint(uint64(minBond)).QuoUint64(1000)

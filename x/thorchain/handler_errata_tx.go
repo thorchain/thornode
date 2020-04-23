@@ -30,7 +30,7 @@ func (h ErrataTxHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version,
 		return errInvalidMessage.Result()
 	}
 	if err := h.validate(ctx, msg, version); err != nil {
-		ctx.Logger().Error("msg set version failed validation", "error", err)
+		ctx.Logger().Error("msg errata tx failed validation", "error", err)
 		return err.Result()
 	}
 	return h.handle(ctx, msg, version)

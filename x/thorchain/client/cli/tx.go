@@ -41,7 +41,7 @@ func GetTxCmd(storeKey string, cdc *codec.Codec) *cobra.Command {
 func GetCmdBan(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:   "ban [node address]",
-		Short: "votes to ban a node address (caution: costs 0.1%% of minimum bond)",
+		Short: "votes to ban a node address (caution: costs 0.1% of minimum bond)",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
