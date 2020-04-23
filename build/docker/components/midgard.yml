@@ -19,6 +19,11 @@ services:
     volumes:
       - "../../scripts:/docker/scripts"
     command: "midgard -c /etc/midgard/config.json"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "128m"
+        max-file: "3"
 
   pg:
     container_name: timescale-db
@@ -30,3 +35,8 @@ services:
       - POSTGRES_USER=midgard
       - POSTGRES_PASSWORD=password
     command: postgres -c 'max_connections=250'
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "32m"
+        max-file: "3"
