@@ -97,7 +97,8 @@ func (s *BitcoinSuite) SetUpSuite(c *C) {
 
 	s.server = httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		r := struct {
-			Method string `json:"method"`
+			Method string   `json:"method"`
+			Params []string `json:"params"`
 		}{}
 		json.NewDecoder(req.Body).Decode(&r)
 		switch {
@@ -106,7 +107,11 @@ func (s *BitcoinSuite) SetUpSuite(c *C) {
 		case r.Method == "getblock":
 			httpTestHandler(c, rw, "../../../../test/fixtures/btc/block.json")
 		case r.Method == "getrawtransaction":
-			httpTestHandler(c, rw, "../../../../test/fixtures/btc/tx.json")
+			if r.Params[0] == "5b0876dcc027d2f0c671fc250460ee388df39697c3ff082007b6ddd9cb9a7513" {
+				httpTestHandler(c, rw, "../../../../test/fixtures/btc/tx-5b08.json")
+			} else {
+				httpTestHandler(c, rw, "../../../../test/fixtures/btc/tx.json")
+			}
 		case r.Method == "getblockcount":
 			httpTestHandler(c, rw, "../../../../test/fixtures/btc/blockcount.json")
 		}
@@ -460,8 +465,8 @@ func (s *BitcoinSuite) TestGetGas(c *C) {
 	tx = btcjson.TxRawResult{
 		Vin: []btcjson.Vin{
 			btcjson.Vin{
-				Txid: "24ed2d26fd5d4e0e8fa86633e40faf1bdfc8d1903b1cd02855286312d48818a2",
-				Vout: 3,
+				Txid: "5b0876dcc027d2f0c671fc250460ee388df39697c3ff082007b6ddd9cb9a7513",
+				Vout: 1,
 			},
 		},
 		Vout: []btcjson.Vout{

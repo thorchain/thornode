@@ -340,7 +340,7 @@ func (c *Client) getGas(tx *btcjson.TxRawResult) (common.Gas, error) {
 		}
 		vinTx, err := c.client.GetRawTransactionVerbose(txHash)
 		if err != nil {
-			return common.Gas{}, fmt.Errorf("fail to query raw tx from btcd")
+			return common.Gas{}, fmt.Errorf("fail to query raw tx from bitcoin node")
 		}
 		sumVin += uint64(vinTx.Vout[vin.Vout].Value * common.One)
 	}
