@@ -58,4 +58,11 @@ func (s *HandlerSwitchSuite) TestHandle(c *C) {
 	coin, err := common.NewCoin(common.RuneNative, sdk.NewUint(100*common.One)).Native()
 	c.Assert(err, IsNil)
 	c.Check(k.CoinKeeper().HasCoins(ctx, destination, sdk.NewCoins(coin)), Equals, true)
+
+	// check that we can add more an account
+	result = handler.handle(ctx, msg, constants.SWVersion)
+	c.Assert(result.IsOK(), Equals, true, Commentf("%+v", result.Log))
+	coin, err = common.NewCoin(common.RuneNative, sdk.NewUint(200*common.One)).Native()
+	c.Assert(err, IsNil)
+	c.Check(k.CoinKeeper().HasCoins(ctx, destination, sdk.NewCoins(coin)), Equals, true)
 }
