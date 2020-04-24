@@ -1,6 +1,8 @@
 package thorchain
 
 import (
+	"fmt"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	. "gopkg.in/check.v1"
 )
@@ -14,7 +16,7 @@ func (s *MemoSuite) SetUpSuite(c *C) {
 }
 
 func (s *MemoSuite) TestTxType(c *C) {
-	for _, trans := range []TxType{TxStake, TxUnstake, TxSwap, TxOutbound, TxAdd, TxBond, TxLeave} {
+	for _, trans := range []TxType{TxStake, TxUnstake, TxSwap, TxOutbound, TxAdd, TxBond, TxLeave, TxSwitch} {
 		tx, err := StringToTxType(trans.String())
 		c.Assert(err, IsNil)
 		c.Check(tx, Equals, trans)
@@ -98,6 +100,13 @@ func (s *MemoSuite) TestParseWithAbbreviated(c *C) {
 	c.Check(memo.IsType(TxRagnarok), Equals, true)
 	c.Check(memo.IsInternal(), Equals, true)
 
+	mem := fmt.Sprintf("switch:%s", GetRandomBech32Addr())
+	fmt.Println(mem)
+	memo, err = ParseMemo(mem)
+	c.Assert(err, IsNil)
+	c.Check(memo.IsType(TxSwitch), Equals, true)
+	c.Check(memo.IsInbound(), Equals, true)
+
 	// unhappy paths
 	_, err = ParseMemo("")
 	c.Assert(err, NotNil)
@@ -122,6 +131,10 @@ func (s *MemoSuite) TestParseWithAbbreviated(c *C) {
 	_, err = ParseMemo("nextpool:whatever")
 	c.Assert(err, NotNil)
 	_, err = ParseMemo("migrate")
+	c.Assert(err, NotNil)
+	_, err = ParseMemo("switch")
+	c.Assert(err, NotNil)
+	_, err = ParseMemo("switch:")
 	c.Assert(err, NotNil)
 }
 
@@ -176,7 +189,7 @@ func (s *MemoSuite) TestParse(c *C) {
 	memo, err = ParseMemo("bond:" + whiteListAddr.String())
 	c.Assert(err, IsNil)
 	c.Assert(memo.IsType(TxBond), Equals, true)
-	c.Assert(memo.GetNodeAddress().String(), Equals, whiteListAddr.String())
+	c.Assert(memo.GetAccAddress().String(), Equals, whiteListAddr.String())
 
 	memo, err = ParseMemo("leave")
 	c.Assert(err, IsNil)
