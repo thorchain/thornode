@@ -180,7 +180,7 @@ func (c *Client) OnObservedTxIn(txIn types.TxIn) {
 			c.logger.Error().Err(err).Str("txID", tx.Tx).Msg("fail to add spendable utxo to storage")
 			continue
 		}
-		utxo := NewUnspentTransactionOutput(*hash, 0, value, blockHeight, tx.ObservedPoolPubKey)
+		utxo := NewUnspentTransactionOutput(*hash, 0, value, blockHeight, tx.ObservedVaultPubKey)
 		err = c.utxoAccessor.AddUTXO(utxo)
 		if err != nil {
 			c.logger.Error().Err(err).Str("txID", tx.Tx).Msg("fail to add spendable utxo to storage")
