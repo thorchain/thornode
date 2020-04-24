@@ -66,17 +66,29 @@ func (h SwitchHandler) handle(ctx sdk.Context, msg MsgSwitch, version semver.Ver
 func (h SwitchHandler) handleV1(ctx sdk.Context, msg MsgSwitch) sdk.Result {
 	bank := h.keeper.CoinKeeper()
 
-	coin, err := common.NewCoin(common.RuneNative, msg.Tx.Coins[0].Amount).Native()
-	if err != nil {
-		ctx.Logger().Error("fail to get native coin", "error", err)
-		return sdk.ErrInternal("fail to get native coin").Result()
-	}
+	if msg.Tx.Coins[0].IsNative() {
+		coin, err := common.NewCoin(common.RuneNative, msg.Tx.Coins[0].Amount).Native()
+		if err != nil {
+			ctx.Logger().Error("fail to get native coin", "error", err)
+			return sdk.ErrInternal("fail to get native coin").Result()
+		}
 
-	if _, err := bank.AddCoins(ctx, msg.Destination, sdk.NewCoins(coin)); err != nil {
-		ctx.Logger().Error("fail to mint native rune coins", "error", err)
-		return sdk.ErrInternal("fail to mint native rune coins").Result()
-	}
+		if _, err := bank.SubtractCoins(ctx, msg.Destination, sdk.NewCoins(coin)); err != nil {
+			ctx.Logger().Error("fail to burn native rune coins", "error", err)
+			return sdk.ErrInternal("fail to burn native rune coins").Result()
+		}
+	} else {
+		coin, err := common.NewCoin(common.RuneNative, msg.Tx.Coins[0].Amount).Native()
+		if err != nil {
+			ctx.Logger().Error("fail to get native coin", "error", err)
+			return sdk.ErrInternal("fail to get native coin").Result()
+		}
 
+		if _, err := bank.AddCoins(ctx, msg.Destination, sdk.NewCoins(coin)); err != nil {
+			ctx.Logger().Error("fail to mint native rune coins", "error", err)
+			return sdk.ErrInternal("fail to mint native rune coins").Result()
+		}
+	}
 	return sdk.Result{
 		Code:      sdk.CodeOK,
 		Codespace: DefaultCodespace,

@@ -45,9 +45,6 @@ func (msg MsgSwitch) ValidateBasic() sdk.Error {
 	if !msg.Tx.Coins[0].Asset.IsRune() {
 		return sdk.ErrInvalidCoins("must be rune")
 	}
-	if msg.Tx.Coins[0].IsNative() {
-		return sdk.ErrInvalidCoins("must be not be a native coin")
-	}
 	return nil
 }
 

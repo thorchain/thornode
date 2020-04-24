@@ -237,13 +237,13 @@ type RagnarokMemo struct {
 
 type SwitchMemo struct {
 	MemoBase
-	Address sdk.AccAddress
+	Destination common.Address
 }
 
-func NewSwitchMemo(addr sdk.AccAddress) SwitchMemo {
+func NewSwitchMemo(addr common.Address) SwitchMemo {
 	return SwitchMemo{
-		MemoBase: MemoBase{TxType: TxSwitch},
-		Address:  addr,
+		MemoBase:    MemoBase{TxType: TxSwitch},
+		Destination: addr,
 	}
 }
 
@@ -499,16 +499,14 @@ func ParseMemo(memo string) (Memo, error) {
 		if len(parts) < 2 {
 			return noMemo, errors.New("not enough parameters")
 		}
-		destination, err := sdk.AccAddressFromBech32(parts[1])
+		destination, err := common.NewAddress(parts[1])
 		if err != nil {
 			return noMemo, err
 		}
-		if destination.Empty() {
+		if destination.IsEmpty() {
 			return noMemo, errors.New("address cannot be empty")
 		}
-		// TODO: enable switching
-		return noMemo, errors.New("switch is not yet supported")
-		// return NewSwitchMemo(destination), nil
+		return NewSwitchMemo(destination), nil
 	default:
 		return noMemo, fmt.Errorf("TxType not supported: %s", tx.String())
 	}
@@ -585,6 +583,6 @@ func (m RagnarokMemo) GetBlockHeight() int64 {
 	return m.BlockHeight
 }
 
-func (m SwitchMemo) GetAccAddress() sdk.AccAddress {
-	return m.Address
+func (m SwitchMemo) GetDestination() common.Address {
+	return m.Destination
 }

@@ -43,13 +43,6 @@ func (MsgSwitchSuite) TestMsgSwitchSuite(c *C) {
 	msg = NewMsgSwitch(tx, acc1, acc2)
 	c.Assert(msg.ValidateBasic(), NotNil)
 
-	// test native token
-	tx.Coins = common.Coins{
-		common.NewCoin(common.RuneNative, sdk.NewUint(100*common.One)),
-	}
-	msg = NewMsgSwitch(tx, acc1, acc2)
-	c.Assert(msg.ValidateBasic(), NotNil)
-
 	// test non rune token
 	tx.Coins = common.Coins{
 		common.NewCoin(common.BNBAsset, sdk.NewUint(100*common.One)),
