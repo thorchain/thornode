@@ -103,12 +103,12 @@ func (o *Observer) filterObservations(chain common.Chain, items []types.TxInItem
 
 		// check if the from address is a valid pool
 		if ok, cpi := o.pubkeyMgr.IsValidPoolAddress(txInItem.Sender, chain); ok {
-			txInItem.ObservedPoolPubKey = cpi.PubKey
+			txInItem.ObservedVaultPubKey = cpi.PubKey
 			txs = append(txs, txInItem)
 		}
 		// check if the to address is a valid pool address
 		if ok, cpi := o.pubkeyMgr.IsValidPoolAddress(txInItem.To, chain); ok {
-			txInItem.ObservedPoolPubKey = cpi.PubKey
+			txInItem.ObservedVaultPubKey = cpi.PubKey
 			txs = append(txs, txInItem)
 		} else {
 			// Apparently we don't recognize where we are sending funds to.
@@ -119,7 +119,7 @@ func (o *Observer) filterObservations(chain common.Chain, items []types.TxInItem
 			case "migrate", "yggdrasil-", "yggdrasil+":
 				o.pubkeyMgr.FetchPubKeys()
 				if ok, cpi := o.pubkeyMgr.IsValidPoolAddress(txInItem.To, chain); ok {
-					txInItem.ObservedPoolPubKey = cpi.PubKey
+					txInItem.ObservedVaultPubKey = cpi.PubKey
 					txs = append(txs, txInItem)
 				}
 			}
@@ -291,17 +291,17 @@ func (o *Observer) getThorchainTxIns(txIn types.TxIn) (stypes.ObservedTxs, error
 			o.errCounter.WithLabelValues("fail to parse block height", txIn.BlockHeight).Inc()
 			return nil, fmt.Errorf("fail to parse block height: %w", err)
 		}
-		o.logger.Debug().Msgf("pool pubkey %s", item.ObservedPoolPubKey)
-		chainAddr, _ := item.ObservedPoolPubKey.GetAddress(txIn.Chain)
+		o.logger.Debug().Msgf("pool pubkey %s", item.ObservedVaultPubKey)
+		chainAddr, _ := item.ObservedVaultPubKey.GetAddress(txIn.Chain)
 		o.logger.Debug().Msgf("%s address %s", txIn.Chain.String(), chainAddr)
 		if err != nil {
-			o.errCounter.WithLabelValues("fail to parse observed pool address", item.ObservedPoolPubKey.String()).Inc()
-			return nil, fmt.Errorf("fail to parse observed pool address: %s: %w", item.ObservedPoolPubKey.String(), err)
+			o.errCounter.WithLabelValues("fail to parse observed pool address", item.ObservedVaultPubKey.String()).Inc()
+			return nil, fmt.Errorf("fail to parse observed pool address: %s: %w", item.ObservedVaultPubKey.String(), err)
 		}
 		txs[i] = stypes.NewObservedTx(
 			common.NewTx(txID, sender, to, item.Coins, item.Gas, item.Memo),
 			h,
-			item.ObservedPoolPubKey,
+			item.ObservedVaultPubKey,
 		)
 	}
 	return txs, nil

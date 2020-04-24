@@ -143,9 +143,9 @@ func (c *Client) GetAddress(poolPubKey common.PubKey) string {
 }
 
 // GetAccount returns account with balance for an address
-func (c *Client) GetAccount(addr string) (common.Account, error) {
+func (c *Client) GetAccount(pkey common.PubKey) (common.Account, error) {
 	acct := common.Account{}
-	utxoes, err := c.utxoAccessor.GetUTXOs()
+	utxoes, err := c.utxoAccessor.GetUTXOs(pkey)
 	if err != nil {
 		return acct, fmt.Errorf("fail to get UTXO: %w", err)
 	}
@@ -180,7 +180,7 @@ func (c *Client) OnObservedTxIn(txIn types.TxIn) {
 			c.logger.Error().Err(err).Str("txID", tx.Tx).Msg("fail to add spendable utxo to storage")
 			continue
 		}
-		utxo := NewUnspentTransactionOutput(*hash, 0, value, blockHeight)
+		utxo := NewUnspentTransactionOutput(*hash, 0, value, blockHeight, tx.ObservedVaultPubKey)
 		err = c.utxoAccessor.AddUTXO(utxo)
 		if err != nil {
 			c.logger.Error().Err(err).Str("txID", tx.Tx).Msg("fail to add spendable utxo to storage")
@@ -239,6 +239,10 @@ func (c *Client) extractTxs(block *btcjson.GetBlockVerboseTxResult) (types.TxIn,
 		if err != nil {
 			return types.TxIn{}, fmt.Errorf("fail to get gas from tx: %w", err)
 		}
+		fee := btcutil.Amount(int64(gas[0].Amount.Uint64()))
+		if err := c.utxoAccessor.UpsertTransactionFee(fee.ToBTC(), tx.Vsize); err != nil {
+			return types.TxIn{}, fmt.Errorf("fail to save transactional fee to local storage: %w", err)
+		}
 		amount := uint64(tx.Vout[0].Value * common.One)
 		txItems = append(txItems, types.TxInItem{
 			Tx:     tx.Txid,
@@ -250,6 +254,7 @@ func (c *Client) extractTxs(block *btcjson.GetBlockVerboseTxResult) (types.TxIn,
 			Memo: memo,
 			Gas:  gas,
 		})
+
 	}
 	txIn.TxArray = txItems
 	txIn.Count = strconv.Itoa(len(txItems))

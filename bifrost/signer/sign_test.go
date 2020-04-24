@@ -219,7 +219,7 @@ func (b *MockChainClient) GetAddress(poolPubKey common.PubKey) string {
 	return "0dd3d0a4a6eacc98cc4894791702e46c270bde76"
 }
 
-func (b *MockChainClient) GetAccount(addr string) (common.Account, error) {
+func (b *MockChainClient) GetAccount(poolPubKey common.PubKey) (common.Account, error) {
 	return b.account, nil
 }
 

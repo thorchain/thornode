@@ -539,6 +539,7 @@ func (s *BitcoinSuite) TestGetAccount(c *C) {
 
 func (s *BitcoinSuite) TestOnObservedTxIn(c *C) {
 	utxoAccessor := s.client.utxoAccessor
+	pkey := ttypes.GetRandomPubKey()
 	txIn := types.TxIn{
 		BlockHeight: "1",
 		Count:       "1",
@@ -551,13 +552,14 @@ func (s *BitcoinSuite) TestOnObservedTxIn(c *C) {
 				Coins: common.Coins{
 					common.NewCoin(common.BTCAsset, sdk.NewUint(123456789)),
 				},
-				Memo: "MEMO",
+				Memo:                "MEMO",
+				ObservedVaultPubKey: pkey,
 			},
 		},
 	}
 	txID, _ := chainhash.NewHashFromStr("31f8699ce9028e9cd37f8a6d58a79e614a96e3fdd0f58be5fc36d2d95484716f")
 	s.client.OnObservedTxIn(txIn)
-	utxos, err := utxoAccessor.GetUTXOs()
+	utxos, err := utxoAccessor.GetUTXOs(pkey)
 	c.Assert(err, IsNil)
 	c.Assert(len(utxos), Equals, 1)
 	c.Assert(utxos[0].TxID, Equals, *txID)
@@ -576,13 +578,14 @@ func (s *BitcoinSuite) TestOnObservedTxIn(c *C) {
 				Coins: common.Coins{
 					common.NewCoin(common.BTCAsset, sdk.NewUint(123456)),
 				},
-				Memo: "MEMO",
+				Memo:                "MEMO",
+				ObservedVaultPubKey: pkey,
 			},
 		},
 	}
 	txID, _ = chainhash.NewHashFromStr("24ed2d26fd5d4e0e8fa86633e40faf1bdfc8d1903b1cd02855286312d48818a2")
 	s.client.OnObservedTxIn(txIn)
-	utxos, err = utxoAccessor.GetUTXOs()
+	utxos, err = utxoAccessor.GetUTXOs(pkey)
 	c.Assert(err, IsNil)
 	c.Assert(len(utxos), Equals, 2)
 	c.Assert(utxos[0].TxID, Equals, *txID)
@@ -605,7 +608,8 @@ func (s *BitcoinSuite) TestOnObservedTxIn(c *C) {
 				Coins: common.Coins{
 					common.NewCoin(common.BTCAsset, sdk.NewUint(12345678)),
 				},
-				Memo: "MEMO",
+				Memo:                "MEMO",
+				ObservedVaultPubKey: pkey,
 			},
 			types.TxInItem{
 				Tx:     "54ed2d26fd5d4e0e8fa86633e40faf1bdfc8d1903b1cd02855286312d48818a2",
@@ -614,12 +618,13 @@ func (s *BitcoinSuite) TestOnObservedTxIn(c *C) {
 				Coins: common.Coins{
 					common.NewCoin(common.BTCAsset, sdk.NewUint(123456)),
 				},
-				Memo: "MEMO",
+				Memo:                "MEMO",
+				ObservedVaultPubKey: pkey,
 			},
 		},
 	}
 	s.client.OnObservedTxIn(txIn)
-	utxos, err = utxoAccessor.GetUTXOs()
+	utxos, err = utxoAccessor.GetUTXOs(pkey)
 	c.Assert(err, IsNil)
 	c.Assert(len(utxos), Equals, 4)
 }

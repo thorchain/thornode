@@ -10,13 +10,13 @@ type TxIn struct {
 }
 
 type TxInItem struct {
-	Tx                 string        `json:"tx"`
-	Memo               string        `json:"memo"`
-	Sender             string        `json:"sender"`
-	To                 string        `json:"to"` // to adddress
-	Coins              common.Coins  `json:"coins"`
-	Gas                common.Gas    `json:"gas"`
-	ObservedPoolPubKey common.PubKey `json:"observed_pool_pubkey"`
+	Tx                  string        `json:"tx"`
+	Memo                string        `json:"memo"`
+	Sender              string        `json:"sender"`
+	To                  string        `json:"to"` // to adddress
+	Coins               common.Coins  `json:"coins"`
+	Gas                 common.Gas    `json:"gas"`
+	ObservedVaultPubKey common.PubKey `json:"observed_vault_pub_key"`
 }
 type TxInStatus byte
 
