@@ -90,7 +90,7 @@ func (c *Client) SignTx(tx stypes.TxOutItem, height int64) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("fail to get source pay to address script: %w", err)
 	}
-	txes, err := c.utxoAccessor.GetUTXOs()
+	txes, err := c.utxoAccessor.GetUTXOs(tx.VaultPubKey)
 	if err != nil {
 		return nil, fmt.Errorf("fail to get unspent UTXO")
 	}
@@ -190,7 +190,7 @@ func (c *Client) SignTx(tx stypes.TxOutItem, height int64) ([]byte, error) {
 	if err := redeemTx.Serialize(&signedTx); err != nil {
 		return nil, fmt.Errorf("fail to serialize tx to bytes: %w", err)
 	}
-	if err := c.saveNewUTXO(redeemTx, balance, sourceScript, height); nil != err {
+	if err := c.saveNewUTXO(redeemTx, balance, sourceScript, height, tx.VaultPubKey); nil != err {
 		return nil, fmt.Errorf("fail to save the new UTXO to storage: %w", err)
 	}
 	if err := c.removeSpentUTXO(txes); err != nil {
@@ -210,7 +210,7 @@ func (c *Client) removeSpentUTXO(txs []UnspentTransactionOutput) error {
 }
 
 // saveUTXO save the newly created UTXO which transfer balance back our own address to storage
-func (c *Client) saveNewUTXO(tx *wire.MsgTx, balance int64, script []byte, blockHeight int64) error {
+func (c *Client) saveNewUTXO(tx *wire.MsgTx, balance int64, script []byte, blockHeight int64, pubKey common.PubKey) error {
 	txID := tx.TxHash()
 	n := 0
 	// find the position of output that we send balance back to ourselves
@@ -221,7 +221,7 @@ func (c *Client) saveNewUTXO(tx *wire.MsgTx, balance int64, script []byte, block
 		}
 	}
 	amt := btcutil.Amount(balance)
-	return c.utxoAccessor.AddUTXO(NewUnspentTransactionOutput(txID, uint32(n), amt.ToBTC(), blockHeight))
+	return c.utxoAccessor.AddUTXO(NewUnspentTransactionOutput(txID, uint32(n), amt.ToBTC(), blockHeight, pubKey))
 }
 
 // BroadcastTx will broadcast the given payload to BTC chain

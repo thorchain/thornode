@@ -1,5 +1,7 @@
 package bitcoin
 
+import "gitlab.com/thorchain/thornode/common"
+
 // DummyUTXOAccessor
 type DummyUTXOAccessor struct {
 	storage map[string]UnspentTransactionOutput
@@ -11,7 +13,7 @@ func NewDummyUTXOAccessor() *DummyUTXOAccessor {
 	}
 }
 
-func (t *DummyUTXOAccessor) GetUTXOs() ([]UnspentTransactionOutput, error) {
+func (t *DummyUTXOAccessor) GetUTXOs(pKey common.PubKey) ([]UnspentTransactionOutput, error) {
 	result := make([]UnspentTransactionOutput, 0, len(t.storage))
 	for _, item := range t.storage {
 		result = append(result, item)

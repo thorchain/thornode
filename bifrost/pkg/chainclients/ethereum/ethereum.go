@@ -269,7 +269,8 @@ func (c *Client) sign(tx *etypes.Transaction, from string, poolPubKey common.Pub
 }
 
 // GetAccount gets account by address in eth client
-func (c *Client) GetAccount(addr string) (common.Account, error) {
+func (c *Client) GetAccount(pkey common.PubKey) (common.Account, error) {
+	addr := c.GetAddress(pkey)
 	ctx := context.Background()
 	nonce, err := c.GetNonce(addr)
 	if err != nil {

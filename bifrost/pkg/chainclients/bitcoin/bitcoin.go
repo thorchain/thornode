@@ -143,9 +143,9 @@ func (c *Client) GetAddress(poolPubKey common.PubKey) string {
 }
 
 // GetAccount returns account with balance for an address
-func (c *Client) GetAccount(addr string) (common.Account, error) {
+func (c *Client) GetAccount(pkey common.PubKey) (common.Account, error) {
 	acct := common.Account{}
-	utxoes, err := c.utxoAccessor.GetUTXOs()
+	utxoes, err := c.utxoAccessor.GetUTXOs(pkey)
 	if err != nil {
 		return acct, fmt.Errorf("fail to get UTXO: %w", err)
 	}
@@ -180,7 +180,7 @@ func (c *Client) OnObservedTxIn(txIn types.TxIn) {
 			c.logger.Error().Err(err).Str("txID", tx.Tx).Msg("fail to add spendable utxo to storage")
 			continue
 		}
-		utxo := NewUnspentTransactionOutput(*hash, 0, value, blockHeight)
+		utxo := NewUnspentTransactionOutput(*hash, 0, value, blockHeight, tx.ObservedPoolPubKey)
 		err = c.utxoAccessor.AddUTXO(utxo)
 		if err != nil {
 			c.logger.Error().Err(err).Str("txID", tx.Tx).Msg("fail to add spendable utxo to storage")
