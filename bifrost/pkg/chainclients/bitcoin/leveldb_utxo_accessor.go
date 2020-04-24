@@ -40,7 +40,7 @@ func (t *LevelDBUTXOAccessor) GetUTXOs(pubKey common.PubKey) ([]UnspentTransacti
 		if err := json.Unmarshal(buf, &utxo); err != nil {
 			return nil, fmt.Errorf("fail to unmarshal to utxo: %w", err)
 		}
-		if !pubKey.Equals(utxo.ObservedPoolPubKey) {
+		if !pubKey.Equals(utxo.VaultPubKey) {
 			continue
 		}
 		results = append(results, utxo)

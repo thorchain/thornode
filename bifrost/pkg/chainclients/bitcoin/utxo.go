@@ -10,21 +10,21 @@ import (
 
 // UnspentTransactionOutput struct
 type UnspentTransactionOutput struct {
-	TxID               chainhash.Hash `json:"tx_id"`
-	N                  uint32         `json:"n"`
-	Value              float64        `json:"value"`
-	BlockHeight        int64          `json:"block_height"`
-	ObservedPoolPubKey common.PubKey  `json:"observed_pool_pub_key"`
+	TxID        chainhash.Hash `json:"tx_id"`
+	N           uint32         `json:"n"`
+	Value       float64        `json:"value"`
+	BlockHeight int64          `json:"block_height"`
+	VaultPubKey common.PubKey  `json:"vault_pub_key"`
 }
 
 // NewUnspentTransactionOutput create a new instance of UnspentTransactionOutput
-func NewUnspentTransactionOutput(txID chainhash.Hash, n uint32, value float64, blockHeight int64, observedPoolPubKey common.PubKey) UnspentTransactionOutput {
+func NewUnspentTransactionOutput(txID chainhash.Hash, n uint32, value float64, blockHeight int64, vaultPubKey common.PubKey) UnspentTransactionOutput {
 	return UnspentTransactionOutput{
-		TxID:               txID,
-		N:                  n,
-		Value:              value,
-		BlockHeight:        blockHeight,
-		ObservedPoolPubKey: observedPoolPubKey,
+		TxID:        txID,
+		N:           n,
+		Value:       value,
+		BlockHeight: blockHeight,
+		VaultPubKey: vaultPubKey,
 	}
 }
 
