@@ -383,7 +383,7 @@ func (s *Signer) handleYggReturn(tx types.TxOutItem) (types.TxOutItem, error) {
 		return tx, err
 	}
 
-	acct, err := chain.GetAccount(chain.GetAddress(tx.VaultPubKey))
+	acct, err := chain.GetAccount(tx.VaultPubKey)
 	if err != nil {
 		s.logger.Error().Err(err).Msg("failed to get chain account info")
 		return tx, err

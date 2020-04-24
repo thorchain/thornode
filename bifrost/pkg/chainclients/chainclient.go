@@ -25,7 +25,7 @@ type ChainClient interface {
 	BroadcastTx(_ stypes.TxOutItem, _ []byte) error
 	GetHeight() (int64, error)
 	GetAddress(poolPubKey common.PubKey) string
-	GetAccount(addr string) (common.Account, error)
+	GetAccount(poolPubKey common.PubKey) (common.Account, error)
 	GetChain() common.Chain
 	ValidateMetadata(_ interface{}) bool
 	Start(globalTxsQueue chan stypes.TxIn, globalErrataQueue chan stypes.ErrataBlock)

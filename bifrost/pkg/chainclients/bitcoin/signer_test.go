@@ -205,7 +205,7 @@ func (s *BitcoinSignerSuite) TestSignTxHappyPathWithPrivateKey(c *C) {
 	}
 	txHash, err := chainhash.NewHashFromStr("256222fb25a9950479bb26049a2c00e75b89abbb7f0cf646c623b93e942c4c34")
 	c.Assert(err, IsNil)
-	utxo := NewUnspentTransactionOutput(*txHash, 0, 0.01049996, 10)
+	utxo := NewUnspentTransactionOutput(*txHash, 0, 0.01049996, 10, txOutItem.VaultPubKey)
 	c.Assert(s.client.utxoAccessor.AddUTXO(utxo), IsNil)
 	priKeyBuf, err := hex.DecodeString("b404c5ec58116b5f0fe13464a92e46626fc5db130e418cbce98df86ffe9317c5")
 	c.Assert(err, IsNil)
@@ -247,7 +247,7 @@ func (s *BitcoinSignerSuite) TestSignTxWithTSS(c *C) {
 	s.client.ksWrapper, err = NewKeySignWrapper(s.client.privateKey, s.client.bridge, thorKeyManager)
 	txHash, err := chainhash.NewHashFromStr("66d2d6b5eb564972c59e4797683a1225a02515a41119f0a8919381236b63e948")
 	c.Assert(err, IsNil)
-	utxo := NewUnspentTransactionOutput(*txHash, 0, 0.00018, 1)
+	utxo := NewUnspentTransactionOutput(*txHash, 0, 0.00018, 1, txOutItem.VaultPubKey)
 	c.Assert(s.client.utxoAccessor.AddUTXO(utxo), IsNil)
 	buf, err := s.client.SignTx(txOutItem, 1)
 	c.Assert(err, IsNil)
@@ -262,7 +262,7 @@ func GetRandomUTXO(amount float64) UnspentTransactionOutput {
 	script, _ := txscript.PayToAddrScript(btcAddr)
 	btcAmt, _ := btcutil.NewAmount(amount)
 	tx.AddTxOut(wire.NewTxOut(int64(btcAmt), script))
-	return NewUnspentTransactionOutput(tx.TxHash(), 0, amount, 10)
+	return NewUnspentTransactionOutput(tx.TxHash(), 0, amount, 10, pk)
 }
 
 func (s *BitcoinSignerSuite) TestBroadcastTx(c *C) {
