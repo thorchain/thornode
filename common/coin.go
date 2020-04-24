@@ -59,6 +59,20 @@ func (c Coin) IsValid() error {
 	return nil
 }
 
+func (c Coin) IsNative() bool {
+	return c.Asset.Chain.Equals(THORChain)
+}
+
+func (c Coin) Native() (sdk.Coin, error) {
+	if !c.IsNative() {
+		return sdk.Coin{}, errors.New("coin is not on thorchain")
+	}
+	return sdk.NewCoin(
+		strings.ToLower(c.Asset.Symbol.String()),
+		sdk.NewIntFromBigInt(c.Amount.BigInt()),
+	), nil
+}
+
 func (c Coin) String() string {
 	return fmt.Sprintf("%d%s", c.Amount.Uint64(), c.Asset.String())
 }
