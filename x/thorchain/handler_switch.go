@@ -72,7 +72,11 @@ func (h SwitchHandler) handleV1(ctx sdk.Context, msg MsgSwitch) sdk.Result {
 		return sdk.ErrInternal("fail to get native coin").Result()
 	}
 
-	bank.AddCoins(ctx, msg.Destination, sdk.NewCoins(coin))
+	if _, err := bank.AddCoins(ctx, msg.Destination, sdk.NewCoins(coin)); err != nil {
+		ctx.Logger().Error("fail to mint native rune coins", "error", err)
+		return sdk.ErrInternal("fail to mint native rune coins").Result()
+	}
+
 	return sdk.Result{
 		Code:      sdk.CodeOK,
 		Codespace: DefaultCodespace,
