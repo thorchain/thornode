@@ -133,6 +133,14 @@ func (vtx *ValidatorMgrV1TestSuite) TestFindCounToRemove(c *C) {
 		NodeAccount{},
 	}), Equals, 1)
 
+	// remove one because of banned
+	c.Check(findCountToRemove(0, 0, NodeAccounts{
+		NodeAccount{LeaveHeight: 12, ForcedToLeave: true},
+		NodeAccount{},
+		NodeAccount{},
+		NodeAccount{},
+	}), Equals, 1)
+
 	// don't remove more than 1/3rd of node accounts
 	c.Check(findCountToRemove(0, 0, NodeAccounts{
 		NodeAccount{LeaveHeight: 12},
