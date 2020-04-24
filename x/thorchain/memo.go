@@ -506,7 +506,9 @@ func ParseMemo(memo string) (Memo, error) {
 		if destination.Empty() {
 			return noMemo, errors.New("address cannot be empty")
 		}
-		return NewSwitchMemo(destination), nil
+		// TODO: enable switching
+		return noMemo, errors.New("switch is not yet supported")
+		// return NewSwitchMemo(destination), nil
 	default:
 		return noMemo, fmt.Errorf("TxType not supported: %s", tx.String())
 	}
