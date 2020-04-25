@@ -94,7 +94,6 @@ func (c *Client) SignTx(tx stypes.TxOutItem, height int64) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("fail to get unspent UTXO")
 	}
-	fmt.Println(txes)
 	redeemTx := wire.NewMsgTx(wire.TxVersion)
 	totalAmt := float64(0)
 	individualAmounts := make(map[chainhash.Hash]btcutil.Amount, len(txes))
@@ -205,7 +204,6 @@ func (c *Client) removeSpentUTXO(txs []UnspentTransactionOutput) error {
 		if err := c.utxoAccessor.RemoveUTXO(key); err != nil {
 			return fmt.Errorf("fail to remove unspent transaction output(%s): %w", key, err)
 		}
-		fmt.Println("remove utxo:", key)
 	}
 	return nil
 }
