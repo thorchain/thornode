@@ -58,13 +58,20 @@ init_chain () {
     thorcli keys list
 
     for user in $@; do # iterate over our list of comma separated users "alice,jack"
-        thord add-genesis-account $user 1000thor
+        thord add-genesis-account $user 10000000000000thor
     done
 
     thorcli config chain-id thorchain
     thorcli config output json
     thorcli config indent true
     thorcli config trust-node true
+
+    # TXBYTES_FROM="max_tx_bytes = 1048576"
+    # TXBYTES_TO="max_tx_bytes = 5048576"
+    # sed -i -e "s/$TXBYTES_FROM/$TXBYTES_TO/g" ~/.thord/config/config.toml
+
+    # jq '.consensus_params.block.max_gas = "200000000"' ~/.thord/config/genesis.json > /tmp/genesis.json
+    # mv /tmp/genesis.json ~/.thord/config/genesis.json
 }
 
 peer_list () {

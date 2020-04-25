@@ -196,7 +196,7 @@ func swapOne(ctx sdk.Context,
 		return sdk.ZeroUint(), pool, evt, sdk.NewError(DefaultCodespace, CodeSwapFailNotEnoughBalance, "asset(%s) balance is %d, can't do swap", asset, Y)
 	}
 
-	ctx.Logger().Info(fmt.Sprintf("Pre-Pool: %sRune %sAsset", pool.BalanceRune, pool.BalanceAsset))
+	ctx.Logger().Debug(fmt.Sprintf("Pre-Pool: %sRune %sAsset", pool.BalanceRune, pool.BalanceAsset))
 
 	if source.IsRune() {
 		pool.BalanceRune = X.Add(x)
@@ -205,7 +205,7 @@ func swapOne(ctx sdk.Context,
 		pool.BalanceAsset = X.Add(x)
 		pool.BalanceRune = common.SafeSub(Y, emitAssets)
 	}
-	ctx.Logger().Info(fmt.Sprintf("Post-swap: %sRune %sAsset , user get:%s ", pool.BalanceRune, pool.BalanceAsset, emitAssets))
+	ctx.Logger().Debug(fmt.Sprintf("Post-swap: %sRune %sAsset , user get:%s ", pool.BalanceRune, pool.BalanceAsset, emitAssets))
 
 	swapBytes, err := json.Marshal(swapEvt)
 	if err != nil {
