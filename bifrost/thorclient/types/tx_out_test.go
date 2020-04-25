@@ -25,5 +25,5 @@ func (TxOutTestSuite) TestTxOut(c *C) {
 	err = json.Unmarshal([]byte(input), &item2)
 	c.Check(err, IsNil)
 	c.Check(len(item2.TxArray), Equals, 1)
-	c.Check(item2.TxArray[0].TxOutItem().Hash(), Equals, "6BCA5232893B143D50E1F108BED799789F8D09C853D4FA0DF8D54AE5F573DCC1")
+	c.Check(item2.TxArray[0].TxOutItem().Hash(), Equals, "680F2FA2EEB80C730C5723799E8F82F316E9C6315FFC22C32212A2B18B22B6A9")
 }

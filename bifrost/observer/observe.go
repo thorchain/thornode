@@ -19,6 +19,8 @@ import (
 	stypes "gitlab.com/thorchain/thornode/x/thorchain/types"
 )
 
+const maxTxArrayLen = 100
+
 // Observer observer service
 type Observer struct {
 	logger            zerolog.Logger
@@ -73,35 +75,58 @@ func (o *Observer) processTxIns() {
 			return
 		case txIn := <-o.globalTxsQueue:
 			txIn.TxArray = o.filterObservations(txIn.Chain, txIn.TxArray)
-			if err := o.signAndSendToThorchain(txIn); err != nil {
-				o.logger.Error().Err(err).Msg("fail to send to thorchain")
-				o.errCounter.WithLabelValues("fail_send_to_thorchain", txIn.BlockHeight).Inc()
-			}
-			// check if chain client has OnObservedTxIn method then call it
-			chainClient, err := o.getChain(txIn.Chain)
-			if err != nil {
-				o.logger.Error().Err(err).Msg("fail to retrieve chain client")
-				continue
-			}
-
-			i, ok := chainClient.(interface {
-				OnObservedTxIn(txIn types.TxInItem, blockHeight int64)
-			})
-			if ok {
-				height, err := strconv.ParseInt(txIn.BlockHeight, 10, 64)
+			for _, txIn := range o.chunkify(txIn) {
+				if err := o.signAndSendToThorchain(txIn); err != nil {
+					o.logger.Error().Err(err).Msg("fail to send to thorchain")
+					o.errCounter.WithLabelValues("fail_send_to_thorchain", txIn.BlockHeight).Inc()
+				}
+				// check if chain client has OnObservedTxIn method then call it
+				chainClient, err := o.getChain(txIn.Chain)
 				if err != nil {
-					o.logger.Error().Err(err).Msg("fail to parse block height")
+					o.logger.Error().Err(err).Msg("fail to retrieve chain client")
 					continue
 				}
-				for _, item := range txIn.TxArray {
-					if o.isOutboundMsg(txIn.Chain, item.Sender, item.Memo) {
+
+				i, ok := chainClient.(interface {
+					OnObservedTxIn(txIn types.TxInItem, blockHeight int64)
+				})
+				if ok {
+					height, err := strconv.ParseInt(txIn.BlockHeight, 10, 64)
+					if err != nil {
+						o.logger.Error().Err(err).Msg("fail to parse block height")
 						continue
 					}
-					i.OnObservedTxIn(item, height)
+					for _, item := range txIn.TxArray {
+						if o.isOutboundMsg(txIn.Chain, item.Sender, item.Memo) {
+							continue
+						}
+						i.OnObservedTxIn(item, height)
+					}
 				}
 			}
 		}
 	}
+}
+
+// chunkify - breaks the observations into 100 transactions per observation
+func (o *Observer) chunkify(txIn types.TxIn) (result []types.TxIn) {
+	for len(txIn.TxArray) > 0 {
+		newTx := types.TxIn{
+			BlockHeight: txIn.BlockHeight,
+			Chain:       txIn.Chain,
+		}
+		if len(txIn.TxArray) > maxTxArrayLen {
+			newTx.Count = fmt.Sprintf("%d", maxTxArrayLen)
+			newTx.TxArray = txIn.TxArray[:maxTxArrayLen]
+			txIn.TxArray = txIn.TxArray[maxTxArrayLen:]
+		} else {
+			newTx.Count = fmt.Sprintf("%d", len(txIn.TxArray))
+			newTx.TxArray = txIn.TxArray
+			txIn.TxArray = nil
+		}
+		result = append(result, newTx)
+	}
+	return result
 }
 
 func (o *Observer) filterObservations(chain common.Chain, items []types.TxInItem) (txs []types.TxInItem) {

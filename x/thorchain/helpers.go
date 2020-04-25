@@ -341,7 +341,7 @@ func updateEventStatus(ctx sdk.Context, keeper Keeper, eventID int64, txs common
 }
 
 func updateEventFee(ctx sdk.Context, keeper Keeper, txID common.TxID, fee common.Fee) error {
-	ctx.Logger().Info("update event fee txid(%s)", txID.String())
+	ctx.Logger().Info("update event fee txid", "tx", txID.String())
 	eventIDs, err := keeper.GetEventsIDByTxHash(ctx, txID)
 	if err != nil {
 		if err == ErrEventNotFound {
