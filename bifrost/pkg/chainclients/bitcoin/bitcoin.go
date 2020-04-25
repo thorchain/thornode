@@ -339,13 +339,13 @@ func (c *Client) getMemo(tx *btcjson.TxRawResult) (string, error) {
 func (c *Client) getGas(tx *btcjson.TxRawResult) (common.Gas, error) {
 	var sumVin uint64 = 0
 	for _, vin := range tx.Vin {
-		txHash, err := chainhash.NewHashFromStr(tx.Vin[0].Txid)
+		txHash, err := chainhash.NewHashFromStr(vin.Txid)
 		if err != nil {
 			return common.Gas{}, fmt.Errorf("fail to get tx hash from tx id string")
 		}
 		vinTx, err := c.client.GetRawTransactionVerbose(txHash)
 		if err != nil {
-			return common.Gas{}, fmt.Errorf("fail to query raw tx from btcd")
+			return common.Gas{}, fmt.Errorf("fail to query raw tx from bitcoin node")
 		}
 		sumVin += uint64(vinTx.Vout[vin.Vout].Value * common.One)
 	}
