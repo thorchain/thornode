@@ -94,7 +94,6 @@ func (c *Client) SignTx(tx stypes.TxOutItem, height int64) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("fail to get unspent UTXO")
 	}
-
 	redeemTx := wire.NewMsgTx(wire.TxVersion)
 	totalAmt := float64(0)
 	individualAmounts := make(map[chainhash.Hash]btcutil.Amount, len(txes))

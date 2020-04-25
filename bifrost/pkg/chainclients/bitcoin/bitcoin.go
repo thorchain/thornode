@@ -167,25 +167,18 @@ func (c *Client) GetAccount(pkey common.PubKey) (common.Account, error) {
 
 // OnObservedTxIn gets called from observer when we have a valid observation
 // For bitcoin chain client we want to save the utxo we can spend later to sign
-func (c *Client) OnObservedTxIn(txIn types.TxIn) {
-	for _, tx := range txIn.TxArray {
-		hash, err := chainhash.NewHashFromStr(tx.Tx)
-		if err != nil {
-			c.logger.Error().Err(err).Str("txID", tx.Tx).Msg("fail to add spendable utxo to storage")
-			continue
-		}
-		value := float64(tx.Coins.GetCoin(common.BTCAsset).Amount.Uint64()) / common.One
-		blockHeight, err := strconv.ParseInt(txIn.BlockHeight, 10, 64)
-		if err != nil {
-			c.logger.Error().Err(err).Str("txID", tx.Tx).Msg("fail to add spendable utxo to storage")
-			continue
-		}
-		utxo := NewUnspentTransactionOutput(*hash, 0, value, blockHeight, tx.ObservedVaultPubKey)
-		err = c.utxoAccessor.AddUTXO(utxo)
-		if err != nil {
-			c.logger.Error().Err(err).Str("txID", tx.Tx).Msg("fail to add spendable utxo to storage")
-			continue
-		}
+func (c *Client) OnObservedTxIn(txIn types.TxInItem, blockHeight int64) {
+	hash, err := chainhash.NewHashFromStr(txIn.Tx)
+	if err != nil {
+		c.logger.Error().Err(err).Str("txID", txIn.Tx).Msg("fail to add spendable utxo to storage")
+		return
+	}
+	value := float64(txIn.Coins.GetCoin(common.BTCAsset).Amount.Uint64()) / common.One
+	utxo := NewUnspentTransactionOutput(*hash, 0, value, blockHeight, txIn.ObservedVaultPubKey)
+	err = c.utxoAccessor.AddUTXO(utxo)
+	if err != nil {
+		c.logger.Error().Err(err).Str("txID", txIn.Tx).Msg("fail to add spendable utxo to storage")
+		return
 	}
 }
 
@@ -243,11 +236,12 @@ func (c *Client) extractTxs(block *btcjson.GetBlockVerboseTxResult) (types.TxIn,
 		if err := c.utxoAccessor.UpsertTransactionFee(fee.ToBTC(), tx.Vsize); err != nil {
 			return types.TxIn{}, fmt.Errorf("fail to save transactional fee to local storage: %w", err)
 		}
-		amount := uint64(tx.Vout[0].Value * common.One)
+		output := c.getOutput(sender, &tx)
+		amount := uint64(output.Value * common.One)
 		txItems = append(txItems, types.TxInItem{
 			Tx:     tx.Txid,
 			Sender: sender,
-			To:     tx.Vout[0].ScriptPubKey.Addresses[0],
+			To:     output.ScriptPubKey.Addresses[0],
 			Coins: common.Coins{
 				common.NewCoin(common.BTCAsset, sdk.NewUint(amount)),
 			},
@@ -287,16 +281,31 @@ func (c *Client) ignoreTx(tx *btcjson.TxRawResult) bool {
 	if len(tx.Vout[0].ScriptPubKey.Addresses) != 1 {
 		return true
 	}
-	countWithCoins := 0
+	countWithOutput := 0
 	for _, vout := range tx.Vout {
 		if vout.Value > 0 {
-			countWithCoins++
+			countWithOutput++
 		}
 	}
-	if countWithCoins > 2 {
+	if countWithOutput > 2 {
 		return true
 	}
 	return false
+}
+
+// getOutput retrieve the correct output for both inbound
+// outbound tx.
+// logic is if FROM == TO then its an outbound change output
+// back to the vault and we need to select the other output
+// as Bifrost already filtered the txs to only have here
+// txs with max 2 outputs with values
+func (c *Client) getOutput(sender string, tx *btcjson.TxRawResult) btcjson.Vout {
+	for _, vout := range tx.Vout {
+		if vout.Value > 0 && vout.ScriptPubKey.Addresses[0] != sender {
+			return vout
+		}
+	}
+	return btcjson.Vout{}
 }
 
 // getSender returns sender address for a btc tx, using vin:0
