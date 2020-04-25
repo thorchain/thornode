@@ -118,14 +118,13 @@ func (o *Observer) chunkify(txIn types.TxIn) (result []types.TxIn) {
 		if len(txIn.TxArray) > maxTxArrayLen {
 			newTx.Count = fmt.Sprintf("%d", maxTxArrayLen)
 			newTx.TxArray = txIn.TxArray[:maxTxArrayLen]
-			result = append(result, newTx)
 			txIn.TxArray = txIn.TxArray[maxTxArrayLen:]
 		} else {
 			newTx.Count = fmt.Sprintf("%d", len(txIn.TxArray))
 			newTx.TxArray = txIn.TxArray
-			result = append(result, newTx)
 			txIn.TxArray = nil
 		}
+		result = append(result, newTx)
 	}
 	return result
 }
