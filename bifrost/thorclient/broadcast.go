@@ -81,7 +81,7 @@ func (b *ThorchainBridge) Broadcast(stdTx authtypes.StdTx, mode types.TxMode) (c
 		return noTxID, fmt.Errorf("fail to marshal settx to json: %w", err)
 	}
 
-	b.logger.Info().Str("payload", string(result)).Msg("post to thorchain")
+	b.logger.Info().Int("size", len(result)).Str("payload", string(result)).Msg("post to thorchain")
 
 	body, err := b.post(BroadcastTxsEndpoint, "application/json", bytes.NewBuffer(result))
 	if err != nil {
