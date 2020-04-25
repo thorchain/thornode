@@ -236,11 +236,12 @@ func (c *Client) extractTxs(block *btcjson.GetBlockVerboseTxResult) (types.TxIn,
 		if err := c.utxoAccessor.UpsertTransactionFee(fee.ToBTC(), tx.Vsize); err != nil {
 			return types.TxIn{}, fmt.Errorf("fail to save transactional fee to local storage: %w", err)
 		}
-		amount := uint64(tx.Vout[0].Value * common.One)
+		output := c.getOutput(sender, &tx)
+		amount := uint64(output.Value * common.One)
 		txItems = append(txItems, types.TxInItem{
 			Tx:     tx.Txid,
 			Sender: sender,
-			To:     tx.Vout[0].ScriptPubKey.Addresses[0],
+			To:     output.ScriptPubKey.Addresses[0],
 			Coins: common.Coins{
 				common.NewCoin(common.BTCAsset, sdk.NewUint(amount)),
 			},
@@ -290,6 +291,21 @@ func (c *Client) ignoreTx(tx *btcjson.TxRawResult) bool {
 		return true
 	}
 	return false
+}
+
+// getOutput retrieve the correct output for both inbound
+// outbound tx.
+// logic is if FROM == TO then its an outbound change output
+// back to the vault and we need to select the other output
+// as Bifrost already filtered the txs to only have here
+// txs with max 2 outputs with values
+func (c *Client) getOutput(sender string, tx *btcjson.TxRawResult) btcjson.Vout {
+	for _, vout := range tx.Vout {
+		if vout.Value > 0 && vout.ScriptPubKey.Addresses[0] != sender {
+			return vout
+		}
+	}
+	return btcjson.Vout{}
 }
 
 // getSender returns sender address for a btc tx, using vin:0
