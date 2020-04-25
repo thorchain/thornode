@@ -58,6 +58,7 @@ func (t *LevelDBUTXOAccessor) AddUTXO(u UnspentTransactionOutput) error {
 	if err := t.db.Put([]byte(key), buf, nil); err != nil {
 		return fmt.Errorf("fail to add utxo to level db storage: %w", err)
 	}
+	fmt.Println("add UTXO:", key, u.Value)
 	return nil
 }
 

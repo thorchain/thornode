@@ -563,7 +563,7 @@ func (s *BitcoinSuite) TestOnObservedTxIn(c *C) {
 		},
 	}
 	txID, _ := chainhash.NewHashFromStr("31f8699ce9028e9cd37f8a6d58a79e614a96e3fdd0f58be5fc36d2d95484716f")
-	s.client.OnObservedTxIn(txIn)
+	s.client.OnObservedTxIn(txIn.TxArray[0], 1)
 	utxos, err := utxoAccessor.GetUTXOs(pkey)
 	c.Assert(err, IsNil)
 	c.Assert(len(utxos), Equals, 1)
@@ -589,7 +589,7 @@ func (s *BitcoinSuite) TestOnObservedTxIn(c *C) {
 		},
 	}
 	txID, _ = chainhash.NewHashFromStr("24ed2d26fd5d4e0e8fa86633e40faf1bdfc8d1903b1cd02855286312d48818a2")
-	s.client.OnObservedTxIn(txIn)
+	s.client.OnObservedTxIn(txIn.TxArray[0], 2)
 	utxos, err = utxoAccessor.GetUTXOs(pkey)
 	c.Assert(err, IsNil)
 	c.Assert(len(utxos), Equals, 2)
@@ -628,7 +628,9 @@ func (s *BitcoinSuite) TestOnObservedTxIn(c *C) {
 			},
 		},
 	}
-	s.client.OnObservedTxIn(txIn)
+	for _, item := range txIn.TxArray {
+		s.client.OnObservedTxIn(item, 3)
+	}
 	utxos, err = utxoAccessor.GetUTXOs(pkey)
 	c.Assert(err, IsNil)
 	c.Assert(len(utxos), Equals, 4)

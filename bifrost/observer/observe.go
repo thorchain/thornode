@@ -83,9 +83,22 @@ func (o *Observer) processTxIns() {
 				o.logger.Error().Err(err).Msg("fail to retrieve chain client")
 				continue
 			}
-			i, ok := chainClient.(interface{ OnObservedTxIn(txIn types.TxIn) })
+
+			i, ok := chainClient.(interface {
+				OnObservedTxIn(txIn types.TxInItem, blockHeight int64)
+			})
 			if ok {
-				i.OnObservedTxIn(txIn)
+				height, err := strconv.ParseInt(txIn.BlockHeight, 10, 64)
+				if err != nil {
+					o.logger.Error().Err(err).Msg("fail to parse block height")
+					continue
+				}
+				for _, item := range txIn.TxArray {
+					if o.isOutboundMsg(txIn.Chain, item.Sender, item.Memo) {
+						continue
+					}
+					i.OnObservedTxIn(item, height)
+				}
 			}
 		}
 	}
@@ -192,7 +205,7 @@ func (o *Observer) isYggdrasil(chain common.Chain, addr string) bool {
 }
 
 func (o *Observer) isOutboundMsg(chain common.Chain, addr, memo string) bool {
-	return o.isAddrWithMemo(chain, addr, memo, "outbound")
+	return o.isAddrWithMemo(chain, addr, memo, "")
 }
 
 func (o *Observer) isAddrWithMemo(chain common.Chain, addr, memo, targetMemo string) bool {
