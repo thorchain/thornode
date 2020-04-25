@@ -127,7 +127,6 @@ func (o *Observer) chunkify(txIn types.TxIn) (result []types.TxIn) {
 			txIn.TxArray = nil
 		}
 	}
-	fmt.Printf("Tx Len: %d\n", len(result))
 	return result
 }
 
