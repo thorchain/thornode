@@ -31,9 +31,34 @@ func GetTxCmd(storeKey string, cdc *codec.Codec) *cobra.Command {
 		GetCmdEndPool(cdc),
 		GetCmdSetVersion(cdc),
 		GetCmdSetIPAddress(cdc),
+		GetCmdBan(cdc),
 	)...)
 
 	return thorchainTxCmd
+}
+
+// GetCmdBan command to ban a node accounts
+func GetCmdBan(cdc *codec.Codec) *cobra.Command {
+	return &cobra.Command{
+		Use:   "ban [node address]",
+		Short: "votes to ban a node address (caution: costs 0.1% of minimum bond)",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx := context.NewCLIContext().WithCodec(cdc)
+			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
+
+			addr, err := sdk.AccAddressFromBech32(args[0])
+			if err != nil {
+				return fmt.Errorf("invalid node address: %w", err)
+			}
+
+			msg := types.NewMsgBan(addr, cliCtx.GetFromAddress())
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
+		},
+	}
 }
 
 // GetCmdSetIPAddress command to set a node accounts IP Address

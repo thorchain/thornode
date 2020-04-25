@@ -6,6 +6,9 @@ import (
 
 	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	abci "github.com/tendermint/tendermint/abci/types"
+	"github.com/tendermint/tendermint/crypto"
+	tmtypes "github.com/tendermint/tendermint/types"
 
 	"gitlab.com/thorchain/thornode/common"
 	"gitlab.com/thorchain/thornode/constants"
@@ -26,6 +29,69 @@ func NewSlasher(keeper Keeper, version semver.Version) (*Slasher, error) {
 		}, nil
 	}
 	return nil, errBadVersion
+}
+
+func (s *Slasher) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock, constAccessor constants.ConstantValues) {
+	// Iterate through any newly discovered evidence of infraction
+	// Slash any validators (and since-unbonded stake within the unbonding period)
+	// who contributed to valid infractions
+	for _, evidence := range req.ByzantineValidators {
+		switch evidence.Type {
+		case tmtypes.ABCIEvidenceTypeDuplicateVote:
+			if err := s.HandleDoubleSign(ctx, evidence.Validator.Address, evidence.Height, constAccessor); err != nil {
+				ctx.Logger().Error("fail to slash for double signing a block", "error", err)
+			}
+		default:
+			ctx.Logger().Error(fmt.Sprintf("ignored unknown evidence type: %s", evidence.Type))
+		}
+	}
+}
+
+// HandleDoubleSign - slashes a validator for singing two blocks at the same
+// block height
+// https://blog.cosmos.network/consensus-compare-casper-vs-tendermint-6df154ad56ae
+func (s *Slasher) HandleDoubleSign(ctx sdk.Context, addr crypto.Address, infractionHeight int64, constAccessor constants.ConstantValues) error {
+	// check if we're recent enough to slash for this behavior
+	maxAge := constAccessor.GetInt64Value(constants.DoubleSignMaxAge)
+	if (ctx.BlockHeight() - infractionHeight) > maxAge {
+		ctx.Logger().Info("double sign detected but too old to be slashed", "infraction height", fmt.Sprintf("%d", infractionHeight), "address", addr.String())
+		return nil
+	}
+
+	nas, err := s.keeper.ListActiveNodeAccounts(ctx)
+	if err != nil {
+		return err
+	}
+
+	for _, na := range nas {
+		pk, err := sdk.GetConsPubKeyBech32(na.ValidatorConsPubKey)
+		if err != nil {
+			return err
+		}
+
+		if addr.String() == pk.Address().String() {
+			if na.Bond.IsZero() {
+				return fmt.Errorf("found account to slash for double signing, but did not have any bond to slash: %s", addr)
+			}
+			// take 5% of the minimum bond, and put it into the reserve
+			minBond := constAccessor.GetInt64Value(constants.MinimumBondInRune)
+			slashAmount := sdk.NewUint(uint64(minBond)).MulUint64(5).QuoUint64(100)
+			na.Bond = common.SafeSub(na.Bond, slashAmount)
+
+			vaultData, err := s.keeper.GetVaultData(ctx)
+			if err != nil {
+				return fmt.Errorf("fail to get vault data: %w", err)
+			}
+			vaultData.TotalReserve = vaultData.TotalReserve.Add(slashAmount)
+			if err := s.keeper.SetVaultData(ctx, vaultData); err != nil {
+				return fmt.Errorf("fail to save vault data: %w", err)
+			}
+
+			return s.keeper.SetNodeAccount(ctx, na)
+		}
+	}
+
+	return fmt.Errorf("could not find node account with validator address: %s", addr)
 }
 
 // LackObserving Slash node accounts that didn't observe a single inbound txn

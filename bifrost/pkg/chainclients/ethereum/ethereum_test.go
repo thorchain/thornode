@@ -209,7 +209,7 @@ func (s *EthereumSuite) TestClient(c *C) {
 	c.Assert(err, IsNil)
 	c.Check(gasPrice.Uint64(), Equals, uint64(13))
 
-	acct, err := e2.GetAccount(account)
+	acct, err := e2.GetAccount(types2.GetRandomPubKey())
 	c.Assert(err, IsNil)
 	c.Check(acct.Sequence, Equals, int64(0))
 	c.Check(acct.Coins[0].Amount, Equals, uint64(1000000000))

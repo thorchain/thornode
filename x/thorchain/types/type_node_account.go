@@ -97,6 +97,7 @@ type NodeAccount struct {
 	StatusSince      int64          `json:"status_since"`
 	SignerMembership common.PubKeys `json:"signer_membership"`
 	RequestedToLeave bool           `json:"requested_to_leave"`
+	ForcedToLeave    bool           `json:"forced_to_leave"`
 	LeaveHeight      int64          `json:"leave_height"`
 	IPAddress        string         `json:"ip_address"`
 	Version          semver.Version `json:"version"`

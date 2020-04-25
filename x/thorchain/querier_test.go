@@ -104,3 +104,53 @@ func (s *QuerierSuite) TestQueryPool(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(len(out), Equals, 2)
 }
+
+func (s *QuerierSuite) TestQueryNodeAccounts(c *C) {
+	ctx, keeper := setupKeeperForTest(c)
+
+	versionedTxOutStoreDummy := NewVersionedTxOutStoreDummy()
+	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(versionedTxOutStoreDummy)
+	validatorMgr := NewVersionedValidatorMgr(keeper, versionedTxOutStoreDummy, versionedVaultMgrDummy)
+
+	querier := NewQuerier(keeper, validatorMgr)
+	path := []string{"nodeaccounts"}
+
+	signer := GetRandomBech32Addr()
+	bondAddr := GetRandomBNBAddress()
+	emptyPubKeySet := common.PubKeySet{}
+	bond := sdk.NewUint(common.One * 100)
+	nodeAccount := NewNodeAccount(signer, NodeActive, emptyPubKeySet, "", bond, bondAddr, ctx.BlockHeight())
+	c.Assert(keeper.SetNodeAccount(ctx, nodeAccount), IsNil)
+
+	res, err := querier(ctx, path, abci.RequestQuery{})
+	c.Assert(err, IsNil)
+
+	var out types.NodeAccounts
+	err1 := keeper.Cdc().UnmarshalJSON(res, &out)
+	c.Assert(err1, IsNil)
+	c.Assert(len(out), Equals, 1)
+
+	signer = GetRandomBech32Addr()
+	bondAddr = GetRandomBNBAddress()
+	emptyPubKeySet = common.PubKeySet{}
+	bond = sdk.NewUint(common.One * 200)
+	nodeAccount2 := NewNodeAccount(signer, NodeActive, emptyPubKeySet, "", bond, bondAddr, ctx.BlockHeight())
+	c.Assert(keeper.SetNodeAccount(ctx, nodeAccount2), IsNil)
+
+	res, err = querier(ctx, path, abci.RequestQuery{})
+	c.Assert(err, IsNil)
+
+	err1 = keeper.Cdc().UnmarshalJSON(res, &out)
+	c.Assert(err1, IsNil)
+	c.Assert(len(out), Equals, 2)
+
+	nodeAccount2.Bond = sdk.NewUint(0)
+	c.Assert(keeper.SetNodeAccount(ctx, nodeAccount2), IsNil)
+
+	res, err = querier(ctx, path, abci.RequestQuery{})
+	c.Assert(err, IsNil)
+
+	err1 = keeper.Cdc().UnmarshalJSON(res, &out)
+	c.Assert(err1, IsNil)
+	c.Assert(len(out), Equals, 1)
+}

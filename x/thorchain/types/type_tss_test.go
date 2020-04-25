@@ -1,6 +1,8 @@
 package types
 
 import (
+	"sort"
+
 	. "gopkg.in/check.v1"
 
 	"gitlab.com/thorchain/thornode/common"
@@ -65,5 +67,8 @@ func (s *TypeTssSuite) TestChainConsensus(c *C) {
 	}
 
 	chains := voter.ConsensusChains(nas)
+	sort.Slice(chains, func(i, j int) bool {
+		return chains[i].String() < chains[j].String()
+	})
 	c.Check(chains, DeepEquals, common.Chains{common.BNBChain, common.BTCChain})
 }
