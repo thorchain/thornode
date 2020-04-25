@@ -107,8 +107,8 @@ func (o *Observer) processTxIns() {
 	}
 }
 
-func (o *Observer) isOutboundMsg(chain common.Chain, addr string) bool {
-	matchOutbound, _ := o.pubkeyMgr.IsValidPoolAddress(addr, chain)
+func (o *Observer) isOutboundMsg(chain common.Chain, fromAddr string) bool {
+	matchOutbound, _ := o.pubkeyMgr.IsValidPoolAddress(fromAddr, chain)
 	if matchOutbound {
 		return true
 	}
