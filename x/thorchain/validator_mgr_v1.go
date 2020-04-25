@@ -982,7 +982,15 @@ func (vm *validatorMgrV1) nextVaultNodeAccounts(ctx sdk.Context, targetCount int
 		if active[i].RequestedToLeave != active[j].RequestedToLeave {
 			return active[i].RequestedToLeave
 		}
+		// sort by LeaveHeight ascending , but exclude LeaveHeight == 0 , because that's the default value
+		if active[i].LeaveHeight == 0 && active[j].LeaveHeight > 0 {
+			return false
+		}
+		if active[i].LeaveHeight > 0 && active[j].LeaveHeight == 0 {
+			return true
+		}
 		return active[i].LeaveHeight < active[j].LeaveHeight
+
 	})
 
 	artificialRagnarokBlockHeight := constAccessor.GetInt64Value(constants.ArtificialRagnarokBlockHeight)
@@ -1016,7 +1024,6 @@ func findCountToRemove(blockHeight, artificalRagnarok int64, active NodeAccounts
 			candidateCount += 1
 			continue
 		}
-		break
 	}
 
 	maxRemove := findMaxAbleToLeave(len(active))
