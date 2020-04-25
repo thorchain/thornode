@@ -106,9 +106,9 @@ func MakeCodec() *codec.Codec {
 func makeStdTx(msgs []sdk.Msg) *authtypes.StdTx {
 	stdTx := authtypes.NewStdTx(
 		msgs,
-		authtypes.NewStdFee(100000000, nil), // fee
-		nil,                                 // signatures
-		"",                                  // memo
+		authtypes.NewStdFee(5000000000000000, nil), // fee
+		nil, // signatures
+		"",  // memo
 	)
 	return &stdTx
 }

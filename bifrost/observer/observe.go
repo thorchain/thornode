@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
-	"strings"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/rs/zerolog"
@@ -18,6 +17,8 @@ import (
 	"gitlab.com/thorchain/thornode/common"
 	stypes "gitlab.com/thorchain/thornode/x/thorchain/types"
 )
+
+const maxTxArrayLen = 100
 
 // Observer observer service
 type Observer struct {
@@ -73,30 +74,70 @@ func (o *Observer) processTxIns() {
 			return
 		case txIn := <-o.globalTxsQueue:
 			txIn.TxArray = o.filterObservations(txIn.Chain, txIn.TxArray)
-			if err := o.signAndSendToThorchain(txIn); err != nil {
-				o.logger.Error().Err(err).Msg("fail to send to thorchain")
-				o.errCounter.WithLabelValues("fail_send_to_thorchain", txIn.BlockHeight).Inc()
-			}
-			// check if chain client has OnObservedTxIn method then call it
-			chainClient, err := o.getChain(txIn.Chain)
-			if err != nil {
-				o.logger.Error().Err(err).Msg("fail to retrieve chain client")
-				continue
-			}
-			i, ok := chainClient.(interface{ OnObservedTxIn(txIn types.TxIn) })
-			if ok {
-				i.OnObservedTxIn(txIn)
+			for _, txIn := range o.chunkify(txIn) {
+				if err := o.signAndSendToThorchain(txIn); err != nil {
+					o.logger.Error().Err(err).Msg("fail to send to thorchain")
+					o.errCounter.WithLabelValues("fail_send_to_thorchain", txIn.BlockHeight).Inc()
+				}
+				// check if chain client has OnObservedTxIn method then call it
+				chainClient, err := o.getChain(txIn.Chain)
+				if err != nil {
+					o.logger.Error().Err(err).Msg("fail to retrieve chain client")
+					continue
+				}
+
+				i, ok := chainClient.(interface {
+					OnObservedTxIn(txIn types.TxInItem, blockHeight int64)
+				})
+				if ok {
+					height, err := strconv.ParseInt(txIn.BlockHeight, 10, 64)
+					if err != nil {
+						o.logger.Error().Err(err).Msg("fail to parse block height")
+						continue
+					}
+					for _, item := range txIn.TxArray {
+						if o.isOutboundMsg(txIn.Chain, item.Sender) {
+							continue
+						}
+						i.OnObservedTxIn(item, height)
+					}
+				}
 			}
 		}
 	}
 }
 
+func (o *Observer) isOutboundMsg(chain common.Chain, addr string) bool {
+	matchOutbound, _ := o.pubkeyMgr.IsValidPoolAddress(addr, chain)
+	if matchOutbound {
+		return true
+	}
+	return false
+}
+
+// chunkify - breaks the observations into 100 transactions per observation
+func (o *Observer) chunkify(txIn types.TxIn) (result []types.TxIn) {
+	for len(txIn.TxArray) > 0 {
+		newTx := types.TxIn{
+			BlockHeight: txIn.BlockHeight,
+			Chain:       txIn.Chain,
+		}
+		if len(txIn.TxArray) > maxTxArrayLen {
+			newTx.Count = fmt.Sprintf("%d", maxTxArrayLen)
+			newTx.TxArray = txIn.TxArray[:maxTxArrayLen]
+			txIn.TxArray = txIn.TxArray[maxTxArrayLen:]
+		} else {
+			newTx.Count = fmt.Sprintf("%d", len(txIn.TxArray))
+			newTx.TxArray = txIn.TxArray
+			txIn.TxArray = nil
+		}
+		result = append(result, newTx)
+	}
+	return result
+}
+
 func (o *Observer) filterObservations(chain common.Chain, items []types.TxInItem) (txs []types.TxInItem) {
 	for _, txInItem := range items {
-		if ok := o.MatchedAddress(chain, txInItem); !ok {
-			continue
-		}
-
 		// NOTE: the following could result in the same tx being added
 		// twice, which is expected. We want to make sure we generate both
 		// a inbound and outbound txn, if we both apply.
@@ -110,36 +151,9 @@ func (o *Observer) filterObservations(chain common.Chain, items []types.TxInItem
 		if ok, cpi := o.pubkeyMgr.IsValidPoolAddress(txInItem.To, chain); ok {
 			txInItem.ObservedVaultPubKey = cpi.PubKey
 			txs = append(txs, txInItem)
-		} else {
-			// Apparently we don't recognize where we are sending funds to.
-			// Lets check if we should because its an internal transaction
-			// moving funds between vaults (for example). If it is, lets
-			// manually trigger an update of pubkeys, then check again...
-			switch strings.ToLower(txInItem.Memo) {
-			case "migrate", "yggdrasil-", "yggdrasil+":
-				o.pubkeyMgr.FetchPubKeys()
-				if ok, cpi := o.pubkeyMgr.IsValidPoolAddress(txInItem.To, chain); ok {
-					txInItem.ObservedVaultPubKey = cpi.PubKey
-					txs = append(txs, txInItem)
-				}
-			}
 		}
 	}
 	return
-}
-
-func (o *Observer) MatchedAddress(chain common.Chain, txInItem types.TxInItem) bool {
-	// inbound
-	matchInbound, _ := o.pubkeyMgr.IsValidPoolAddress(txInItem.Sender, chain)
-	if matchInbound {
-		return true
-	}
-
-	matchOutbound, _ := o.pubkeyMgr.IsValidPoolAddress(txInItem.To, chain)
-	if matchOutbound {
-		return true
-	}
-	return false
 }
 
 func (o *Observer) processErrataTx() {
