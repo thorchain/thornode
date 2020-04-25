@@ -990,7 +990,6 @@ func (vm *validatorMgrV1) nextVaultNodeAccounts(ctx sdk.Context, targetCount int
 			return true
 		}
 		return active[i].LeaveHeight < active[j].LeaveHeight
-
 	})
 
 	artificialRagnarokBlockHeight := constAccessor.GetInt64Value(constants.ArtificialRagnarokBlockHeight)
