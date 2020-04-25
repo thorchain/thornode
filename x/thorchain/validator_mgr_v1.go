@@ -196,7 +196,7 @@ func (vm *validatorMgrV1) EndBlock(ctx sdk.Context, constAccessor constants.Cons
 	}
 	for _, na := range removedNodes {
 		status := NodeStandby
-		if na.RequestedToLeave {
+		if na.RequestedToLeave || na.ForcedToLeave {
 			status = NodeDisabled
 		}
 
@@ -925,6 +925,11 @@ func (vm *validatorMgrV1) markReadyActors(ctx sdk.Context, constAccessor constan
 			na.UpdateStatus(NodeStandby, ctx.BlockHeight())
 		}
 
+		// ensure banned nodes can't get churned in again
+		if na.ForcedToLeave {
+			na.UpdateStatus(NodeDisabled, ctx.BlockHeight())
+		}
+
 		// Check that the node account has an IP address
 		if net.ParseIP(na.IPAddress) == nil {
 			na.UpdateStatus(NodeStandby, ctx.BlockHeight())
@@ -967,13 +972,24 @@ func (vm *validatorMgrV1) nextVaultNodeAccounts(ctx sdk.Context, targetCount int
 	if err != nil {
 		return nil, false, err
 	}
-	// sort by LeaveHeight, giving preferential treatment to people who
-	// requested to leave
+	// sort by LeaveHeight ascending
+	// giving preferential treatment to people who are forced to leave
+	//  and then requested to leave
 	sort.SliceStable(active, func(i, j int) bool {
+		if active[i].ForcedToLeave != active[j].ForcedToLeave {
+			return active[i].ForcedToLeave
+		}
 		if active[i].RequestedToLeave != active[j].RequestedToLeave {
 			return active[i].RequestedToLeave
 		}
-		return active[i].LeaveHeight > active[j].LeaveHeight
+		// sort by LeaveHeight ascending , but exclude LeaveHeight == 0 , because that's the default value
+		if active[i].LeaveHeight == 0 && active[j].LeaveHeight > 0 {
+			return false
+		}
+		if active[i].LeaveHeight > 0 && active[j].LeaveHeight == 0 {
+			return true
+		}
+		return active[i].LeaveHeight < active[j].LeaveHeight
 	})
 
 	artificialRagnarokBlockHeight := constAccessor.GetInt64Value(constants.ArtificialRagnarokBlockHeight)
@@ -1007,15 +1023,14 @@ func findCountToRemove(blockHeight, artificalRagnarok int64, active NodeAccounts
 			candidateCount += 1
 			continue
 		}
-		break
 	}
 
 	maxRemove := findMaxAbleToLeave(len(active))
 	if len(active) > 0 {
 		if maxRemove == 0 {
-			// we can't remove any mathematically, but we always leave room for node
-			// accounts requesting to leave
-			if active[0].RequestedToLeave || (artificalRagnarok > 0 && blockHeight >= artificalRagnarok) {
+			// we can't remove any mathematically, but we always leave room for
+			// node accounts requesting to leave or are being banned
+			if active[0].ForcedToLeave || active[0].RequestedToLeave || (artificalRagnarok > 0 && blockHeight >= artificalRagnarok) {
 				toRemove = 1
 			}
 		} else {

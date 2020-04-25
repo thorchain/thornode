@@ -343,7 +343,7 @@ func (b *Binance) SignTx(tx stypes.TxOutItem, height int64) ([]byte, error) {
 	}
 	meta := b.accts.Get(tx.VaultPubKey)
 	if currentHeight > meta.BlockHeight {
-		acc, err := b.GetAccount(fromAddr)
+		acc, err := b.GetAccount(tx.VaultPubKey)
 		if err != nil {
 			return nil, fmt.Errorf("fail to get account info: %w", err)
 		}
@@ -419,7 +419,8 @@ func (b *Binance) signMsg(signMsg btx.StdSignMsg, from string, poolPubKey common
 	return nil, err
 }
 
-func (b *Binance) GetAccount(addr string) (common.Account, error) {
+func (b *Binance) GetAccount(pkey common.PubKey) (common.Account, error) {
+	addr := b.GetAddress(pkey)
 	address, err := types.AccAddressFromBech32(addr)
 	if err != nil {
 		b.logger.Error().Err(err).Msgf("fail to get parse address: %s", addr)

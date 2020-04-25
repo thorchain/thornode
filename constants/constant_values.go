@@ -28,6 +28,7 @@ const (
 	OldValidatorRate
 	LackOfObservationPenalty
 	SigningTransactionPeriod
+	DoubleSignMaxAge
 	MinimumBondInRune
 	FundMigrationInterval
 	WhiteListGasAsset
@@ -58,6 +59,7 @@ var nameToString = map[ConstantName]string{
 	OldValidatorRate:                "OldValidatorRate",
 	LackOfObservationPenalty:        "LackOfObservationPenalty",
 	SigningTransactionPeriod:        "SigningTransactionPeriod",
+	DoubleSignMaxAge:                "DoubleSignMaxAge",
 	MinimumBondInRune:               "MinimumBondInRune",
 	FundMigrationInterval:           "FundMigrationInterval",
 	WhiteListGasAsset:               "WhiteListGasAsset",

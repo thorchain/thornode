@@ -45,6 +45,7 @@ var (
 	NewVaultData                   = types.NewVaultData
 	NewObservedTx                  = types.NewObservedTx
 	NewTssVoter                    = types.NewTssVoter
+	NewBanVoter                    = types.NewBanVoter
 	NewErrataTxVoter               = types.NewErrataTxVoter
 	NewObservedTxVoter             = types.NewObservedTxVoter
 	NewMsgTssPool                  = types.NewMsgTssPool
@@ -93,6 +94,7 @@ var (
 	NewMsgReserveContributor       = types.NewMsgReserveContributor
 	NewMsgBond                     = types.NewMsgBond
 	NewMsgErrataTx                 = types.NewMsgErrataTx
+	NewMsgBan                      = types.NewMsgBan
 	NewMsgLeave                    = types.NewMsgLeave
 	NewMsgSetVersion               = types.NewMsgSetVersion
 	NewMsgSetIPAddress             = types.NewMsgSetIPAddress
@@ -123,6 +125,7 @@ type (
 	MsgRagnarok                 = types.MsgRagnarok
 	MsgRefundTx                 = types.MsgRefundTx
 	MsgErrataTx                 = types.MsgErrataTx
+	MsgBan                      = types.MsgBan
 	MsgSwap                     = types.MsgSwap
 	MsgSetVersion               = types.MsgSetVersion
 	MsgSetIPAddress             = types.MsgSetIPAddress
@@ -154,6 +157,7 @@ type (
 	ObservedTxVoter             = types.ObservedTxVoter
 	ObservedTxVoters            = types.ObservedTxVoters
 	ObservedTxIndex             = types.ObservedTxIndex
+	BanVoter                    = types.BanVoter
 	ErrataTxVoter               = types.ErrataTxVoter
 	TssVoter                    = types.TssVoter
 	TssKeysignFailVoter         = types.TssKeysignFailVoter

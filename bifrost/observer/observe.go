@@ -19,6 +19,8 @@ import (
 	stypes "gitlab.com/thorchain/thornode/x/thorchain/types"
 )
 
+const maxTxArrayLen = 100
+
 // Observer observer service
 type Observer struct {
 	logger            zerolog.Logger
@@ -73,22 +75,58 @@ func (o *Observer) processTxIns() {
 			return
 		case txIn := <-o.globalTxsQueue:
 			txIn.TxArray = o.filterObservations(txIn.Chain, txIn.TxArray)
-			if err := o.signAndSendToThorchain(txIn); err != nil {
-				o.logger.Error().Err(err).Msg("fail to send to thorchain")
-				o.errCounter.WithLabelValues("fail_send_to_thorchain", txIn.BlockHeight).Inc()
-			}
-			// check if chain client has OnObservedTxIn method then call it
-			chainClient, err := o.getChain(txIn.Chain)
-			if err != nil {
-				o.logger.Error().Err(err).Msg("fail to retrieve chain client")
-				continue
-			}
-			i, ok := chainClient.(interface{ OnObservedTxIn(txIn types.TxIn) })
-			if ok {
-				i.OnObservedTxIn(txIn)
+			for _, txIn := range o.chunkify(txIn) {
+				if err := o.signAndSendToThorchain(txIn); err != nil {
+					o.logger.Error().Err(err).Msg("fail to send to thorchain")
+					o.errCounter.WithLabelValues("fail_send_to_thorchain", txIn.BlockHeight).Inc()
+				}
+				// check if chain client has OnObservedTxIn method then call it
+				chainClient, err := o.getChain(txIn.Chain)
+				if err != nil {
+					o.logger.Error().Err(err).Msg("fail to retrieve chain client")
+					continue
+				}
+
+				i, ok := chainClient.(interface {
+					OnObservedTxIn(txIn types.TxInItem, blockHeight int64)
+				})
+				if ok {
+					height, err := strconv.ParseInt(txIn.BlockHeight, 10, 64)
+					if err != nil {
+						o.logger.Error().Err(err).Msg("fail to parse block height")
+						continue
+					}
+					for _, item := range txIn.TxArray {
+						if o.isOutboundMsg(txIn.Chain, item.Sender, item.Memo) {
+							continue
+						}
+						i.OnObservedTxIn(item, height)
+					}
+				}
 			}
 		}
 	}
+}
+
+// chunkify - breaks the observations into 100 transactions per observation
+func (o *Observer) chunkify(txIn types.TxIn) (result []types.TxIn) {
+	for len(txIn.TxArray) > 0 {
+		newTx := types.TxIn{
+			BlockHeight: txIn.BlockHeight,
+			Chain:       txIn.Chain,
+		}
+		if len(txIn.TxArray) > maxTxArrayLen {
+			newTx.Count = fmt.Sprintf("%d", maxTxArrayLen)
+			newTx.TxArray = txIn.TxArray[:maxTxArrayLen]
+			txIn.TxArray = txIn.TxArray[maxTxArrayLen:]
+		} else {
+			newTx.Count = fmt.Sprintf("%d", len(txIn.TxArray))
+			newTx.TxArray = txIn.TxArray
+			txIn.TxArray = nil
+		}
+		result = append(result, newTx)
+	}
+	return result
 }
 
 func (o *Observer) filterObservations(chain common.Chain, items []types.TxInItem) (txs []types.TxInItem) {
@@ -103,12 +141,12 @@ func (o *Observer) filterObservations(chain common.Chain, items []types.TxInItem
 
 		// check if the from address is a valid pool
 		if ok, cpi := o.pubkeyMgr.IsValidPoolAddress(txInItem.Sender, chain); ok {
-			txInItem.ObservedPoolPubKey = cpi.PubKey
+			txInItem.ObservedVaultPubKey = cpi.PubKey
 			txs = append(txs, txInItem)
 		}
 		// check if the to address is a valid pool address
 		if ok, cpi := o.pubkeyMgr.IsValidPoolAddress(txInItem.To, chain); ok {
-			txInItem.ObservedPoolPubKey = cpi.PubKey
+			txInItem.ObservedVaultPubKey = cpi.PubKey
 			txs = append(txs, txInItem)
 		} else {
 			// Apparently we don't recognize where we are sending funds to.
@@ -119,7 +157,7 @@ func (o *Observer) filterObservations(chain common.Chain, items []types.TxInItem
 			case "migrate", "yggdrasil-", "yggdrasil+":
 				o.pubkeyMgr.FetchPubKeys()
 				if ok, cpi := o.pubkeyMgr.IsValidPoolAddress(txInItem.To, chain); ok {
-					txInItem.ObservedPoolPubKey = cpi.PubKey
+					txInItem.ObservedVaultPubKey = cpi.PubKey
 					txs = append(txs, txInItem)
 				}
 			}
@@ -192,7 +230,7 @@ func (o *Observer) isYggdrasil(chain common.Chain, addr string) bool {
 }
 
 func (o *Observer) isOutboundMsg(chain common.Chain, addr, memo string) bool {
-	return o.isAddrWithMemo(chain, addr, memo, "outbound")
+	return o.isAddrWithMemo(chain, addr, memo, "")
 }
 
 func (o *Observer) isAddrWithMemo(chain common.Chain, addr, memo, targetMemo string) bool {
@@ -291,17 +329,17 @@ func (o *Observer) getThorchainTxIns(txIn types.TxIn) (stypes.ObservedTxs, error
 			o.errCounter.WithLabelValues("fail to parse block height", txIn.BlockHeight).Inc()
 			return nil, fmt.Errorf("fail to parse block height: %w", err)
 		}
-		o.logger.Debug().Msgf("pool pubkey %s", item.ObservedPoolPubKey)
-		chainAddr, _ := item.ObservedPoolPubKey.GetAddress(txIn.Chain)
+		o.logger.Debug().Msgf("pool pubkey %s", item.ObservedVaultPubKey)
+		chainAddr, _ := item.ObservedVaultPubKey.GetAddress(txIn.Chain)
 		o.logger.Debug().Msgf("%s address %s", txIn.Chain.String(), chainAddr)
 		if err != nil {
-			o.errCounter.WithLabelValues("fail to parse observed pool address", item.ObservedPoolPubKey.String()).Inc()
-			return nil, fmt.Errorf("fail to parse observed pool address: %s: %w", item.ObservedPoolPubKey.String(), err)
+			o.errCounter.WithLabelValues("fail to parse observed pool address", item.ObservedVaultPubKey.String()).Inc()
+			return nil, fmt.Errorf("fail to parse observed pool address: %s: %w", item.ObservedVaultPubKey.String(), err)
 		}
 		txs[i] = stypes.NewObservedTx(
 			common.NewTx(txID, sender, to, item.Coins, item.Gas, item.Memo),
 			h,
-			item.ObservedPoolPubKey,
+			item.ObservedVaultPubKey,
 		)
 	}
 	return txs, nil

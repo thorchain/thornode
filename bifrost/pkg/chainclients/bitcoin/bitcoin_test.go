@@ -97,7 +97,8 @@ func (s *BitcoinSuite) SetUpSuite(c *C) {
 
 	s.server = httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		r := struct {
-			Method string `json:"method"`
+			Method string   `json:"method"`
+			Params []string `json:"params"`
 		}{}
 		json.NewDecoder(req.Body).Decode(&r)
 		switch {
@@ -106,7 +107,11 @@ func (s *BitcoinSuite) SetUpSuite(c *C) {
 		case r.Method == "getblock":
 			httpTestHandler(c, rw, "../../../../test/fixtures/btc/block.json")
 		case r.Method == "getrawtransaction":
-			httpTestHandler(c, rw, "../../../../test/fixtures/btc/tx.json")
+			if r.Params[0] == "5b0876dcc027d2f0c671fc250460ee388df39697c3ff082007b6ddd9cb9a7513" {
+				httpTestHandler(c, rw, "../../../../test/fixtures/btc/tx-5b08.json")
+			} else {
+				httpTestHandler(c, rw, "../../../../test/fixtures/btc/tx.json")
+			}
 		case r.Method == "getblockcount":
 			httpTestHandler(c, rw, "../../../../test/fixtures/btc/blockcount.json")
 		}
@@ -460,8 +465,8 @@ func (s *BitcoinSuite) TestGetGas(c *C) {
 	tx = btcjson.TxRawResult{
 		Vin: []btcjson.Vin{
 			btcjson.Vin{
-				Txid: "24ed2d26fd5d4e0e8fa86633e40faf1bdfc8d1903b1cd02855286312d48818a2",
-				Vout: 3,
+				Txid: "5b0876dcc027d2f0c671fc250460ee388df39697c3ff082007b6ddd9cb9a7513",
+				Vout: 1,
 			},
 		},
 		Vout: []btcjson.Vout{
@@ -539,6 +544,7 @@ func (s *BitcoinSuite) TestGetAccount(c *C) {
 
 func (s *BitcoinSuite) TestOnObservedTxIn(c *C) {
 	utxoAccessor := s.client.utxoAccessor
+	pkey := ttypes.GetRandomPubKey()
 	txIn := types.TxIn{
 		BlockHeight: "1",
 		Count:       "1",
@@ -551,13 +557,14 @@ func (s *BitcoinSuite) TestOnObservedTxIn(c *C) {
 				Coins: common.Coins{
 					common.NewCoin(common.BTCAsset, sdk.NewUint(123456789)),
 				},
-				Memo: "MEMO",
+				Memo:                "MEMO",
+				ObservedVaultPubKey: pkey,
 			},
 		},
 	}
 	txID, _ := chainhash.NewHashFromStr("31f8699ce9028e9cd37f8a6d58a79e614a96e3fdd0f58be5fc36d2d95484716f")
-	s.client.OnObservedTxIn(txIn)
-	utxos, err := utxoAccessor.GetUTXOs()
+	s.client.OnObservedTxIn(txIn.TxArray[0], 1)
+	utxos, err := utxoAccessor.GetUTXOs(pkey)
 	c.Assert(err, IsNil)
 	c.Assert(len(utxos), Equals, 1)
 	c.Assert(utxos[0].TxID, Equals, *txID)
@@ -576,13 +583,14 @@ func (s *BitcoinSuite) TestOnObservedTxIn(c *C) {
 				Coins: common.Coins{
 					common.NewCoin(common.BTCAsset, sdk.NewUint(123456)),
 				},
-				Memo: "MEMO",
+				Memo:                "MEMO",
+				ObservedVaultPubKey: pkey,
 			},
 		},
 	}
 	txID, _ = chainhash.NewHashFromStr("24ed2d26fd5d4e0e8fa86633e40faf1bdfc8d1903b1cd02855286312d48818a2")
-	s.client.OnObservedTxIn(txIn)
-	utxos, err = utxoAccessor.GetUTXOs()
+	s.client.OnObservedTxIn(txIn.TxArray[0], 2)
+	utxos, err = utxoAccessor.GetUTXOs(pkey)
 	c.Assert(err, IsNil)
 	c.Assert(len(utxos), Equals, 2)
 	c.Assert(utxos[0].TxID, Equals, *txID)
@@ -605,7 +613,8 @@ func (s *BitcoinSuite) TestOnObservedTxIn(c *C) {
 				Coins: common.Coins{
 					common.NewCoin(common.BTCAsset, sdk.NewUint(12345678)),
 				},
-				Memo: "MEMO",
+				Memo:                "MEMO",
+				ObservedVaultPubKey: pkey,
 			},
 			types.TxInItem{
 				Tx:     "54ed2d26fd5d4e0e8fa86633e40faf1bdfc8d1903b1cd02855286312d48818a2",
@@ -614,12 +623,15 @@ func (s *BitcoinSuite) TestOnObservedTxIn(c *C) {
 				Coins: common.Coins{
 					common.NewCoin(common.BTCAsset, sdk.NewUint(123456)),
 				},
-				Memo: "MEMO",
+				Memo:                "MEMO",
+				ObservedVaultPubKey: pkey,
 			},
 		},
 	}
-	s.client.OnObservedTxIn(txIn)
-	utxos, err = utxoAccessor.GetUTXOs()
+	for _, item := range txIn.TxArray {
+		s.client.OnObservedTxIn(item, 3)
+	}
+	utxos, err = utxoAccessor.GetUTXOs(pkey)
 	c.Assert(err, IsNil)
 	c.Assert(len(utxos), Equals, 4)
 }
