@@ -184,12 +184,6 @@ func (c *Client) GetNonce(addr string) (uint64, error) {
 	return nonce, nil
 }
 
-func (c *Client) ValidateMetadata(inter interface{}) bool {
-	meta := inter.(EthereumMetadata)
-	acct := c.accts.GetByAccount(meta.Address)
-	return acct.Address == meta.Address && acct.Nonce == meta.Nonce
-}
-
 // SignTx sign the the given TxArrayItem
 func (c *Client) SignTx(tx stypes.TxOutItem, height int64) ([]byte, error) {
 	toAddr := tx.ToAddress.String()

@@ -127,11 +127,6 @@ func (c *Client) GetHeight() (int64, error) {
 	return c.client.GetBlockCount()
 }
 
-// ValidateMetadata validates metadata
-func (c *Client) ValidateMetadata(inter interface{}) bool {
-	return true
-}
-
 // GetAddress returns address from pubkey
 func (c *Client) GetAddress(poolPubKey common.PubKey) string {
 	addr, err := poolPubKey.GetAddress(common.BTCChain)
