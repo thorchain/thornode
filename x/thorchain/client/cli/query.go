@@ -35,7 +35,6 @@ func GetQueryCmd(storeKey string, cdc *codec.Codec) *cobra.Command {
 		GetCmdPools(storeKey, cdc),
 		GetCmdStakerPool(storeKey, cdc),
 		GetCmdPoolStaker(storeKey, cdc),
-		GetCmdPoolIndex(storeKey, cdc),
 		GetCmdSwapRecord(storeKey, cdc),
 		GetCmdUnStakeRecord(storeKey, cdc),
 		GetCmdKeysignArray(storeKey, cdc),
@@ -168,30 +167,6 @@ func GetCmdPools(queryRoute string, cdc *codec.Codec) *cobra.Command {
 				return fmt.Errorf("fail to unmarhal pools: %w", err)
 			}
 			return cliCtx.PrintOutput(out)
-		},
-	}
-}
-
-// GetCmdPoolIndex query pool index
-func GetCmdPoolIndex(queryRoute string, cdc *codec.Codec) *cobra.Command {
-	return &cobra.Command{
-		Use:   "poolindex",
-		Short: "poolindex",
-		// Args:  cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx := context.NewCLIContext().WithCodec(cdc)
-			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/poolindex", queryRoute), nil)
-			if err != nil {
-				cmd.Println("could not get query poolindex")
-				return nil
-			}
-
-			var out types.PoolIndex
-			if err := cdc.UnmarshalJSON(res, &out); err != nil {
-				return fmt.Errorf("fail to unmarshal pool index: %w", err)
-			}
-			cmd.Println(out)
-			return nil
 		},
 	}
 }

@@ -146,7 +146,6 @@ type (
 	NodeKeys                    = types.NodeKeys
 	NodesKeys                   = types.NodesKeys
 	PoolStatus                  = types.PoolStatus
-	PoolIndex                   = types.PoolIndex
 	Pool                        = types.Pool
 	Pools                       = types.Pools
 	PoolStaker                  = types.PoolStaker
