@@ -52,11 +52,6 @@ func unstake(ctx sdk.Context, version semver.Version, keeper Keeper, msg MsgSetU
 		return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), sdk.NewError(DefaultCodespace, CodePoolStakerNotExist, "pool staker doesn't exist")
 
 	}
-	stakerPool, err := keeper.GetStakerPool(ctx, msg.RuneAddress)
-	if err != nil {
-		ctx.Logger().Error("can't find staker pool", "error", err)
-		return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), sdk.NewError(DefaultCodespace, CodeStakerPoolNotExist, "staker pool doesn't exist")
-	}
 
 	poolUnits := pool.PoolUnits
 	poolRune := pool.BalanceRune
@@ -127,13 +122,6 @@ func unstake(ctx sdk.Context, version semver.Version, keeper Keeper, msg MsgSetU
 		stakerUnit.Units = unitAfter
 		poolStaker.UpsertStakerUnit(stakerUnit)
 	}
-	if unitAfter.IsZero() {
-		stakerPool.RemoveStakerPoolItem(msg.Asset)
-	} else {
-		spi := stakerPool.GetStakerPoolItem(msg.Asset)
-		spi.Units = unitAfter
-		stakerPool.UpsertStakerPoolItem(spi)
-	}
 
 	// Create a pool event if THORNode have no rune or assets
 	if pool.BalanceAsset.IsZero() || pool.BalanceRune.IsZero() {
@@ -146,7 +134,6 @@ func unstake(ctx sdk.Context, version semver.Version, keeper Keeper, msg MsgSetU
 		return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), sdk.ErrInternal("fail to save pool")
 	}
 	keeper.SetPoolStaker(ctx, poolStaker)
-	keeper.SetStakerPool(ctx, stakerPool)
 	return withdrawRune, withDrawAsset, common.SafeSub(fStakerUnit, unitAfter), gasAsset, nil
 }
 

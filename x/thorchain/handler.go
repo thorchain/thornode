@@ -41,7 +41,6 @@ const (
 	CodeFailAddOutboundTx     sdk.CodeType = 131
 	CodeFailSaveEvent         sdk.CodeType = 132
 	CodePoolStakerNotExist    sdk.CodeType = 133
-	CodeStakerPoolNotExist    sdk.CodeType = 134
 	CodeNoStakeUnitLeft       sdk.CodeType = 135
 	CodeUnstakeWithin24Hours  sdk.CodeType = 136
 	CodeUnstakeFail           sdk.CodeType = 137

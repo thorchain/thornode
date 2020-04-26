@@ -36,8 +36,6 @@ var (
 	QueryPool               = Query{Key: "pool", EndpointTemplate: "/%s/pool/{%s}"}
 	QueryPools              = Query{Key: "pools", EndpointTemplate: "/%s/pools"}
 	QueryPoolStakers        = Query{Key: "poolstakers", EndpointTemplate: "/%s/pool/{%s}/stakers"}
-	QueryStakerPools        = Query{Key: "stakerpools", EndpointTemplate: "/%s/staker/{%s}"}
-	QuerySwapRecord         = Query{Key: "swaprecord", EndpointTemplate: "/%s/swaprecord/{%s}"}
 	QueryUnStakeRecord      = Query{Key: "unstakerecord", EndpointTemplate: "/%s/unstakerecord/{%s}"}
 	QueryTxIn               = Query{Key: "txin", EndpointTemplate: "/%s/tx/{%s}"}
 	QueryKeysignArray       = Query{Key: "keysign", EndpointTemplate: "/%s/keysign/{%s}"}
@@ -67,8 +65,6 @@ var Queries = []Query{
 	QueryPool,
 	QueryPools,
 	QueryPoolStakers,
-	QueryStakerPools,
-	QuerySwapRecord,
 	QueryUnStakeRecord,
 	QueryTxIn,
 	QueryKeysignArray,

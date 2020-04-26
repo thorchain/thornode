@@ -63,14 +63,6 @@ func (m *MockStackKeeper) GetPoolStaker(_ sdk.Context, asset common.Asset) (Pool
 	}, nil
 }
 
-func (m *MockStackKeeper) GetStakerPool(_ sdk.Context, addr common.Address) (StakerPool, error) {
-	return StakerPool{
-		RuneAddress:  addr,
-		AssetAddress: addr,
-		PoolUnits:    nil,
-	}, nil
-}
-
 func (m *MockStackKeeper) UpsertEvent(_ sdk.Context, _ Event) error {
 	if m.failGetNextEventID {
 		return kaboom

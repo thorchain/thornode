@@ -356,20 +356,6 @@ func (UnstakeSuite) TestUnstake(c *C) {
 			expectedError: sdk.NewError(DefaultCodespace, CodePoolStakerNotExist, "pool staker doesn't exist"),
 		},
 		{
-			name: "invalid-staker-pool-notexist",
-			msg: MsgSetUnStake{
-				RuneAddress:        common.Address("NOTEXISTSTAKER"),
-				UnstakeBasisPoints: sdk.NewUint(10000),
-				Asset:              common.BNBAsset,
-				Tx:                 common.Tx{ID: "28B40BF105A112389A339A64BD1A042E6140DC9082C679586C6CF493A9FDE3FE"},
-				Signer:             accountAddr,
-			},
-			ps:            ps,
-			runeAmount:    sdk.ZeroUint(),
-			assetAmount:   sdk.ZeroUint(),
-			expectedError: sdk.NewError(DefaultCodespace, CodeStakerPoolNotExist, "staker pool doesn't exist"),
-		},
-		{
 			name: "nothing-to-withdraw",
 			msg: MsgSetUnStake{
 				RuneAddress:        runeAddress,
@@ -460,22 +446,5 @@ func getInMemoryPoolStorageForUnstake(c *C) Keeper {
 		},
 	}
 	store.SetPoolStaker(ctx, poolStaker)
-	stakerPool := StakerPool{
-		RuneAddress: runeAddress,
-		PoolUnits: []*StakerPoolItem{
-			{
-				Asset: common.BNBAsset,
-				Units: sdk.NewUint(100 * common.One),
-				StakeDetails: []StakeTxDetail{
-					{
-						RequestTxHash: common.TxID("28B40BF105A112389A339A64BD1A042E6140DC9082C679586C6CF493A9FDE3FE"),
-						RuneAmount:    sdk.NewUint(100 * common.One),
-						AssetAmount:   sdk.NewUint(100 * common.One),
-					},
-				},
-			},
-		},
-	}
-	store.SetStakerPool(ctx, stakerPool)
 	return store
 }

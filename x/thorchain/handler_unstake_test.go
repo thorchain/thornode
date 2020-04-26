@@ -23,7 +23,6 @@ type MockUnstakeKeeper struct {
 	suspendedPool     bool
 	failPoolStaker    bool
 	failAddEvents     bool
-	stakerPool        StakerPool
 	poolStaker        PoolStaker
 }
 
@@ -65,14 +64,6 @@ func (mfp *MockUnstakeKeeper) GetPoolStaker(_ sdk.Context, _ common.Asset) (Pool
 		return PoolStaker{}, errors.New("fail to get pool staker")
 	}
 	return mfp.poolStaker, nil
-}
-
-func (mfp *MockUnstakeKeeper) GetStakerPool(_ sdk.Context, _ common.Address) (StakerPool, error) {
-	return mfp.stakerPool, nil
-}
-
-func (mfp *MockUnstakeKeeper) SetStakerPool(_ sdk.Context, sp StakerPool) {
-	mfp.stakerPool = sp
 }
 
 func (mfp *MockUnstakeKeeper) SetPoolStaker(_ sdk.Context, ps PoolStaker) {

@@ -78,7 +78,6 @@ type TestEndPoolHandleKeeper struct {
 	failAddEvent      bool
 	failStakeEvent    bool
 	poolStaker        PoolStaker
-	stakerPool        StakerPool
 }
 
 func (k *TestEndPoolHandleKeeper) PoolExist(_ sdk.Context, asset common.Asset) bool {
@@ -118,14 +117,6 @@ func (k *TestEndPoolHandleKeeper) GetPoolStaker(_ sdk.Context, _ common.Asset) (
 	return k.poolStaker, nil
 }
 
-func (k *TestEndPoolHandleKeeper) GetStakerPool(_ sdk.Context, _ common.Address) (StakerPool, error) {
-	return k.stakerPool, nil
-}
-
-func (k *TestEndPoolHandleKeeper) SetStakerPool(_ sdk.Context, sp StakerPool) {
-	k.stakerPool = sp
-}
-
 func (k *TestEndPoolHandleKeeper) SetPoolStaker(_ sdk.Context, ps PoolStaker) {
 	k.poolStaker = ps
 }
@@ -161,11 +152,6 @@ func (s *HandlerEndPoolSuite) TestHandle(c *C) {
 			Asset:      asset,
 			TotalUnits: sdk.ZeroUint(),
 			Stakers:    nil,
-		},
-		stakerPool: StakerPool{
-			RuneAddress:  bnbAddr,
-			AssetAddress: bnbAddr,
-			PoolUnits:    nil,
 		},
 	}
 

@@ -22,7 +22,6 @@ type Keeper interface {
 	KeeperPool
 	KeeperLastHeight
 	KeeperPoolStaker
-	KeeperStakerPool
 	KeeperNodeAccount
 	KeeperObserver
 	KeeperObservedTx
@@ -57,7 +56,6 @@ const (
 	prefixTotalLiquidityFee  dbPrefix = "total_liquidity_fee/"
 	prefixPoolLiquidityFee   dbPrefix = "pool_liquidity_fee/"
 	prefixPoolStaker         dbPrefix = "pool_staker/"
-	prefixStakerPool         dbPrefix = "staker_pool/"
 	prefixEvents             dbPrefix = "events/"
 	prefixTxHashEvents       dbPrefix = "tx_events/"
 	prefixPendingEvents      dbPrefix = "pending_events/"
