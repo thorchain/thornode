@@ -62,7 +62,7 @@ func (h UnstakeHandler) validateV1(ctx sdk.Context, msg MsgSetUnStake) sdk.Error
 		ctx.Logger().Error("unstake msg fail validation", "error", err.ABCILog())
 		return sdk.NewError(DefaultCodespace, CodeUnstakeFailValidation, err.Error())
 	}
-	if !isSignedByActiveObserver(ctx, h.keeper, msg.GetSigners()) {
+	if !isSignedByActiveNodeAccounts(ctx, h.keeper, msg.GetSigners()) {
 		ctx.Logger().Error("message signed by unauthorized account",
 			"request tx hash", msg.Tx.ID,
 			"rune address", msg.RuneAddress,

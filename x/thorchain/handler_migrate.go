@@ -46,7 +46,7 @@ func (h MigrateHandler) validateV1(ctx sdk.Context, msg MsgMigrate) error {
 		return err
 	}
 
-	if !isSignedByActiveObserver(ctx, h.keeper, msg.GetSigners()) {
+	if !isSignedByActiveNodeAccounts(ctx, h.keeper, msg.GetSigners()) {
 		ctx.Logger().Error(notAuthorized.Error())
 		return notAuthorized
 	}

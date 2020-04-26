@@ -13,13 +13,16 @@ type HandlerObservedTxInSuite struct{}
 
 type TestObservedTxInValidateKeeper struct {
 	KVStoreDummy
-	isActive       bool
-	standbyAccount NodeAccount
+	activeNodeAccount NodeAccount
+	standbyAccount    NodeAccount
 }
 
 func (k *TestObservedTxInValidateKeeper) GetNodeAccount(_ sdk.Context, addr sdk.AccAddress) (NodeAccount, error) {
 	if addr.Equals(k.standbyAccount.NodeAddress) {
 		return k.standbyAccount, nil
+	}
+	if addr.Equals(k.activeNodeAccount.NodeAddress) {
+		return k.activeNodeAccount, nil
 	}
 	return NodeAccount{}, kaboom
 }
@@ -32,20 +35,17 @@ func (k *TestObservedTxInValidateKeeper) SetNodeAccount(_ sdk.Context, na NodeAc
 	return kaboom
 }
 
-func (k *TestObservedTxInValidateKeeper) IsActiveObserver(_ sdk.Context, _ sdk.AccAddress) bool {
-	return k.isActive
-}
-
 var _ = Suite(&HandlerObservedTxInSuite{})
 
 func (s *HandlerObservedTxInSuite) TestValidate(c *C) {
 	var err error
 	ctx, _ := setupKeeperForTest(c)
 	w := getHandlerTestWrapper(c, 1, true, false)
+	activeNodeAccount := GetRandomNodeAccount(NodeActive)
 	standbyAccount := GetRandomNodeAccount(NodeStandby)
 	keeper := &TestObservedTxInValidateKeeper{
-		isActive:       true,
-		standbyAccount: standbyAccount,
+		activeNodeAccount: activeNodeAccount,
+		standbyAccount:    standbyAccount,
 	}
 
 	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(w.versionedTxOutStore)
@@ -59,7 +59,7 @@ func (s *HandlerObservedTxInSuite) TestValidate(c *C) {
 	txs := ObservedTxs{NewObservedTx(GetRandomTx(), 12, pk)}
 	txs[0].Tx.ToAddress, err = pk.GetAddress(txs[0].Tx.Coins[0].Asset.Chain)
 	c.Assert(err, IsNil)
-	msg := NewMsgObservedTxIn(txs, GetRandomBech32Addr())
+	msg := NewMsgObservedTxIn(txs, activeNodeAccount.NodeAddress)
 	isNewSigner, err := handler.validate(ctx, msg, ver)
 	c.Assert(err, IsNil)
 	c.Assert(isNewSigner, Equals, false)
@@ -70,7 +70,6 @@ func (s *HandlerObservedTxInSuite) TestValidate(c *C) {
 	c.Assert(isNewSigner, Equals, false)
 
 	// inactive node account
-	keeper.isActive = false
 	msg = NewMsgObservedTxIn(txs, GetRandomBech32Addr())
 	isNewSigner, err = handler.validate(ctx, msg, ver)
 	c.Assert(err, Equals, notAuthorized)

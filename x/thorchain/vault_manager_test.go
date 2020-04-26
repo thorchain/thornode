@@ -40,6 +40,13 @@ func (k *TestRagnarokChainKeeper) ListActiveNodeAccounts(_ sdk.Context) (NodeAcc
 	return NodeAccounts{k.na}, k.err
 }
 
+func (k *TestRagnarokChainKeeper) GetNodeAccount(ctx sdk.Context, signer sdk.AccAddress) (NodeAccount, error) {
+	if k.na.NodeAddress.Equals(signer) {
+		return k.na, nil
+	}
+	return NodeAccount{}, nil
+}
+
 func (k *TestRagnarokChainKeeper) GetAsgardVaultsByStatus(_ sdk.Context, vt VaultStatus) (Vaults, error) {
 	if vt == ActiveVault {
 		return Vaults{k.activeVault}, k.err

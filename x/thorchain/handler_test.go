@@ -141,13 +141,6 @@ func getHandlerTestWrapper(c *C, height int64, withActiveNode, withActieBNBPool 
 	}
 }
 
-func (HandlerSuite) TestIsSignedByActiveObserver(c *C) {
-	ctx, k := setupKeeperForTest(c)
-	nodeAddr := GetRandomBech32Addr()
-	c.Check(isSignedByActiveObserver(ctx, k, []sdk.AccAddress{nodeAddr}), Equals, false)
-	c.Check(isSignedByActiveObserver(ctx, k, []sdk.AccAddress{}), Equals, false)
-}
-
 func (HandlerSuite) TestIsSignedByActiveNodeAccounts(c *C) {
 	ctx, k := setupKeeperForTest(c)
 	nodeAddr := GetRandomBech32Addr()
