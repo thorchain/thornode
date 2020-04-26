@@ -26,6 +26,7 @@ func GetRandomNodeAccount(status NodeStatus) NodeAccount {
 	na.Version = constants.SWVersion
 	if na.Status == Active {
 		na.ActiveBlockHeight = 10
+		na.Bond = sdk.NewUint(1000 * common.One)
 	}
 	na.IPAddress = "192.168.0.1"
 

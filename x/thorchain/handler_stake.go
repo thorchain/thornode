@@ -158,7 +158,7 @@ func processStakeEvent(ctx sdk.Context, keeper Keeper, msg MsgSetStakeData, stak
 
 // getTotalBond
 func (h StakeHandler) getTotalBond(ctx sdk.Context) (sdk.Uint, error) {
-	nodeAccounts, err := h.keeper.ListNodeAccounts(ctx)
+	nodeAccounts, err := h.keeper.ListNodeAccountsWithBond(ctx)
 	if err != nil {
 		return sdk.ZeroUint(), err
 	}

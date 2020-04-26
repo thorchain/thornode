@@ -44,7 +44,7 @@ func (m *MockStackKeeper) SetPool(_ sdk.Context, pool Pool) error {
 	return nil
 }
 
-func (m *MockStackKeeper) ListNodeAccounts(_ sdk.Context) (NodeAccounts, error) {
+func (m *MockStackKeeper) ListNodeAccountsWithBond(_ sdk.Context) (NodeAccounts, error) {
 	return NodeAccounts{m.activeNodeAccount}, nil
 }
 

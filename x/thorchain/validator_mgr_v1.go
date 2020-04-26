@@ -481,7 +481,7 @@ func (vm *validatorMgrV1) ragnarokReserve(ctx sdk.Context, nth int64) error {
 }
 
 func (vm *validatorMgrV1) ragnarokBond(ctx sdk.Context, nth int64) error {
-	nas, err := vm.k.ListNodeAccounts(ctx)
+	nas, err := vm.k.ListNodeAccountsWithBond(ctx)
 	if err != nil {
 		ctx.Logger().Error("can't get nodes", "error", err)
 		return err
@@ -680,7 +680,7 @@ func (vm *validatorMgrV1) RequestYggReturn(ctx sdk.Context, node NodeAccount) er
 }
 
 func (vm *validatorMgrV1) recallYggFunds(ctx sdk.Context) error {
-	nodes, err := vm.k.ListNodeAccounts(ctx)
+	nodes, err := vm.k.ListNodeAccountsWithBond(ctx)
 	if err != nil {
 		return fmt.Errorf("fail to list all node accounts: %w", err)
 	}
