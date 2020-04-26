@@ -57,10 +57,6 @@ func (k KVStoreDummy) GetPoolIterator(_ sdk.Context) sdk.Iterator {
 func (k KVStoreDummy) SetPoolData(_ sdk.Context, _ common.Asset, _ PoolStatus) {}
 func (k KVStoreDummy) GetPoolDataIterator(_ sdk.Context) sdk.Iterator          { return nil }
 func (k KVStoreDummy) EnableAPool(_ sdk.Context)                               {}
-func (k KVStoreDummy) GetPoolIndex(_ sdk.Context) (PoolIndex, error)           { return nil, kaboom }
-func (k KVStoreDummy) SetPoolIndex(_ sdk.Context, _ PoolIndex)                 {}
-func (k KVStoreDummy) AddToPoolIndex(_ sdk.Context, _ common.Asset) error      { return kaboom }
-func (k KVStoreDummy) RemoveFromPoolIndex(_ sdk.Context, _ common.Asset) error { return kaboom }
 
 func (k KVStoreDummy) GetPool(_ sdk.Context, _ common.Asset) (Pool, error) {
 	return Pool{}, kaboom
