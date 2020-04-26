@@ -284,12 +284,6 @@ func (b *Binance) getGasFee(count uint64) common.Gas {
 	return common.CalcGasPrice(common.Tx{Coins: coins}, common.BNBAsset, gasInfo)
 }
 
-func (b *Binance) ValidateMetadata(inter interface{}) bool {
-	meta := inter.(BinanceMetadata)
-	acct := b.accts.GetByAccount(meta.AccountNumber)
-	return acct.AccountNumber == meta.AccountNumber && acct.SeqNumber == meta.SeqNumber
-}
-
 // SignTx sign the the given TxArrayItem
 func (b *Binance) SignTx(tx stypes.TxOutItem, height int64) ([]byte, error) {
 	var payload []msg.Transfer
