@@ -63,7 +63,7 @@ func (c *Client) getGasCoin(tx stypes.TxOutItem, vSize int64) common.Coin {
 		if err != nil {
 			c.logger.Err(err).Msg("fail to convert amount from float64 to int64")
 		} else {
-			gasRate = int64(amt) / int64(vBytes) * vSize // sats per vbyte
+			gasRate = int64(amt) / int64(vBytes) // sats per vbyte
 		}
 	}
 	return common.NewCoin(common.BTCAsset, sdk.NewUint(uint64(gasRate*vSize)))
@@ -122,6 +122,10 @@ func (c *Client) SignTx(tx stypes.TxOutItem, height int64) ([]byte, error) {
 	}
 	vSize := mempool.GetTxVirtualSize(btcutil.NewTx(redeemTx))
 	gasCoin := c.getGasCoin(tx, vSize)
+	gasAmt := btcutil.Amount(int64(gasCoin.Amount.Uint64()))
+	if err := c.utxoAccessor.UpsertTransactionFee(gasAmt.ToBTC(), int32(vSize)); err != nil {
+		c.logger.Err(err).Msg("fail to save gas info to UTXO storage")
+	}
 	coinToCustomer := tx.Coins.GetCoin(common.BTCAsset)
 
 	// pay to customer
