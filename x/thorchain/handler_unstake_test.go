@@ -53,9 +53,11 @@ func (mfp *MockUnstakeKeeper) SetPool(_ sdk.Context, pool Pool) error {
 	return nil
 }
 
-// IsActiveObserver see whether it is an active observer
-func (mfp *MockUnstakeKeeper) IsActiveObserver(_ sdk.Context, addr sdk.AccAddress) bool {
-	return mfp.activeNodeAccount.NodeAddress.Equals(addr)
+func (mfp *MockUnstakeKeeper) GetNodeAccount(_ sdk.Context, addr sdk.AccAddress) (NodeAccount, error) {
+	if mfp.activeNodeAccount.NodeAddress.Equals(addr) {
+		return mfp.activeNodeAccount, nil
+	}
+	return NodeAccount{}, nil
 }
 
 func (mfp *MockUnstakeKeeper) GetPoolStaker(_ sdk.Context, _ common.Asset) (PoolStaker, error) {

@@ -265,19 +265,6 @@ func isCurrentVaultPubKey(ctx sdk.Context, keeper Keeper, tx ObservedTx) bool {
 	return keeper.VaultExists(ctx, tx.ObservedPubKey)
 }
 
-// isSignedByActiveObserver check whether the signers are all active observer
-func isSignedByActiveObserver(ctx sdk.Context, keeper Keeper, signers []sdk.AccAddress) bool {
-	if len(signers) == 0 {
-		return false
-	}
-	for _, signer := range signers {
-		if !keeper.IsActiveObserver(ctx, signer) {
-			return false
-		}
-	}
-	return true
-}
-
 func isSignedByActiveNodeAccounts(ctx sdk.Context, keeper Keeper, signers []sdk.AccAddress) bool {
 	if len(signers) == 0 {
 		return false

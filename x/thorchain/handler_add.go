@@ -53,7 +53,7 @@ func (ah AddHandler) validateV1(ctx sdk.Context, msg MsgAdd) sdk.Error {
 	if err := msg.ValidateBasic(); err != nil {
 		return err
 	}
-	if !isSignedByActiveObserver(ctx, ah.keeper, msg.GetSigners()) {
+	if !isSignedByActiveNodeAccounts(ctx, ah.keeper, msg.GetSigners()) {
 		return sdk.ErrUnauthorized("Not authorized")
 	}
 	return nil

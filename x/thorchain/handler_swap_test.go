@@ -19,9 +19,11 @@ type TestSwapKeeper struct {
 	activeNodeAccount NodeAccount
 }
 
-// IsActiveObserver see whether it is an active observer
-func (k *TestSwapKeeper) IsActiveObserver(_ sdk.Context, addr sdk.AccAddress) bool {
-	return k.activeNodeAccount.NodeAddress.Equals(addr)
+func (k *TestSwapKeeper) GetNodeAccount(_ sdk.Context, addr sdk.AccAddress) (NodeAccount, error) {
+	if k.activeNodeAccount.NodeAddress.Equals(addr) {
+		return k.activeNodeAccount, nil
+	}
+	return NodeAccount{}, nil
 }
 
 var _ = Suite(&HandlerSwapSuite{})

@@ -19,9 +19,11 @@ type TestRagnarokKeeper struct {
 	vault             Vault
 }
 
-// IsActiveObserver see whether it is an active observer
-func (k *TestRagnarokKeeper) IsActiveObserver(_ sdk.Context, addr sdk.AccAddress) bool {
-	return k.activeNodeAccount.NodeAddress.Equals(addr)
+func (k *TestRagnarokKeeper) GetNodeAccount(_ sdk.Context, addr sdk.AccAddress) (NodeAccount, error) {
+	if k.activeNodeAccount.NodeAddress.Equals(addr) {
+		return k.activeNodeAccount, nil
+	}
+	return NodeAccount{}, nil
 }
 
 func (HandlerRagnarokSuite) TestRagnarok(c *C) {
