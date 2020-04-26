@@ -66,11 +66,11 @@ func unstake(ctx sdk.Context, version semver.Version, keeper Keeper, msg MsgSetU
 		return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), sdk.NewError(DefaultCodespace, CodeNoStakeUnitLeft, "nothing to withdraw")
 	}
 
+	cv := constants.GetConstantValues(version)
 	// check if thorchain need to rate limit unstaking
 	// https://gitlab.com/thorchain/thornode/issues/166
 	if !msg.Asset.Chain.Equals(common.BNBChain) {
 		height := ctx.BlockHeight()
-		cv := constants.GetConstantValues(version)
 		if height < (stakerUnit.Height + cv.GetInt64Value(constants.StakeLockUpBlocks)) {
 			return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), sdk.NewError(DefaultCodespace, CodeUnstakeWithin24Hours, "you cannot unstake for 24 hours after staking for this blockchain")
 		}
@@ -86,7 +86,6 @@ func unstake(ctx sdk.Context, version semver.Version, keeper Keeper, msg MsgSetU
 
 	// If the pool is empty, and there is a gas asset, subtract required gas
 	if common.SafeSub(poolUnits, fStakerUnit).Add(unitAfter).IsZero() {
-		// TODO: make this not chain specific
 		// minus gas costs for our transactions
 		if pool.Asset.IsBNB() {
 			gasInfo, err := keeper.GetGas(ctx, pool.Asset)
@@ -98,6 +97,11 @@ func unstake(ctx sdk.Context, version semver.Version, keeper Keeper, msg MsgSetU
 				withDrawAsset,
 				gasInfo[0].MulUint64(uint64(2)),
 			)
+		} else if pool.Asset.Equals(common.BTCAsset) || pool.Asset.Equals(common.ETHAsset) {
+			// leave half a RUNE as gas fee for BTC chain and ETH chain
+			transactionFee := cv.GetInt64Value(constants.TransactionFee)
+			gasAsset := pool.RuneValueInAsset(sdk.NewUint(uint64(transactionFee / 2)))
+			withDrawAsset = common.SafeSub(withDrawAsset, gasAsset)
 		}
 	}
 
