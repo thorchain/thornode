@@ -12,9 +12,7 @@ import (
 	"gitlab.com/thorchain/thornode/x/thorchain/types"
 )
 
-var (
-	notExistPoolStakerAsset, _ = common.NewAsset("BNB.NotExistPoolStakerAsset")
-)
+var notExistPoolStakerAsset, _ = common.NewAsset("BNB.NotExistPoolStakerAsset")
 
 type MockInMemoryPoolStorage struct {
 	KVStoreDummy
