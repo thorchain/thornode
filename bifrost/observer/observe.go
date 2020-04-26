@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
-	"strings"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/rs/zerolog"
@@ -97,7 +96,7 @@ func (o *Observer) processTxIns() {
 						continue
 					}
 					for _, item := range txIn.TxArray {
-						if o.isOutboundMsg(txIn.Chain, item.Sender, item.Memo) {
+						if o.isOutboundMsg(txIn.Chain, item.Sender) {
 							continue
 						}
 						i.OnObservedTxIn(item, height)
@@ -106,6 +105,14 @@ func (o *Observer) processTxIns() {
 			}
 		}
 	}
+}
+
+func (o *Observer) isOutboundMsg(chain common.Chain, fromAddr string) bool {
+	matchOutbound, _ := o.pubkeyMgr.IsValidPoolAddress(fromAddr, chain)
+	if matchOutbound {
+		return true
+	}
+	return false
 }
 
 // chunkify - breaks the observations into 100 transactions per observation
@@ -131,10 +138,6 @@ func (o *Observer) chunkify(txIn types.TxIn) (result []types.TxIn) {
 
 func (o *Observer) filterObservations(chain common.Chain, items []types.TxInItem) (txs []types.TxInItem) {
 	for _, txInItem := range items {
-		if ok := o.MatchedAddress(chain, txInItem); !ok {
-			continue
-		}
-
 		// NOTE: the following could result in the same tx being added
 		// twice, which is expected. We want to make sure we generate both
 		// a inbound and outbound txn, if we both apply.
@@ -148,101 +151,9 @@ func (o *Observer) filterObservations(chain common.Chain, items []types.TxInItem
 		if ok, cpi := o.pubkeyMgr.IsValidPoolAddress(txInItem.To, chain); ok {
 			txInItem.ObservedVaultPubKey = cpi.PubKey
 			txs = append(txs, txInItem)
-		} else {
-			// Apparently we don't recognize where we are sending funds to.
-			// Lets check if we should because its an internal transaction
-			// moving funds between vaults (for example). If it is, lets
-			// manually trigger an update of pubkeys, then check again...
-			switch strings.ToLower(txInItem.Memo) {
-			case "migrate", "yggdrasil-", "yggdrasil+":
-				o.pubkeyMgr.FetchPubKeys()
-				if ok, cpi := o.pubkeyMgr.IsValidPoolAddress(txInItem.To, chain); ok {
-					txInItem.ObservedVaultPubKey = cpi.PubKey
-					txs = append(txs, txInItem)
-				}
-			}
 		}
 	}
 	return
-}
-
-func (o *Observer) MatchedAddress(chain common.Chain, txInItem types.TxInItem) bool {
-	// Check if we are migrating our funds...
-	if ok := o.isMigration(chain, txInItem.Sender, txInItem.Memo); ok {
-		o.logger.Debug().Str("memo", txInItem.Memo).Msg("migrate")
-		return true
-	}
-
-	// Check if our pool is registering a new yggdrasil pool. Ie
-	// sending the staked assets to the user
-	if ok := o.isRegisterYggdrasil(chain, txInItem.Sender, txInItem.Memo); ok {
-		o.logger.Debug().Str("memo", txInItem.Memo).Msg("yggdrasil+")
-		return true
-	}
-
-	// Check if out pool is de registering a yggdrasil pool. Ie sending
-	// the bond back to the user
-	if ok := o.isDeregisterYggdrasil(chain, txInItem.Sender, txInItem.Memo); ok {
-		o.logger.Debug().Str("memo", txInItem.Memo).Msg("yggdrasil-")
-		return true
-	}
-
-	// Check if THORNode are sending from a yggdrasil address
-	if ok := o.isYggdrasil(chain, txInItem.Sender); ok {
-		o.logger.Debug().Str("assets sent from yggdrasil pool", txInItem.Memo).Msg("fill order")
-		return true
-	}
-
-	// Check if THORNode are sending to a yggdrasil address
-	if ok := o.isYggdrasil(chain, txInItem.To); ok {
-		o.logger.Debug().Str("assets to yggdrasil pool", txInItem.Memo).Msg("refill")
-		return true
-	}
-
-	// outbound message from pool, when it is outbound, it does not matter how much coins THORNode send to customer for now
-	if ok := o.isOutboundMsg(chain, txInItem.Sender, txInItem.Memo); ok {
-		o.logger.Debug().Str("memo", txInItem.Memo).Msg("outbound")
-		return true
-	}
-
-	return false
-}
-
-// Check if memo is for registering an Asgard vault
-func (o *Observer) isMigration(chain common.Chain, addr, memo string) bool {
-	return o.isAddrWithMemo(chain, addr, memo, "migrate")
-}
-
-// Check if memo is for registering a Yggdrasil vault
-func (o *Observer) isRegisterYggdrasil(chain common.Chain, addr, memo string) bool {
-	return o.isAddrWithMemo(chain, addr, memo, "yggdrasil+")
-}
-
-// Check if memo is for de registering a Yggdrasil vault
-func (o *Observer) isDeregisterYggdrasil(chain common.Chain, addr, memo string) bool {
-	return o.isAddrWithMemo(chain, addr, memo, "yggdrasil-")
-}
-
-// Check if THORNode have an outbound yggdrasil transaction
-func (o *Observer) isYggdrasil(chain common.Chain, addr string) bool {
-	ok, _ := o.pubkeyMgr.IsValidPoolAddress(addr, chain)
-	return ok
-}
-
-func (o *Observer) isOutboundMsg(chain common.Chain, addr, memo string) bool {
-	return o.isAddrWithMemo(chain, addr, memo, "")
-}
-
-func (o *Observer) isAddrWithMemo(chain common.Chain, addr, memo, targetMemo string) bool {
-	match, _ := o.pubkeyMgr.IsValidPoolAddress(addr, chain)
-	if !match {
-		return false
-	}
-	lowerMemo := strings.ToLower(memo)
-	if strings.HasPrefix(lowerMemo, targetMemo) {
-		return true
-	}
-	return false
 }
 
 func (o *Observer) processErrataTx() {
