@@ -94,7 +94,7 @@ func (h UnstakeHandler) handle(ctx sdk.Context, msg MsgSetUnStake, version semve
 	}
 	stakerUnit := poolStaker.GetStakerUnit(msg.RuneAddress)
 
-	runeAmt, assetAmount, units, err := unstake(ctx, version, h.keeper, msg)
+	runeAmt, assetAmount, units, gasAsset, err := unstake(ctx, version, h.keeper, msg)
 	if err != nil {
 		return nil, sdk.ErrInternal(fmt.Errorf("fail to process UnStake request: %w", err).Error())
 	}
@@ -151,6 +151,13 @@ func (h UnstakeHandler) handle(ctx sdk.Context, msg MsgSetUnStake, version semve
 		Coin:      common.NewCoin(common.RuneAsset(), runeAmt),
 		Memo:      memo,
 	}
+	if !gasAsset.IsZero() {
+		if msg.Asset.IsBNB() {
+			toi.MaxGas = common.Gas{
+				common.NewCoin(common.RuneAsset().Chain.GetGasAsset(), gasAsset.QuoUint64(2)),
+			}
+		}
+	}
 	ok, err := txOutStore.TryAddTxOutItem(ctx, toi)
 	if err != nil {
 		ctx.Logger().Error("fail to prepare outbound tx", "error", err)
@@ -167,6 +174,18 @@ func (h UnstakeHandler) handle(ctx sdk.Context, msg MsgSetUnStake, version semve
 		Coin:      common.NewCoin(msg.Asset, assetAmount),
 		Memo:      memo,
 	}
+	if !gasAsset.IsZero() {
+		if msg.Asset.IsBNB() {
+			toi.MaxGas = common.Gas{
+				common.NewCoin(common.RuneAsset().Chain.GetGasAsset(), gasAsset.QuoUint64(2)),
+			}
+		} else if msg.Asset.Chain.GetGasAsset().Equals(msg.Asset) {
+			toi.MaxGas = common.Gas{
+				common.NewCoin(msg.Asset.Chain.GetGasAsset(), gasAsset),
+			}
+		}
+	}
+
 	ok, err = txOutStore.TryAddTxOutItem(ctx, toi)
 	if err != nil {
 		ctx.Logger().Error("fail to prepare outbound tx", "error", err)

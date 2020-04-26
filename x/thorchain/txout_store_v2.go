@@ -125,7 +125,7 @@ func (tos *TxOutStorageV2) prepareTxOutItem(ctx sdk.Context, toi *TxOutItem) (bo
 		// check that this vault has enough funds to satisfy the request
 		if toi.Coin.Amount.GT(vault.GetCoin(toi.Coin.Asset).Amount) {
 			// not enough funds
-			return false, fmt.Errorf("Vault %s, does not have enough funds. Has %s, but requires %s", vault.PubKey, vault.GetCoin(toi.Coin.Asset), toi.Coin)
+			return false, fmt.Errorf("vault %s, does not have enough funds. Has %s, but requires %s", vault.PubKey, vault.GetCoin(toi.Coin.Asset), toi.Coin)
 		}
 
 		toi.VaultPubKey = vault.PubKey
@@ -155,6 +155,7 @@ func (tos *TxOutStorageV2) prepareTxOutItem(ctx sdk.Context, toi *TxOutItem) (bo
 		toi.MaxGas = common.Gas{
 			common.NewCoin(gasAsset, maxAmt),
 		}
+
 	}
 
 	// Deduct TransactionFee from TOI and add to Reserve
