@@ -9,6 +9,37 @@ import (
 	"gitlab.com/thorchain/thornode/common"
 )
 
+type Staker struct {
+	Asset        common.Asset   `json:"asset"`
+	RuneAddress  common.Address `json:"rune_address"`
+	AssetAddress common.Address `json:"asset_address"`
+	LastStake    int64          `json:"last_stake"`
+	LastUnStake  int64          `json:"last_unstake"`
+	Units        sdk.Uint       `json:"units"`
+	PendingRune  sdk.Uint       `json:"pending_rune"` // number of rune coins
+}
+
+func (staker Staker) Valid() error {
+	if staker.LastStake == 0 {
+		return errors.New("last stake height cannot be empty")
+	}
+	if staker.RuneAddress.IsEmpty() {
+		return errors.New("rune address cannot be empty")
+	}
+	if staker.AssetAddress.IsEmpty() {
+		return errors.New("asset address cannot be empty")
+	}
+	return nil
+}
+
+func (staker Staker) Key() string {
+	return fmt.Sprintf(
+		"%s/%s",
+		staker.Asset.String(),
+		staker.RuneAddress.String(),
+	)
+}
+
 // StakerUnit staker and their units in the pool
 type StakerUnit struct {
 	RuneAddress  common.Address `json:"rune_address"`

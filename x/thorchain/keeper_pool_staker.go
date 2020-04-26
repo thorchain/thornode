@@ -45,3 +45,35 @@ func (k KVStore) SetPoolStaker(ctx sdk.Context, ps PoolStaker) {
 	result := k.cdc.MustMarshalBinaryBare(ps)
 	store.Set([]byte(key), result)
 }
+
+// GetStakerIterator iterate stakers
+func (k KVStore) GetStakerIterator(ctx sdk.Context, asset common.Asset) sdk.Iterator {
+	store := ctx.KVStore(k.storeKey)
+	key := k.GetKey(ctx, prefixStaker, Staker{Asset: asset}.Key())
+	return sdk.KVStorePrefixIterator(store, []byte(key))
+}
+
+// GetStaker retrieve staker from the data store
+func (k KVStore) GetStaker(ctx sdk.Context, asset common.Asset, addr common.Address) (Staker, error) {
+	store := ctx.KVStore(k.storeKey)
+	staker := Staker{
+		Asset:       asset,
+		RuneAddress: addr,
+	}
+	key := k.GetKey(ctx, prefixStaker, staker.Key())
+	if !store.Has([]byte(key)) {
+		return Staker{}, nil
+	}
+	buf := store.Get([]byte(key))
+	if err := k.cdc.UnmarshalBinaryBare(buf, &staker); err != nil {
+		return staker, err
+	}
+	return staker, nil
+}
+
+// SetStaker store the staker to kvstore
+func (k KVStore) SetStaker(ctx sdk.Context, staker Staker) {
+	store := ctx.KVStore(k.storeKey)
+	key := k.GetKey(ctx, prefixStaker, staker.Key())
+	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(staker))
+}

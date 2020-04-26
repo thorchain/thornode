@@ -149,6 +149,7 @@ type (
 	Pools                       = types.Pools
 	PoolStaker                  = types.PoolStaker
 	StakerUnit                  = types.StakerUnit
+	Staker                      = types.Staker
 	ObservedTxs                 = types.ObservedTxs
 	ObservedTx                  = types.ObservedTx
 	ObservedTxVoter             = types.ObservedTxVoter
