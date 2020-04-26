@@ -581,15 +581,12 @@ func (vm *validatorMgrV1) ragnarokPools(ctx sdk.Context, nth int64, constAccesso
 
 	for i := len(pools) - 1; i >= 0; i-- { // iterate backwards
 		pool := pools[i]
-		fmt.Printf("Ragnarok Pool: %s\n", pool.Asset)
 		iterator := vm.k.GetStakerIterator(ctx, pool.Asset)
 		defer iterator.Close()
 		for ; iterator.Valid(); iterator.Next() {
 			var staker Staker
-			fmt.Println("fooooooooo")
 			vm.k.Cdc().MustUnmarshalBinaryBare(iterator.Value(), &staker)
 			if staker.Units.IsZero() {
-				fmt.Println("is zero")
 				continue
 			}
 

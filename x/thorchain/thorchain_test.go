@@ -1,7 +1,6 @@
 package thorchain
 
 import (
-	"fmt"
 	"sort"
 	"testing"
 
@@ -370,7 +369,6 @@ func (s *ThorchainSuite) TestRagnarok(c *C) {
 	migrateInterval := consts.GetInt64Value(constants.FundMigrationInterval)
 	for i := 1; i <= 10; i++ { // simulate each round of ragnarok (max of ten)
 		ctx = ctx.WithBlockHeight(ragnarokHeight + (int64(i) * migrateInterval))
-		fmt.Printf("Process Rag: %d\n", i)
 		c.Assert(validatorMgr.processRagnarok(ctx, consts), IsNil)
 		items, err := versionedTxOutStoreDummy.txoutStore.GetOutboundItems(ctx)
 		c.Assert(err, IsNil)

@@ -126,7 +126,7 @@ func unstake(ctx sdk.Context, version semver.Version, keeper Keeper, msg MsgSetU
 		ctx.Logger().Error("fail to save pool", "error", err)
 		return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), sdk.ErrInternal("fail to save pool")
 	}
-	if stakerUnit.Units.IsZero() {
+	if !stakerUnit.Units.IsZero() {
 		keeper.SetStaker(ctx, stakerUnit)
 	} else {
 		keeper.RemoveStaker(ctx, stakerUnit)
