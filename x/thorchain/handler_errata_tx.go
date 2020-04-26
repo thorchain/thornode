@@ -166,21 +166,18 @@ func (h ErrataTxHandler) handleV1(ctx sdk.Context, msg MsgErrataTx) sdk.Result {
 	pool.BalanceAsset = common.SafeSub(pool.BalanceAsset, assetAmt)
 
 	if memo.IsType(TxStake) {
-		ps, err := h.keeper.GetPoolStaker(ctx, memo.GetAsset())
+		staker, err := h.keeper.GetStaker(ctx, memo.GetAsset(), tx.FromAddress)
 		if err != nil {
-			ctx.Logger().Error("fail to get pool staker record", "error", err)
+			ctx.Logger().Error("fail to get staker", "error", err)
 			return sdk.ErrInternal(err.Error()).Result()
 		}
 
 		// since this address is being malicious, zero their staking units
-		su := ps.GetStakerUnit(tx.FromAddress)
-		pool.PoolUnits = common.SafeSub(pool.PoolUnits, su.Units)
-		ps.TotalUnits = pool.PoolUnits
-		su.Units = sdk.ZeroUint()
-		su.Height = ctx.BlockHeight()
+		pool.PoolUnits = common.SafeSub(pool.PoolUnits, staker.Units)
+		staker.Units = sdk.ZeroUint()
+		staker.LastStakeHeight = ctx.BlockHeight()
 
-		ps.UpsertStakerUnit(su)
-		h.keeper.SetPoolStaker(ctx, ps)
+		h.keeper.SetStaker(ctx, staker)
 	}
 
 	if err := h.keeper.SetPool(ctx, pool); err != nil {

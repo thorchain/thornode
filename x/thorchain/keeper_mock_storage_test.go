@@ -40,14 +40,20 @@ func (mps MockPoolStorage) GetPool(ctx sdk.Context, asset common.Asset) (types.P
 
 func (mps MockPoolStorage) SetPool(ctx sdk.Context, ps types.Pool) error { return nil }
 
-func (mps MockPoolStorage) GetPoolStaker(ctx sdk.Context, asset common.Asset) (types.PoolStaker, error) {
+func (mps MockPoolStorage) GetStaker(ctx sdk.Context, asset common.Asset, addr common.Address) (types.Staker, error) {
 	if asset.Equals(common.Asset{Chain: common.BNBChain, Symbol: "NOTEXISTSTICKER", Ticker: "NOTEXISTSTICKER"}) {
-		return types.PoolStaker{}, errors.New("you asked for it")
+		return types.Staker{}, errors.New("you asked for it")
 	}
-	return types.NewPoolStaker(asset, sdk.NewUint(100)), nil
+	return Staker{
+		Asset:        asset,
+		RuneAddress:  addr,
+		AssetAddress: addr,
+		Units:        sdk.NewUint(100),
+		PendingRune:  sdk.ZeroUint(),
+	}, nil
 }
 
-func (mps MockPoolStorage) SetPoolStaker(ctx sdk.Context, ps types.PoolStaker) {}
+func (mps MockPoolStorage) SetStaker(ctx sdk.Context, ps types.Staker) {}
 
 func (mps MockPoolStorage) AddToLiquidityFees(ctx sdk.Context, asset common.Asset, fs sdk.Uint) error {
 	return nil

@@ -87,12 +87,11 @@ func (h UnstakeHandler) validateV1(ctx sdk.Context, msg MsgSetUnStake) sdk.Error
 }
 
 func (h UnstakeHandler) handle(ctx sdk.Context, msg MsgSetUnStake, version semver.Version) ([]byte, sdk.Error) {
-	poolStaker, err := h.keeper.GetPoolStaker(ctx, msg.Asset)
+	staker, err := h.keeper.GetStaker(ctx, msg.Asset, msg.RuneAddress)
 	if err != nil {
-		ctx.Logger().Error("fail to get pool staker", "error", err)
-		return nil, sdk.NewError(DefaultCodespace, CodeFailGetPoolStaker, "fail to get pool staker")
+		ctx.Logger().Error("fail to get staker", "error", err)
+		return nil, sdk.NewError(DefaultCodespace, CodeFailGetPoolStaker, "fail to get staker")
 	}
-	stakerUnit := poolStaker.GetStakerUnit(msg.RuneAddress)
 
 	runeAmt, assetAmount, units, gasAsset, err := unstake(ctx, version, h.keeper, msg)
 	if err != nil {
@@ -147,7 +146,7 @@ func (h UnstakeHandler) handle(ctx sdk.Context, msg MsgSetUnStake, version semve
 	toi := &TxOutItem{
 		Chain:     common.RuneAsset().Chain,
 		InHash:    msg.Tx.ID,
-		ToAddress: stakerUnit.RuneAddress,
+		ToAddress: staker.RuneAddress,
 		Coin:      common.NewCoin(common.RuneAsset(), runeAmt),
 		Memo:      memo,
 	}
@@ -170,7 +169,7 @@ func (h UnstakeHandler) handle(ctx sdk.Context, msg MsgSetUnStake, version semve
 	toi = &TxOutItem{
 		Chain:     msg.Asset.Chain,
 		InHash:    msg.Tx.ID,
-		ToAddress: stakerUnit.AssetAddress,
+		ToAddress: staker.AssetAddress,
 		Coin:      common.NewCoin(msg.Asset, assetAmount),
 		Memo:      memo,
 	}

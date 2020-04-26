@@ -24,8 +24,8 @@ func NewQuerier(keeper Keeper, validatorMgr VersionedValidatorManager) sdk.Queri
 			return queryPool(ctx, path[1:], req, keeper)
 		case q.QueryPools.Key:
 			return queryPools(ctx, req, keeper)
-		case q.QueryPoolStakers.Key:
-			return queryPoolStakers(ctx, path[1:], req, keeper)
+		case q.QueryStakers.Key:
+			return queryStakers(ctx, path[1:], req, keeper)
 		case q.QueryTxIn.Key:
 			return queryTxIn(ctx, path[1:], req, keeper)
 		case q.QueryKeysignArray.Key:
@@ -335,22 +335,25 @@ func queryObserver(ctx sdk.Context, path []string, req abci.RequestQuery, keeper
 	return res, nil
 }
 
-// queryPoolStakers
-func queryPoolStakers(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
+// queryStakers
+func queryStakers(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
 	asset, err := common.NewAsset(path[0])
 	if err != nil {
 		ctx.Logger().Error("fail to get parse asset", "error", err)
 		return nil, sdk.ErrInternal("fail to parse asset")
 	}
-	ps, err := keeper.GetPoolStaker(ctx, asset)
-	if err != nil {
-		ctx.Logger().Error("fail to get pool staker", "error", err)
-		return nil, sdk.ErrInternal("fail to get pool staker")
+	var stakers []Staker
+	iterator := keeper.GetStakerIterator(ctx, asset)
+	defer iterator.Close()
+	for ; iterator.Valid(); iterator.Next() {
+		var staker Staker
+		keeper.Cdc().MustUnmarshalBinaryBare(iterator.Value(), &staker)
+		stakers = append(stakers, staker)
 	}
-	res, err := codec.MarshalJSONIndent(keeper.Cdc(), ps)
+	res, err := codec.MarshalJSONIndent(keeper.Cdc(), stakers)
 	if err != nil {
-		ctx.Logger().Error("fail to marshal pool staker to json", "error", err)
-		return nil, sdk.ErrInternal("fail to marshal pool staker to json")
+		ctx.Logger().Error("fail to marshal stakers to json", "error", err)
+		return nil, sdk.ErrInternal("fail to marshal stakers to json")
 	}
 	return res, nil
 }

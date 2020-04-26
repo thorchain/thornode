@@ -46,19 +46,18 @@ func unstake(ctx sdk.Context, version semver.Version, keeper Keeper, msg MsgSetU
 		return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), sdk.ErrInternal("fail to get pool")
 	}
 
-	poolStaker, err := keeper.GetPoolStaker(ctx, msg.Asset)
+	stakerUnit, err := keeper.GetStaker(ctx, msg.Asset, msg.RuneAddress)
 	if err != nil {
-		ctx.Logger().Error("can't find pool staker", "error", err)
-		return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), sdk.NewError(DefaultCodespace, CodePoolStakerNotExist, "pool staker doesn't exist")
+		ctx.Logger().Error("can't find staker", "error", err)
+		return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), sdk.NewError(DefaultCodespace, CodePoolStakerNotExist, "staker doesn't exist")
 
 	}
 
 	poolUnits := pool.PoolUnits
 	poolRune := pool.BalanceRune
 	poolAsset := pool.BalanceAsset
-	stakerUnit := poolStaker.GetStakerUnit(msg.RuneAddress)
 	fStakerUnit := stakerUnit.Units
-	if !stakerUnit.Units.GT(sdk.ZeroUint()) {
+	if stakerUnit.Units.IsZero() || msg.UnstakeBasisPoints.IsZero() {
 		return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), sdk.NewError(DefaultCodespace, CodeNoStakeUnitLeft, "nothing to withdraw")
 	}
 
@@ -67,7 +66,7 @@ func unstake(ctx sdk.Context, version semver.Version, keeper Keeper, msg MsgSetU
 	// https://gitlab.com/thorchain/thornode/issues/166
 	if !msg.Asset.Chain.Equals(common.BNBChain) {
 		height := ctx.BlockHeight()
-		if height < (stakerUnit.Height + cv.GetInt64Value(constants.StakeLockUpBlocks)) {
+		if height < (stakerUnit.LastStakeHeight + cv.GetInt64Value(constants.StakeLockUpBlocks)) {
 			return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), sdk.NewError(DefaultCodespace, CodeUnstakeWithin24Hours, "you cannot unstake for 24 hours after staking for this blockchain")
 		}
 	}
@@ -114,14 +113,8 @@ func unstake(ctx sdk.Context, version semver.Version, keeper Keeper, msg MsgSetU
 
 	ctx.Logger().Info("pool after unstake", "pool unit", pool.PoolUnits, "balance RUNE", pool.BalanceRune, "balance asset", pool.BalanceAsset)
 	// update pool staker
-	poolStaker.TotalUnits = pool.PoolUnits
-	if unitAfter.IsZero() {
-		// just remove it
-		poolStaker.RemoveStakerUnit(msg.RuneAddress)
-	} else {
-		stakerUnit.Units = unitAfter
-		poolStaker.UpsertStakerUnit(stakerUnit)
-	}
+	stakerUnit.Units = unitAfter
+	stakerUnit.LastUnStakeHeight = ctx.BlockHeight()
 
 	// Create a pool event if THORNode have no rune or assets
 	if pool.BalanceAsset.IsZero() || pool.BalanceRune.IsZero() {
@@ -133,7 +126,11 @@ func unstake(ctx sdk.Context, version semver.Version, keeper Keeper, msg MsgSetU
 		ctx.Logger().Error("fail to save pool", "error", err)
 		return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), sdk.ErrInternal("fail to save pool")
 	}
-	keeper.SetPoolStaker(ctx, poolStaker)
+	if stakerUnit.Units.IsZero() {
+		keeper.SetStaker(ctx, stakerUnit)
+	} else {
+		keeper.RemoveStaker(ctx, stakerUnit)
+	}
 	return withdrawRune, withDrawAsset, common.SafeSub(fStakerUnit, unitAfter), gasAsset, nil
 }
 

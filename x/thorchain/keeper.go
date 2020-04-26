@@ -21,7 +21,7 @@ type Keeper interface {
 	// Keeper Interfaces
 	KeeperPool
 	KeeperLastHeight
-	KeeperPoolStaker
+	KeeperStaker
 	KeeperNodeAccount
 	KeeperObserver
 	KeeperObservedTx

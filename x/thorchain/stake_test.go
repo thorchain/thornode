@@ -162,20 +162,11 @@ func (StakeSuite) TestStake(c *C) {
 		PoolAddress:  bnbAddress,
 		Status:       PoolEnabled,
 	}), IsNil)
-	makePoolStaker := func(total int, avg sdk.Uint) PoolStaker {
-		stakers := make([]StakerUnit, total)
-		for i := range stakers {
-			stakers[i] = StakerUnit{Units: avg}
-		}
 
-		return PoolStaker{
-			Asset:      common.BNBAsset,
-			TotalUnits: avg.MulUint64(uint64(total)),
-			Stakers:    stakers,
-		}
+	for i := 1; i <= 150; i++ {
+		staker := Staker{Units: sdk.NewUint(common.One / 5000)}
+		ps.SetStaker(ctx, staker)
 	}
-	skrs := makePoolStaker(150, sdk.NewUint(common.One/5000))
-	ps.SetPoolStaker(ctx, skrs)
 	_, err = stake(ctx, ps, common.BNBAsset, sdk.NewUint(common.One), sdk.NewUint(common.One), bnbAddress, assetAddress, txID, constAccessor)
 	c.Assert(err, IsNil)
 

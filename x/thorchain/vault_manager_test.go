@@ -26,7 +26,7 @@ type TestRagnarokChainKeeper struct {
 	retireVault Vault
 	yggVault    Vault
 	pools       Pools
-	ps          PoolStaker
+	stakers     []Staker
 	na          NodeAccount
 	err         error
 }
@@ -87,15 +87,40 @@ func (k *TestRagnarokChainKeeper) PoolExist(_ sdk.Context, _ common.Asset) bool 
 	return true
 }
 
-func (k *TestRagnarokChainKeeper) GetPoolStaker(_ sdk.Context, asset common.Asset) (PoolStaker, error) {
-	if asset.Equals(common.BTCAsset) {
-		return k.ps, k.err
+func (k *TestRagnarokChainKeeper) GetStakerIterator(ctx sdk.Context, _ common.Asset) sdk.Iterator {
+	cdc := makeTestCodec()
+	iter := NewDummyIterator()
+	for _, staker := range k.stakers {
+		iter.AddItem([]byte("key"), cdc.MustMarshalBinaryBare(staker))
 	}
-	return PoolStaker{}, k.err
+	return iter
 }
 
-func (k *TestRagnarokChainKeeper) SetPoolStaker(_ sdk.Context, ps PoolStaker) {
-	k.ps = ps
+func (k *TestRagnarokChainKeeper) GetStaker(_ sdk.Context, asset common.Asset, addr common.Address) (Staker, error) {
+	if asset.Equals(common.BTCAsset) {
+		for i, staker := range k.stakers {
+			if addr.Equals(staker.RuneAddress) {
+				return k.stakers[i], k.err
+			}
+		}
+	}
+	return Staker{}, k.err
+}
+
+func (k *TestRagnarokChainKeeper) SetStaker(_ sdk.Context, staker Staker) {
+	for i, skr := range k.stakers {
+		if staker.RuneAddress.Equals(skr.RuneAddress) {
+			k.stakers[i] = staker
+		}
+	}
+}
+
+func (k *TestRagnarokChainKeeper) RemoveStaker(_ sdk.Context, staker Staker) {
+	for i, skr := range k.stakers {
+		if staker.RuneAddress.Equals(skr.RuneAddress) {
+			k.stakers[i] = staker
+		}
+	}
 }
 
 func (k *TestRagnarokChainKeeper) GetGas(_ sdk.Context, _ common.Asset) ([]sdk.Uint, error) {
@@ -146,20 +171,19 @@ func (s *ValidatorManagerTestSuite) TestRagnarokChain(c *C) {
 	bnbPool.BalanceAsset = sdk.NewUint(10 * common.One)
 	bnbPool.PoolUnits = sdk.NewUint(1600)
 
-	ps := NewPoolStaker(common.BTCAsset, sdk.NewUint(1600))
 	addr := GetRandomBNBAddress()
-	ps.Stakers = []StakerUnit{
-		StakerUnit{
-			RuneAddress: addr,
-			Height:      5,
-			Units:       ps.TotalUnits.QuoUint64(2),
-			PendingRune: sdk.ZeroUint(),
+	stakers := []Staker{
+		Staker{
+			RuneAddress:     addr,
+			LastStakeHeight: 5,
+			Units:           btcPool.PoolUnits.QuoUint64(2),
+			PendingRune:     sdk.ZeroUint(),
 		},
-		StakerUnit{
-			RuneAddress: GetRandomBNBAddress(),
-			Height:      10,
-			Units:       ps.TotalUnits.QuoUint64(2),
-			PendingRune: sdk.ZeroUint(),
+		Staker{
+			RuneAddress:     GetRandomBNBAddress(),
+			LastStakeHeight: 10,
+			Units:           btcPool.PoolUnits.QuoUint64(2),
+			PendingRune:     sdk.ZeroUint(),
 		},
 	}
 
@@ -169,7 +193,7 @@ func (s *ValidatorManagerTestSuite) TestRagnarokChain(c *C) {
 		retireVault: retireVault,
 		yggVault:    yggVault,
 		pools:       Pools{bnbPool, btcPool},
-		ps:          ps,
+		stakers:     stakers,
 	}
 
 	versionedTxOutStoreDummy := NewVersionedTxOutStoreDummy()
@@ -180,7 +204,9 @@ func (s *ValidatorManagerTestSuite) TestRagnarokChain(c *C) {
 	c.Check(keeper.pools[1].Asset.Equals(common.BTCAsset), Equals, true)
 	c.Check(keeper.pools[1].PoolUnits.IsZero(), Equals, true, Commentf("%d\n", keeper.pools[1].PoolUnits.Uint64()))
 	c.Check(keeper.pools[0].PoolUnits.Equal(sdk.NewUint(1600)), Equals, true)
-	c.Check(keeper.ps.Stakers, HasLen, 0)
+	for _, skr := range keeper.stakers {
+		c.Check(skr.Units.IsZero(), Equals, true)
+	}
 
 	// ensure we have requested for ygg funds to be returned
 	txOutStore, err := versionedTxOutStoreDummy.GetTxOutStore(keeper, constants.SWVersion)

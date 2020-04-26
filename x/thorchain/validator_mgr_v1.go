@@ -577,34 +577,34 @@ func (vm *validatorMgrV1) ragnarokPools(ctx sdk.Context, nth int64, constAccesso
 		}
 	}
 
+	version := vm.k.GetLowestActiveVersion(ctx)
+
 	for i := len(pools) - 1; i >= 0; i-- { // iterate backwards
 		pool := pools[i]
-		poolStaker, err := vm.k.GetPoolStaker(ctx, pool.Asset)
-		if err != nil {
-			ctx.Logger().Error("fail to get pool staker", "error", err)
-			return err
-		}
-
-		// everyone withdraw
-		for i := len(poolStaker.Stakers) - 1; i >= 0; i-- { // iterate backwards
-			item := poolStaker.Stakers[i]
-			if item.Units.IsZero() {
+		fmt.Printf("Ragnarok Pool: %s\n", pool.Asset)
+		iterator := vm.k.GetStakerIterator(ctx, pool.Asset)
+		defer iterator.Close()
+		for ; iterator.Valid(); iterator.Next() {
+			var staker Staker
+			fmt.Println("fooooooooo")
+			vm.k.Cdc().MustUnmarshalBinaryBare(iterator.Value(), &staker)
+			if staker.Units.IsZero() {
+				fmt.Println("is zero")
 				continue
 			}
 
 			unstakeMsg := NewMsgSetUnStake(
-				common.GetRagnarokTx(pool.Asset.Chain, item.RuneAddress, item.RuneAddress),
-				item.RuneAddress,
+				common.GetRagnarokTx(pool.Asset.Chain, staker.RuneAddress, staker.RuneAddress),
+				staker.RuneAddress,
 				sdk.NewUint(uint64(basisPoints)),
 				pool.Asset,
 				na.NodeAddress,
 			)
 
-			version := vm.k.GetLowestActiveVersion(ctx)
 			unstakeHandler := NewUnstakeHandler(vm.k, vm.versionedTxOutStore)
 			result := unstakeHandler.Run(ctx, unstakeMsg, version, constAccessor)
 			if !result.IsOK() {
-				ctx.Logger().Error("fail to unstake", "staker", item.RuneAddress, "error", result.Log)
+				ctx.Logger().Error("fail to unstake", "staker", staker.RuneAddress, "error", result.Log)
 			}
 		}
 	}

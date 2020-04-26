@@ -1,6 +1,7 @@
 package thorchain
 
 import (
+	"fmt"
 	"sort"
 	"testing"
 
@@ -51,35 +52,35 @@ func (s *ThorchainSuite) TestStaking(c *C) {
 	c.Assert(err, IsNil)
 	_, err = stake(ctx, keeper, common.BNBAsset, sdk.NewUint(100*common.One), sdk.NewUint(100*common.One), user1, user1, txID, constAccessor)
 	c.Assert(err, IsNil)
-	stakers, err := keeper.GetPoolStaker(ctx, common.BNBAsset)
+	staker1, err := keeper.GetStaker(ctx, common.BNBAsset, user1)
 	c.Assert(err, IsNil)
-	c.Check(stakers.Stakers, HasLen, 1)
+	c.Check(staker1.Units.IsZero(), Equals, false)
 
 	// stake for user2
 	_, err = stake(ctx, keeper, common.BNBAsset, sdk.NewUint(75*common.One), sdk.NewUint(75*common.One), user2, user2, txID, constAccessor)
 	c.Assert(err, IsNil)
 	_, err = stake(ctx, keeper, common.BNBAsset, sdk.NewUint(75*common.One), sdk.NewUint(75*common.One), user2, user2, txID, constAccessor)
 	c.Assert(err, IsNil)
-	stakers, err = keeper.GetPoolStaker(ctx, common.BNBAsset)
+	staker2, err := keeper.GetStaker(ctx, common.BNBAsset, user2)
 	c.Assert(err, IsNil)
-	c.Check(stakers.Stakers, HasLen, 2)
+	c.Check(staker2.Units.IsZero(), Equals, false)
 
 	version := constants.SWVersion
 	// unstake for user1
 	msg := NewMsgSetUnStake(GetRandomTx(), user1, sdk.NewUint(10000), common.BNBAsset, GetRandomBech32Addr())
 	_, _, _, _, err = unstake(ctx, version, keeper, msg)
 	c.Assert(err, IsNil)
-	stakers, err = keeper.GetPoolStaker(ctx, common.BNBAsset)
+	staker1, err = keeper.GetStaker(ctx, common.BNBAsset, user1)
 	c.Assert(err, IsNil)
-	c.Check(stakers.Stakers, HasLen, 1)
+	c.Check(staker1.Units.IsZero(), Equals, true)
 
 	// unstake for user2
 	msg = NewMsgSetUnStake(GetRandomTx(), user2, sdk.NewUint(10000), common.BNBAsset, GetRandomBech32Addr())
 	_, _, _, _, err = unstake(ctx, version, keeper, msg)
 	c.Assert(err, IsNil)
-	stakers, err = keeper.GetPoolStaker(ctx, common.BNBAsset)
+	staker2, err = keeper.GetStaker(ctx, common.BNBAsset, user2)
 	c.Assert(err, IsNil)
-	c.Check(stakers.Stakers, HasLen, 0)
+	c.Check(staker2.Units.IsZero(), Equals, true)
 
 	// check pool is now empty
 	pool, err = keeper.GetPool(ctx, common.BNBAsset)
@@ -93,9 +94,9 @@ func (s *ThorchainSuite) TestStaking(c *C) {
 	c.Assert(err, IsNil)
 	_, err = stake(ctx, keeper, common.BNBAsset, sdk.NewUint(100*common.One), sdk.NewUint(100*common.One), user1, user1, txID, constAccessor)
 	c.Assert(err, IsNil)
-	stakers, err = keeper.GetPoolStaker(ctx, common.BNBAsset)
+	staker1, err = keeper.GetStaker(ctx, common.BNBAsset, user1)
 	c.Assert(err, IsNil)
-	c.Check(stakers.Stakers, HasLen, 1)
+	c.Check(staker1.Units.IsZero(), Equals, false)
 
 	// check pool is NOT empty
 	pool, err = keeper.GetPool(ctx, common.BNBAsset)
@@ -369,6 +370,7 @@ func (s *ThorchainSuite) TestRagnarok(c *C) {
 	migrateInterval := consts.GetInt64Value(constants.FundMigrationInterval)
 	for i := 1; i <= 10; i++ { // simulate each round of ragnarok (max of ten)
 		ctx = ctx.WithBlockHeight(ragnarokHeight + (int64(i) * migrateInterval))
+		fmt.Printf("Process Rag: %d\n", i)
 		c.Assert(validatorMgr.processRagnarok(ctx, consts), IsNil)
 		items, err := versionedTxOutStoreDummy.txoutStore.GetOutboundItems(ctx)
 		c.Assert(err, IsNil)

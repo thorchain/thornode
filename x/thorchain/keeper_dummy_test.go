@@ -19,7 +19,7 @@ var kaboom = errors.New("Kaboom!!!")
 
 type KVStoreDummy struct{}
 
-func (k KVStoreDummy) Cdc() *codec.Codec       { return codec.New() }
+func (k KVStoreDummy) Cdc() *codec.Codec       { return makeTestCodec() }
 func (k KVStoreDummy) Supply() supply.Keeper   { return supply.Keeper{} }
 func (k KVStoreDummy) CoinKeeper() bank.Keeper { return bank.BaseKeeper{} }
 func (k KVStoreDummy) Logger(ctx sdk.Context) log.Logger {
@@ -61,19 +61,17 @@ func (k KVStoreDummy) EnableAPool(_ sdk.Context)                               {
 func (k KVStoreDummy) GetPool(_ sdk.Context, _ common.Asset) (Pool, error) {
 	return Pool{}, kaboom
 }
-func (k KVStoreDummy) GetPools(_ sdk.Context) (Pools, error)            { return nil, kaboom }
-func (k KVStoreDummy) SetPool(_ sdk.Context, _ Pool) error              { return kaboom }
-func (k KVStoreDummy) PoolExist(_ sdk.Context, _ common.Asset) bool     { return false }
-func (k KVStoreDummy) GetPoolStakerIterator(_ sdk.Context) sdk.Iterator { return nil }
-func (k KVStoreDummy) GetPoolStaker(_ sdk.Context, _ common.Asset) (PoolStaker, error) {
-	return PoolStaker{}, kaboom
+func (k KVStoreDummy) GetPools(_ sdk.Context) (Pools, error)                        { return nil, kaboom }
+func (k KVStoreDummy) SetPool(_ sdk.Context, _ Pool) error                          { return kaboom }
+func (k KVStoreDummy) PoolExist(_ sdk.Context, _ common.Asset) bool                 { return false }
+func (k KVStoreDummy) GetStakerIterator(_ sdk.Context, _ common.Asset) sdk.Iterator { return nil }
+func (k KVStoreDummy) GetStaker(_ sdk.Context, _ common.Asset, _ common.Address) (Staker, error) {
+	return Staker{}, kaboom
 }
-func (k KVStoreDummy) SetPoolStaker(_ sdk.Context, _ PoolStaker)         {}
-func (k KVStoreDummy) TotalActiveNodeAccount(_ sdk.Context) (int, error) { return 0, kaboom }
-func (k KVStoreDummy) ListNodeAccountsWithBond(_ sdk.Context) (NodeAccounts, error) {
-	return nil, kaboom
-}
-
+func (k KVStoreDummy) SetStaker(_ sdk.Context, _ Staker)                    {}
+func (k KVStoreDummy) RemoveStaker(_ sdk.Context, _ Staker)                 {}
+func (k KVStoreDummy) TotalActiveNodeAccount(_ sdk.Context) (int, error)    { return 0, kaboom }
+func (k KVStoreDummy) ListNodeAccounts(_ sdk.Context) (NodeAccounts, error) { return nil, kaboom }
 func (k KVStoreDummy) ListNodeAccountsByStatus(_ sdk.Context, _ NodeStatus) (NodeAccounts, error) {
 	return nil, kaboom
 }

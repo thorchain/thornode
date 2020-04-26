@@ -21,9 +21,9 @@ type MockUnstakeKeeper struct {
 	currentPool       Pool
 	failPool          bool
 	suspendedPool     bool
-	failPoolStaker    bool
+	failStaker        bool
 	failAddEvents     bool
-	poolStaker        PoolStaker
+	staker            Staker
 }
 
 func (mfp *MockUnstakeKeeper) PoolExist(_ sdk.Context, asset common.Asset) bool {
@@ -59,15 +59,21 @@ func (mfp *MockUnstakeKeeper) GetNodeAccount(_ sdk.Context, addr sdk.AccAddress)
 	return NodeAccount{}, nil
 }
 
-func (mfp *MockUnstakeKeeper) GetPoolStaker(_ sdk.Context, _ common.Asset) (PoolStaker, error) {
-	if mfp.failPoolStaker {
-		return PoolStaker{}, errors.New("fail to get pool staker")
-	}
-	return mfp.poolStaker, nil
+func (mfp *MockUnstakeKeeper) GetStakerIterator(ctx sdk.Context, _ common.Asset) sdk.Iterator {
+	iter := NewDummyIterator()
+	iter.AddItem([]byte("key"), mfp.Cdc().MustMarshalBinaryBare(mfp.staker))
+	return iter
 }
 
-func (mfp *MockUnstakeKeeper) SetPoolStaker(_ sdk.Context, ps PoolStaker) {
-	mfp.poolStaker = ps
+func (mfp *MockUnstakeKeeper) GetStaker(_ sdk.Context, _ common.Asset, _ common.Address) (Staker, error) {
+	if mfp.failStaker {
+		return Staker{}, errors.New("fail to get staker")
+	}
+	return mfp.staker, nil
+}
+
+func (mfp *MockUnstakeKeeper) SetStaker(_ sdk.Context, staker Staker) {
+	mfp.staker = staker
 }
 
 func (mfp *MockUnstakeKeeper) GetAdminConfigDefaultPoolStatus(_ sdk.Context, _ sdk.AccAddress) PoolStatus {
@@ -91,6 +97,10 @@ func (HandlerUnstakeSuite) TestUnstakeHandler(c *C) {
 			Asset:        common.BNBAsset,
 			PoolUnits:    sdk.ZeroUint(),
 			Status:       PoolEnabled,
+		},
+		staker: Staker{
+			Units:       sdk.ZeroUint(),
+			PendingRune: sdk.ZeroUint(),
 		},
 	}
 	ver := constants.SWVersion
@@ -175,6 +185,10 @@ func (HandlerUnstakeSuite) TestUnstakeHandler_mockFailScenarios(c *C) {
 		PoolUnits:    sdk.ZeroUint(),
 		Status:       PoolEnabled,
 	}
+	staker := Staker{
+		Units:       sdk.ZeroUint(),
+		PendingRune: sdk.ZeroUint(),
+	}
 	testCases := []struct {
 		name           string
 		k              Keeper
@@ -185,6 +199,7 @@ func (HandlerUnstakeSuite) TestUnstakeHandler_mockFailScenarios(c *C) {
 			k: &MockUnstakeKeeper{
 				activeNodeAccount: activeNodeAccount,
 				failPool:          true,
+				staker:            staker,
 			},
 			expectedResult: sdk.CodeInternal,
 		},
@@ -193,6 +208,7 @@ func (HandlerUnstakeSuite) TestUnstakeHandler_mockFailScenarios(c *C) {
 			k: &MockUnstakeKeeper{
 				activeNodeAccount: activeNodeAccount,
 				suspendedPool:     true,
+				staker:            staker,
 			},
 			expectedResult: CodeInvalidPoolStatus,
 		},
@@ -200,7 +216,8 @@ func (HandlerUnstakeSuite) TestUnstakeHandler_mockFailScenarios(c *C) {
 			name: "fail to get pool staker unstake should fail",
 			k: &MockUnstakeKeeper{
 				activeNodeAccount: activeNodeAccount,
-				failPoolStaker:    true,
+				failStaker:        true,
+				staker:            staker,
 			},
 			expectedResult: CodeFailGetPoolStaker,
 		},
@@ -210,6 +227,7 @@ func (HandlerUnstakeSuite) TestUnstakeHandler_mockFailScenarios(c *C) {
 				activeNodeAccount: activeNodeAccount,
 				currentPool:       currentPool,
 				failAddEvents:     true,
+				staker:            staker,
 			},
 			expectedResult: sdk.CodeInternal,
 		},
