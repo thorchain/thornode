@@ -213,13 +213,13 @@ func (HandlerUnstakeSuite) TestUnstakeHandler_mockFailScenarios(c *C) {
 			expectedResult: CodeInvalidPoolStatus,
 		},
 		{
-			name: "fail to get pool staker unstake should fail",
+			name: "fail to get staker unstake should fail",
 			k: &MockUnstakeKeeper{
 				activeNodeAccount: activeNodeAccount,
 				failStaker:        true,
 				staker:            staker,
 			},
-			expectedResult: CodeFailGetPoolStaker,
+			expectedResult: CodeFailGetStaker,
 		},
 		{
 			name: "fail to add incomplete event unstake should fail",

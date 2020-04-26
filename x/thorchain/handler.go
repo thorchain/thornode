@@ -31,7 +31,7 @@ const (
 	CodeSwapFailNotEnoughBalance sdk.CodeType = 115
 
 	CodeStakeFailValidation    sdk.CodeType = 120
-	CodeFailGetPoolStaker      sdk.CodeType = 122
+	CodeFailGetStaker          sdk.CodeType = 122
 	CodeStakeMismatchAssetAddr sdk.CodeType = 123
 	CodeStakeInvalidPoolAsset  sdk.CodeType = 124
 	CodeStakeRUNEOverLimit     sdk.CodeType = 125
@@ -40,7 +40,7 @@ const (
 	CodeUnstakeFailValidation sdk.CodeType = 130
 	CodeFailAddOutboundTx     sdk.CodeType = 131
 	CodeFailSaveEvent         sdk.CodeType = 132
-	CodePoolStakerNotExist    sdk.CodeType = 133
+	CodeStakerNotExist        sdk.CodeType = 133
 	CodeNoStakeUnitLeft       sdk.CodeType = 135
 	CodeUnstakeWithin24Hours  sdk.CodeType = 136
 	CodeUnstakeFail           sdk.CodeType = 137

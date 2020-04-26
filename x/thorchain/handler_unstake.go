@@ -90,7 +90,7 @@ func (h UnstakeHandler) handle(ctx sdk.Context, msg MsgSetUnStake, version semve
 	staker, err := h.keeper.GetStaker(ctx, msg.Asset, msg.RuneAddress)
 	if err != nil {
 		ctx.Logger().Error("fail to get staker", "error", err)
-		return nil, sdk.NewError(DefaultCodespace, CodeFailGetPoolStaker, "fail to get staker")
+		return nil, sdk.NewError(DefaultCodespace, CodeFailGetStaker, "fail to get staker")
 	}
 
 	runeAmt, assetAmount, units, gasAsset, err := unstake(ctx, version, h.keeper, msg)

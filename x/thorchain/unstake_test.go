@@ -353,7 +353,7 @@ func (UnstakeSuite) TestUnstake(c *C) {
 			ps:            ps,
 			runeAmount:    sdk.ZeroUint(),
 			assetAmount:   sdk.ZeroUint(),
-			expectedError: sdk.NewError(DefaultCodespace, CodePoolStakerNotExist, "staker doesn't exist"),
+			expectedError: sdk.NewError(DefaultCodespace, CodeStakerNotExist, "staker doesn't exist"),
 		},
 		{
 			name: "nothing-to-withdraw",

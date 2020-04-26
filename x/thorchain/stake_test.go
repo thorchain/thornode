@@ -141,7 +141,7 @@ func (StakeSuite) TestStake(c *C) {
 	c.Assert(ps.SetPool(ctx, Pool{
 		BalanceRune:  sdk.NewUint(100 * common.One),
 		BalanceAsset: sdk.NewUint(100 * common.One),
-		Asset:        notExistPoolStakerAsset,
+		Asset:        notExistStakerAsset,
 		PoolUnits:    sdk.NewUint(100 * common.One),
 		PoolAddress:  bnbAddress,
 		Status:       PoolEnabled,
@@ -152,7 +152,7 @@ func (StakeSuite) TestStake(c *C) {
 	_, err = stake(ctx, ps, common.BNBAsset, sdk.ZeroUint(), sdk.NewUint(100*common.One), bnbAddress, assetAddress, txID, constAccessor)
 	c.Assert(err, IsNil)
 
-	_, err = stake(ctx, ps, notExistPoolStakerAsset, sdk.NewUint(100*common.One), sdk.NewUint(100*common.One), bnbAddress, assetAddress, txID, constAccessor)
+	_, err = stake(ctx, ps, notExistStakerAsset, sdk.NewUint(100*common.One), sdk.NewUint(100*common.One), bnbAddress, assetAddress, txID, constAccessor)
 	c.Assert(err, NotNil)
 	c.Assert(ps.SetPool(ctx, Pool{
 		BalanceRune:  sdk.NewUint(100 * common.One),

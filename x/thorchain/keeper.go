@@ -55,7 +55,6 @@ const (
 	prefixTxOut              dbPrefix = "txout/"
 	prefixTotalLiquidityFee  dbPrefix = "total_liquidity_fee/"
 	prefixPoolLiquidityFee   dbPrefix = "pool_liquidity_fee/"
-	prefixPoolStaker         dbPrefix = "pool_staker/"
 	prefixStaker             dbPrefix = "staker/"
 	prefixEvents             dbPrefix = "events/"
 	prefixTxHashEvents       dbPrefix = "tx_events/"

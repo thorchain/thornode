@@ -49,7 +49,7 @@ func unstake(ctx sdk.Context, version semver.Version, keeper Keeper, msg MsgSetU
 	stakerUnit, err := keeper.GetStaker(ctx, msg.Asset, msg.RuneAddress)
 	if err != nil {
 		ctx.Logger().Error("can't find staker", "error", err)
-		return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), sdk.NewError(DefaultCodespace, CodePoolStakerNotExist, "staker doesn't exist")
+		return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), sdk.NewError(DefaultCodespace, CodeStakerNotExist, "staker doesn't exist")
 
 	}
 
@@ -112,7 +112,7 @@ func unstake(ctx sdk.Context, version semver.Version, keeper Keeper, msg MsgSetU
 	pool.BalanceAsset = common.SafeSub(poolAsset, withDrawAsset)
 
 	ctx.Logger().Info("pool after unstake", "pool unit", pool.PoolUnits, "balance RUNE", pool.BalanceRune, "balance asset", pool.BalanceAsset)
-	// update pool staker
+	// update staker
 	stakerUnit.Units = unitAfter
 	stakerUnit.LastUnStakeHeight = ctx.BlockHeight()
 
@@ -121,7 +121,6 @@ func unstake(ctx sdk.Context, version semver.Version, keeper Keeper, msg MsgSetU
 		pool.Status = PoolBootstrap
 	}
 
-	// update staker pool
 	if err := keeper.SetPool(ctx, pool); err != nil {
 		ctx.Logger().Error("fail to save pool", "error", err)
 		return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), sdk.ErrInternal("fail to save pool")

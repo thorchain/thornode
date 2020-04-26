@@ -12,7 +12,7 @@ import (
 	"gitlab.com/thorchain/thornode/x/thorchain/types"
 )
 
-var notExistPoolStakerAsset, _ = common.NewAsset("BNB.NotExistPoolStakerAsset")
+var notExistStakerAsset, _ = common.NewAsset("BNB.NotExistStakerAsset")
 
 type MockInMemoryPoolStorage struct {
 	KVStoreDummy
@@ -54,7 +54,7 @@ func (p *MockInMemoryPoolStorage) GetPoolLiquidityFees(ctx sdk.Context, height u
 }
 
 func (p *MockInMemoryPoolStorage) GetStaker(ctx sdk.Context, asset common.Asset, addr common.Address) (Staker, error) {
-	if notExistPoolStakerAsset.Equals(asset) {
+	if notExistStakerAsset.Equals(asset) {
 		return Staker{}, errors.New("simulate error for test")
 	}
 	staker := Staker{
@@ -63,7 +63,7 @@ func (p *MockInMemoryPoolStorage) GetStaker(ctx sdk.Context, asset common.Asset,
 		Units:       sdk.ZeroUint(),
 		PendingRune: sdk.ZeroUint(),
 	}
-	key := p.GetKey(ctx, prefixPoolStaker, staker.Key())
+	key := p.GetKey(ctx, prefixStaker, staker.Key())
 	if res, ok := p.store[key]; ok {
 		return res.(Staker), nil
 	}
@@ -71,7 +71,7 @@ func (p *MockInMemoryPoolStorage) GetStaker(ctx sdk.Context, asset common.Asset,
 }
 
 func (p *MockInMemoryPoolStorage) SetStaker(ctx sdk.Context, staker Staker) {
-	key := p.GetKey(ctx, prefixPoolStaker, staker.Key())
+	key := p.GetKey(ctx, prefixStaker, staker.Key())
 	p.store[key] = staker
 }
 

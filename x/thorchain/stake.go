@@ -65,7 +65,7 @@ func stake(ctx sdk.Context, keeper Keeper,
 	su, err := keeper.GetStaker(ctx, asset, runeAddr)
 	if err != nil {
 		ctx.Logger().Error("fail to get staker", "error", err)
-		return sdk.ZeroUint(), sdk.NewError(DefaultCodespace, CodeFailGetPoolStaker, "fail to get staker")
+		return sdk.ZeroUint(), sdk.NewError(DefaultCodespace, CodeFailGetStaker, "fail to get staker")
 	}
 
 	su.LastStakeHeight = ctx.BlockHeight()
@@ -119,7 +119,7 @@ func stake(ctx sdk.Context, keeper Keeper,
 		ctx.Logger().Error("fail to save pool", "error", err)
 		return sdk.ZeroUint(), sdk.ErrInternal("fail to save pool")
 	}
-	// maintain pool staker structure
+	// maintain staker structure
 
 	fex := su.Units
 	totalStakerUnits := fex.Add(stakerUnits)

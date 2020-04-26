@@ -43,16 +43,7 @@ This section documents the pools API resources.
 
 ### Get Pools [GET]
 + Response 200 (application/json)
-    + Attributes (PoolStaker)
-
-## Get List of pools for a staker [/thorchain/staker/{ticker}]
-
-+ Parameters
-    + ticker: "bnb" (required, string) - The ticker of the pool
-
-### Get Pools [GET]
-+ Response 200 (application/json)
-    + Attributes (StakerPool)
+    + Attributes (Staker)
 
 
 # Group Tx
@@ -77,28 +68,14 @@ This section documents the pools API resources.
 + pool_units: total number of units within the pool
 + status: the status of the pool
 
-### PoolStaker
-+ ticker: the ticker of the non-rune asset
-+ total_units: the total number of units of the pool
-+ stakers: (array[StakerUnit]) a list of stakers in this pool
-
-### StakerUnit
-+ staker_id: bnb address of the staker
-+ units: amount of units staked
-
-### StakeTxDetail
-+ request_tx_hash: the binance tx has of the request
-+ rune_amount: the amount of rune
-+ asset_amount: the amount of asset 
-
-### StakerPoolItem
-+ ticker: the ticker of the non-rune asset
-+ units: the amount of units
-+ stake_details: (array[StakeTxDetail]) a list of stake tx details
-
-### StakerPool
-+ staker_id: the bnb address of the staker
-+ pool_and_units: list of pools and their stake details
+### Staker
++ asset: the asset of the non-rune asset
++ units: the total number of units of the pool
++ rune_address: the rune address of the staker
++ asset_address: the non-rune asset address of the staker
++ last_stake: block height of the last stake
++ last_unstake: block height of the last unstake
++ pending_rune: rune that has been staked, but not committed yet. Awaiting a staking of the non-rune asset
 
 ### Tx
 + request: request tx hash
