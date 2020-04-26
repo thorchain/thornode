@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"strings"
 
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/btcsuite/btcd/btcjson"
@@ -22,7 +21,6 @@ import (
 	stypes "gitlab.com/thorchain/thornode/bifrost/thorclient/types"
 	"gitlab.com/thorchain/thornode/bifrost/tss"
 	"gitlab.com/thorchain/thornode/common"
-	"gitlab.com/thorchain/thornode/x/thorchain"
 )
 
 // SatsPervBytes it should be enough , this one will only be used if signer can't find any previous UTXO , and fee info from local storage.
@@ -51,10 +49,9 @@ func (c *Client) getChainCfg() *chaincfg.Params {
 }
 
 func (c *Client) getGasCoin(tx stypes.TxOutItem, vSize int64) common.Coin {
-	if !strings.HasPrefix(strings.ToLower(tx.Memo), thorchain.TxYggdrasilReturn.String()) {
+	if !tx.MaxGas.IsEmpty() {
 		return tx.MaxGas.ToCoins().GetCoin(common.BTCAsset)
 	}
-
 	gasRate := int64(SatsPervBytes)
 	fee, vBytes, err := c.utxoAccessor.GetTransactionFee()
 	if err != nil {
@@ -66,7 +63,7 @@ func (c *Client) getGasCoin(tx stypes.TxOutItem, vSize int64) common.Coin {
 		if err != nil {
 			c.logger.Err(err).Msg("fail to convert amount from float64 to int64")
 		} else {
-			gasRate = int64(amt) / int64(vBytes) * vSize // sats per vbyte
+			gasRate = int64(amt) / int64(vBytes) // sats per vbyte
 		}
 	}
 	return common.NewCoin(common.BTCAsset, sdk.NewUint(uint64(gasRate*vSize)))
@@ -125,6 +122,10 @@ func (c *Client) SignTx(tx stypes.TxOutItem, height int64) ([]byte, error) {
 	}
 	vSize := mempool.GetTxVirtualSize(btcutil.NewTx(redeemTx))
 	gasCoin := c.getGasCoin(tx, vSize)
+	gasAmt := btcutil.Amount(int64(gasCoin.Amount.Uint64()))
+	if err := c.utxoAccessor.UpsertTransactionFee(gasAmt.ToBTC(), int32(vSize)); err != nil {
+		c.logger.Err(err).Msg("fail to save gas info to UTXO storage")
+	}
 	coinToCustomer := tx.Coins.GetCoin(common.BTCAsset)
 
 	// pay to customer
@@ -145,8 +146,9 @@ func (c *Client) SignTx(tx stypes.TxOutItem, height int64) ([]byte, error) {
 	if balance < 0 {
 		return nil, errors.New("not enough balance to pay customer")
 	}
-
-	redeemTx.AddTxOut(wire.NewTxOut(balance, sourceScript))
+	if balance > 0 {
+		redeemTx.AddTxOut(wire.NewTxOut(balance, sourceScript))
+	}
 	txsort.InPlaceSort(redeemTx)
 	for idx, txIn := range redeemTx.TxIn {
 		sigHashes := txscript.NewTxSigHashes(redeemTx)
@@ -189,8 +191,11 @@ func (c *Client) SignTx(tx stypes.TxOutItem, height int64) ([]byte, error) {
 	if err := redeemTx.Serialize(&signedTx); err != nil {
 		return nil, fmt.Errorf("fail to serialize tx to bytes: %w", err)
 	}
-	if err := c.saveNewUTXO(redeemTx, balance, sourceScript, height, tx.VaultPubKey); nil != err {
-		return nil, fmt.Errorf("fail to save the new UTXO to storage: %w", err)
+	// only send the balance back to ourselves
+	if balance > 0 {
+		if err := c.saveNewUTXO(redeemTx, balance, sourceScript, height, tx.VaultPubKey); nil != err {
+			return nil, fmt.Errorf("fail to save the new UTXO to storage: %w", err)
+		}
 	}
 	if err := c.removeSpentUTXO(txes); err != nil {
 		return nil, fmt.Errorf("fail to remove already spent transaction output: %w", err)

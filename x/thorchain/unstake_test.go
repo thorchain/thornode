@@ -416,7 +416,7 @@ func (UnstakeSuite) TestUnstake(c *C) {
 		ctx, _ := setupKeeperForTest(c)
 		c.Logf("name:%s", tc.name)
 		version := constants.SWVersion
-		r, asset, _, err := unstake(ctx, version, tc.ps, tc.msg)
+		r, asset, _, _, err := unstake(ctx, version, tc.ps, tc.msg)
 		if tc.expectedError != nil {
 			c.Assert(err, NotNil)
 			c.Check(err.Error(), Equals, tc.expectedError.Error())

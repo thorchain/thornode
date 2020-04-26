@@ -33,28 +33,29 @@ func validateUnstake(ctx sdk.Context, keeper Keeper, msg MsgSetUnStake) error {
 }
 
 // unstake withdraw all the asset
-func unstake(ctx sdk.Context, version semver.Version, keeper Keeper, msg MsgSetUnStake) (sdk.Uint, sdk.Uint, sdk.Uint, sdk.Error) {
+// it returns runeAmt,assetAmount,units, lastUnstake,err
+func unstake(ctx sdk.Context, version semver.Version, keeper Keeper, msg MsgSetUnStake) (sdk.Uint, sdk.Uint, sdk.Uint, sdk.Uint, sdk.Error) {
 	if err := validateUnstake(ctx, keeper, msg); err != nil {
 		ctx.Logger().Error("msg unstake fail validation", "error", err)
-		return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), sdk.NewError(DefaultCodespace, CodeUnstakeFailValidation, err.Error())
+		return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), sdk.NewError(DefaultCodespace, CodeUnstakeFailValidation, err.Error())
 	}
 
 	pool, err := keeper.GetPool(ctx, msg.Asset)
 	if err != nil {
 		ctx.Logger().Error("fail to get pool", "error", err)
-		return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), sdk.ErrInternal("fail to get pool")
+		return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), sdk.ErrInternal("fail to get pool")
 	}
 
 	poolStaker, err := keeper.GetPoolStaker(ctx, msg.Asset)
 	if err != nil {
 		ctx.Logger().Error("can't find pool staker", "error", err)
-		return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), sdk.NewError(DefaultCodespace, CodePoolStakerNotExist, "pool staker doesn't exist")
+		return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), sdk.NewError(DefaultCodespace, CodePoolStakerNotExist, "pool staker doesn't exist")
 
 	}
 	stakerPool, err := keeper.GetStakerPool(ctx, msg.RuneAddress)
 	if err != nil {
 		ctx.Logger().Error("can't find staker pool", "error", err)
-		return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), sdk.NewError(DefaultCodespace, CodeStakerPoolNotExist, "staker pool doesn't exist")
+		return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), sdk.NewError(DefaultCodespace, CodeStakerPoolNotExist, "staker pool doesn't exist")
 	}
 
 	poolUnits := pool.PoolUnits
@@ -63,16 +64,16 @@ func unstake(ctx sdk.Context, version semver.Version, keeper Keeper, msg MsgSetU
 	stakerUnit := poolStaker.GetStakerUnit(msg.RuneAddress)
 	fStakerUnit := stakerUnit.Units
 	if !stakerUnit.Units.GT(sdk.ZeroUint()) {
-		return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), sdk.NewError(DefaultCodespace, CodeNoStakeUnitLeft, "nothing to withdraw")
+		return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), sdk.NewError(DefaultCodespace, CodeNoStakeUnitLeft, "nothing to withdraw")
 	}
 
+	cv := constants.GetConstantValues(version)
 	// check if thorchain need to rate limit unstaking
 	// https://gitlab.com/thorchain/thornode/issues/166
 	if !msg.Asset.Chain.Equals(common.BNBChain) {
 		height := ctx.BlockHeight()
-		cv := constants.GetConstantValues(version)
 		if height < (stakerUnit.Height + cv.GetInt64Value(constants.StakeLockUpBlocks)) {
-			return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), sdk.NewError(DefaultCodespace, CodeUnstakeWithin24Hours, "you cannot unstake for 24 hours after staking for this blockchain")
+			return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), sdk.NewError(DefaultCodespace, CodeUnstakeWithin24Hours, "you cannot unstake for 24 hours after staking for this blockchain")
 		}
 	}
 
@@ -81,23 +82,29 @@ func unstake(ctx sdk.Context, version semver.Version, keeper Keeper, msg MsgSetU
 	withdrawRune, withDrawAsset, unitAfter, err := calculateUnstake(poolUnits, poolRune, poolAsset, fStakerUnit, msg.UnstakeBasisPoints)
 	if err != nil {
 		ctx.Logger().Error("fail to unstake", "error", err)
-		return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), sdk.NewError(DefaultCodespace, CodeUnstakeFail, err.Error())
+		return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), sdk.NewError(DefaultCodespace, CodeUnstakeFail, err.Error())
 	}
-
+	gasAsset := sdk.ZeroUint()
 	// If the pool is empty, and there is a gas asset, subtract required gas
 	if common.SafeSub(poolUnits, fStakerUnit).Add(unitAfter).IsZero() {
-		// TODO: make this not chain specific
 		// minus gas costs for our transactions
 		if pool.Asset.IsBNB() {
 			gasInfo, err := keeper.GetGas(ctx, pool.Asset)
 			if err != nil {
 				ctx.Logger().Error("fail to get gas for asset", "asset", pool.Asset, "error", err)
-				return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), sdk.NewError(DefaultCodespace, CodeUnstakeFail, err.Error())
+				return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), sdk.NewError(DefaultCodespace, CodeUnstakeFail, err.Error())
 			}
+			originalAsset := withDrawAsset
 			withDrawAsset = common.SafeSub(
 				withDrawAsset,
 				gasInfo[0].MulUint64(uint64(2)),
 			)
+			gasAsset = originalAsset.Sub(withDrawAsset)
+		} else if pool.Asset.Chain.GetGasAsset().Equals(pool.Asset) {
+			// leave half a RUNE as gas fee for BTC chain and ETH chain
+			transactionFee := cv.GetInt64Value(constants.TransactionFee)
+			gasAsset = pool.RuneValueInAsset(sdk.NewUint(uint64(transactionFee / 2)))
+			withDrawAsset = common.SafeSub(withDrawAsset, gasAsset)
 		}
 	}
 
@@ -109,6 +116,7 @@ func unstake(ctx sdk.Context, version semver.Version, keeper Keeper, msg MsgSetU
 	pool.PoolUnits = common.SafeSub(poolUnits, fStakerUnit).Add(unitAfter)
 	pool.BalanceRune = common.SafeSub(poolRune, withdrawRune)
 	pool.BalanceAsset = common.SafeSub(poolAsset, withDrawAsset)
+
 	ctx.Logger().Info("pool after unstake", "pool unit", pool.PoolUnits, "balance RUNE", pool.BalanceRune, "balance asset", pool.BalanceAsset)
 	// update pool staker
 	poolStaker.TotalUnits = pool.PoolUnits
@@ -135,11 +143,11 @@ func unstake(ctx sdk.Context, version semver.Version, keeper Keeper, msg MsgSetU
 	// update staker pool
 	if err := keeper.SetPool(ctx, pool); err != nil {
 		ctx.Logger().Error("fail to save pool", "error", err)
-		return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), sdk.ErrInternal("fail to save pool")
+		return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), sdk.ErrInternal("fail to save pool")
 	}
 	keeper.SetPoolStaker(ctx, poolStaker)
 	keeper.SetStakerPool(ctx, stakerPool)
-	return withdrawRune, withDrawAsset, common.SafeSub(fStakerUnit, unitAfter), nil
+	return withdrawRune, withDrawAsset, common.SafeSub(fStakerUnit, unitAfter), gasAsset, nil
 }
 
 func calculateUnstake(poolUnits, poolRune, poolAsset, stakerUnits, withdrawBasisPoints sdk.Uint) (sdk.Uint, sdk.Uint, sdk.Uint, error) {
