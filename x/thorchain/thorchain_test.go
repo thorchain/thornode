@@ -51,35 +51,35 @@ func (s *ThorchainSuite) TestStaking(c *C) {
 	c.Assert(err, IsNil)
 	_, err = stake(ctx, keeper, common.BNBAsset, sdk.NewUint(100*common.One), sdk.NewUint(100*common.One), user1, user1, txID, constAccessor)
 	c.Assert(err, IsNil)
-	staker1, err := keeper.GetStakerPool(ctx, user1)
+	stakers, err := keeper.GetPoolStaker(ctx, common.BNBAsset)
 	c.Assert(err, IsNil)
-	c.Check(staker1.PoolUnits, HasLen, 1)
+	c.Check(stakers.Stakers, HasLen, 1)
 
 	// stake for user2
 	_, err = stake(ctx, keeper, common.BNBAsset, sdk.NewUint(75*common.One), sdk.NewUint(75*common.One), user2, user2, txID, constAccessor)
 	c.Assert(err, IsNil)
 	_, err = stake(ctx, keeper, common.BNBAsset, sdk.NewUint(75*common.One), sdk.NewUint(75*common.One), user2, user2, txID, constAccessor)
 	c.Assert(err, IsNil)
-	staker2, err := keeper.GetStakerPool(ctx, user2)
+	stakers, err = keeper.GetPoolStaker(ctx, common.BNBAsset)
 	c.Assert(err, IsNil)
-	c.Check(staker2.PoolUnits, HasLen, 1)
+	c.Check(stakers.Stakers, HasLen, 2)
 
 	version := constants.SWVersion
 	// unstake for user1
 	msg := NewMsgSetUnStake(GetRandomTx(), user1, sdk.NewUint(10000), common.BNBAsset, GetRandomBech32Addr())
 	_, _, _, _, err = unstake(ctx, version, keeper, msg)
 	c.Assert(err, IsNil)
-	staker1, err = keeper.GetStakerPool(ctx, user1)
+	stakers, err = keeper.GetPoolStaker(ctx, common.BNBAsset)
 	c.Assert(err, IsNil)
-	c.Check(staker1.PoolUnits, HasLen, 0)
+	c.Check(stakers.Stakers, HasLen, 1)
 
 	// unstake for user2
 	msg = NewMsgSetUnStake(GetRandomTx(), user2, sdk.NewUint(10000), common.BNBAsset, GetRandomBech32Addr())
 	_, _, _, _, err = unstake(ctx, version, keeper, msg)
 	c.Assert(err, IsNil)
-	staker2, err = keeper.GetStakerPool(ctx, user2)
+	stakers, err = keeper.GetPoolStaker(ctx, common.BNBAsset)
 	c.Assert(err, IsNil)
-	c.Check(staker2.PoolUnits, HasLen, 0)
+	c.Check(stakers.Stakers, HasLen, 0)
 
 	// check pool is now empty
 	pool, err = keeper.GetPool(ctx, common.BNBAsset)
@@ -93,9 +93,9 @@ func (s *ThorchainSuite) TestStaking(c *C) {
 	c.Assert(err, IsNil)
 	_, err = stake(ctx, keeper, common.BNBAsset, sdk.NewUint(100*common.One), sdk.NewUint(100*common.One), user1, user1, txID, constAccessor)
 	c.Assert(err, IsNil)
-	staker1, err = keeper.GetStakerPool(ctx, user1)
+	stakers, err = keeper.GetPoolStaker(ctx, common.BNBAsset)
 	c.Assert(err, IsNil)
-	c.Check(staker1.PoolUnits, HasLen, 1)
+	c.Check(stakers.Stakers, HasLen, 1)
 
 	// check pool is NOT empty
 	pool, err = keeper.GetPool(ctx, common.BNBAsset)

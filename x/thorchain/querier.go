@@ -26,8 +26,6 @@ func NewQuerier(keeper Keeper, validatorMgr VersionedValidatorManager) sdk.Queri
 			return queryPools(ctx, req, keeper)
 		case q.QueryPoolStakers.Key:
 			return queryPoolStakers(ctx, path[1:], req, keeper)
-		case q.QueryStakerPools.Key:
-			return queryStakerPool(ctx, path[1:], req, keeper)
 		case q.QueryTxIn.Key:
 			return queryTxIn(ctx, path[1:], req, keeper)
 		case q.QueryKeysignArray.Key:
@@ -359,27 +357,6 @@ func queryPoolStakers(ctx sdk.Context, path []string, req abci.RequestQuery, kee
 	if err != nil {
 		ctx.Logger().Error("fail to marshal pool staker to json", "error", err)
 		return nil, sdk.ErrInternal("fail to marshal pool staker to json")
-	}
-	return res, nil
-}
-
-// queryStakerPool
-func queryStakerPool(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
-	addr, err := common.NewAddress(path[0])
-	if err != nil {
-		ctx.Logger().Error("fail to parse bnb address", "error", err)
-		return nil, sdk.ErrInternal("fail to parse bnb address")
-	}
-
-	ps, err := keeper.GetStakerPool(ctx, addr)
-	if err != nil {
-		ctx.Logger().Error("fail to get staker pool", "error", err)
-		return nil, sdk.ErrInternal("fail to get staker pool")
-	}
-	res, err := codec.MarshalJSONIndent(keeper.Cdc(), ps)
-	if err != nil {
-		ctx.Logger().Error("fail to marshal staker pool to json", "error", err)
-		return nil, sdk.ErrInternal("fail to marshal staker pool to json")
 	}
 	return res, nil
 }

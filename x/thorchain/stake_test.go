@@ -179,22 +179,11 @@ func (StakeSuite) TestStake(c *C) {
 	_, err = stake(ctx, ps, common.BNBAsset, sdk.NewUint(common.One), sdk.NewUint(common.One), bnbAddress, assetAddress, txID, constAccessor)
 	c.Assert(err, IsNil)
 
-	_, err = stake(ctx, ps, common.BNBAsset, sdk.NewUint(100*common.One), sdk.NewUint(100*common.One), notExistStakerPoolAddr, notExistStakerPoolAddr, txID, constAccessor)
-	c.Assert(err, NotNil)
-	c.Assert(ps.SetPool(ctx, Pool{
-		BalanceRune:  sdk.NewUint(100 * common.One),
-		BalanceAsset: sdk.NewUint(100 * common.One),
-		Asset:        common.BNBAsset,
-		PoolUnits:    sdk.NewUint(100 * common.One),
-		PoolAddress:  bnbAddress,
-		Status:       PoolEnabled,
-	}), IsNil)
 	_, err = stake(ctx, ps, common.BNBAsset, sdk.NewUint(100*common.One), sdk.NewUint(100*common.One), bnbAddress, assetAddress, txID, constAccessor)
 	c.Assert(err, IsNil)
 	p, err := ps.GetPool(ctx, common.BNBAsset)
 	c.Assert(err, IsNil)
-
-	c.Check(p.PoolUnits.Equal(sdk.NewUint(200*common.One)), Equals, true)
+	c.Check(p.PoolUnits.Equal(sdk.NewUint(201*common.One)), Equals, true, Commentf("%d", p.PoolUnits.Uint64()))
 
 	// Test atomic cross chain staking
 	// create BTC pool

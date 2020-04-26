@@ -130,18 +130,6 @@ func stake(ctx sdk.Context, keeper Keeper,
 	su.Units = totalStakerUnits
 	ps.UpsertStakerUnit(su)
 	keeper.SetPoolStaker(ctx, ps)
-	// maintain stake pool structure
-	sp, err := keeper.GetStakerPool(ctx, runeAddr)
-	if err != nil {
-		ctx.Logger().Error("fail to get staker pool object", "error", err)
-		return sdk.ZeroUint(), sdk.ErrInternal("fail to get staker pool object")
-	}
-	stakerPoolItem := sp.GetStakerPoolItem(asset)
-	existUnit := stakerPoolItem.Units
-	stakerPoolItem.Units = totalStakerUnits.Add(existUnit)
-	stakerPoolItem.AddStakerTxDetail(requestTxHash, stakeRuneAmount, stakeAssetAmount)
-	sp.UpsertStakerPoolItem(stakerPoolItem)
-	keeper.SetStakerPool(ctx, sp)
 	return stakerUnits, nil
 }
 

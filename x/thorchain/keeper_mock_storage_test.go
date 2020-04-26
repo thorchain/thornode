@@ -2,7 +2,6 @@ package thorchain
 
 import (
 	"errors"
-	"strings"
 
 	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -40,16 +39,6 @@ func (mps MockPoolStorage) GetPool(ctx sdk.Context, asset common.Asset) (types.P
 }
 
 func (mps MockPoolStorage) SetPool(ctx sdk.Context, ps types.Pool) error { return nil }
-
-func (mps MockPoolStorage) GetStakerPool(ctx sdk.Context, stakerID common.Address) (types.StakerPool, error) {
-	if strings.EqualFold(stakerID.String(), "NOTEXISTSTAKER") {
-		return types.StakerPool{}, errors.New("you asked for it")
-	}
-	return types.NewStakerPool(stakerID), nil
-}
-
-func (mps MockPoolStorage) SetStakerPool(ctx sdk.Context, sp types.StakerPool) {
-}
 
 func (mps MockPoolStorage) GetPoolStaker(ctx sdk.Context, asset common.Asset) (types.PoolStaker, error) {
 	if asset.Equals(common.Asset{Chain: common.BNBChain, Symbol: "NOTEXISTSTICKER", Ticker: "NOTEXISTSTICKER"}) {

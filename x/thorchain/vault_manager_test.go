@@ -27,7 +27,6 @@ type TestRagnarokChainKeeper struct {
 	yggVault    Vault
 	pools       Pools
 	ps          PoolStaker
-	sp          StakerPool
 	na          NodeAccount
 	err         error
 }
@@ -99,14 +98,6 @@ func (k *TestRagnarokChainKeeper) SetPoolStaker(_ sdk.Context, ps PoolStaker) {
 	k.ps = ps
 }
 
-func (k *TestRagnarokChainKeeper) GetStakerPool(_ sdk.Context, addr common.Address) (StakerPool, error) {
-	return k.sp, k.err
-}
-
-func (k *TestRagnarokChainKeeper) SetStakerPool(_ sdk.Context, sp StakerPool) {
-	k.sp = sp
-}
-
 func (k *TestRagnarokChainKeeper) GetGas(_ sdk.Context, _ common.Asset) ([]sdk.Uint, error) {
 	return []sdk.Uint{sdk.NewUint(10)}, k.err
 }
@@ -171,7 +162,6 @@ func (s *ValidatorManagerTestSuite) TestRagnarokChain(c *C) {
 			PendingRune: sdk.ZeroUint(),
 		},
 	}
-	sp := NewStakerPool(addr)
 
 	keeper := &TestRagnarokChainKeeper{
 		na:          GetRandomNodeAccount(NodeActive),
@@ -180,7 +170,6 @@ func (s *ValidatorManagerTestSuite) TestRagnarokChain(c *C) {
 		yggVault:    yggVault,
 		pools:       Pools{bnbPool, btcPool},
 		ps:          ps,
-		sp:          sp,
 	}
 
 	versionedTxOutStoreDummy := NewVersionedTxOutStoreDummy()

@@ -80,7 +80,6 @@ var (
 	NewMsgMigrate                  = types.NewMsgMigrate
 	NewMsgRagnarok                 = types.NewMsgRagnarok
 	NewPoolStaker                  = types.NewPoolStaker
-	NewStakerPool                  = types.NewStakerPool
 	NewMsgEndPool                  = types.NewMsgEndPool
 	HasSuperMajority               = types.HasSuperMajority
 	ChooseSignerParty              = types.ChooseSignerParty
@@ -149,7 +148,6 @@ type (
 	Pool                        = types.Pool
 	Pools                       = types.Pools
 	PoolStaker                  = types.PoolStaker
-	StakerPool                  = types.StakerPool
 	StakerUnit                  = types.StakerUnit
 	ObservedTxs                 = types.ObservedTxs
 	ObservedTx                  = types.ObservedTx
@@ -164,8 +162,6 @@ type (
 	TxOut                       = types.TxOut
 	Keygen                      = types.Keygen
 	KeygenBlock                 = types.KeygenBlock
-	StakerPoolItem              = types.StakerPoolItem
-	StakeTxDetail               = types.StakeTxDetail
 	Event                       = types.Event
 	Events                      = types.Events
 	EventSwap                   = types.EventSwap
