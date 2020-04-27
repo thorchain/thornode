@@ -74,6 +74,7 @@ func (k KVStoreDummy) TotalActiveNodeAccount(_ sdk.Context) (int, error) { retur
 func (k KVStoreDummy) ListNodeAccountsWithBond(_ sdk.Context) (NodeAccounts, error) {
 	return nil, kaboom
 }
+
 func (k KVStoreDummy) ListNodeAccountsByStatus(_ sdk.Context, _ NodeStatus) (NodeAccounts, error) {
 	return nil, kaboom
 }
