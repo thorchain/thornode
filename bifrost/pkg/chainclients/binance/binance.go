@@ -351,7 +351,6 @@ func (b *Binance) SignTx(tx stypes.TxOutItem, height int64) ([]byte, error) {
 	b.logger.Info().Int64("account_number", meta.AccountNumber).Int64("sequence_number", meta.SeqNumber).Msg("account info")
 	signMsg := btx.StdSignMsg{
 		ChainID:       b.chainID,
-		Memo:          tx.Memo,
 		Msgs:          []msg.Msg{sendMsg},
 		Source:        btx.Source,
 		Sequence:      meta.SeqNumber,

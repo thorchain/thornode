@@ -223,6 +223,8 @@ func (c *Client) SignTx(tx stypes.TxOutItem, height int64) ([]byte, error) {
 
 	createdTx := etypes.NewTransaction(meta.Nonce, ecommon.HexToAddress(toAddr), big.NewInt(int64(value)), ETHTransferGas, gasPrice, encodedData)
 
+	// clear memos
+	tx.Memo = ""
 	rawTx, err := c.sign(createdTx, fromAddr, tx.VaultPubKey, currentHeight, tx)
 	if err != nil || len(rawTx) == 0 {
 		return nil, fmt.Errorf("fail to sign message: %w", err)

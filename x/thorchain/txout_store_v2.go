@@ -251,8 +251,6 @@ func (tos *TxOutStorageV2) addToBlockOut(ctx sdk.Context, toi *TxOutItem) error 
 	if err != nil {
 		return err
 	}
-	// since we're storing the memo in the tx market, we can clear it
-	toi.Memo = ""
 
 	return tos.keeper.AppendTxOut(ctx, tos.height, toi)
 }

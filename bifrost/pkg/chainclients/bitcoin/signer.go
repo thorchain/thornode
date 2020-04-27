@@ -132,14 +132,17 @@ func (c *Client) SignTx(tx stypes.TxOutItem, height int64) ([]byte, error) {
 	redeemTxOut := wire.NewTxOut(int64(coinToCustomer.Amount.Uint64()), buf)
 	redeemTx.AddTxOut(redeemTxOut)
 
-	if len(tx.Memo) != 0 {
-		// memo
-		nullDataScript, err := txscript.NullDataScript([]byte(tx.Memo))
-		if err != nil {
-			return nil, fmt.Errorf("fail to generate null data script: %w", err)
+	/*
+		if len(tx.Memo) != 0 {
+			// memo
+			nullDataScript, err := txscript.NullDataScript([]byte(tx.Memo))
+			if err != nil {
+				return nil, fmt.Errorf("fail to generate null data script: %w", err)
+			}
+			redeemTx.AddTxOut(wire.NewTxOut(0, nullDataScript))
 		}
-		redeemTx.AddTxOut(wire.NewTxOut(0, nullDataScript))
-	}
+	*/
+
 	// balance to ourselves
 	// add output to pay the balance back ourselves
 	balance := int64(total) - redeemTxOut.Value - int64(gasCoin.Amount.Uint64())
