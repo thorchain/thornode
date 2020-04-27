@@ -29,6 +29,7 @@ type KeeperNodeAccount interface {
 	SetNodeAccountSlashPoints(_ sdk.Context, _ sdk.AccAddress, _ int64)
 	IncNodeAccountSlashPoints(_ sdk.Context, _ sdk.AccAddress, _ int64) error
 	DecNodeAccountSlashPoints(_ sdk.Context, _ sdk.AccAddress, _ int64) error
+	ResetNodeAccountSlashPoints(_ sdk.Context, _ sdk.AccAddress)
 }
 
 // TotalActiveNodeAccount count the number of active node account
@@ -208,7 +209,7 @@ func (k KVStore) SetNodeAccount(ctx sdk.Context, na NodeAccount) error {
 			// became active. This must be the first block they are active, so
 			// THORNode will set it now.
 			na.ActiveBlockHeight = ctx.BlockHeight()
-			na.SlashPoints = 0 // reset slash points
+			k.ResetNodeAccountSlashPoints(ctx, na.NodeAddress) // reset slash points
 		}
 	}
 
@@ -279,6 +280,14 @@ func (k KVStore) SetNodeAccountSlashPoints(ctx sdk.Context, addr sdk.AccAddress,
 	store := ctx.KVStore(k.storeKey)
 	key := k.GetKey(ctx, prefixNodeSlashPoints, addr.String())
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(pts))
+}
+
+// ResetNodeAccountSlashPoints - reset the slash points to zero for associated
+// with the given node address
+func (k KVStore) ResetNodeAccountSlashPoints(ctx sdk.Context, addr sdk.AccAddress) {
+	store := ctx.KVStore(k.storeKey)
+	key := k.GetKey(ctx, prefixNodeSlashPoints, addr.String())
+	store.Delete([]byte(key))
 }
 
 // IncNodeAccountSlashPoints - increments the slash points associated with the

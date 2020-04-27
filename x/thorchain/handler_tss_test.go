@@ -358,7 +358,9 @@ func (s *HandlerTssSuite) TestTssHandler(c *C) {
 				pubKey := helper.members[3]
 				na, err := helper.keeper.GetNodeAccountByPubKey(helper.ctx, pubKey)
 				c.Assert(err, IsNil)
-				c.Assert(na.SlashPoints > 0, Equals, true)
+				slashPts, err := helper.keeper.GetNodeAccountSlashPoints(helper.ctx, na.NodeAddress)
+				c.Assert(err, IsNil)
+				c.Assert(slashPts > 0, Equals, true)
 			},
 			expectedResult: sdk.CodeOK,
 		},

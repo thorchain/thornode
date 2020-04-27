@@ -20,9 +20,7 @@ func (s *KeeperNodeAccountSuite) TestNodeAccount(c *C) {
 	c.Assert(k.SetNodeAccount(ctx, na1), IsNil)
 	c.Assert(k.SetNodeAccount(ctx, na2), IsNil)
 	c.Check(na1.ActiveBlockHeight, Equals, int64(10))
-	c.Check(na1.SlashPoints, Equals, int64(0))
 	c.Check(na2.ActiveBlockHeight, Equals, int64(0))
-	c.Check(na2.SlashPoints, Equals, int64(0))
 
 	count, err := k.TotalActiveNodeAccount(ctx)
 	c.Assert(err, IsNil)

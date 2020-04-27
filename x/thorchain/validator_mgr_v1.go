@@ -180,7 +180,7 @@ func (vm *validatorMgrV1) EndBlock(ctx sdk.Context, constAccessor constants.Cons
 		na.UpdateStatus(NodeActive, height)
 		na.LeaveHeight = 0
 		na.RequestedToLeave = false
-		na.SlashPoints = 0
+		vm.k.ResetNodeAccountSlashPoints(ctx, na.NodeAddress)
 		if err := vm.k.SetNodeAccount(ctx, na); err != nil {
 			ctx.Logger().Error("fail to save node account", "error", err)
 		}
@@ -297,11 +297,16 @@ func (vm *validatorMgrV1) payNodeAccountBondAward(ctx sdk.Context, na NodeAccoun
 		return fmt.Errorf("fail to get vault: %w", err)
 	}
 
+	slashPts, err := vm.k.GetNodeAccountSlashPoints(ctx, na.NodeAddress)
+	if err != nil {
+		return fmt.Errorf("fail to get node slash points: %w", err)
+	}
+
 	// Find number of blocks they have been an active node
 	totalActiveBlocks := ctx.BlockHeight() - na.ActiveBlockHeight
 
 	// find number of blocks they were well behaved (ie active - slash points)
-	earnedBlocks := na.CalcBondUnits(ctx.BlockHeight())
+	earnedBlocks := na.CalcBondUnits(ctx.BlockHeight(), slashPts)
 
 	// calc number of rune they are awarded
 	reward := vault.CalcNodeRewards(earnedBlocks)
@@ -763,7 +768,11 @@ func (vm *validatorMgrV1) findBadActors(ctx sdk.Context) (NodeAccounts, error) {
 
 	// Find bad actor relative to age / slashpoints
 	for _, na := range nas {
-		if na.SlashPoints == 0 {
+		slashPts, err := vm.k.GetNodeAccountSlashPoints(ctx, na.NodeAddress)
+		if err != nil {
+			ctx.Logger().Error("fail to get node slash points", "error", err)
+		}
+		if slashPts == 0 {
 			continue
 		}
 
@@ -772,7 +781,7 @@ func (vm *validatorMgrV1) findBadActors(ctx sdk.Context) (NodeAccounts, error) {
 			// this node account is too new (1 hour) to be considered for removal
 			continue
 		}
-		score := age.Quo(sdk.NewDecWithPrec(na.SlashPoints, 5))
+		score := age.Quo(sdk.NewDecWithPrec(slashPts, 5))
 		totalScore = totalScore.Add(score)
 
 		tracker = append(tracker, badTracker{
