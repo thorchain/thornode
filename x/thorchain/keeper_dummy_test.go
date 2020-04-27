@@ -109,6 +109,7 @@ func (k KVStoreDummy) ResetNodeAccountSlashPoints(_ sdk.Context, _ sdk.AccAddres
 func (k KVStoreDummy) IncNodeAccountSlashPoints(_ sdk.Context, _ sdk.AccAddress, _ int64) error {
 	return kaboom
 }
+
 func (k KVStoreDummy) DecNodeAccountSlashPoints(_ sdk.Context, _ sdk.AccAddress, _ int64) error {
 	return kaboom
 }
