@@ -155,5 +155,8 @@ func (tx Tx) IsValid() error {
 	if err := tx.Gas.IsValid(); err != nil {
 		return err
 	}
+	if len([]byte(tx.Memo)) > 150 {
+		return fmt.Errorf("Memo must not exceed 150 bytes: %d", len([]byte(tx.Memo)))
+	}
 	return nil
 }

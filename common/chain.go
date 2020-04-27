@@ -32,6 +32,9 @@ func (c Chain) Validate() error {
 	if len(c) < 3 {
 		return errors.New("chain id len is less than 3")
 	}
+	if len(c) > 10 {
+		return errors.New("chain id len is more than 10")
+	}
 	for _, ch := range string(c) {
 		if ch < 'A' || ch > 'Z' {
 			return errors.New("chain id can consist only of uppercase letters")
