@@ -381,6 +381,7 @@ func (s *Signer) handleYggReturn(tx types.TxOutItem) (types.TxOutItem, error) {
 		s.logger.Error().Err(err).Msgf("not supported %s", tx.Chain.String())
 		return tx, err
 	}
+	// it is important to set the memo field to `yggdrasil-` , thus chain client can use it to decide leave some gas coin behind to pay the fees
 	tx.Memo = thorchain.TxYggdrasilReturn.String()
 	acct, err := chain.GetAccount(tx.VaultPubKey)
 	if err != nil {
