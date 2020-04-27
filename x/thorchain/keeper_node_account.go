@@ -25,6 +25,10 @@ type KeeperNodeAccount interface {
 	SetNodeAccount(ctx sdk.Context, na NodeAccount) error
 	EnsureNodeKeysUnique(ctx sdk.Context, consensusPubKey string, pubKeys common.PubKeySet) error
 	GetNodeAccountIterator(ctx sdk.Context) sdk.Iterator
+	GetNodeAccountSlashPoints(_ sdk.Context, _ sdk.AccAddress) (int64, error)
+	SetNodeAccountSlashPoints(_ sdk.Context, _ sdk.AccAddress, _ int64)
+	IncNodeAccountSlashPoints(_ sdk.Context, _ sdk.AccAddress, _ int64) error
+	DecNodeAccountSlashPoints(_ sdk.Context, _ sdk.AccAddress, _ int64) error
 }
 
 // TotalActiveNodeAccount count the number of active node account
@@ -251,4 +255,50 @@ func (k KVStore) EnsureNodeKeysUnique(ctx sdk.Context, consensusPubKey string, p
 func (k KVStore) GetNodeAccountIterator(ctx sdk.Context) sdk.Iterator {
 	store := ctx.KVStore(k.storeKey)
 	return sdk.KVStorePrefixIterator(store, []byte(prefixNodeAccount))
+}
+
+// GetNodeAccountSlashPoints - get the slash points associated with the given
+// node address
+func (k KVStore) GetNodeAccountSlashPoints(ctx sdk.Context, addr sdk.AccAddress) (int64, error) {
+	store := ctx.KVStore(k.storeKey)
+	key := k.GetKey(ctx, prefixNodeSlashPoints, addr.String())
+	if !store.Has([]byte(key)) {
+		return 0, nil
+	}
+	payload := store.Get([]byte(key))
+	var pts int64
+	if err := k.cdc.UnmarshalBinaryBare(payload, &pts); err != nil {
+		return pts, dbError(ctx, "Unmarshal: node account slash points", err)
+	}
+	return pts, nil
+}
+
+// SetNodeAccountSlashPoints - set the slash points associated with the given
+// node address and uint
+func (k KVStore) SetNodeAccountSlashPoints(ctx sdk.Context, addr sdk.AccAddress, pts int64) {
+	store := ctx.KVStore(k.storeKey)
+	key := k.GetKey(ctx, prefixNodeSlashPoints, addr.String())
+	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(pts))
+}
+
+// IncNodeAccountSlashPoints - increments the slash points associated with the
+// given node address and uint
+func (k KVStore) IncNodeAccountSlashPoints(ctx sdk.Context, addr sdk.AccAddress, pts int64) error {
+	current, err := k.GetNodeAccountSlashPoints(ctx, addr)
+	if err != nil {
+		return err
+	}
+	k.SetNodeAccountSlashPoints(ctx, addr, current+pts)
+	return nil
+}
+
+// DecNodeAccountSlashPoints - decrements the slash points associated with the
+// given node address and uint
+func (k KVStore) DecNodeAccountSlashPoints(ctx sdk.Context, addr sdk.AccAddress, pts int64) error {
+	current, err := k.GetNodeAccountSlashPoints(ctx, addr)
+	if err != nil {
+		return err
+	}
+	k.SetNodeAccountSlashPoints(ctx, addr, current-pts)
+	return nil
 }
