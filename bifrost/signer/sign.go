@@ -381,6 +381,12 @@ func (s *Signer) handleYggReturn(tx types.TxOutItem) (types.TxOutItem, error) {
 		s.logger.Error().Err(err).Msgf("not supported %s", tx.Chain.String())
 		return tx, err
 	}
+	isValid, _ := s.pubkeyMgr.IsValidPoolAddress(tx.ToAddress.String(), tx.Chain)
+	if !isValid {
+		errInvalidPool := fmt.Errorf("yggdrasil return should return to a valid pool address,%s is not valid", tx.ToAddress.String())
+		s.logger.Error().Err(errInvalidPool).Msg("invalid yggdrasil return address")
+		return tx, errInvalidPool
+	}
 	// it is important to set the memo field to `yggdrasil-` , thus chain client can use it to decide leave some gas coin behind to pay the fees
 	tx.Memo = thorchain.TxYggdrasilReturn.String()
 	acct, err := chain.GetAccount(tx.VaultPubKey)
