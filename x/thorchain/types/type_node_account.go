@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
 	"strconv"
 	"strings"
 
@@ -91,16 +92,13 @@ type NodeAccount struct {
 	Bond                sdk.Uint         `json:"bond"`
 	ActiveBlockHeight   int64            `json:"active_block_height"` // The block height when this node account became active status
 	BondAddress         common.Address   `json:"bond_address"`        // BNB Address to send bond from. It also indicates the operator address to whilelist and associate.
-	SlashPoints         int64            `json:"slash_points"`        // Amount of penalty points the users has incurred.
-	// start from which block height this node account is in current status
-	// StatusSince field is important , it has been used to sort node account , used for validator rotation
-	StatusSince      int64          `json:"status_since"`
-	SignerMembership common.PubKeys `json:"signer_membership"`
-	RequestedToLeave bool           `json:"requested_to_leave"`
-	ForcedToLeave    bool           `json:"forced_to_leave"`
-	LeaveHeight      int64          `json:"leave_height"`
-	IPAddress        string         `json:"ip_address"`
-	Version          semver.Version `json:"version"`
+	StatusSince         int64            `json:"status_since"`
+	SignerMembership    common.PubKeys   `json:"signer_membership"`
+	RequestedToLeave    bool             `json:"requested_to_leave"`
+	ForcedToLeave       bool             `json:"forced_to_leave"`
+	LeaveHeight         int64            `json:"leave_height"`
+	IPAddress           string           `json:"ip_address"`
+	Version             semver.Version   `json:"version"`
 }
 
 // NewNodeAccount create new instance of NodeAccount
@@ -173,12 +171,14 @@ func (n NodeAccount) String() string {
 }
 
 // CalcBondUnits calculate bond
-func (n *NodeAccount) CalcBondUnits(height int64) sdk.Uint {
-	if height < 0 || n.ActiveBlockHeight < 0 || n.SlashPoints < 0 {
+func (n *NodeAccount) CalcBondUnits(height, slashpoints int64) sdk.Uint {
+	// ensure slashpoints is not negative
+	slashpoints = int64(math.Max(float64(0), float64(slashpoints)))
+	if height < 0 || n.ActiveBlockHeight < 0 || slashpoints < 0 {
 		return sdk.ZeroUint()
 	}
 
-	blockCount := height - (n.ActiveBlockHeight + n.SlashPoints)
+	blockCount := height - (n.ActiveBlockHeight + slashpoints)
 	if blockCount < 0 { // ensure we're never negative
 		blockCount = 0
 	}
@@ -276,27 +276,4 @@ func (nas NodeAccounts) Contains(na NodeAccount) bool {
 		}
 	}
 	return false
-}
-
-type NodeAccountsBySlashingPoint []NodeAccount
-
-// NodeAccountsBySlashingPoint sort interface , it will sort by StatusSince field, and then by SignerBNBAddress
-func (nas NodeAccountsBySlashingPoint) Less(i, j int) bool {
-	if nas[i].SlashPoints > nas[j].SlashPoints {
-		return true
-	}
-	if nas[i].SlashPoints < nas[j].SlashPoints {
-		return false
-	}
-	if nas[i].StatusSince < nas[j].StatusSince {
-		return true
-	}
-	if nas[i].StatusSince > nas[j].StatusSince {
-		return false
-	}
-	return nas[i].NodeAddress.String() < nas[j].NodeAddress.String()
-}
-func (nas NodeAccountsBySlashingPoint) Len() int { return len(nas) }
-func (nas NodeAccountsBySlashingPoint) Swap(i, j int) {
-	nas[i], nas[j] = nas[j], nas[i]
 }

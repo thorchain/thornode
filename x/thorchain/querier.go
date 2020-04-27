@@ -273,7 +273,15 @@ func queryNodeAccount(ctx sdk.Context, path []string, req abci.RequestQuery, kee
 	if err != nil {
 		return nil, sdk.ErrInternal("fail to get node accounts")
 	}
-	res, err := codec.MarshalJSONIndent(keeper.Cdc(), nodeAcc)
+
+	slashPts, err := keeper.GetNodeAccountSlashPoints(ctx, addr)
+	if err != nil {
+		return nil, sdk.ErrInternal("fail to get node slash points")
+	}
+
+	result := NewQueryNodeAccount(nodeAcc)
+	result.SlashPoints = slashPts
+	res, err := codec.MarshalJSONIndent(keeper.Cdc(), result)
 	if err != nil {
 		ctx.Logger().Error("fail to marshal node account to json", "error", err)
 		return nil, sdk.ErrInternal("fail to marshal node account to json")
@@ -287,7 +295,18 @@ func queryNodeAccounts(ctx sdk.Context, path []string, req abci.RequestQuery, ke
 	if err != nil {
 		return nil, sdk.ErrInternal("fail to get node accounts")
 	}
-	res, err := codec.MarshalJSONIndent(keeper.Cdc(), nodeAccounts)
+
+	result := make([]QueryNodeAccount, len(nodeAccounts))
+	for i, na := range nodeAccounts {
+		slashPts, err := keeper.GetNodeAccountSlashPoints(ctx, na.NodeAddress)
+		if err != nil {
+			return nil, sdk.ErrInternal("fail to get node slash points")
+		}
+		result[i] = NewQueryNodeAccount(na)
+		result[i].SlashPoints = slashPts
+	}
+
+	res, err := codec.MarshalJSONIndent(keeper.Cdc(), result)
 	if err != nil {
 		ctx.Logger().Error("fail to marshal observers to json", "error", err)
 		return nil, sdk.ErrInternal("fail to marshal observers to json")

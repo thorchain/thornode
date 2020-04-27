@@ -220,17 +220,6 @@ func (h HandlerTssKeysignSuite) TestTssKeysignFailHandler(c *C) {
 			expectedResult: sdk.CodeInternal,
 		},
 		{
-			name: "fail to set node account should return an error",
-			messageCreator: func(helper tssKeysignFailHandlerTestHelper) sdk.Msg {
-				return NewMsgTssKeysignFail(helper.ctx.BlockHeight(), helper.blame, "hello", common.Coins{common.NewCoin(common.BNBAsset, sdk.NewUint(100))}, helper.nodeAccount.NodeAddress)
-			},
-			runner: func(handler TssKeysignHandler, msg sdk.Msg, helper tssKeysignFailHandlerTestHelper) sdk.Result {
-				helper.keeper.errFailSetNodeAccount = true
-				return handler.Run(helper.ctx, msg, constants.SWVersion, helper.constAccessor)
-			},
-			expectedResult: sdk.CodeInternal,
-		},
-		{
 			name: "without majority it should not take any actions",
 			messageCreator: func(helper tssKeysignFailHandlerTestHelper) sdk.Msg {
 				return NewMsgTssKeysignFail(helper.ctx.BlockHeight(), helper.blame, "hello", common.Coins{common.NewCoin(common.BNBAsset, sdk.NewUint(100))}, helper.nodeAccount.NodeAddress)

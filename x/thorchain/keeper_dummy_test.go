@@ -99,7 +99,20 @@ func (k KVStoreDummy) SetNodeAccount(_ sdk.Context, _ NodeAccount) error { retur
 func (k KVStoreDummy) EnsureNodeKeysUnique(_ sdk.Context, _ string, _ common.PubKeySet) error {
 	return kaboom
 }
-func (k KVStoreDummy) GetNodeAccountIterator(_ sdk.Context) sdk.Iterator     { return nil }
+func (k KVStoreDummy) GetNodeAccountIterator(_ sdk.Context) sdk.Iterator { return nil }
+
+func (k KVStoreDummy) GetNodeAccountSlashPoints(_ sdk.Context, _ sdk.AccAddress) (int64, error) {
+	return 0, kaboom
+}
+func (k KVStoreDummy) SetNodeAccountSlashPoints(_ sdk.Context, _ sdk.AccAddress, _ int64) {}
+func (k KVStoreDummy) ResetNodeAccountSlashPoints(_ sdk.Context, _ sdk.AccAddress)        {}
+func (k KVStoreDummy) IncNodeAccountSlashPoints(_ sdk.Context, _ sdk.AccAddress, _ int64) error {
+	return kaboom
+}
+
+func (k KVStoreDummy) DecNodeAccountSlashPoints(_ sdk.Context, _ sdk.AccAddress, _ int64) error {
+	return kaboom
+}
 func (k KVStoreDummy) SetActiveObserver(_ sdk.Context, _ sdk.AccAddress)     {}
 func (k KVStoreDummy) RemoveActiveObserver(_ sdk.Context, _ sdk.AccAddress)  {}
 func (k KVStoreDummy) IsActiveObserver(_ sdk.Context, _ sdk.AccAddress) bool { return false }

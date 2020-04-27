@@ -76,6 +76,7 @@ const (
 	prefixSupportedTxMarker  dbPrefix = "marker/"
 	prefixErrataTx           dbPrefix = "errata/"
 	prefixBanVoter           dbPrefix = "ban/"
+	prefixNodeSlashPoints    dbPrefix = "slash/"
 )
 
 func dbError(ctx sdk.Context, wrapper string, err error) error {

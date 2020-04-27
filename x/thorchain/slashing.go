@@ -126,10 +126,8 @@ func (s *Slasher) LackObserving(ctx sdk.Context, constAccessor constants.Constan
 		// this na is not found, therefore it should be slashed
 		if !found {
 			lackOfObservationPenalty := constAccessor.GetInt64Value(constants.LackOfObservationPenalty)
-			na.SlashPoints += lackOfObservationPenalty
-			if err := s.keeper.SetNodeAccount(ctx, na); err != nil {
-				ctx.Logger().Error(fmt.Sprintf("fail to save node account(%s)", na), "error", err)
-				return err
+			if err := s.keeper.IncNodeAccountSlashPoints(ctx, na.NodeAddress, lackOfObservationPenalty); err != nil {
+				ctx.Logger().Error("fail to inc slash points", "error", err)
 			}
 		}
 	}
@@ -170,9 +168,8 @@ func (s *Slasher) LackSigning(ctx sdk.Context, constAccessor constants.ConstantV
 							ctx.Logger().Error("Unable to get node account", "error", err)
 							continue
 						}
-						na.SlashPoints += signingTransPeriod * 2
-						if err := s.keeper.SetNodeAccount(ctx, na); err != nil {
-							ctx.Logger().Error("fail to save node account", "error", err)
+						if err := s.keeper.IncNodeAccountSlashPoints(ctx, na.NodeAddress, signingTransPeriod*2); err != nil {
+							ctx.Logger().Error("fail to inc slash points", "error", err)
 						}
 					}
 
