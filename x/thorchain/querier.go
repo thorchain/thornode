@@ -641,7 +641,7 @@ func queryCompEvents(ctx sdk.Context, path []string, req abci.RequestQuery, keep
 	}
 
 	chain := common.EmptyChain
-	if len(path[1]) > 0 {
+	if len(path) > 1 {
 		chain, err = common.NewChain(path[1])
 		if err != nil {
 			ctx.Logger().Error("fail to discover chain name", "error", err)
@@ -671,7 +671,7 @@ func queryCompEvents(ctx sdk.Context, path []string, req abci.RequestQuery, keep
 		if len(event.OutTxs) > 0 {
 			evtChain = common.RuneAsset().Chain
 			for _, outTx := range event.OutTxs {
-				if !evtChain.Equals(outTx.Chain) {
+				if !outTx.Chain.IsEmpty() && !evtChain.Equals(outTx.Chain) {
 					evtChain = outTx.Chain
 					break
 				}
