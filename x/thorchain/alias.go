@@ -80,6 +80,7 @@ var (
 	NewMsgMigrate                  = types.NewMsgMigrate
 	NewMsgRagnarok                 = types.NewMsgRagnarok
 	NewMsgEndPool                  = types.NewMsgEndPool
+	NewQueryNodeAccount            = types.NewQueryNodeAccount
 	HasSuperMajority               = types.HasSuperMajority
 	ChooseSignerParty              = types.ChooseSignerParty
 	GetThreshold                   = types.GetThreshold
@@ -140,6 +141,7 @@ type (
 	QueryResHeights       = types.QueryResHeights
 	QueryResTxOut         = types.QueryResTxOut
 	QueryYggdrasilVaults  = types.QueryYggdrasilVaults
+	QueryNodeAccount      = types.QueryNodeAccount
 	ResTxOut              = types.ResTxOut
 	NodeKeys              = types.NodeKeys
 	NodesKeys             = types.NodesKeys
