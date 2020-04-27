@@ -61,8 +61,15 @@ func (vts *ValidatorMgrV1TestSuite) TestBadActors(c *C) {
 	nas, err = vMgr.findBadActors(ctx)
 	c.Assert(err, IsNil)
 	c.Assert(nas, HasLen, 2, Commentf("%d", len(nas)))
-	c.Check(nas[0].NodeAddress.Equals(bad1.NodeAddress), Equals, true)
-	c.Check(nas[1].NodeAddress.Equals(bad2.NodeAddress), Equals, true)
+
+	// inconsistent order, workaround
+	var count int
+	for _, bad := range nas {
+		if bad.Equals(bad1) || bad.Equals(bad2) {
+			count += 1
+		}
+	}
+	c.Check(count, Equals, 2)
 }
 
 func (vts *ValidatorMgrV1TestSuite) TestRagnarokBond(c *C) {
