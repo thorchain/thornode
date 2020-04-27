@@ -79,7 +79,6 @@ var (
 	NewMsgOutboundTx               = types.NewMsgOutboundTx
 	NewMsgMigrate                  = types.NewMsgMigrate
 	NewMsgRagnarok                 = types.NewMsgRagnarok
-	NewPoolStaker                  = types.NewPoolStaker
 	NewMsgEndPool                  = types.NewMsgEndPool
 	HasSuperMajority               = types.HasSuperMajority
 	ChooseSignerParty              = types.ChooseSignerParty
@@ -147,8 +146,7 @@ type (
 	PoolStatus                  = types.PoolStatus
 	Pool                        = types.Pool
 	Pools                       = types.Pools
-	PoolStaker                  = types.PoolStaker
-	StakerUnit                  = types.StakerUnit
+	Staker                      = types.Staker
 	ObservedTxs                 = types.ObservedTxs
 	ObservedTx                  = types.ObservedTx
 	ObservedTxVoter             = types.ObservedTxVoter

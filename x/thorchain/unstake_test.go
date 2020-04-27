@@ -353,13 +353,13 @@ func (UnstakeSuite) TestUnstake(c *C) {
 			ps:            ps,
 			runeAmount:    sdk.ZeroUint(),
 			assetAmount:   sdk.ZeroUint(),
-			expectedError: sdk.NewError(DefaultCodespace, CodePoolStakerNotExist, "pool staker doesn't exist"),
+			expectedError: sdk.NewError(DefaultCodespace, CodeStakerNotExist, "staker doesn't exist"),
 		},
 		{
 			name: "nothing-to-withdraw",
 			msg: MsgSetUnStake{
 				RuneAddress:        runeAddress,
-				UnstakeBasisPoints: sdk.NewUint(10000),
+				UnstakeBasisPoints: sdk.NewUint(0),
 				Asset:              common.BNBAsset,
 				Tx:                 common.Tx{ID: "28B40BF105A112389A339A64BD1A042E6140DC9082C679586C6CF493A9FDE3FE"},
 				Signer:             accountAddr,
@@ -434,17 +434,13 @@ func getInMemoryPoolStorageForUnstake(c *C) Keeper {
 		Status:       PoolEnabled,
 	}
 	store.SetPool(ctx, pool)
-	poolStaker := PoolStaker{
-		Asset:      common.BNBAsset,
-		TotalUnits: sdk.NewUint(100 * common.One),
-		Stakers: []StakerUnit{
-			{
-				RuneAddress: runeAddress,
-				Units:       sdk.NewUint(100 * common.One),
-				PendingRune: sdk.ZeroUint(),
-			},
-		},
+	staker := Staker{
+		Asset:        pool.Asset,
+		RuneAddress:  runeAddress,
+		AssetAddress: runeAddress,
+		Units:        sdk.NewUint(100 * common.One),
+		PendingRune:  sdk.ZeroUint(),
 	}
-	store.SetPoolStaker(ctx, poolStaker)
+	store.SetStaker(ctx, staker)
 	return store
 }

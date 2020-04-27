@@ -55,11 +55,12 @@ func (m *MockStackKeeper) GetNodeAccount(_ sdk.Context, addr sdk.AccAddress) (No
 	return NodeAccount{}, errors.New("not exist")
 }
 
-func (m *MockStackKeeper) GetPoolStaker(_ sdk.Context, asset common.Asset) (PoolStaker, error) {
-	return PoolStaker{
-		Asset:      asset,
-		TotalUnits: sdk.ZeroUint(),
-		Stakers:    nil,
+func (m *MockStackKeeper) GetStaker(_ sdk.Context, asset common.Asset, addr common.Address) (Staker, error) {
+	return Staker{
+		Asset:        asset,
+		RuneAddress:  addr,
+		AssetAddress: addr,
+		Units:        sdk.ZeroUint(),
 	}, nil
 }
 

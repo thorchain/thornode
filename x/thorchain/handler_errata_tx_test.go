@@ -16,11 +16,11 @@ type HandlerErrataTxSuite struct{}
 
 type TestErrataTxKeeper struct {
 	KVStoreDummy
-	event Event
-	pool  Pool
-	na    NodeAccount
-	ps    PoolStaker
-	err   error
+	event   Event
+	pool    Pool
+	na      NodeAccount
+	stakers []Staker
+	err     error
 }
 
 func (k *TestErrataTxKeeper) ListActiveNodeAccounts(_ sdk.Context) (NodeAccounts, error) {
@@ -53,12 +53,21 @@ func (k *TestErrataTxKeeper) SetPool(_ sdk.Context, pool Pool) error {
 	return k.err
 }
 
-func (k *TestErrataTxKeeper) GetPoolStaker(_ sdk.Context, _ common.Asset) (PoolStaker, error) {
-	return k.ps, k.err
+func (k *TestErrataTxKeeper) GetStaker(_ sdk.Context, asset common.Asset, addr common.Address) (Staker, error) {
+	for _, staker := range k.stakers {
+		if staker.RuneAddress.Equals(addr) {
+			return staker, k.err
+		}
+	}
+	return Staker{}, k.err
 }
 
-func (k *TestErrataTxKeeper) SetPoolStaker(_ sdk.Context, ps PoolStaker) {
-	k.ps = ps
+func (k *TestErrataTxKeeper) SetStaker(_ sdk.Context, staker Staker) {
+	for i, skr := range k.stakers {
+		if skr.RuneAddress.Equals(staker.RuneAddress) {
+			k.stakers[i] = staker
+		}
+	}
 }
 
 func (k *TestErrataTxKeeper) GetErrataTxVoter(_ sdk.Context, txID common.TxID, chain common.Chain) (ErrataTxVoter, error) {
@@ -95,29 +104,30 @@ func (s *HandlerErrataTxSuite) TestHandle(c *C) {
 
 	txID := GetRandomTxHash()
 	na := GetRandomNodeAccount(NodeActive)
-	ps := NewPoolStaker(common.BNBAsset, sdk.NewUint(1600))
 	addr := GetRandomBNBAddress()
-	ps.Stakers = []StakerUnit{
-		StakerUnit{
-			RuneAddress: addr,
-			Height:      5,
-			Units:       ps.TotalUnits.QuoUint64(2),
-		},
-		StakerUnit{
-			RuneAddress: GetRandomBNBAddress(),
-			Height:      10,
-			Units:       ps.TotalUnits.QuoUint64(2),
-		},
-	}
+	totalUnits := sdk.NewUint(1600)
 
 	keeper := &TestErrataTxKeeper{
 		na: na,
-		ps: ps,
 		pool: Pool{
 			Asset:        common.BNBAsset,
-			PoolUnits:    ps.TotalUnits,
+			PoolUnits:    totalUnits,
 			BalanceRune:  sdk.NewUint(100 * common.One),
 			BalanceAsset: sdk.NewUint(100 * common.One),
+		},
+		stakers: []Staker{
+			Staker{
+				RuneAddress:     addr,
+				LastStakeHeight: 5,
+				Units:           totalUnits.QuoUint64(2),
+				PendingRune:     sdk.ZeroUint(),
+			},
+			Staker{
+				RuneAddress:     GetRandomBNBAddress(),
+				LastStakeHeight: 10,
+				Units:           totalUnits.QuoUint64(2),
+				PendingRune:     sdk.ZeroUint(),
+			},
 		},
 		event: Event{
 			InTx: common.Tx{
@@ -139,9 +149,8 @@ func (s *HandlerErrataTxSuite) TestHandle(c *C) {
 	c.Assert(result.IsOK(), Equals, true)
 	c.Check(keeper.pool.BalanceRune.Equal(sdk.NewUint(70*common.One)), Equals, true)
 	c.Check(keeper.pool.BalanceAsset.Equal(sdk.NewUint(100*common.One)), Equals, true)
-	c.Check(keeper.ps.TotalUnits.Equal(sdk.NewUint(800)), Equals, true)
-	c.Check(keeper.ps.Stakers[0].Units.IsZero(), Equals, true)
-	c.Check(keeper.ps.Stakers[0].Height, Equals, int64(18))
+	c.Check(keeper.stakers[0].Units.IsZero(), Equals, true, Commentf("%d", keeper.stakers[0].Units.Uint64()))
+	c.Check(keeper.stakers[0].LastStakeHeight, Equals, int64(18))
 
 	c.Assert(keeper.event.Type, Equals, "errata")
 	var evt EventErrata

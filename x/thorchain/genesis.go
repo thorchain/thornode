@@ -12,7 +12,7 @@ import (
 // GenesisState strcture that used to store the data THORNode put in genesis
 type GenesisState struct {
 	Pools            []Pool                `json:"pools"`
-	PoolStakers      []PoolStaker          `json:"pool_stakers"`
+	Stakers          []Staker              `json:"stakers"`
 	ObservedTxVoters ObservedTxVoters      `json:"observed_tx_voters"`
 	TxOuts           []TxOut               `json:"txouts"`
 	NodeAccounts     NodeAccounts          `json:"node_accounts"`
@@ -78,7 +78,7 @@ func DefaultGenesisState() GenesisState {
 		NodeAccounts:     NodeAccounts{},
 		CurrentEventID:   1,
 		TxOuts:           make([]TxOut, 0),
-		PoolStakers:      make([]PoolStaker, 0),
+		Stakers:          make([]Staker, 0),
 		Events:           make(Events, 0),
 		Vaults:           make(Vaults, 0),
 		ObservedTxVoters: make(ObservedTxVoters, 0),
@@ -94,8 +94,8 @@ func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) []abci.Valid
 		}
 	}
 
-	for _, stake := range data.PoolStakers {
-		keeper.SetPoolStaker(ctx, stake)
+	for _, stake := range data.Stakers {
+		keeper.SetStaker(ctx, stake)
 	}
 
 	validators := make([]abci.ValidatorUpdate, 0, len(data.NodeAccounts))
@@ -157,15 +157,23 @@ func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) []abci.Valid
 
 // ExportGenesis export the data in Genesis
 func ExportGenesis(ctx sdk.Context, k Keeper) GenesisState {
+	var iterator sdk.Iterator
 	currentEventID, _ := k.GetCurrentEventID(ctx)
 
-	var poolStakers []PoolStaker
-	iterator := k.GetPoolStakerIterator(ctx)
-	defer iterator.Close()
-	for ; iterator.Valid(); iterator.Next() {
-		var ps PoolStaker
-		k.Cdc().MustUnmarshalBinaryBare(iterator.Value(), &ps)
-		poolStakers = append(poolStakers, ps)
+	pools, err := k.GetPools(ctx)
+	if err != nil {
+		panic(err)
+	}
+
+	var stakers []Staker
+	for _, pool := range pools {
+		iterator := k.GetStakerIterator(ctx, pool.Asset)
+		defer iterator.Close()
+		for ; iterator.Valid(); iterator.Next() {
+			var ps Staker
+			k.Cdc().MustUnmarshalBinaryBare(iterator.Value(), &ps)
+			stakers = append(stakers, ps)
+		}
 	}
 
 	var nodeAccounts NodeAccounts
@@ -175,11 +183,6 @@ func ExportGenesis(ctx sdk.Context, k Keeper) GenesisState {
 		var na NodeAccount
 		k.Cdc().MustUnmarshalBinaryBare(iterator.Value(), &na)
 		nodeAccounts = append(nodeAccounts, na)
-	}
-
-	pools, err := k.GetPools(ctx)
-	if err != nil {
-		panic(err)
 	}
 
 	var votes ObservedTxVoters
@@ -221,7 +224,7 @@ func ExportGenesis(ctx sdk.Context, k Keeper) GenesisState {
 	return GenesisState{
 		Pools:            pools,
 		NodeAccounts:     nodeAccounts,
-		PoolStakers:      poolStakers,
+		Stakers:          stakers,
 		ObservedTxVoters: votes,
 		TxOuts:           outs,
 		CurrentEventID:   currentEventID,
