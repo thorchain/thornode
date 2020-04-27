@@ -341,7 +341,7 @@ func (vm *VaultMgr) findChainsToRetire(ctx sdk.Context) (common.Chains, error) {
 // associated with given chain
 func (vm *VaultMgr) recallChainFunds(ctx sdk.Context, chain common.Chain) error {
 	version := vm.k.GetLowestActiveVersion(ctx)
-	allNodes, err := vm.k.ListNodeAccounts(ctx)
+	allNodes, err := vm.k.ListNodeAccountsWithBond(ctx)
 	if err != nil {
 		return fmt.Errorf("fail to list all node accounts: %w", err)
 	}
