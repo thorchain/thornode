@@ -68,10 +68,12 @@ func (k KVStoreDummy) GetStakerIterator(_ sdk.Context, _ common.Asset) sdk.Itera
 func (k KVStoreDummy) GetStaker(_ sdk.Context, _ common.Asset, _ common.Address) (Staker, error) {
 	return Staker{}, kaboom
 }
-func (k KVStoreDummy) SetStaker(_ sdk.Context, _ Staker)                    {}
-func (k KVStoreDummy) RemoveStaker(_ sdk.Context, _ Staker)                 {}
-func (k KVStoreDummy) TotalActiveNodeAccount(_ sdk.Context) (int, error)    { return 0, kaboom }
-func (k KVStoreDummy) ListNodeAccounts(_ sdk.Context) (NodeAccounts, error) { return nil, kaboom }
+func (k KVStoreDummy) SetStaker(_ sdk.Context, _ Staker)                 {}
+func (k KVStoreDummy) RemoveStaker(_ sdk.Context, _ Staker)              {}
+func (k KVStoreDummy) TotalActiveNodeAccount(_ sdk.Context) (int, error) { return 0, kaboom }
+func (k KVStoreDummy) ListNodeAccountsWithBond(_ sdk.Context) (NodeAccounts, error) {
+	return nil, kaboom
+}
 func (k KVStoreDummy) ListNodeAccountsByStatus(_ sdk.Context, _ NodeStatus) (NodeAccounts, error) {
 	return nil, kaboom
 }
