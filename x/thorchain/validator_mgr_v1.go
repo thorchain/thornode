@@ -745,7 +745,7 @@ func (vm *validatorMgrV1) setupValidatorNodes(ctx sdk.Context, height int64, con
 
 // Iterate over active node accounts, finding bad actors with high slash points
 func (vm *validatorMgrV1) findBadActors(ctx sdk.Context) (NodeAccounts, error) {
-	badActors := NodeAccounts{}
+	badActors := make(NodeAccounts, 0)
 	nas, err := vm.k.ListActiveNodeAccounts(ctx)
 	if err != nil {
 		return badActors, err

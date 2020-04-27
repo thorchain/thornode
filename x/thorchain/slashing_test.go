@@ -127,9 +127,6 @@ func (s *SlashingSuite) TestLackObservingErrors(c *C) {
 	keeper.failListActiveNodeAccount = true
 	c.Assert(slasher.LackObserving(ctx, constAccessor), NotNil)
 	keeper.failListActiveNodeAccount = false
-	keeper.failSetNodeAccount = true
-	c.Assert(slasher.LackObserving(ctx, constAccessor), NotNil)
-	keeper.failSetNodeAccount = false
 }
 
 type TestSlashingLackKeeper struct {
@@ -194,6 +191,14 @@ func (k *TestSlashingLackKeeper) SetTxOut(_ sdk.Context, tx *TxOut) error {
 		return kaboom
 	}
 	k.txOut = tx
+	return nil
+}
+
+func (k *TestSlashingLackKeeper) IncNodeAccountSlashPoints(_ sdk.Context, addr sdk.AccAddress, pts int64) error {
+	if _, ok := k.slashPts[addr.String()]; !ok {
+		k.slashPts[addr.String()] = 0
+	}
+	k.slashPts[addr.String()] += pts
 	return nil
 }
 
@@ -325,6 +330,7 @@ func (s *SlashingSuite) TestNodeSignSlashErrors(c *C) {
 			voter: ObservedTxVoter{
 				Actions: []TxOutItem{*txOutItem},
 			},
+			slashPts: make(map[string]int64, 0),
 		}
 		signingTransactionPeriod := constAccessor.GetInt64Value(constants.SigningTransactionPeriod)
 		ctx = ctx.WithBlockHeight(evt.Height + signingTransactionPeriod)

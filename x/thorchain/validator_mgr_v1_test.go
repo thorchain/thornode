@@ -52,10 +52,10 @@ func (vts *ValidatorMgrV1TestSuite) TestBadActors(c *C) {
 
 	// create really bad actors (crossing the redline)
 	bad1 := GetRandomNodeAccount(NodeActive)
-	k.SetNodeAccountSlashPoints(ctx, bad1.NodeAddress, 25)
+	k.SetNodeAccountSlashPoints(ctx, bad1.NodeAddress, 1000)
 	c.Assert(k.SetNodeAccount(ctx, bad1), IsNil)
 	bad2 := GetRandomNodeAccount(NodeActive)
-	k.SetNodeAccountSlashPoints(ctx, bad2.NodeAddress, 25)
+	k.SetNodeAccountSlashPoints(ctx, bad2.NodeAddress, 1000)
 	c.Assert(k.SetNodeAccount(ctx, bad2), IsNil)
 
 	nas, err = vMgr.findBadActors(ctx)
