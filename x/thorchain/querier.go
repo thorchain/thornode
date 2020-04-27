@@ -1,6 +1,7 @@
 package thorchain
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/url"
@@ -274,12 +275,19 @@ func queryNodeAccount(ctx sdk.Context, path []string, req abci.RequestQuery, kee
 		return nil, sdk.ErrInternal("fail to get node accounts")
 	}
 
-	nodeAcc.SlashPoints, err = keeper.GetNodeAccountSlashPoints(ctx, addr)
+	slashPts, err := keeper.GetNodeAccountSlashPoints(ctx, addr)
 	if err != nil {
 		return nil, sdk.ErrInternal("fail to get node slash points")
 	}
 
-	res, err := codec.MarshalJSONIndent(keeper.Cdc(), nodeAcc)
+	type alias NodeAccount
+	res, err := json.MarshalIndent(&struct {
+		*alias
+		SlashPoints int64 `json:"slash_points"`
+	}{
+		alias:       (*alias)(&nodeAcc),
+		SlashPoints: slashPts,
+	}, "", "    ")
 	if err != nil {
 		ctx.Logger().Error("fail to marshal node account to json", "error", err)
 		return nil, sdk.ErrInternal("fail to marshal node account to json")
@@ -293,13 +301,28 @@ func queryNodeAccounts(ctx sdk.Context, path []string, req abci.RequestQuery, ke
 	if err != nil {
 		return nil, sdk.ErrInternal("fail to get node accounts")
 	}
+
+	type alias NodeAccount
+	results := make([]interface{}, len(nodeAccounts))
 	for i, na := range nodeAccounts {
-		nodeAccounts[i].SlashPoints, err = keeper.GetNodeAccountSlashPoints(ctx, na.NodeAddress)
+		slashPts, err := keeper.GetNodeAccountSlashPoints(ctx, na.NodeAddress)
 		if err != nil {
 			return nil, sdk.ErrInternal("fail to get node slash points")
 		}
+		results[i] = &struct {
+			*alias
+			SlashPoints int64 `json:"slash_points"`
+		}{
+			alias:       (*alias)(&na),
+			SlashPoints: slashPts,
+		}
+		if err != nil {
+			ctx.Logger().Error("fail to marshal node account to json", "error", err)
+			return nil, sdk.ErrInternal("fail to node account to json")
+		}
 	}
-	res, err := codec.MarshalJSONIndent(keeper.Cdc(), nodeAccounts)
+
+	res, err := json.MarshalIndent(results, "", "    ")
 	if err != nil {
 		ctx.Logger().Error("fail to marshal observers to json", "error", err)
 		return nil, sdk.ErrInternal("fail to marshal observers to json")
