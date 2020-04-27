@@ -16,11 +16,12 @@ type HandlerErrataTxSuite struct{}
 
 type TestErrataTxKeeper struct {
 	KVStoreDummy
-	event   Event
-	pool    Pool
-	na      NodeAccount
-	stakers []Staker
-	err     error
+	event      Event
+	observedTx ObservedTxVoter
+	pool       Pool
+	na         NodeAccount
+	stakers    []Staker
+	err        error
 }
 
 func (k *TestErrataTxKeeper) ListActiveNodeAccounts(_ sdk.Context) (NodeAccounts, error) {
@@ -31,17 +32,13 @@ func (k *TestErrataTxKeeper) GetNodeAccount(_ sdk.Context, _ sdk.AccAddress) (No
 	return k.na, k.err
 }
 
-func (k *TestErrataTxKeeper) GetEventsIDByTxHash(_ sdk.Context, _ common.TxID) ([]int64, error) {
-	return []int64{1}, k.err
-}
-
-func (k *TestErrataTxKeeper) GetEvent(_ sdk.Context, _ int64) (Event, error) {
-	return k.event, k.err
-}
-
 func (k *TestErrataTxKeeper) UpsertEvent(_ sdk.Context, evt Event) error {
 	k.event = evt
 	return nil
+}
+
+func (k *TestErrataTxKeeper) GetObservedTxVoter(_ sdk.Context, txID common.TxID) (ObservedTxVoter, error) {
+	return k.observedTx, k.err
 }
 
 func (k *TestErrataTxKeeper) GetPool(_ sdk.Context, _ common.Asset) (Pool, error) {
@@ -109,6 +106,19 @@ func (s *HandlerErrataTxSuite) TestHandle(c *C) {
 
 	keeper := &TestErrataTxKeeper{
 		na: na,
+		observedTx: ObservedTxVoter{
+			Tx: ObservedTx{
+				Tx: common.Tx{
+					ID:          txID,
+					Chain:       common.BNBChain,
+					FromAddress: addr,
+					Coins: common.Coins{
+						common.NewCoin(common.RuneAsset(), sdk.NewUint(30*common.One)),
+					},
+					Memo: "STAKE:BNB.BNB",
+				},
+			},
+		},
 		pool: Pool{
 			Asset:        common.BNBAsset,
 			PoolUnits:    totalUnits,
@@ -127,17 +137,6 @@ func (s *HandlerErrataTxSuite) TestHandle(c *C) {
 				LastStakeHeight: 10,
 				Units:           totalUnits.QuoUint64(2),
 				PendingRune:     sdk.ZeroUint(),
-			},
-		},
-		event: Event{
-			InTx: common.Tx{
-				ID:          txID,
-				Chain:       common.BNBChain,
-				FromAddress: addr,
-				Coins: common.Coins{
-					common.NewCoin(common.RuneAsset(), sdk.NewUint(30*common.One)),
-				},
-				Memo: "STAKE:BNB.BNB",
 			},
 		},
 	}
