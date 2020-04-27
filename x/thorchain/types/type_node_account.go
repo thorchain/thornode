@@ -99,6 +99,7 @@ type NodeAccount struct {
 	LeaveHeight         int64            `json:"leave_height"`
 	IPAddress           string           `json:"ip_address"`
 	Version             semver.Version   `json:"version"`
+	SlashPoints         int64            `json:"slash_points"` // only here display purposes, does NOT actually store slash points. That is stored elsewhere.
 }
 
 // NewNodeAccount create new instance of NodeAccount
