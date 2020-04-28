@@ -176,6 +176,9 @@ func (v *Vault) AddFunds(coins common.Coins) {
 		if found {
 			continue
 		}
+		if !v.Chains.Has(coin.Asset.Chain) {
+			v.Chains = append(v.Chains, coin.Asset.Chain)
+		}
 		v.Coins = append(v.Coins, coin)
 	}
 }

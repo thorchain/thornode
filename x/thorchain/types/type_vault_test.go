@@ -50,6 +50,12 @@ func (s *VaultSuite) TestVault(c *C) {
 	c.Check(vault.GetCoin(common.BNBAsset).Amount.Equal(sdk.ZeroUint()), Equals, true)
 	c.Check(vault.GetCoin(common.BTCAsset).Amount.Equal(sdk.ZeroUint()), Equals, true)
 	c.Check(vault.HasFunds(), Equals, false)
+	vault.AddFunds(common.Coins{
+		common.NewCoin(common.ETHAsset, sdk.NewUint(100*common.One)),
+	})
+	c.Assert(vault.Chains.Has(common.BNBChain), Equals, true)
+	c.Assert(vault.Chains.Has(common.ETHChain), Equals, true)
+	c.Assert(vault.Chains.Has(common.BTCChain), Equals, true)
 }
 
 func (s *VaultSuite) TestGetTssSigners(c *C) {
