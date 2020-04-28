@@ -641,7 +641,7 @@ func queryCompEvents(ctx sdk.Context, path []string, req abci.RequestQuery, keep
 	}
 
 	chain := common.EmptyChain
-	if len(path) > 1 {
+	if len(path) > 1 && len(path[1]) > 0 {
 		chain, err = common.NewChain(path[1])
 		if err != nil {
 			ctx.Logger().Error("fail to discover chain name", "error", err)

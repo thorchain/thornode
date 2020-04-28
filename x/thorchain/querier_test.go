@@ -244,4 +244,14 @@ func (s *QuerierSuite) TestQueryCompEvents(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(len(out), Equals, 3)
 	c.Assert(out[2].OutTxs[0].Chain.Equals(common.BTCChain), Equals, true)
+
+	// check call with empty chain id
+	path = []string{"comp_events", "1", ""}
+	res, err = querier(ctx, path, abci.RequestQuery{})
+	c.Assert(err, IsNil)
+
+	err = keeper.Cdc().UnmarshalJSON(res, &out)
+	c.Assert(err, IsNil)
+	c.Assert(len(out), Equals, 3)
+	c.Assert(out[2].OutTxs[0].Chain.Equals(common.BTCChain), Equals, true)
 }
