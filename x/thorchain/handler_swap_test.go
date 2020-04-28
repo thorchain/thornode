@@ -14,24 +14,12 @@ import (
 
 type HandlerSwapSuite struct{}
 
-type TestSwapKeeper struct {
-	KVStoreDummy
-	activeNodeAccount NodeAccount
-}
-
-func (k *TestSwapKeeper) GetNodeAccount(_ sdk.Context, addr sdk.AccAddress) (NodeAccount, error) {
-	if k.activeNodeAccount.NodeAddress.Equals(addr) {
-		return k.activeNodeAccount, nil
-	}
-	return NodeAccount{}, nil
-}
-
 var _ = Suite(&HandlerSwapSuite{})
 
 func (s *HandlerSwapSuite) TestValidate(c *C) {
 	ctx, _ := setupKeeperForTest(c)
 
-	keeper := &TestSwapKeeper{
+	keeper := &TestSwapHandleKeeper{
 		activeNodeAccount: GetRandomNodeAccount(NodeActive),
 	}
 
