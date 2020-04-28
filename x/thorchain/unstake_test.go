@@ -9,6 +9,7 @@ import (
 
 	"gitlab.com/thorchain/thornode/common"
 	"gitlab.com/thorchain/thornode/constants"
+	"gitlab.com/thorchain/thornode/x/thorchain/types"
 )
 
 type UnstakeSuite struct{}
@@ -17,6 +18,44 @@ var _ = Suite(&UnstakeSuite{})
 
 func (s *UnstakeSuite) SetUpSuite(c *C) {
 	SetupConfigForTest()
+}
+
+type UnstakeTestKeeper struct {
+	KVStoreDummy
+}
+
+func (k *UnstakeTestKeeper) PoolExist(ctx sdk.Context, asset common.Asset) bool {
+	if asset.Equals(common.Asset{Chain: common.BNBChain, Symbol: "NOTEXIST", Ticker: "NOTEXIST"}) {
+		return false
+	}
+	return true
+}
+
+func (k *UnstakeTestKeeper) GetPool(ctx sdk.Context, asset common.Asset) (types.Pool, error) {
+	if asset.Equals(common.Asset{Chain: common.BNBChain, Symbol: "NOTEXIST", Ticker: "NOTEXIST"}) {
+		return types.Pool{}, nil
+	} else {
+		return types.Pool{
+			BalanceRune:  sdk.NewUint(100).MulUint64(common.One),
+			BalanceAsset: sdk.NewUint(100).MulUint64(common.One),
+			PoolUnits:    sdk.NewUint(100).MulUint64(common.One),
+			Status:       types.Enabled,
+			Asset:        asset,
+		}, nil
+	}
+}
+
+func (k *UnstakeTestKeeper) GetStaker(ctx sdk.Context, asset common.Asset, addr common.Address) (types.Staker, error) {
+	if asset.Equals(common.Asset{Chain: common.BNBChain, Symbol: "NOTEXISTSTICKER", Ticker: "NOTEXISTSTICKER"}) {
+		return types.Staker{}, errors.New("you asked for it")
+	}
+	return Staker{
+		Asset:        asset,
+		RuneAddress:  addr,
+		AssetAddress: addr,
+		Units:        sdk.NewUint(100),
+		PendingRune:  sdk.ZeroUint(),
+	}, nil
 }
 
 func (s UnstakeSuite) TestCalculateUnsake(c *C) {
@@ -229,7 +268,7 @@ func (s UnstakeSuite) TestValidateUnstake(c *C) {
 
 	for _, item := range inputs {
 		ctx, _ := setupKeeperForTest(c)
-		ps := MockPoolStorage{}
+		ps := &UnstakeTestKeeper{}
 		c.Logf("name:%s", item.name)
 		err := validateUnstake(ctx, ps, item.msg)
 		if item.expectedError != nil {
@@ -242,7 +281,7 @@ func (s UnstakeSuite) TestValidateUnstake(c *C) {
 }
 
 func (UnstakeSuite) TestUnstake(c *C) {
-	ps := MockPoolStorage{}
+	ps := &UnstakeTestKeeper{}
 	accountAddr := GetRandomNodeAccount(NodeWhiteListed).NodeAddress
 	runeAddress, err := common.NewAddress("bnb1g0xakzh03tpa54khxyvheeu92hwzypkdce77rm")
 	if err != nil {
