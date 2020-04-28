@@ -126,7 +126,7 @@ func (k KVStore) UpdateVaultData(ctx sdk.Context, constAccessor constants.Consta
 	}
 	surplusReserve := sdk.ZeroUint()
 	if vault.TotalReserve.GT(totalContrib) {
-		surplusReserve = common.SafeSub(totalContrib, vault.TotalReserve)
+		surplusReserve = common.SafeSub(vault.TotalReserve, totalContrib)
 		vault.TotalReserve = common.SafeSub(vault.TotalReserve, surplusReserve)
 	}
 
