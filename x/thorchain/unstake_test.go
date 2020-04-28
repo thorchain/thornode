@@ -22,6 +22,13 @@ func (s *UnstakeSuite) SetUpSuite(c *C) {
 
 type UnstakeTestKeeper struct {
 	KVStoreDummy
+	store map[string]interface{}
+}
+
+func NewUnstakeTestKeeper() *UnstakeTestKeeper {
+	return &UnstakeTestKeeper{
+		store: make(map[string]interface{}),
+	}
 }
 
 func (k *UnstakeTestKeeper) PoolExist(ctx sdk.Context, asset common.Asset) bool {
@@ -45,17 +52,38 @@ func (k *UnstakeTestKeeper) GetPool(ctx sdk.Context, asset common.Asset) (types.
 	}
 }
 
-func (k *UnstakeTestKeeper) GetStaker(ctx sdk.Context, asset common.Asset, addr common.Address) (types.Staker, error) {
+func (k *UnstakeTestKeeper) SetPool(ctx sdk.Context, ps Pool) error {
+	k.store[ps.Asset.String()] = ps
+	return nil
+}
+
+func (k *UnstakeTestKeeper) GetGas(ctx sdk.Context, asset common.Asset) ([]sdk.Uint, error) {
+	return []sdk.Uint{sdk.NewUint(37500), sdk.NewUint(30000)}, nil
+}
+
+func (p *UnstakeTestKeeper) GetStaker(ctx sdk.Context, asset common.Asset, addr common.Address) (Staker, error) {
 	if asset.Equals(common.Asset{Chain: common.BNBChain, Symbol: "NOTEXISTSTICKER", Ticker: "NOTEXISTSTICKER"}) {
 		return types.Staker{}, errors.New("you asked for it")
 	}
-	return Staker{
-		Asset:        asset,
-		RuneAddress:  addr,
-		AssetAddress: addr,
-		Units:        sdk.NewUint(100),
-		PendingRune:  sdk.ZeroUint(),
-	}, nil
+	if notExistStakerAsset.Equals(asset) {
+		return Staker{}, errors.New("simulate error for test")
+	}
+	staker := Staker{
+		Asset:       asset,
+		RuneAddress: addr,
+		Units:       sdk.ZeroUint(),
+		PendingRune: sdk.ZeroUint(),
+	}
+	key := p.GetKey(ctx, prefixStaker, staker.Key())
+	if res, ok := p.store[key]; ok {
+		return res.(Staker), nil
+	}
+	return staker, nil
+}
+
+func (p *UnstakeTestKeeper) SetStaker(ctx sdk.Context, staker Staker) {
+	key := p.GetKey(ctx, prefixStaker, staker.Key())
+	p.store[key] = staker
 }
 
 func (s UnstakeSuite) TestCalculateUnsake(c *C) {
@@ -417,7 +445,7 @@ func (UnstakeSuite) TestUnstake(c *C) {
 				Tx:                 common.Tx{ID: "28B40BF105A112389A339A64BD1A042E6140DC9082C679586C6CF493A9FDE3FE"},
 				Signer:             accountAddr,
 			},
-			ps:            getInMemoryPoolStorageForUnstake(c),
+			ps:            getUnstakeTestKeeper(c),
 			runeAmount:    sdk.NewUint(100 * common.One),
 			assetAmount:   sdk.NewUint(100 * common.One).Sub(sdk.NewUint(75000)),
 			expectedError: nil,
@@ -431,7 +459,7 @@ func (UnstakeSuite) TestUnstake(c *C) {
 				Tx:                 common.Tx{ID: "28B40BF105A112389A339A64BD1A042E6140DC9082C679586C6CF493A9FDE3FE"},
 				Signer:             accountAddr,
 			},
-			ps:            getInMemoryPoolStorageForUnstake(c),
+			ps:            getUnstakeTestKeeper(c),
 			runeAmount:    sdk.NewUint(50 * common.One),
 			assetAmount:   sdk.NewUint(50 * common.One),
 			expectedError: nil,
@@ -455,7 +483,7 @@ func (UnstakeSuite) TestUnstake(c *C) {
 	}
 }
 
-func getInMemoryPoolStorageForUnstake(c *C) Keeper {
+func getUnstakeTestKeeper(c *C) Keeper {
 	runeAddress, err := common.NewAddress("bnb1g0xakzh03tpa54khxyvheeu92hwzypkdce77rm")
 	if err != nil {
 		c.Error("fail to create new BNB Address")
@@ -463,7 +491,7 @@ func getInMemoryPoolStorageForUnstake(c *C) Keeper {
 
 	ctx, _ := setupKeeperForTest(c)
 
-	store := NewMockInMemoryPoolStorage()
+	store := NewUnstakeTestKeeper()
 	pool := Pool{
 		BalanceRune:  sdk.NewUint(100 * common.One),
 		BalanceAsset: sdk.NewUint(100 * common.One),
