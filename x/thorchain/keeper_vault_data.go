@@ -115,6 +115,21 @@ func (k KVStore) UpdateVaultData(ctx sdk.Context, constAccessor constants.Consta
 		return k.SetVaultData(ctx, vault)
 	}
 
+	// fetch total reserve contribution
+	contribs, err := k.GetReservesContributors(ctx)
+	if err != nil {
+		return fmt.Errorf("fail to get reserve contributors: %w", err)
+	}
+	totalContrib := sdk.ZeroUint()
+	for _, contrib := range contribs {
+		totalContrib = totalContrib.Add(contrib.Amount)
+	}
+	surplusReserve := sdk.ZeroUint()
+	if vault.TotalReserve.GT(totalContrib) {
+		surplusReserve = common.SafeSub(totalContrib, vault.TotalReserve)
+		vault.TotalReserve = common.SafeSub(vault.TotalReserve, surplusReserve)
+	}
+
 	// NOTE: if we continue to have remaining gas to pay off (which is
 	// extremely unlikely), ignore it for now (attempt to recover in the next
 	// block). This should be OK as the asset amount in the pool has already
@@ -125,7 +140,7 @@ func (k KVStore) UpdateVaultData(ctx sdk.Context, constAccessor constants.Consta
 	}
 	emissionCurve := constAccessor.GetInt64Value(constants.EmissionCurve)
 	blocksOerYear := constAccessor.GetInt64Value(constants.BlocksPerYear)
-	bondReward, totalPoolRewards, stakerDeficit := calcBlockRewards(totalStaked, totalBonded, vault.TotalReserve, totalLiquidityFees, emissionCurve, blocksOerYear)
+	bondReward, totalPoolRewards, stakerDeficit := calcBlockRewards(totalStaked, totalBonded, vault.TotalReserve, surplusReserve, totalLiquidityFees, emissionCurve, blocksOerYear)
 
 	// given bondReward and toolPoolRewards are both calculated base on vault.TotalReserve, thus it should always have enough to pay the bond reward
 
