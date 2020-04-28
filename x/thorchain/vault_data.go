@@ -12,7 +12,12 @@ func calcPoolDeficit(stakerDeficit, totalFees, poolFees sdk.Uint) sdk.Uint {
 }
 
 // Calculate the block rewards that bonders and stakers should receive
-func calcBlockRewards(totalStaked, totalBonded, totalReserve, surplusReserve, totalLiquidityFees sdk.Uint, emissionCurve, blocksPerYear int64) (sdk.Uint, sdk.Uint, sdk.Uint) {
+func calcBlockRewards(totalStaked, totalBonded, totalReserve, totalContrib, totalLiquidityFees sdk.Uint, emissionCurve, blocksPerYear int64) (sdk.Uint, sdk.Uint, sdk.Uint) {
+	surplusReserve := sdk.ZeroUint()
+	if totalReserve.GT(totalContrib) {
+		surplusReserve = totalReserve.Sub(totalContrib)
+		totalReserve = totalReserve.Sub(surplusReserve)
+	}
 	// Block Rewards will take the latest reserve, divide it by the emission
 	// curve factor, then divide by blocks per year
 	trD := sdk.NewDec(int64(totalReserve.Uint64()))
