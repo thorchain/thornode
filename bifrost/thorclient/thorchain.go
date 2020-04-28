@@ -142,7 +142,7 @@ func (b *ThorchainBridge) get(url string) ([]byte, int, error) {
 }
 
 // post handle all the low level http POST calls using retryablehttp.ThorchainBridge
-func (b *ThorchainBridge) post(path string, bodyType string, body interface{}) ([]byte, error) {
+func (b *ThorchainBridge) post(path, bodyType string, body interface{}) ([]byte, error) {
 	resp, err := b.httpClient.Post(b.getThorChainURL(path), bodyType, body)
 	if err != nil {
 		b.errCounter.WithLabelValues("fail_post_to_thorchain", "").Inc()

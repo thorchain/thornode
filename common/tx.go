@@ -75,7 +75,7 @@ func GetRagnarokTx(chain Chain, fromAddr, toAddr Address) Tx {
 	}
 }
 
-func NewTx(txID TxID, from Address, to Address, coins Coins, gas Gas, memo string) Tx {
+func NewTx(txID TxID, from, to Address, coins Coins, gas Gas, memo string) Tx {
 	var chain Chain
 	for _, coin := range coins {
 		chain = coin.Asset.Chain
