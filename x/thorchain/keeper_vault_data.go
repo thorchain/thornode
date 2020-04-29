@@ -110,11 +110,6 @@ func (k KVStore) UpdateVaultData(ctx sdk.Context, constAccessor constants.Consta
 		return fmt.Errorf("fail to get total liquidity fee: %w", err)
 	}
 
-	// if we have no swaps, no block rewards for this block
-	if totalLiquidityFees.IsZero() {
-		return k.SetVaultData(ctx, vault)
-	}
-
 	// fetch total reserve contribution
 	contribs, err := k.GetReservesContributors(ctx)
 	if err != nil {
@@ -141,6 +136,7 @@ func (k KVStore) UpdateVaultData(ctx sdk.Context, constAccessor constants.Consta
 
 	// Move Rune from the Reserve to the Bond and Pool Rewards
 	vault.TotalReserve = common.SafeSub(vault.TotalReserve, bondReward.Add(totalPoolRewards))
+	fmt.Printf(">>>>>>>> New Reserve: %d\n", vault.TotalReserve.Uint64())
 	vault.BondRewardRune = vault.BondRewardRune.Add(bondReward) // Add here for individual Node collection later
 
 	var evtPools []PoolAmt
