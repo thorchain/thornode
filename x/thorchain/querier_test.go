@@ -235,15 +235,48 @@ func (s *QuerierSuite) TestQueryCompEvents(c *C) {
 	c.Assert(len(out), Equals, 1)
 	c.Assert(out[0].OutTxs[0].Chain.Equals(common.BTCChain), Equals, true)
 
+	// add a gas event with empty chain and make sure its return in BNB chain calls
+	evt.InTx.Chain = common.EmptyChain
+	evt.OutTxs = nil
+	c.Assert(keeper.UpsertEvent(ctx, evt), IsNil)
+
+	// regular complete events without chain should have now all 4 events
+	path = []string{"comp_events", "1"}
+	res, err = querier(ctx, path, abci.RequestQuery{})
+	c.Assert(err, IsNil)
+	err = keeper.Cdc().UnmarshalJSON(res, &out)
+	c.Assert(err, IsNil)
+	c.Assert(len(out), Equals, 4)
+
+	// BNB events should have 3 events including gas event with empty tx in chain
+	path = []string{"comp_events", "1", "BNB"}
+	res, err = querier(ctx, path, abci.RequestQuery{})
+	c.Assert(err, IsNil)
+	err = keeper.Cdc().UnmarshalJSON(res, &out)
+	c.Assert(err, IsNil)
+	c.Assert(len(out), Equals, 3)
+	c.Assert(out[2].InTx.Chain.IsEmpty(), Equals, true)
+
+	// BTC events should still have the 1 event
+	path = []string{"comp_events", "1", "BTC"}
+	res, err = querier(ctx, path, abci.RequestQuery{})
+	c.Assert(err, IsNil)
+	err = keeper.Cdc().UnmarshalJSON(res, &out)
+	c.Assert(err, IsNil)
+	c.Assert(len(out), Equals, 1)
+	c.Assert(out[0].OutTxs[0].Chain.Equals(common.BTCChain), Equals, true)
+
 	// check regular query complete events still works correctly
+	// regular complete events without chain should have now all 4 events
 	path = []string{"comp_events", "1"}
 	res, err = querier(ctx, path, abci.RequestQuery{})
 	c.Assert(err, IsNil)
 
 	err = keeper.Cdc().UnmarshalJSON(res, &out)
 	c.Assert(err, IsNil)
-	c.Assert(len(out), Equals, 3)
+	c.Assert(len(out), Equals, 4)
 	c.Assert(out[2].OutTxs[0].Chain.Equals(common.BTCChain), Equals, true)
+	c.Assert(out[3].InTx.Chain.IsEmpty(), Equals, true)
 
 	// check call with empty chain id
 	path = []string{"comp_events", "1", ""}
@@ -252,6 +285,7 @@ func (s *QuerierSuite) TestQueryCompEvents(c *C) {
 
 	err = keeper.Cdc().UnmarshalJSON(res, &out)
 	c.Assert(err, IsNil)
-	c.Assert(len(out), Equals, 3)
+	c.Assert(len(out), Equals, 4)
 	c.Assert(out[2].OutTxs[0].Chain.Equals(common.BTCChain), Equals, true)
+	c.Assert(out[3].InTx.Chain.IsEmpty(), Equals, true)
 }

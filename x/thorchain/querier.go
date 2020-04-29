@@ -696,8 +696,19 @@ func queryCompEvents(ctx sdk.Context, path []string, req abci.RequestQuery, keep
 				}
 			}
 		}
+		// if event is pending, get the chain event from memo
+		if event.Status == EventPending {
+			memo, _ := ParseMemo(event.InTx.Memo)
+			asset := memo.GetAsset()
+			if asset.Chain != "" {
+				evtChain = asset.Chain
+			}
+		}
 
-		if !chain.IsEmpty() && !evtChain.Equals(chain) {
+		if !chain.IsEmpty() && !evtChain.Equals(chain) && !evtChain.IsEmpty() {
+			continue
+		}
+		if evtChain.IsEmpty() && !chain.IsBNB() && !chain.IsEmpty() {
 			continue
 		}
 		if event.Empty() {
