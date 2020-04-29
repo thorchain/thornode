@@ -697,7 +697,10 @@ func queryCompEvents(ctx sdk.Context, path []string, req abci.RequestQuery, keep
 			}
 		}
 
-		if !chain.IsEmpty() && !evtChain.Equals(chain) {
+		if !chain.IsEmpty() && !evtChain.Equals(chain) && !evtChain.IsEmpty() {
+			continue
+		}
+		if evtChain.IsEmpty() && !chain.IsBNB() && !chain.IsEmpty() {
 			continue
 		}
 		if event.Empty() {
