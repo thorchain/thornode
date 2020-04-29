@@ -696,13 +696,15 @@ func queryCompEvents(ctx sdk.Context, path []string, req abci.RequestQuery, keep
 				}
 			}
 		}
-
-		// first break on pending events no matter what
-		if len(es) == 0 && event.Status == EventPending {
-			break
+		// if event is pending, get the chain event from memo
+		if event.Status == EventPending {
+			memo, _ := ParseMemo(event.InTx.Memo)
+			asset := memo.GetAsset()
+			if asset.Chain != "" {
+				evtChain = asset.Chain
+			}
 		}
 
-		// then check chain matching
 		if !chain.IsEmpty() && !evtChain.Equals(chain) && !evtChain.IsEmpty() {
 			continue
 		}
@@ -713,6 +715,9 @@ func queryCompEvents(ctx sdk.Context, path []string, req abci.RequestQuery, keep
 			continue
 		}
 		if len(es) == 0 {
+			if event.Status == EventPending {
+				break
+			}
 			events = append(events, event)
 		} else {
 			if es.Contains(event.Status) {
