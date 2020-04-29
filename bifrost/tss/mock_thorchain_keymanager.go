@@ -47,8 +47,8 @@ func (k *MockThorchainKeyManager) SignWithPool(msg tx.StdSignMsg, poolPubKey com
 func (k *MockThorchainKeyManager) RemoteSign(msg []byte, poolPubKey string, signerPubKeys common.PubKeys) ([]byte, error) {
 	// this is the key we are using to test TSS keysign result in BTC chain
 	fmt.Println(base64.StdEncoding.EncodeToString(msg))
-	if poolPubKey == "thorpub1addwnpepqdvw4jxzzpr4ulvrm045k967x5mfr2hcjl9wud692jvztxmx7td2szeyl8l" {
-		return getSignature("FrBZ7IvdT5hr6naKOkF7/R8Sv8Vx+rnsKm1GNkGLni4=", "YCBzwg0XkODbNXNfjH9PJseQLn27IY0cfpFDbXelzpI=")
+	if poolPubKey == "thorpub1addwnpepqts24euwrgly2vtez3zdvusmk6u3cwf8leuzj8m4ynvmv5cst7us2vltqrh" {
+		return getSignature("8RrEI1OG07hiGgRA82/Vfjw5U6OWE6YMrwE9lL5kflM=", "FbNxmjunwFNvwdpzKawW0XbbWSKED8rkt0se4S5KJJk=")
 	}
 	return nil, nil
 }

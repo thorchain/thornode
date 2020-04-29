@@ -78,7 +78,7 @@ func (s *BitcoinSignerSuite) SetUpTest(c *C) {
 	c.Assert(err, IsNil)
 
 	s.server = httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
-		if req.RequestURI == "/thorchain/vaults/thorpub1addwnpepqdvw4jxzzpr4ulvrm045k967x5mfr2hcjl9wud692jvztxmx7td2szeyl8l/signers" {
+		if req.RequestURI == "/thorchain/vaults/thorpub1addwnpepqts24euwrgly2vtez3zdvusmk6u3cwf8leuzj8m4ynvmv5cst7us2vltqrh/signers" {
 			_, err := rw.Write([]byte("[]"))
 			c.Assert(err, IsNil)
 		} else {
@@ -145,7 +145,6 @@ func (s *BitcoinSignerSuite) TestSignTx(c *C) {
 		Coins: common.Coins{
 			common.NewCoin(common.BTCAsset, sdk.NewUint(10)),
 		},
-		Memo: "whatever",
 		MaxGas: common.Gas{
 			common.NewCoin(common.BTCAsset, sdk.NewUint(1)),
 		},
@@ -196,7 +195,6 @@ func (s *BitcoinSignerSuite) TestSignTxHappyPathWithPrivateKey(c *C) {
 		Coins: common.Coins{
 			common.NewCoin(common.BTCAsset, sdk.NewUint(10)),
 		},
-		Memo: "outboundbtc",
 		MaxGas: common.Gas{
 			common.NewCoin(common.BTCAsset, sdk.NewUint(1)),
 		},
@@ -224,19 +222,18 @@ func (s *BitcoinSignerSuite) TestSignTxHappyPathWithPrivateKey(c *C) {
 }
 
 func (s *BitcoinSignerSuite) TestSignTxWithTSS(c *C) {
-	pubkey, err := common.NewPubKey("thorpub1addwnpepqdvw4jxzzpr4ulvrm045k967x5mfr2hcjl9wud692jvztxmx7td2szeyl8l")
+	pubkey, err := common.NewPubKey("thorpub1addwnpepqts24euwrgly2vtez3zdvusmk6u3cwf8leuzj8m4ynvmv5cst7us2vltqrh")
 	c.Assert(err, IsNil)
 	addr, err := pubkey.GetAddress(common.BTCChain)
 	c.Assert(err, IsNil)
 	txOutItem := stypes.TxOutItem{
 		Chain:       common.BTCChain,
 		ToAddress:   addr,
-		VaultPubKey: "thorpub1addwnpepqdvw4jxzzpr4ulvrm045k967x5mfr2hcjl9wud692jvztxmx7td2szeyl8l",
+		VaultPubKey: "thorpub1addwnpepqts24euwrgly2vtez3zdvusmk6u3cwf8leuzj8m4ynvmv5cst7us2vltqrh",
 		SeqNo:       0,
 		Coins: common.Coins{
 			common.NewCoin(common.BTCAsset, sdk.NewUint(10)),
 		},
-		Memo: "outboundbtc",
 		MaxGas: common.Gas{
 			common.NewCoin(common.BTCAsset, sdk.NewUint(1)),
 		},
@@ -274,7 +271,6 @@ func (s *BitcoinSignerSuite) TestBroadcastTx(c *C) {
 		Coins: common.Coins{
 			common.NewCoin(common.BTCAsset, sdk.NewUint(10)),
 		},
-		Memo: "whatever",
 		MaxGas: common.Gas{
 			common.NewCoin(common.BTCAsset, sdk.NewUint(1)),
 		},
