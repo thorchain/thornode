@@ -34,6 +34,8 @@ func NewSwapQv1(k Keeper, versionedTxOutStore VersionedTxOutStore) *SwapQv1 {
 
 // EndBlock move funds from retiring asgard vaults
 func (vm *SwapQv1) EndBlock(ctx sdk.Context, version semver.Version, constAccessor constants.ConstantValues) error {
+	handler := NewSwapHandler(vm.k, vm.versionedTxOutStore)
+
 	msgs, err := vm.FetchQueue(ctx)
 	if err != nil {
 		ctx.Logger().Error("fail to fetch swap queue from store", "error", err)
@@ -57,7 +59,11 @@ func (vm *SwapQv1) EndBlock(ctx sdk.Context, version semver.Version, constAccess
 		swaps = append(swaps[:pick], swaps[i+pick:]...)
 
 		// TODO: process msg
-		_ = msg
+		result := handler.handle(ctx, msg, version, constAccessor)
+		if !result.IsOK() {
+			ctx.Logger().Error("fail to swap", "msg", msg.Tx.String(), "error", result.Log)
+		}
+
 	}
 
 	return nil
