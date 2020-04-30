@@ -25,6 +25,7 @@ import (
 
 // SatsPervBytes it should be enough , this one will only be used if signer can't find any previous UTXO , and fee info from local storage.
 const SatsPervBytes = 25
+const MinUTXOConfirmation = 10
 
 func getBTCPrivateKey(key crypto.PrivKey) (*btcec.PrivateKey, error) {
 	priKey, ok := key.(secp256k1.PrivKeySecp256k1)
@@ -68,9 +69,35 @@ func (c *Client) getGasCoin(tx stypes.TxOutItem, vSize int64) common.Coin {
 	}
 	return common.NewCoin(common.BTCAsset, sdk.NewUint(uint64(gasRate*vSize)))
 }
+func (c *Client) getAllUtxos(pubKey common.PubKey) ([]UnspentTransactionOutput, error) {
+	height, err := c.getBlockHeight()
+	if err != nil {
+		return nil, fmt.Errorf("fail to get latest block height:%w", err)
+	}
+	utxoes := make([]UnspentTransactionOutput, 0)
+	stopHeight := height - MinUTXOConfirmation
+	blockMetas, err := c.blockMetaAccessor.GetBlockMetas()
+	if err != nil {
+		return nil, fmt.Errorf("fail to get block metas: %w", err)
+	}
+	for _, b := range blockMetas {
+		if b.Height > stopHeight {
+			continue
+		}
+		utxoes = append(utxoes, b.GetUTXOs(pubKey)...)
+	}
+	return utxoes, nil
+}
+func (c *Client) getBlockHeight() (int64, error) {
+	_, blockHeight, err := c.client.GetBestBlock()
+	if err != nil {
+		return 0, fmt.Errorf("fail to get the best block: %w", err)
+	}
+	return int64(blockHeight), nil
+}
 
 // SignTx is going to generate the outbound transaction, and also sign it
-func (c *Client) SignTx(tx stypes.TxOutItem, height int64) ([]byte, error) {
+func (c *Client) SignTx(tx stypes.TxOutItem, thorchainHeight int64) ([]byte, error) {
 	if !tx.Chain.Equals(common.BTCChain) {
 		return nil, errors.New("not BTC chain")
 	}
@@ -87,7 +114,8 @@ func (c *Client) SignTx(tx stypes.TxOutItem, height int64) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("fail to get source pay to address script: %w", err)
 	}
-	txes, err := c.blockMetaAccessor.GetUTXOs(tx.VaultPubKey)
+
+	txes, err := c.getAllUtxos(tx.VaultPubKey)
 	if err != nil {
 		return nil, fmt.Errorf("fail to get unspent UTXO")
 	}
@@ -164,7 +192,7 @@ func (c *Client) SignTx(tx stypes.TxOutItem, height int64) ([]byte, error) {
 				}
 
 				// key sign error forward the keysign blame to thorchain
-				txID, err := c.bridge.PostKeysignFailure(keysignError.Blame, height, tx.Memo, tx.Coins)
+				txID, err := c.bridge.PostKeysignFailure(keysignError.Blame, thorchainHeight, tx.Memo, tx.Coins)
 				if err != nil {
 					c.logger.Error().Err(err).Msg("fail to post keysign failure to thorchain")
 					return nil, err
@@ -193,7 +221,7 @@ func (c *Client) SignTx(tx stypes.TxOutItem, height int64) ([]byte, error) {
 	}
 	// only send the balance back to ourselves
 	if balance > 0 {
-		if err := c.saveNewUTXO(redeemTx, balance, sourceScript, height, tx.VaultPubKey); nil != err {
+		if err := c.saveNewUTXO(redeemTx, balance, sourceScript, thorchainHeight, tx.VaultPubKey); nil != err {
 			return nil, fmt.Errorf("fail to save the new UTXO to storage: %w", err)
 		}
 	}
@@ -205,9 +233,14 @@ func (c *Client) SignTx(tx stypes.TxOutItem, height int64) ([]byte, error) {
 
 func (c *Client) removeSpentUTXO(txs []UnspentTransactionOutput) error {
 	for _, item := range txs {
+		blockMeta, err := c.blockMetaAccessor.GetBlockMeta(item.BlockHeight)
+		if err != nil {
+			return fmt.Errorf("fail to get block meta: %w", err)
+		}
 		key := item.GetKey()
-		if err := c.blockMetaAccessor.RemoveUTXO(key); err != nil {
-			return fmt.Errorf("fail to remove unspent transaction output(%s): %w", key, err)
+		blockMeta.RemoveUTXO(key)
+		if err := c.blockMetaAccessor.SaveBlockMeta(blockMeta.Height, blockMeta); err != nil {
+			return fmt.Errorf("fail to save block meta back to storage: %w", err)
 		}
 	}
 	return nil
@@ -225,6 +258,7 @@ func (c *Client) saveNewUTXO(tx *wire.MsgTx, balance int64, script []byte, block
 		}
 	}
 	amt := btcutil.Amount(balance)
+	//
 	return c.blockMetaAccessor.AddUTXO(NewUnspentTransactionOutput(txID, uint32(n), amt.ToBTC(), blockHeight, pubKey))
 }
 
