@@ -49,19 +49,29 @@ func (vm *SwapQv1) EndBlock(ctx sdk.Context, version semver.Version, constAccess
 		// at all)
 	}
 
-	limit := 100 // TODO: make this a constant
-	r := rand.New(rand.NewSource(swaps.randSeed()))
-	for i := 0; i < limit; i++ {
-		pick := swaps.Pick(r)
-		msg := swaps[pick].msg // grab our msg
+	// determine how many swaps to do.
+	// Do half the length of the queue. Unless...
+	//	1. The queue length is greater than 200
+	//  2. The queue legnth is less than 10
+	maxSwaps := 100 // TODO: make this a constant
+	minSwaps := 10  // TODO: make this a constant
+	todo := len(swaps) / 2
+	if maxSwaps < todo {
+		todo = maxSwaps
+	}
+	if minSwaps >= len(swaps) {
+		todo = len(swaps)
+	}
 
-		// remove pick from swaps
-		swaps = append(swaps[:pick], swaps[i+pick:]...)
+	var pick swapItem
+	r := rand.New(rand.NewSource(swaps.randSeed()))
+	for i := 0; i < todo; i++ {
+		pick, swaps = swaps.PickRandom(r)
 
 		// TODO: process msg
-		result := handler.handle(ctx, msg, version, constAccessor)
+		result := handler.handle(ctx, pick.msg, version, constAccessor)
 		if !result.IsOK() {
-			ctx.Logger().Error("fail to swap", "msg", msg.Tx.String(), "error", result.Log)
+			ctx.Logger().Error("fail to swap", "msg", pick.msg.Tx.String(), "error", result.Log)
 		}
 
 	}
@@ -145,7 +155,7 @@ func (items swapItems) randSeed() int64 {
 
 // Pick - picks a random transaction based on weight of liquidity fee
 // Much of this code borrowed from https://github.com/mroth/weightedrand
-func (items swapItems) Pick(r *rand.Rand) int {
+func (items swapItems) PickRandom(r *rand.Rand) (swapItem, swapItems) {
 	sort.Slice(items, func(i, j int) bool {
 		return items[i].fee.LT(items[j].fee)
 	})
@@ -157,5 +167,64 @@ func (items swapItems) Pick(r *rand.Rand) int {
 	}
 
 	r2 := r.Intn(runningTotal + 1)
-	return sort.SearchInts(totals, r2)
+	i := sort.SearchInts(totals, r2)
+	item := items[i]
+	items = append(items[:i], items[i+1:]...)
+	return item, items
+}
+
+func (items swapItems) PickBySlip() (swapItem, swapItems) {
+	// sort by liquidity fee
+	byFee := items
+	sort.Slice(byFee, func(i, j int) bool {
+		return byFee[i].fee.GT(byFee[j].fee)
+	})
+
+	// sort by slip fee
+	bySlip := items
+	sort.Slice(bySlip, func(i, j int) bool {
+		return bySlip[i].fee.GT(bySlip[j].fee)
+	})
+
+	type score struct {
+		msg   MsgSwap
+		score int
+	}
+
+	// add liquidity fee score
+	scores := make([]score, len(items))
+	for i, item := range byFee {
+		scores[i] = score{
+			msg:   item.msg,
+			score: i,
+		}
+	}
+
+	// add slip score
+	for i, item := range bySlip {
+		for j, score := range scores {
+			if score.msg.Tx.ID.Equals(item.msg.Tx.ID) {
+				scores[j].score += i
+			}
+		}
+	}
+
+	// sort by score
+	sort.Slice(scores, func(i, j int) bool {
+		return scores[i].score > scores[j].score
+	})
+
+	// take our top score, and find its index in our items slice
+	msg := scores[0].msg
+	for i, item := range items {
+		if item.msg.Tx.ID.Equals(msg.Tx.ID) {
+			item := items[i]
+			items = append(items[:i], items[i+1:]...)
+			return item, items
+		}
+	}
+
+	item := items[0]
+	items = items[1:]
+	return item, items
 }
