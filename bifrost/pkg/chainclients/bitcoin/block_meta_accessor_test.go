@@ -19,7 +19,7 @@ func (s *BitcoinUTXOAccessor) TestNewUTXOAccessor(c *C) {
 	memStorage := storage.NewMemStorage()
 	db, err := leveldb.Open(memStorage, nil)
 	c.Assert(err, IsNil)
-	utxoAccessor, err := NewLevelDBUTXOAccessor(db)
+	utxoAccessor, err := NewLevelDBBlockMetaAccessor(db)
 	c.Assert(err, IsNil)
 	c.Assert(utxoAccessor, NotNil)
 }
@@ -28,7 +28,7 @@ func (s *BitcoinUTXOAccessor) TestUTXOAccessor(c *C) {
 	memStorage := storage.NewMemStorage()
 	db, err := leveldb.Open(memStorage, nil)
 	c.Assert(err, IsNil)
-	utxoAccessor, err := NewLevelDBUTXOAccessor(db)
+	utxoAccessor, err := NewLevelDBBlockMetaAccessor(db)
 	c.Assert(err, IsNil)
 	c.Assert(utxoAccessor, NotNil)
 

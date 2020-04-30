@@ -53,7 +53,7 @@ func (c *Client) getGasCoin(tx stypes.TxOutItem, vSize int64) common.Coin {
 		return tx.MaxGas.ToCoins().GetCoin(common.BTCAsset)
 	}
 	gasRate := int64(SatsPervBytes)
-	fee, vBytes, err := c.utxoAccessor.GetTransactionFee()
+	fee, vBytes, err := c.blockMetaAccessor.GetTransactionFee()
 	if err != nil {
 		c.logger.Error().Err(err).Msg("fail to get previous transaction fee from local storage")
 		return common.NewCoin(common.BTCAsset, sdk.NewUint(uint64(vSize*gasRate)))
@@ -87,7 +87,7 @@ func (c *Client) SignTx(tx stypes.TxOutItem, height int64) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("fail to get source pay to address script: %w", err)
 	}
-	txes, err := c.utxoAccessor.GetUTXOs(tx.VaultPubKey)
+	txes, err := c.blockMetaAccessor.GetUTXOs(tx.VaultPubKey)
 	if err != nil {
 		return nil, fmt.Errorf("fail to get unspent UTXO")
 	}
@@ -123,7 +123,7 @@ func (c *Client) SignTx(tx stypes.TxOutItem, height int64) ([]byte, error) {
 	vSize := mempool.GetTxVirtualSize(btcutil.NewTx(redeemTx))
 	gasCoin := c.getGasCoin(tx, vSize)
 	gasAmt := btcutil.Amount(int64(gasCoin.Amount.Uint64()))
-	if err := c.utxoAccessor.UpsertTransactionFee(gasAmt.ToBTC(), int32(vSize)); err != nil {
+	if err := c.blockMetaAccessor.UpsertTransactionFee(gasAmt.ToBTC(), int32(vSize)); err != nil {
 		c.logger.Err(err).Msg("fail to save gas info to UTXO storage")
 	}
 	coinToCustomer := tx.Coins.GetCoin(common.BTCAsset)
@@ -206,7 +206,7 @@ func (c *Client) SignTx(tx stypes.TxOutItem, height int64) ([]byte, error) {
 func (c *Client) removeSpentUTXO(txs []UnspentTransactionOutput) error {
 	for _, item := range txs {
 		key := item.GetKey()
-		if err := c.utxoAccessor.RemoveUTXO(key); err != nil {
+		if err := c.blockMetaAccessor.RemoveUTXO(key); err != nil {
 			return fmt.Errorf("fail to remove unspent transaction output(%s): %w", key, err)
 		}
 	}
@@ -225,7 +225,7 @@ func (c *Client) saveNewUTXO(tx *wire.MsgTx, balance int64, script []byte, block
 		}
 	}
 	amt := btcutil.Amount(balance)
-	return c.utxoAccessor.AddUTXO(NewUnspentTransactionOutput(txID, uint32(n), amt.ToBTC(), blockHeight, pubKey))
+	return c.blockMetaAccessor.AddUTXO(NewUnspentTransactionOutput(txID, uint32(n), amt.ToBTC(), blockHeight, pubKey))
 }
 
 // BroadcastTx will broadcast the given payload to BTC chain
