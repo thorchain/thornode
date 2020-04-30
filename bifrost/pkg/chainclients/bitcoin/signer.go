@@ -24,8 +24,10 @@ import (
 )
 
 // SatsPervBytes it should be enough , this one will only be used if signer can't find any previous UTXO , and fee info from local storage.
-const SatsPervBytes = 25
-const MinUTXOConfirmation = 10
+const (
+	SatsPervBytes       = 25
+	MinUTXOConfirmation = 10
+)
 
 func getBTCPrivateKey(key crypto.PrivKey) (*btcec.PrivateKey, error) {
 	priKey, ok := key.(secp256k1.PrivKeySecp256k1)
@@ -69,31 +71,57 @@ func (c *Client) getGasCoin(tx stypes.TxOutItem, vSize int64) common.Coin {
 	}
 	return common.NewCoin(common.BTCAsset, sdk.NewUint(uint64(gasRate*vSize)))
 }
-func (c *Client) getAllUtxos(pubKey common.PubKey) ([]UnspentTransactionOutput, error) {
-	height, err := c.getBlockHeight()
-	if err != nil {
-		return nil, fmt.Errorf("fail to get latest block height:%w", err)
-	}
+
+// getAllUtxos is going to spend all UTXOs in a block that might be evicted from local storage, on the top of that
+// it also try to spend enough UTXOs that can add up to more than the given total
+func (c *Client) getAllUtxos(height int64, pubKey common.PubKey, total float64) ([]UnspentTransactionOutput, error) {
 	utxoes := make([]UnspentTransactionOutput, 0)
 	stopHeight := height - MinUTXOConfirmation
+	// as bifrost only keep the last BlockCacheSize(100) blocks , so it will need to consume all the utxos that is older than that.
+	consumeAllHeight := height - BlockCacheSize - 1
 	blockMetas, err := c.blockMetaAccessor.GetBlockMetas()
 	if err != nil {
 		return nil, fmt.Errorf("fail to get block metas: %w", err)
 	}
+	target := 0.0
 	for _, b := range blockMetas {
+		// not enough confirmations, skip it
 		if b.Height > stopHeight {
 			continue
 		}
-		utxoes = append(utxoes, b.GetUTXOs(pubKey)...)
+
+		// blocks that might be evicted from storage , so spent it all
+		if b.Height <= consumeAllHeight || target < total {
+			blockUtxoes := b.GetUTXOs(pubKey)
+			for _, u := range blockUtxoes {
+				target += u.Value
+			}
+			utxoes = append(utxoes, blockUtxoes...)
+		}
+
+		if target > total {
+			return utxoes, nil
+		}
 	}
 	return utxoes, nil
 }
+
 func (c *Client) getBlockHeight() (int64, error) {
 	_, blockHeight, err := c.client.GetBestBlock()
 	if err != nil {
 		return 0, fmt.Errorf("fail to get the best block: %w", err)
 	}
 	return int64(blockHeight), nil
+}
+
+func (c *Client) getBTCPaymentAmount(tx stypes.TxOutItem) float64 {
+	amtToPay := tx.Coins.GetCoin(common.BTCAsset).Amount.Uint64()
+	amtToPayInBTC := btcutil.Amount(int64(amtToPay)).ToBTC()
+	if !tx.MaxGas.IsEmpty() {
+		gasAmt := tx.MaxGas.ToCoins().GetCoin(common.BTCAsset).Amount
+		amtToPayInBTC += btcutil.Amount(int64(gasAmt.Uint64())).ToBTC()
+	}
+	return amtToPayInBTC
 }
 
 // SignTx is going to generate the outbound transaction, and also sign it
@@ -114,8 +142,11 @@ func (c *Client) SignTx(tx stypes.TxOutItem, thorchainHeight int64) ([]byte, err
 	if err != nil {
 		return nil, fmt.Errorf("fail to get source pay to address script: %w", err)
 	}
-
-	txes, err := c.getAllUtxos(tx.VaultPubKey)
+	chainBlockHeight, err := c.getBlockHeight()
+	if err != nil {
+		return nil, fmt.Errorf("fail to get chain block height: %w", err)
+	}
+	txes, err := c.getAllUtxos(chainBlockHeight, tx.VaultPubKey, c.getBTCPaymentAmount(tx))
 	if err != nil {
 		return nil, fmt.Errorf("fail to get unspent UTXO")
 	}
@@ -221,7 +252,7 @@ func (c *Client) SignTx(tx stypes.TxOutItem, thorchainHeight int64) ([]byte, err
 	}
 	// only send the balance back to ourselves
 	if balance > 0 {
-		if err := c.saveNewUTXO(redeemTx, balance, sourceScript, thorchainHeight, tx.VaultPubKey); nil != err {
+		if err := c.saveNewUTXO(redeemTx, balance, sourceScript, chainBlockHeight, tx.VaultPubKey); nil != err {
 			return nil, fmt.Errorf("fail to save the new UTXO to storage: %w", err)
 		}
 	}
@@ -257,9 +288,17 @@ func (c *Client) saveNewUTXO(tx *wire.MsgTx, balance int64, script []byte, block
 			break
 		}
 	}
+
 	amt := btcutil.Amount(balance)
-	//
-	return c.blockMetaAccessor.AddUTXO(NewUnspentTransactionOutput(txID, uint32(n), amt.ToBTC(), blockHeight, pubKey))
+	blockMeta, err := c.blockMetaAccessor.GetBlockMeta(blockHeight)
+	if err != nil {
+		return fmt.Errorf("fail to get block meta: %w", err)
+	}
+	if blockMeta == nil {
+		blockMeta = NewBlockMeta("", blockHeight, "")
+	}
+	blockMeta.AddUTXO(NewUnspentTransactionOutput(txID, uint32(n), amt.ToBTC(), blockHeight, pubKey))
+	return c.blockMetaAccessor.SaveBlockMeta(blockHeight, blockMeta)
 }
 
 // BroadcastTx will broadcast the given payload to BTC chain

@@ -197,7 +197,17 @@ func (c *Client) FetchTxs(height int64) (types.TxIn, error) {
 		}
 		return types.TxIn{}, fmt.Errorf("fail to get block: %w", err)
 	}
-	blockMeta := NewBlockMeta(block.PreviousHash, block.Height, block.Hash)
+	blockMeta, err := c.blockMetaAccessor.GetBlockMeta(block.Height)
+	if err != nil {
+		return types.TxIn{}, fmt.Errorf("fail to get block meta from storage: %w", err)
+	}
+	if blockMeta == nil {
+		blockMeta = NewBlockMeta(block.PreviousHash, block.Height, block.Hash)
+	} else {
+		blockMeta.PreviousHash = block.PreviousHash
+		blockMeta.BlockHash = block.Hash
+	}
+
 	if err := c.blockMetaAccessor.SaveBlockMeta(block.Height, blockMeta); err != nil {
 		return types.TxIn{}, fmt.Errorf("fail to save block meta into storage: %w", err)
 	}
@@ -208,7 +218,6 @@ func (c *Client) FetchTxs(height int64) (types.TxIn, error) {
 				c.logger.Err(err).Msgf("fail to prune block meta, height(%d)", pruneHeight)
 			}
 		}()
-
 	}
 	txs, err := c.extractTxs(block)
 	if err != nil {
