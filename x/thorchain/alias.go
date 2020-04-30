@@ -116,6 +116,7 @@ var (
 )
 
 type (
+	MsgSwitch             = types.MsgSwitch
 	MsgBond               = types.MsgBond
 	MsgNoOp               = types.MsgNoOp
 	MsgAdd                = types.MsgAdd
