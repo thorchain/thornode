@@ -41,6 +41,7 @@ type Client struct {
 	blockMetaAccessor BlockMetaAccessor
 	ksWrapper         *KeySignWrapper
 	bridge            *thorclient.ThorchainBridge
+	globalErrataQueue chan<- types.ErrataBlock
 }
 
 // NewClient generates a new Client
@@ -108,6 +109,7 @@ func NewClient(thorKeys *thorclient.Keys, cfg config.ChainConfiguration, server 
 // Start starts the block scanner
 func (c *Client) Start(globalTxsQueue chan types.TxIn, globalErrataQueue chan types.ErrataBlock) {
 	c.blockScanner.Start(globalTxsQueue)
+	c.globalErrataQueue = globalErrataQueue
 }
 
 // Stop stops the block scanner
@@ -190,6 +192,59 @@ func (c *Client) OnObservedTxIn(txIn types.TxInItem, blockHeight int64) {
 	}
 }
 
+func (c *Client) hasReorg(block *btcjson.GetBlockVerboseTxResult) error {
+	previousHeight := block.Height - 1
+	prevBlockMeta, err := c.blockMetaAccessor.GetBlockMeta(previousHeight)
+	if err != nil {
+		return fmt.Errorf("fail to get block meta of height(%d) : %w", previousHeight, err)
+	}
+	// the block's previous hash need to be the same as the block hash chain client recorded in block meta
+	// blockMetas[PreviousHeight].BlockHash == Block.PreviousHash
+	if strings.EqualFold(prevBlockMeta.BlockHash, block.PreviousHash) {
+		return nil
+	}
+
+	c.logger.Info().Msgf("re-org detected, current block height:%d ,previous block hash is : %s , however block meta at height: %d, block hash is %s", block.Height, block.PreviousHash, prevBlockMeta.Height, prevBlockMeta.BlockHash)
+	return c.reConfirmTx()
+}
+
+func (c *Client) reConfirmTx() error {
+	blockMetas, err := c.blockMetaAccessor.GetBlockMetas()
+	if err != nil {
+		return fmt.Errorf("fail to get block metas from local storage: %w", err)
+	}
+
+	for _, blockMeta := range blockMetas {
+		var errataTxs []types.ErrataTx
+		for _, utxo := range blockMeta.UnspentTransactionOutputs {
+			result, err := c.client.GetTransaction(&utxo.TxID)
+			if err != nil {
+				if rpcErr, ok := err.(*btcjson.RPCError); ok && rpcErr.Code == btcjson.ErrRPCNoTxInfo {
+					// this means the tx had been broadcast to chain, it must be another signer finished quicker then us
+					// log error
+					errataTxs = append(errataTxs, types.ErrataTx{
+						TxID:  common.TxID(utxo.TxID.String()),
+						Chain: common.BTCChain,
+					})
+					// remove the UTXO from block meta
+					blockMeta.RemoveUTXO(utxo.GetKey())
+				}
+			}
+			c.logger.Info().Msgf("block height: %d, tx: %s still exist", blockMeta.Height, result.TxID)
+		}
+		if len(errataTxs) == 0 {
+			continue
+		}
+		c.globalErrataQueue <- types.ErrataBlock{
+			Height: blockMeta.Height,
+			Txs:    errataTxs,
+		}
+		if err := c.blockMetaAccessor.SaveBlockMeta(blockMeta.Height, blockMeta); err != nil {
+			c.logger.Err(err).Msgf("fail to save block meta of height: %d ", blockMeta.Height)
+		}
+	}
+}
+
 // FetchTxs retrieves txs for a block height
 func (c *Client) FetchTxs(height int64) (types.TxIn, error) {
 	block, err := c.getBlock(height)
@@ -201,7 +256,6 @@ func (c *Client) FetchTxs(height int64) (types.TxIn, error) {
 		}
 		return types.TxIn{}, fmt.Errorf("fail to get block: %w", err)
 	}
-	// TODO here try to detect reorg
 
 	blockMeta, err := c.blockMetaAccessor.GetBlockMeta(block.Height)
 	if err != nil {
