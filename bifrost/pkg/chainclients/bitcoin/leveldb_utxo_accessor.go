@@ -82,7 +82,7 @@ func (t *LevelDBBlockMetaAccessor) GetBlockMetas() ([]*BlockMeta, error) {
 func (t *LevelDBBlockMetaAccessor) PruneBlockMeta(height int64) error {
 	iterator := t.db.NewIterator(util.BytesPrefix([]byte(PrefixBlocMeta)), nil)
 	defer iterator.Release()
-	targetToDelete := make([][]byte, 0)
+	targetToDelete := make([]string, 0)
 	for iterator.Next() {
 		buf := iterator.Value()
 		if len(buf) == 0 {
@@ -92,13 +92,15 @@ func (t *LevelDBBlockMetaAccessor) PruneBlockMeta(height int64) error {
 		if err := json.Unmarshal(buf, &blockMeta); err != nil {
 			return fmt.Errorf("fail to unmarshal block meta: %w", err)
 		}
-		if blockMeta.Height <= height && len(blockMeta.UnspentTransactionOutputs) == 0 {
-			targetToDelete = append(targetToDelete, iterator.Key())
+		if blockMeta.Height < height && len(blockMeta.UnspentTransactionOutputs) == 0 {
+			targetToDelete = append(targetToDelete, t.getBlockMetaKey(blockMeta.Height))
 		}
 	}
-	for _, k := range targetToDelete {
-		if err := t.db.Delete(k, nil); err != nil {
-			return fmt.Errorf("fail to delete block meta with key(%s) from storage: %w", string(k), err)
+	iterator.Release()
+
+	for _, key := range targetToDelete {
+		if err := t.db.Delete([]byte(key), nil); err != nil {
+			return fmt.Errorf("fail to delete block meta with key(%s) from storage: %w", key, err)
 		}
 	}
 	return nil

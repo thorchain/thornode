@@ -1,33 +1,34 @@
 package bitcoin
 
-import "gitlab.com/thorchain/thornode/common"
+import "fmt"
 
 // DummyUTXOAccessor
 type DummyUTXOAccessor struct {
-	storage map[string]UnspentTransactionOutput
+	storage map[string]*BlockMeta
 }
 
 func NewDummyUTXOAccessor() *DummyUTXOAccessor {
 	return &DummyUTXOAccessor{
-		storage: make(map[string]UnspentTransactionOutput),
+		storage: make(map[string]*BlockMeta),
 	}
 }
 
-func (t *DummyUTXOAccessor) GetUTXOs(pKey common.PubKey) ([]UnspentTransactionOutput, error) {
-	result := make([]UnspentTransactionOutput, 0, len(t.storage))
+func (t *DummyUTXOAccessor) GetBlockMetas() ([]*BlockMeta, error) {
+	blockMetas := make([]*BlockMeta, 0)
 	for _, item := range t.storage {
-		result = append(result, item)
+		blockMetas = append(blockMetas, item)
 	}
-	return result, nil
+	return blockMetas, nil
 }
-
-func (t *DummyUTXOAccessor) AddUTXO(u UnspentTransactionOutput) error {
-	t.storage[u.GetKey()] = u
+func (t *DummyUTXOAccessor) GetBlockMeta(height int64) (*BlockMeta, error) {
+	return nil, nil
+}
+func (t *DummyUTXOAccessor) SaveBlockMeta(height int64, blockMeta *BlockMeta) error {
+	key := fmt.Sprintf(PrefixBlocMeta+"%d", height)
+	t.storage[key] = blockMeta
 	return nil
 }
-
-func (t *DummyUTXOAccessor) RemoveUTXO(key string) error {
-	delete(t.storage, key)
+func (t *DummyUTXOAccessor) PruneBlockMeta(height int64) error {
 	return nil
 }
 

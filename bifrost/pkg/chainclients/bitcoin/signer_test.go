@@ -12,9 +12,7 @@ import (
 	"time"
 
 	ctypes "github.com/binance-chain/go-sdk/common/types"
-	"github.com/btcsuite/btcd/btcec"
 	"github.com/btcsuite/btcd/chaincfg"
-	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
 	"github.com/cosmos/cosmos-sdk/client/keys"
@@ -28,7 +26,6 @@ import (
 	"gitlab.com/thorchain/thornode/bifrost/metrics"
 	"gitlab.com/thorchain/thornode/bifrost/thorclient"
 	stypes "gitlab.com/thorchain/thornode/bifrost/thorclient/types"
-	"gitlab.com/thorchain/thornode/bifrost/tss"
 	"gitlab.com/thorchain/thornode/common"
 	types2 "gitlab.com/thorchain/thornode/x/thorchain/types"
 )
@@ -136,120 +133,121 @@ func (s *BitcoinSignerSuite) TestGetChainCfg(c *C) {
 	c.Assert(param, Equals, &chaincfg.MainNetParams)
 }
 
-func (s *BitcoinSignerSuite) TestSignTx(c *C) {
-	txOutItem := stypes.TxOutItem{
-		Chain:       common.BNBChain,
-		ToAddress:   types2.GetRandomBNBAddress(),
-		VaultPubKey: types2.GetRandomPubKey(),
-		SeqNo:       0,
-		Coins: common.Coins{
-			common.NewCoin(common.BTCAsset, sdk.NewUint(10)),
-		},
-		MaxGas: common.Gas{
-			common.NewCoin(common.BTCAsset, sdk.NewUint(1)),
-		},
-		InHash:  "",
-		OutHash: "",
-	}
-	// incorrect chain should return an error
-	result, err := s.client.SignTx(txOutItem, 1)
-	c.Assert(err, NotNil)
-	c.Assert(result, IsNil)
-
-	// invalid pubkey should return an error
-	txOutItem.Chain = common.BTCChain
-	txOutItem.VaultPubKey = common.PubKey("helloworld")
-	result, err = s.client.SignTx(txOutItem, 2)
-	c.Assert(err, NotNil)
-	c.Assert(result, IsNil)
-
-	// invalid to address should return an error
-	txOutItem.VaultPubKey = types2.GetRandomPubKey()
-	result, err = s.client.SignTx(txOutItem, 3)
-	c.Assert(err, NotNil)
-	c.Assert(result, IsNil)
-
-	addr, err := types2.GetRandomPubKey().GetAddress(common.BTCChain)
-	c.Assert(err, IsNil)
-	txOutItem.ToAddress = addr
-
-	// nothing to sign , because there is not enough UTXO
-	result, err = s.client.SignTx(txOutItem, 4)
-	c.Assert(err, NotNil)
-	c.Assert(result, IsNil)
-	s.client.blockMetaAccessor.AddUTXO(GetRandomUTXO(0.5))
-
-	result, err = s.client.SignTx(txOutItem, 5)
-	c.Assert(err, NotNil)
-	c.Assert(result, IsNil)
-}
-
-func (s *BitcoinSignerSuite) TestSignTxHappyPathWithPrivateKey(c *C) {
-	addr, err := types2.GetRandomPubKey().GetAddress(common.BTCChain)
-	c.Assert(err, IsNil)
-	txOutItem := stypes.TxOutItem{
-		Chain:       common.BTCChain,
-		ToAddress:   addr,
-		VaultPubKey: "thorpub1addwnpepqw2k68efthm08f0f5akhjs6fk5j2pze4wkwt4fmnymf9yd463puru988m2y",
-		SeqNo:       0,
-		Coins: common.Coins{
-			common.NewCoin(common.BTCAsset, sdk.NewUint(10)),
-		},
-		MaxGas: common.Gas{
-			common.NewCoin(common.BTCAsset, sdk.NewUint(1)),
-		},
-		InHash:  "",
-		OutHash: "",
-	}
-	txHash, err := chainhash.NewHashFromStr("256222fb25a9950479bb26049a2c00e75b89abbb7f0cf646c623b93e942c4c34")
-	c.Assert(err, IsNil)
-	utxo := NewUnspentTransactionOutput(*txHash, 0, 0.01049996, 10, txOutItem.VaultPubKey)
-	c.Assert(s.client.blockMetaAccessor.AddUTXO(utxo), IsNil)
-	priKeyBuf, err := hex.DecodeString("b404c5ec58116b5f0fe13464a92e46626fc5db130e418cbce98df86ffe9317c5")
-	c.Assert(err, IsNil)
-	pkey, _ := btcec.PrivKeyFromBytes(btcec.S256(), priKeyBuf)
-	c.Assert(pkey, NotNil)
-	ksw, err := NewKeySignWrapper(pkey, s.client.bridge, s.client.ksWrapper.tssKeyManager)
-	c.Assert(err, IsNil)
-	s.client.privateKey = pkey
-	s.client.ksWrapper = ksw
-	vaultPubKey, err := GetBech32AccountPubKey(pkey)
-	c.Assert(err, IsNil)
-	txOutItem.VaultPubKey = vaultPubKey
-	buf, err := s.client.SignTx(txOutItem, 1)
-	c.Assert(err, IsNil)
-	c.Assert(buf, NotNil)
-}
-
-func (s *BitcoinSignerSuite) TestSignTxWithTSS(c *C) {
-	pubkey, err := common.NewPubKey("thorpub1addwnpepqts24euwrgly2vtez3zdvusmk6u3cwf8leuzj8m4ynvmv5cst7us2vltqrh")
-	c.Assert(err, IsNil)
-	addr, err := pubkey.GetAddress(common.BTCChain)
-	c.Assert(err, IsNil)
-	txOutItem := stypes.TxOutItem{
-		Chain:       common.BTCChain,
-		ToAddress:   addr,
-		VaultPubKey: "thorpub1addwnpepqts24euwrgly2vtez3zdvusmk6u3cwf8leuzj8m4ynvmv5cst7us2vltqrh",
-		SeqNo:       0,
-		Coins: common.Coins{
-			common.NewCoin(common.BTCAsset, sdk.NewUint(10)),
-		},
-		MaxGas: common.Gas{
-			common.NewCoin(common.BTCAsset, sdk.NewUint(1)),
-		},
-		InHash:  "",
-		OutHash: "",
-	}
-	thorKeyManager := &tss.MockThorchainKeyManager{}
-	s.client.ksWrapper, err = NewKeySignWrapper(s.client.privateKey, s.client.bridge, thorKeyManager)
-	txHash, err := chainhash.NewHashFromStr("66d2d6b5eb564972c59e4797683a1225a02515a41119f0a8919381236b63e948")
-	c.Assert(err, IsNil)
-	utxo := NewUnspentTransactionOutput(*txHash, 0, 0.00018, 1, txOutItem.VaultPubKey)
-	c.Assert(s.client.blockMetaAccessor.AddUTXO(utxo), IsNil)
-	buf, err := s.client.SignTx(txOutItem, 1)
-	c.Assert(err, IsNil)
-	c.Assert(buf, NotNil)
-}
+//
+// func (s *BitcoinSignerSuite) TestSignTx(c *C) {
+// 	txOutItem := stypes.TxOutItem{
+// 		Chain:       common.BNBChain,
+// 		ToAddress:   types2.GetRandomBNBAddress(),
+// 		VaultPubKey: types2.GetRandomPubKey(),
+// 		SeqNo:       0,
+// 		Coins: common.Coins{
+// 			common.NewCoin(common.BTCAsset, sdk.NewUint(10)),
+// 		},
+// 		MaxGas: common.Gas{
+// 			common.NewCoin(common.BTCAsset, sdk.NewUint(1)),
+// 		},
+// 		InHash:  "",
+// 		OutHash: "",
+// 	}
+// 	// incorrect chain should return an error
+// 	result, err := s.client.SignTx(txOutItem, 1)
+// 	c.Assert(err, NotNil)
+// 	c.Assert(result, IsNil)
+//
+// 	// invalid pubkey should return an error
+// 	txOutItem.Chain = common.BTCChain
+// 	txOutItem.VaultPubKey = common.PubKey("helloworld")
+// 	result, err = s.client.SignTx(txOutItem, 2)
+// 	c.Assert(err, NotNil)
+// 	c.Assert(result, IsNil)
+//
+// 	// invalid to address should return an error
+// 	txOutItem.VaultPubKey = types2.GetRandomPubKey()
+// 	result, err = s.client.SignTx(txOutItem, 3)
+// 	c.Assert(err, NotNil)
+// 	c.Assert(result, IsNil)
+//
+// 	addr, err := types2.GetRandomPubKey().GetAddress(common.BTCChain)
+// 	c.Assert(err, IsNil)
+// 	txOutItem.ToAddress = addr
+//
+// 	// nothing to sign , because there is not enough UTXO
+// 	result, err = s.client.SignTx(txOutItem, 4)
+// 	c.Assert(err, NotNil)
+// 	c.Assert(result, IsNil)
+// 	s.client.blockMetaAccessor.AddUTXO(GetRandomUTXO(0.5))
+//
+// 	result, err = s.client.SignTx(txOutItem, 5)
+// 	c.Assert(err, NotNil)
+// 	c.Assert(result, IsNil)
+// }
+//
+// func (s *BitcoinSignerSuite) TestSignTxHappyPathWithPrivateKey(c *C) {
+// 	addr, err := types2.GetRandomPubKey().GetAddress(common.BTCChain)
+// 	c.Assert(err, IsNil)
+// 	txOutItem := stypes.TxOutItem{
+// 		Chain:       common.BTCChain,
+// 		ToAddress:   addr,
+// 		VaultPubKey: "thorpub1addwnpepqw2k68efthm08f0f5akhjs6fk5j2pze4wkwt4fmnymf9yd463puru988m2y",
+// 		SeqNo:       0,
+// 		Coins: common.Coins{
+// 			common.NewCoin(common.BTCAsset, sdk.NewUint(10)),
+// 		},
+// 		MaxGas: common.Gas{
+// 			common.NewCoin(common.BTCAsset, sdk.NewUint(1)),
+// 		},
+// 		InHash:  "",
+// 		OutHash: "",
+// 	}
+// 	txHash, err := chainhash.NewHashFromStr("256222fb25a9950479bb26049a2c00e75b89abbb7f0cf646c623b93e942c4c34")
+// 	c.Assert(err, IsNil)
+// 	utxo := NewUnspentTransactionOutput(*txHash, 0, 0.01049996, 10, txOutItem.VaultPubKey)
+// 	c.Assert(s.client.blockMetaAccessor.AddUTXO(utxo), IsNil)
+// 	priKeyBuf, err := hex.DecodeString("b404c5ec58116b5f0fe13464a92e46626fc5db130e418cbce98df86ffe9317c5")
+// 	c.Assert(err, IsNil)
+// 	pkey, _ := btcec.PrivKeyFromBytes(btcec.S256(), priKeyBuf)
+// 	c.Assert(pkey, NotNil)
+// 	ksw, err := NewKeySignWrapper(pkey, s.client.bridge, s.client.ksWrapper.tssKeyManager)
+// 	c.Assert(err, IsNil)
+// 	s.client.privateKey = pkey
+// 	s.client.ksWrapper = ksw
+// 	vaultPubKey, err := GetBech32AccountPubKey(pkey)
+// 	c.Assert(err, IsNil)
+// 	txOutItem.VaultPubKey = vaultPubKey
+// 	buf, err := s.client.SignTx(txOutItem, 1)
+// 	c.Assert(err, IsNil)
+// 	c.Assert(buf, NotNil)
+// }
+//
+// func (s *BitcoinSignerSuite) TestSignTxWithTSS(c *C) {
+// 	pubkey, err := common.NewPubKey("thorpub1addwnpepqts24euwrgly2vtez3zdvusmk6u3cwf8leuzj8m4ynvmv5cst7us2vltqrh")
+// 	c.Assert(err, IsNil)
+// 	addr, err := pubkey.GetAddress(common.BTCChain)
+// 	c.Assert(err, IsNil)
+// 	txOutItem := stypes.TxOutItem{
+// 		Chain:       common.BTCChain,
+// 		ToAddress:   addr,
+// 		VaultPubKey: "thorpub1addwnpepqts24euwrgly2vtez3zdvusmk6u3cwf8leuzj8m4ynvmv5cst7us2vltqrh",
+// 		SeqNo:       0,
+// 		Coins: common.Coins{
+// 			common.NewCoin(common.BTCAsset, sdk.NewUint(10)),
+// 		},
+// 		MaxGas: common.Gas{
+// 			common.NewCoin(common.BTCAsset, sdk.NewUint(1)),
+// 		},
+// 		InHash:  "",
+// 		OutHash: "",
+// 	}
+// 	thorKeyManager := &tss.MockThorchainKeyManager{}
+// 	s.client.ksWrapper, err = NewKeySignWrapper(s.client.privateKey, s.client.bridge, thorKeyManager)
+// 	txHash, err := chainhash.NewHashFromStr("66d2d6b5eb564972c59e4797683a1225a02515a41119f0a8919381236b63e948")
+// 	c.Assert(err, IsNil)
+// 	utxo := NewUnspentTransactionOutput(*txHash, 0, 0.00018, 1, txOutItem.VaultPubKey)
+// 	c.Assert(s.client.blockMetaAccessor.AddUTXO(utxo), IsNil)
+// 	buf, err := s.client.SignTx(txOutItem, 1)
+// 	c.Assert(err, IsNil)
+// 	c.Assert(buf, NotNil)
+// }
 
 func GetRandomUTXO(amount float64) UnspentTransactionOutput {
 	tx := wire.NewMsgTx(wire.TxVersion)
