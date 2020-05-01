@@ -201,6 +201,8 @@ func (c *Client) FetchTxs(height int64) (types.TxIn, error) {
 		}
 		return types.TxIn{}, fmt.Errorf("fail to get block: %w", err)
 	}
+	// TODO here try to detect reorg
+
 	blockMeta, err := c.blockMetaAccessor.GetBlockMeta(block.Height)
 	if err != nil {
 		return types.TxIn{}, fmt.Errorf("fail to get block meta from storage: %w", err)
