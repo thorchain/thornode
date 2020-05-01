@@ -19,7 +19,7 @@ type LevelDBBlockMetaAccessor struct {
 	db *leveldb.DB
 }
 
-// NewLevelDBBlockMetaAccessor creates a new level db utxo accessor
+// NewLevelDBBlockMetaAccessor creates a new level db backed BlockMeta accessor
 func NewLevelDBBlockMetaAccessor(db *leveldb.DB) (*LevelDBBlockMetaAccessor, error) {
 	return &LevelDBBlockMetaAccessor{db: db}, nil
 }
@@ -28,7 +28,7 @@ func (t *LevelDBBlockMetaAccessor) getBlockMetaKey(height int64) string {
 	return fmt.Sprintf(PrefixBlocMeta+"%d", height)
 }
 
-// GetBlockMeta at given block height
+// GetBlockMeta at given block height ,  when the requested block meta doesn't exist , it will return nil , thus caller need to double check it
 func (t *LevelDBBlockMetaAccessor) GetBlockMeta(height int64) (*BlockMeta, error) {
 	key := t.getBlockMetaKey(height)
 	exist, err := t.db.Has([]byte(key), nil)
@@ -59,7 +59,9 @@ func (t *LevelDBBlockMetaAccessor) SaveBlockMeta(height int64, blockMeta *BlockM
 	return t.db.Put([]byte(key), buf, nil)
 }
 
-// GetBlockMetas returns all the block metas in storage , given chain client will prune it , so hopefully it won't be too much
+// GetBlockMetas returns all the block metas in storage
+// The chain client will Prune block metas every time it finished scan a block , so at maximum it will keep BlockCacheSize blocks
+// thus it should not grow out of control
 func (t *LevelDBBlockMetaAccessor) GetBlockMetas() ([]*BlockMeta, error) {
 	blockMetas := make([]*BlockMeta, 0)
 	iterator := t.db.NewIterator(util.BytesPrefix([]byte(PrefixBlocMeta)), nil)
@@ -79,6 +81,7 @@ func (t *LevelDBBlockMetaAccessor) GetBlockMetas() ([]*BlockMeta, error) {
 }
 
 // PruneBlockMeta remove all block meta that is older than the given block height
+// with exception, if there are unspent transaction output in it , then the block meta will not be removed
 func (t *LevelDBBlockMetaAccessor) PruneBlockMeta(height int64) error {
 	iterator := t.db.NewIterator(util.BytesPrefix([]byte(PrefixBlocMeta)), nil)
 	defer iterator.Release()
@@ -96,7 +99,6 @@ func (t *LevelDBBlockMetaAccessor) PruneBlockMeta(height int64) error {
 			targetToDelete = append(targetToDelete, t.getBlockMetaKey(blockMeta.Height))
 		}
 	}
-	iterator.Release()
 
 	for _, key := range targetToDelete {
 		if err := t.db.Delete([]byte(key), nil); err != nil {

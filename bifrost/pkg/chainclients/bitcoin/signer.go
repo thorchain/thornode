@@ -24,9 +24,10 @@ import (
 	"gitlab.com/thorchain/thornode/common"
 )
 
-// SatsPervBytes it should be enough , this one will only be used if signer can't find any previous UTXO , and fee info from local storage.
 const (
-	SatsPervBytes       = 25
+	// SatsPervBytes it should be enough , this one will only be used if signer can't find any previous UTXO , and fee info from local storage.
+	SatsPervBytes = 25
+	// MinUTXOConfirmation UTXO that has less confirmation then this will not be spent , unless it is yggdrasil
 	MinUTXOConfirmation = 10
 )
 
@@ -73,10 +74,11 @@ func (c *Client) getGasCoin(tx stypes.TxOutItem, vSize int64) common.Coin {
 	return common.NewCoin(common.BTCAsset, sdk.NewUint(uint64(gasRate*vSize)))
 }
 
-// getAllUtxos is going to spend all UTXOs in a block that might be evicted from local storage, on the top of that
+// getAllUtxos go through all the block meta in the local storage, it will spend all UTXOs in  block that might be evicted from local storage soon
 // it also try to spend enough UTXOs that can add up to more than the given total
 func (c *Client) getAllUtxos(height int64, pubKey common.PubKey, total float64) ([]UnspentTransactionOutput, error) {
 	utxoes := make([]UnspentTransactionOutput, 0)
+	// TODO for yggdrasil , it will not need to wait for the minimum confirmation  as yggdrasil funded by asgard
 	stopHeight := height - MinUTXOConfirmation
 	// as bifrost only keep the last BlockCacheSize(100) blocks , so it will need to consume all the utxos that is older than that.
 	consumeAllHeight := height - BlockCacheSize + 1

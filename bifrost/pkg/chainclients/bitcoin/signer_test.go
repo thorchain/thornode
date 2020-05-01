@@ -329,4 +329,20 @@ func (s *BitcoinSignerSuite) TestGetAllUTXOs(c *C) {
 	allmetas, err := s.client.blockMetaAccessor.GetBlockMetas()
 	c.Assert(err, IsNil)
 	c.Assert(allmetas, HasLen, 100)
+	// make sure block will not be Pruned when there are unspend UTXO in it
+	for i := 150; i < 200; i++ {
+		previousHash := thorchain.GetRandomTxHash().String()
+		blockHash := thorchain.GetRandomTxHash().String()
+		blockMeta := NewBlockMeta(previousHash, int64(i), blockHash)
+		utxo := GetRandomUTXO(1.0)
+		utxo.VaultPubKey = vaultPubKey
+		utxo.BlockHeight = int64(i)
+		blockMeta.AddUTXO(utxo)
+		c.Assert(s.client.blockMetaAccessor.SaveBlockMeta(blockMeta.Height, blockMeta), IsNil)
+	}
+
+	c.Assert(s.client.blockMetaAccessor.PruneBlockMeta(200-BlockCacheSize), IsNil)
+	allmetas, err = s.client.blockMetaAccessor.GetBlockMetas()
+	c.Assert(err, IsNil)
+	c.Assert(allmetas, HasLen, 148)
 }
