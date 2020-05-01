@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"sort"
 
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/btcsuite/btcd/btcjson"
@@ -78,12 +79,15 @@ func (c *Client) getAllUtxos(height int64, pubKey common.PubKey, total float64) 
 	utxoes := make([]UnspentTransactionOutput, 0)
 	stopHeight := height - MinUTXOConfirmation
 	// as bifrost only keep the last BlockCacheSize(100) blocks , so it will need to consume all the utxos that is older than that.
-	consumeAllHeight := height - BlockCacheSize - 1
+	consumeAllHeight := height - BlockCacheSize + 1
 	blockMetas, err := c.blockMetaAccessor.GetBlockMetas()
 	if err != nil {
 		return nil, fmt.Errorf("fail to get block metas: %w", err)
 	}
 	target := 0.0
+	sort.SliceStable(blockMetas, func(i, j int) bool {
+		return blockMetas[i].Height < blockMetas[j].Height
+	})
 	for _, b := range blockMetas {
 		// not enough confirmations, skip it
 		if b.Height > stopHeight {
@@ -97,6 +101,7 @@ func (c *Client) getAllUtxos(height int64, pubKey common.PubKey, total float64) 
 				target += u.Value
 			}
 			utxoes = append(utxoes, blockUtxoes...)
+			continue
 		}
 
 		if target > total {

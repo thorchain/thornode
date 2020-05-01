@@ -20,6 +20,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/keys"
 	cKeys "github.com/cosmos/cosmos-sdk/crypto/keys"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/syndtr/goleveldb/leveldb"
+	"github.com/syndtr/goleveldb/leveldb/storage"
 	"github.com/tendermint/tendermint/crypto/secp256k1"
 	"gitlab.com/thorchain/txscript"
 	. "gopkg.in/check.v1"
@@ -30,6 +32,7 @@ import (
 	stypes "gitlab.com/thorchain/thornode/bifrost/thorclient/types"
 	"gitlab.com/thorchain/thornode/bifrost/tss"
 	"gitlab.com/thorchain/thornode/common"
+	"gitlab.com/thorchain/thornode/x/thorchain"
 	types2 "gitlab.com/thorchain/thornode/x/thorchain/types"
 )
 
@@ -109,7 +112,12 @@ func (s *BitcoinSignerSuite) SetUpTest(c *C) {
 	s.bridge, err = thorclient.NewThorchainBridge(cfg, s.m)
 	c.Assert(err, IsNil)
 	s.client, err = NewClient(thorKeys, s.cfg, nil, s.bridge, s.m)
-	s.client.blockMetaAccessor = NewDummyUTXOAccessor()
+	storage := storage.NewMemStorage()
+	db, err := leveldb.Open(storage, nil)
+	c.Assert(err, IsNil)
+	accessor, err := NewLevelDBBlockMetaAccessor(db)
+	c.Assert(err, IsNil)
+	s.client.blockMetaAccessor = accessor
 	c.Assert(err, IsNil)
 	c.Assert(s.client, NotNil)
 }
@@ -297,4 +305,28 @@ func (s *BitcoinSignerSuite) TestBroadcastTx(c *C) {
 	input1, err := hex.DecodeString("01000000000103c7d45551ff54354be6711396560348ebbf273b989b542be36645568ed1dbecf10000000000ffffffff951ed70edc0bf2a4b3e1cbfe55d191a72850c5595c381309f69fc084c9af0b540100000000ffffffffc5db14c562b96bfd95f97d74a558a3e3b91841a96e1b09546208c9fb67424f420000000000ffffffff02231710000000000016001417acb08a31369e7666d94664d7e64f0e048220900000000000000000176a1574686f72636861696e3a636f6e736f6c6964617465024730440220756d15a363b78b070b583dfc1a6aba0dd605550407d5d3d92f5e785ef7e42aca02200db19dab144033c9c353481be30469da42c0c0a7580a513f49282bea77d7a29301210223da2ff73fa9b2258d335a4e63a4e7ef88211b8e800588280ed8b51e285ec0ff02483045022100a695f0fece36de02212b10bf6aa2f06dc6ef84ba30cae0c78749deddba1574530220315b490111c830c27e6cb810559c2a37cd00b123de82df79e061df26c8deb14301210223da2ff73fa9b2258d335a4e63a4e7ef88211b8e800588280ed8b51e285ec0ff0247304402207e586439b04985a90a53cf9fc511a53d86acece57b3e5571118562449d4f27ac02206d84f0fba1a68cf55efc8a1c2ec768924479b97ceaf2029ed6941176f004bf8101210223da2ff73fa9b2258d335a4e63a4e7ef88211b8e800588280ed8b51e285ec0ff00000000")
 	c.Assert(err, IsNil)
 	c.Assert(s.client.BroadcastTx(txOutItem, input1), IsNil)
+}
+
+func (s *BitcoinSignerSuite) TestGetAllUTXOs(c *C) {
+	vaultPubKey := thorchain.GetRandomPubKey()
+	for i := 0; i < 150; i++ {
+		previousHash := thorchain.GetRandomTxHash().String()
+		blockHash := thorchain.GetRandomTxHash().String()
+		blockMeta := NewBlockMeta(previousHash, int64(i), blockHash)
+		utxo := GetRandomUTXO(1.0)
+		utxo.VaultPubKey = vaultPubKey
+		utxo.BlockHeight = int64(i)
+		blockMeta.AddUTXO(utxo)
+		c.Assert(s.client.blockMetaAccessor.SaveBlockMeta(blockMeta.Height, blockMeta), IsNil)
+	}
+	utxoes, err := s.client.getAllUtxos(150, vaultPubKey, 10)
+	c.Assert(err, IsNil)
+
+	// include block height 0 ~ 51
+	c.Assert(utxoes, HasLen, 52)
+	c.Assert(s.client.removeSpentUTXO(utxoes), IsNil)
+	c.Assert(s.client.blockMetaAccessor.PruneBlockMeta(150-BlockCacheSize), IsNil)
+	allmetas, err := s.client.blockMetaAccessor.GetBlockMetas()
+	c.Assert(err, IsNil)
+	c.Assert(allmetas, HasLen, 100)
 }
