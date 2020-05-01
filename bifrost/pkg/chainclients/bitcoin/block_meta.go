@@ -51,5 +51,10 @@ func (b *BlockMeta) RemoveUTXO(key string) {
 
 // AddUTXO add the given utxo to blockmeta
 func (b *BlockMeta) AddUTXO(utxo UnspentTransactionOutput) {
+	for _, u := range b.UnspentTransactionOutputs {
+		if u.GetKey() == utxo.GetKey() {
+			return
+		}
+	}
 	b.UnspentTransactionOutputs = append(b.UnspentTransactionOutputs, utxo)
 }

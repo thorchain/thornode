@@ -20,14 +20,22 @@ func (t *DummyUTXOAccessor) GetBlockMetas() ([]*BlockMeta, error) {
 	}
 	return blockMetas, nil
 }
+
 func (t *DummyUTXOAccessor) GetBlockMeta(height int64) (*BlockMeta, error) {
+	key := fmt.Sprintf(PrefixBlocMeta+"%d", height)
+	blockMeta, ok := t.storage[key]
+	if ok {
+		return blockMeta, nil
+	}
 	return nil, nil
 }
+
 func (t *DummyUTXOAccessor) SaveBlockMeta(height int64, blockMeta *BlockMeta) error {
 	key := fmt.Sprintf(PrefixBlocMeta+"%d", height)
 	t.storage[key] = blockMeta
 	return nil
 }
+
 func (t *DummyUTXOAccessor) PruneBlockMeta(height int64) error {
 	return nil
 }

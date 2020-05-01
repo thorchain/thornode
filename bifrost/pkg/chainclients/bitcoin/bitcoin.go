@@ -179,6 +179,10 @@ func (c *Client) OnObservedTxIn(txIn types.TxInItem, blockHeight int64) {
 	if nil != err {
 		c.logger.Err(err).Msgf("fail to get block meta on block height(%d)", blockHeight)
 	}
+	if nil == blockMeta {
+		c.logger.Error().Msgf("can't get block meta for height: %d", blockHeight)
+		return
+	}
 	utxo := NewUnspentTransactionOutput(*hash, 0, value, blockHeight, txIn.ObservedVaultPubKey)
 	blockMeta.AddUTXO(utxo)
 	if err := c.blockMetaAccessor.SaveBlockMeta(blockHeight, blockMeta); err != nil {

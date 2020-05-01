@@ -107,11 +107,16 @@ func (c *Client) getAllUtxos(height int64, pubKey common.PubKey, total float64) 
 }
 
 func (c *Client) getBlockHeight() (int64, error) {
-	_, blockHeight, err := c.client.GetBestBlock()
+	hash, err := c.client.GetBestBlockHash()
 	if err != nil {
-		return 0, fmt.Errorf("fail to get the best block: %w", err)
+		return 0, fmt.Errorf("fail to get best block hash: %w", err)
 	}
-	return int64(blockHeight), nil
+	blockInfo, err := c.client.GetBlockVerbose(hash)
+	if err != nil {
+		return 0, fmt.Errorf("fail to get the best block detail: %w", err)
+	}
+
+	return blockInfo.Height, nil
 }
 
 func (c *Client) getBTCPaymentAmount(tx stypes.TxOutItem) float64 {
