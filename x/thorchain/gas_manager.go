@@ -21,6 +21,7 @@ type GasManager interface {
 type GasMgr struct {
 	gasEvent *EventGas
 	gas      common.Gas
+	gasCount map[common.Asset]int64
 }
 
 // NewGasMgr create a new instance of GasManager
@@ -28,6 +29,7 @@ func NewGasMgr() *GasMgr {
 	return &GasMgr{
 		gasEvent: NewEventGas(),
 		gas:      common.Gas{},
+		gasCount: make(map[common.Asset]int64, 0),
 	}
 }
 
@@ -35,11 +37,15 @@ func NewGasMgr() *GasMgr {
 func (gm *GasMgr) BeginBlock() {
 	gm.gasEvent = NewEventGas()
 	gm.gas = common.Gas{}
+	gm.gasCount = make(map[common.Asset]int64, 0)
 }
 
 // AddGasAsset to the EventGas
 func (gm *GasMgr) AddGasAsset(gas common.Gas) {
 	gm.gas = gm.gas.Add(gas)
+	for _, coin := range gas {
+		gm.gasCount[coin.Asset] += 1
+	}
 }
 
 func (gm *GasMgr) GetGas() common.Gas {
@@ -104,6 +110,7 @@ func (gm *GasMgr) ProcessGas(ctx sdk.Context, keeper Keeper) {
 			Asset:    gas.Asset,
 			AssetAmt: gas.Amount,
 			RuneAmt:  runeGas,
+			Count:    gm.gasCount[gas.Asset],
 		}
 		gm.gasEvent.UpsertGasPool(gasPool)
 	}
