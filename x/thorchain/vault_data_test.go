@@ -22,11 +22,6 @@ func (s VaultSuite) TestCalcBlockRewards(c *C) {
 	c.Check(poolR.Uint64(), Equals, uint64(880), Commentf("%d", poolR.Uint64()))
 	c.Check(stakerD.Uint64(), Equals, uint64(0), Commentf("%d", poolR.Uint64()))
 
-	bondR, poolR, stakerD = calcBlockRewards(sdk.NewUint(1000*common.One), sdk.NewUint(2000*common.One), sdk.NewUint(1000*common.One), sdk.NewUint(900*common.One), sdk.ZeroUint(), emissionCurve, blocksPerYear)
-	c.Check(bondR.Uint64(), Equals, uint64(6666668252), Commentf("%d", bondR.Uint64()))
-	c.Check(poolR.Uint64(), Equals, uint64(3333334125), Commentf("%d", poolR.Uint64()))
-	c.Check(stakerD.Uint64(), Equals, uint64(0), Commentf("%d", poolR.Uint64()))
-
 	bondR, poolR, stakerD = calcBlockRewards(sdk.NewUint(1000*common.One), sdk.NewUint(2000*common.One), sdk.NewUint(1000*common.One), sdk.NewUint(1000*common.One), sdk.NewUint(3000), emissionCurve, blocksPerYear)
 	c.Check(bondR.Uint64(), Equals, uint64(3761), Commentf("%d", bondR.Uint64()))
 	c.Check(poolR.Uint64(), Equals, uint64(0), Commentf("%d", poolR.Uint64()))
