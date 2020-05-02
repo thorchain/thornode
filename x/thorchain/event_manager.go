@@ -42,7 +42,6 @@ func (m *EventMgr) GetBlockEvents(ctx sdk.Context, keeper Keeper, height int64) 
 
 // CompleteEvents Mark an event in the given block height to the given status
 func (m *EventMgr) CompleteEvents(ctx sdk.Context, keeper Keeper, height int64, txID common.TxID, txs common.Txs, eventStatus EventStatus) {
-
 }
 
 // AddEvent add an event to block event

@@ -232,6 +232,16 @@ func (k KVStoreDummy) SetBanVoter(_ sdk.Context, _ BanVoter) {}
 func (k KVStoreDummy) GetBanVoter(_ sdk.Context, _ sdk.AccAddress) (BanVoter, error) {
 	return BanVoter{}, kaboom
 }
+func (k KVStoreDummy) GetBlockEvents(ctx sdk.Context, height int64) (*BlockEvents, error) {
+	return nil, kaboom
+}
+
+func (k KVStoreDummy) GetBlockEventsIterator(ctx sdk.Context) sdk.Iterator {
+	return nil
+}
+
+func (k KVStoreDummy) SetBlockEvents(ctx sdk.Context, blockEvents *BlockEvents) {
+}
 
 // a mock sdk.Iterator implementation for testing purposes
 type DummyIterator struct {
@@ -280,15 +290,4 @@ func (iter *DummyIterator) Error() error {
 
 func (iter *DummyIterator) Domain() (start, end []byte) {
 	return nil, nil
-}
-
-func (iter *DummyIterator) GetBlockEvents(ctx sdk.Context, height int64) (*BlockEvents, error) {
-	return nil, kaboom
-}
-
-func (iter *DummyIterator) GetBlockEventsIterator(ctx sdk.Context) sdk.Iterator {
-	return nil
-}
-
-func (iter *DummyIterator) SetBlockEvents(ctx sdk.Context, blockEvents *BlockEvents) {
 }
