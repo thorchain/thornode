@@ -9,10 +9,6 @@ variables:
   DOCKER_TLS_CERTDIR: "/certs"
   DOCKER_HOST: tcp://docker:2376
 
-default-job:
-  tags:
-    - thorchain
-
 before_script:
   - mkdir -p .cache
   - export GOPATH="$CI_PROJECT_DIR/.cache"
@@ -26,6 +22,8 @@ stages:
 
 unit_tests:
   stage: test
+  tags:
+    - thorchain
   except:
     - schedules
   coverage: '/total:\s+\(statements\)\s+(\d+.\d+\%)/'
@@ -40,6 +38,8 @@ unit_tests:
 lint_code:
   image: golangci/golangci-lint
   stage: test
+  tags:
+    - thorchain
   except:
     - schedules
   before_script:
@@ -51,6 +51,8 @@ lint_code:
 build-thornode:
   stage: build
   image: docker:stable
+  tags:
+    - thorchain
   only:
     - build
   services:
@@ -67,6 +69,8 @@ build-thornode:
 build-thornode-nightly:
   stage: build
   image: docker:stable
+  tags:
+    - thorchain
   only:
     - master
   services:
@@ -112,6 +116,8 @@ smoke-test:thornode:
 deploy:
   #stage: deploy
   image: docker/compose:alpine-1.25.4
+  tags:
+    - thorchain
   only:
     - schedules
   services:
@@ -131,6 +137,8 @@ deploy-lambda:
   stage: deploy
   only:
     - master
+  tags:
+    - thorchain
 
   before_script:
     - python -V
