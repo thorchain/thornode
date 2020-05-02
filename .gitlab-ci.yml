@@ -101,7 +101,7 @@ smoke-test:thornode:
     - apk add git make
     - git clone --single-branch -b $CI_COMMIT_BRANCH https://gitlab.com/thorchain/heimdall.git || git clone --single-branch -b master https://gitlab.com/thorchain/heimdall.git
     - (git clone --single-branch -b $CI_COMMIT_BRANCH https://gitlab.com/thorchain/midgard.git && cd midgard && make docker-gitlab-build && cd ..) || true
-    - make -C build/docker reset-mocknet-standalone
+    - DOCKER_TLS_CERTDIR="/certs" make -C build/docker reset-mocknet-standalone
   except:
     - schedules
   environment:
@@ -111,7 +111,7 @@ smoke-test:thornode:
     - make build
     - make smoke
   after_script:
-    - ./scripts/docker_logs.sh
+    - DOCKER_TLS_CERTDIR="/certs" ./scripts/docker_logs.sh
 
 deploy:
   #stage: deploy
