@@ -60,7 +60,7 @@ func GetMetricForTest(c *C) *metrics.Metrics {
 	return m
 }
 
-func (s *BitcoinSuite) SetUpSuite(c *C) {
+func (s *BitcoinSuite) SetUpTest(c *C) {
 	s.m = GetMetricForTest(c)
 	s.cfg = config.ChainConfiguration{
 		ChainID:     "BTC",
@@ -127,7 +127,7 @@ func (s *BitcoinSuite) SetUpSuite(c *C) {
 	c.Assert(s.client, NotNil)
 }
 
-func (s *BitcoinSuite) TearDownSuite(c *C) {
+func (s *BitcoinSuite) TearDownTest(c *C) {
 	s.server.Close()
 }
 
