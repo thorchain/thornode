@@ -107,6 +107,7 @@ func getHandlerMapping(keeper Keeper,
 	m[MsgTssKeysignFail{}.Type()] = NewTssKeysignHandler(keeper)
 	m[MsgMigrate{}.Type()] = NewMigrateHandler(keeper)
 	m[MsgRagnarok{}.Type()] = NewRagnarokHandler(keeper)
+	m[MsgErrataTx{}.Type()] = NewErrataTxHandler(keeper)
 	return m
 }
 
