@@ -31,7 +31,6 @@ unit_tests:
     SignerName: "statechain"
     SignerPasswd: "password"
   script:
-    - docker info
     - go test -tags testnet -mod=readonly -v -coverprofile=coverage.out ./...
     - go tool cover -func=coverage.out
     - go tool cover -html=coverage.out -o coverage.html
