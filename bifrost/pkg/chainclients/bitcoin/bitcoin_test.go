@@ -105,7 +105,7 @@ func (s *BitcoinSuite) SetUpSuite(c *C) {
 		case r.Method == "getblockhash":
 			httpTestHandler(c, rw, "../../../../test/fixtures/btc/blockhash.json")
 		case r.Method == "getblock":
-			httpTestHandler(c, rw, "../../../../test/fixtures/btc/block.json")
+			httpTestHandler(c, rw, "../../../../test/fixtures/btc/block_verbose.json")
 		case r.Method == "getrawtransaction":
 			if r.Params[0] == "5b0876dcc027d2f0c671fc250460ee388df39697c3ff082007b6ddd9cb9a7513" {
 				httpTestHandler(c, rw, "../../../../test/fixtures/btc/tx-5b08.json")
@@ -525,8 +525,13 @@ func (s *BitcoinSuite) TestGetAccount(c *C) {
 		Value:       10,
 		BlockHeight: 0,
 	}
-	s.client.utxoAccessor.AddUTXO(utxo)
-	defer s.client.utxoAccessor.RemoveUTXO(utxo.GetKey())
+	blockMeta := NewBlockMeta("000000000000008a0da55afa8432af3b15c225cc7e04d32f0de912702dd9e2ae",
+		100,
+		"0000000000000068f0710c510e94bd29aa624745da43e32a1de887387306bfda")
+
+	blockMeta.AddUTXO(utxo)
+	c.Assert(s.client.blockMetaAccessor.SaveBlockMeta(blockMeta.Height, blockMeta), IsNil)
+
 	h2, _ := chainhash.NewHashFromStr("819e927b0377feae269e5bcdca3b194eb4bae60d6b5c32004bd878326efd31e4")
 	utxo1 := UnspentTransactionOutput{
 		TxID:        *h2,
@@ -534,8 +539,13 @@ func (s *BitcoinSuite) TestGetAccount(c *C) {
 		Value:       1000,
 		BlockHeight: 1,
 	}
-	s.client.utxoAccessor.AddUTXO(utxo1)
-	defer s.client.utxoAccessor.RemoveUTXO(utxo1.GetKey())
+	blockMeta1 := NewBlockMeta("0000000000000031c2229f160c0aa0c9530045b01331b90b5ac23f1f41ee2981",
+		101,
+		"000000001ab8a8484eb89f04b87d90eb88e2cbb2829e84eb36b966dcb28af90b")
+
+	blockMeta1.AddUTXO(utxo1)
+	c.Assert(s.client.blockMetaAccessor.SaveBlockMeta(blockMeta1.Height, blockMeta1), IsNil)
+
 	acct1, err := s.client.GetAccount("")
 	c.Assert(err, IsNil)
 	c.Assert(acct1.Coins, HasLen, 1)
@@ -543,7 +553,6 @@ func (s *BitcoinSuite) TestGetAccount(c *C) {
 }
 
 func (s *BitcoinSuite) TestOnObservedTxIn(c *C) {
-	utxoAccessor := s.client.utxoAccessor
 	pkey := ttypes.GetRandomPubKey()
 	txIn := types.TxIn{
 		BlockHeight: "1",
@@ -562,9 +571,14 @@ func (s *BitcoinSuite) TestOnObservedTxIn(c *C) {
 			},
 		},
 	}
+	blockMeta := NewBlockMeta("000000001ab8a8484eb89f04b87d90eb88e2cbb2829e84eb36b966dcb28af90b", 1, "00000000ffa57c95f4f226f751114e9b24fdf8dbe2dbc02a860da9320bebd63e")
+	c.Assert(s.client.blockMetaAccessor.SaveBlockMeta(blockMeta.Height, blockMeta), IsNil)
 	txID, _ := chainhash.NewHashFromStr("31f8699ce9028e9cd37f8a6d58a79e614a96e3fdd0f58be5fc36d2d95484716f")
 	s.client.OnObservedTxIn(txIn.TxArray[0], 1)
-	utxos, err := utxoAccessor.GetUTXOs(pkey)
+	blockMeta, err := s.client.blockMetaAccessor.GetBlockMeta(1)
+	c.Assert(err, IsNil)
+	c.Assert(blockMeta, NotNil)
+	utxos := blockMeta.GetUTXOs(pkey)
 	c.Assert(err, IsNil)
 	c.Assert(len(utxos), Equals, 1)
 	c.Assert(utxos[0].TxID, Equals, *txID)
@@ -588,18 +602,19 @@ func (s *BitcoinSuite) TestOnObservedTxIn(c *C) {
 			},
 		},
 	}
+	blockMeta = NewBlockMeta("000000001ab8a8484eb89f04b87d90eb88e2cbb2829e84eb36b966dcb28af90b", 2, "00000000ffa57c95f4f226f751114e9b24fdf8dbe2dbc02a860da9320bebd63e")
+	c.Assert(s.client.blockMetaAccessor.SaveBlockMeta(blockMeta.Height, blockMeta), IsNil)
 	txID, _ = chainhash.NewHashFromStr("24ed2d26fd5d4e0e8fa86633e40faf1bdfc8d1903b1cd02855286312d48818a2")
 	s.client.OnObservedTxIn(txIn.TxArray[0], 2)
-	utxos, err = utxoAccessor.GetUTXOs(pkey)
+	blockMeta, err = s.client.blockMetaAccessor.GetBlockMeta(2)
 	c.Assert(err, IsNil)
-	c.Assert(len(utxos), Equals, 2)
+	c.Assert(blockMeta, NotNil)
+	utxos = blockMeta.GetUTXOs(pkey)
+
+	c.Assert(len(utxos), Equals, 1)
 	c.Assert(utxos[0].TxID, Equals, *txID)
 	c.Assert(utxos[0].N, Equals, uint32(0))
 	c.Assert(utxos[0].Value, Equals, float64(0.00123456))
-	txID, _ = chainhash.NewHashFromStr("31f8699ce9028e9cd37f8a6d58a79e614a96e3fdd0f58be5fc36d2d95484716f")
-	c.Assert(utxos[1].TxID, Equals, *txID)
-	c.Assert(utxos[1].N, Equals, uint32(0))
-	c.Assert(utxos[1].Value, Equals, float64(1.23456789))
 
 	txIn = types.TxIn{
 		BlockHeight: "3",
@@ -628,10 +643,17 @@ func (s *BitcoinSuite) TestOnObservedTxIn(c *C) {
 			},
 		},
 	}
+	blockMeta = NewBlockMeta("000000001ab8a8484eb89f04b87d90eb88e2cbb2829e84eb36b966dcb28af90b", 3, "00000000ffa57c95f4f226f751114e9b24fdf8dbe2dbc02a860da9320bebd63e")
+	c.Assert(s.client.blockMetaAccessor.SaveBlockMeta(blockMeta.Height, blockMeta), IsNil)
 	for _, item := range txIn.TxArray {
 		s.client.OnObservedTxIn(item, 3)
 	}
-	utxos, err = utxoAccessor.GetUTXOs(pkey)
+
+	blockMeta, err = s.client.blockMetaAccessor.GetBlockMeta(3)
 	c.Assert(err, IsNil)
-	c.Assert(len(utxos), Equals, 4)
+	c.Assert(blockMeta, NotNil)
+	utxos = blockMeta.GetUTXOs(pkey)
+	utxos = blockMeta.GetUTXOs(pkey)
+	c.Assert(err, IsNil)
+	c.Assert(len(utxos), Equals, 2)
 }

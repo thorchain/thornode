@@ -27,17 +27,20 @@ import (
 	"gitlab.com/thorchain/thornode/common"
 )
 
+// BlockCacheSize the number of block meta that get store in storage.
+const BlockCacheSize = 100
+
 // Client observes bitcoin chain and allows to sign and broadcast tx
 type Client struct {
-	logger       zerolog.Logger
-	cfg          config.ChainConfiguration
-	client       *rpcclient.Client
-	chain        common.Chain
-	privateKey   *btcec.PrivateKey
-	blockScanner *blockscanner.BlockScanner
-	utxoAccessor UnspentTransactionOutputAccessor
-	ksWrapper    *KeySignWrapper
-	bridge       *thorclient.ThorchainBridge
+	logger            zerolog.Logger
+	cfg               config.ChainConfiguration
+	client            *rpcclient.Client
+	chain             common.Chain
+	privateKey        *btcec.PrivateKey
+	blockScanner      *blockscanner.BlockScanner
+	blockMetaAccessor BlockMetaAccessor
+	ksWrapper         *KeySignWrapper
+	bridge            *thorclient.ThorchainBridge
 }
 
 // NewClient generates a new Client
@@ -94,7 +97,7 @@ func NewClient(thorKeys *thorclient.Keys, cfg config.ChainConfiguration, server 
 		return c, fmt.Errorf("fail to create block scanner: %w", err)
 	}
 
-	c.utxoAccessor, err = NewLevelDBUTXOAccessor(storage.GetInternalDb())
+	c.blockMetaAccessor, err = NewLevelDBBlockMetaAccessor(storage.GetInternalDb())
 	if err != nil {
 		return c, fmt.Errorf("fail to create utxo accessor: %w", err)
 	}
@@ -140,14 +143,17 @@ func (c *Client) GetAddress(poolPubKey common.PubKey) string {
 // GetAccount returns account with balance for an address
 func (c *Client) GetAccount(pkey common.PubKey) (common.Account, error) {
 	acct := common.Account{}
-	utxoes, err := c.utxoAccessor.GetUTXOs(pkey)
+	blockMetas, err := c.blockMetaAccessor.GetBlockMetas()
 	if err != nil {
-		return acct, fmt.Errorf("fail to get UTXO: %w", err)
+		return acct, fmt.Errorf("fail to get block meta: %w", err)
 	}
 	total := 0.0
-	for _, item := range utxoes {
-		total += item.Value
+	for _, item := range blockMetas {
+		for _, utxo := range item.GetUTXOs(pkey) {
+			total += utxo.Value
+		}
 	}
+
 	totalAmt, err := btcutil.NewAmount(total)
 	if err != nil {
 		return acct, fmt.Errorf("fail to convert total amount: %w", err)
@@ -169,11 +175,18 @@ func (c *Client) OnObservedTxIn(txIn types.TxInItem, blockHeight int64) {
 		return
 	}
 	value := float64(txIn.Coins.GetCoin(common.BTCAsset).Amount.Uint64()) / common.One
-	utxo := NewUnspentTransactionOutput(*hash, 0, value, blockHeight, txIn.ObservedVaultPubKey)
-	err = c.utxoAccessor.AddUTXO(utxo)
-	if err != nil {
-		c.logger.Error().Err(err).Str("txID", txIn.Tx).Msg("fail to add spendable utxo to storage")
+	blockMeta, err := c.blockMetaAccessor.GetBlockMeta(blockHeight)
+	if nil != err {
+		c.logger.Err(err).Msgf("fail to get block meta on block height(%d)", blockHeight)
+	}
+	if nil == blockMeta {
+		c.logger.Error().Msgf("can't get block meta for height: %d", blockHeight)
 		return
+	}
+	utxo := NewUnspentTransactionOutput(*hash, 0, value, blockHeight, txIn.ObservedVaultPubKey)
+	blockMeta.AddUTXO(utxo)
+	if err := c.blockMetaAccessor.SaveBlockMeta(blockHeight, blockMeta); err != nil {
+		c.logger.Err(err).Msgf("fail to save block meta to storage,block height(%d)", blockHeight)
 	}
 }
 
@@ -187,6 +200,30 @@ func (c *Client) FetchTxs(height int64) (types.TxIn, error) {
 			return types.TxIn{}, btypes.UnavailableBlock
 		}
 		return types.TxIn{}, fmt.Errorf("fail to get block: %w", err)
+	}
+	// TODO here try to detect reorg
+
+	blockMeta, err := c.blockMetaAccessor.GetBlockMeta(block.Height)
+	if err != nil {
+		return types.TxIn{}, fmt.Errorf("fail to get block meta from storage: %w", err)
+	}
+	if blockMeta == nil {
+		blockMeta = NewBlockMeta(block.PreviousHash, block.Height, block.Hash)
+	} else {
+		blockMeta.PreviousHash = block.PreviousHash
+		blockMeta.BlockHash = block.Hash
+	}
+
+	if err := c.blockMetaAccessor.SaveBlockMeta(block.Height, blockMeta); err != nil {
+		return types.TxIn{}, fmt.Errorf("fail to save block meta into storage: %w", err)
+	}
+	pruneHeight := height - BlockCacheSize
+	if pruneHeight > 0 {
+		defer func() {
+			if err := c.blockMetaAccessor.PruneBlockMeta(pruneHeight); err != nil {
+				c.logger.Err(err).Msgf("fail to prune block meta, height(%d)", pruneHeight)
+			}
+		}()
 	}
 	txs, err := c.extractTxs(block)
 	if err != nil {
