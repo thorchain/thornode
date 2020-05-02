@@ -42,6 +42,7 @@ type Client struct {
 	ksWrapper         *KeySignWrapper
 	bridge            *thorclient.ThorchainBridge
 	globalErrataQueue chan<- types.ErrataBlock
+	nodePubKey        common.PubKey
 }
 
 // NewClient generates a new Client
@@ -73,6 +74,10 @@ func NewClient(thorKeys *thorclient.Keys, cfg config.ChainConfiguration, server 
 	if err != nil {
 		return nil, fmt.Errorf("fail to create keysign wrapper: %w", err)
 	}
+	nodePubKey, err := common.NewPubKeyFromCrypto(thorKeys.GetSignerInfo().GetPubKey())
+	if err != nil {
+		return nil, fmt.Errorf("fail to get the node pubkey: %w", err)
+	}
 
 	c := &Client{
 		logger:     log.Logger.With().Str("module", "bitcoin").Logger(),
@@ -82,6 +87,7 @@ func NewClient(thorKeys *thorclient.Keys, cfg config.ChainConfiguration, server 
 		privateKey: btcPrivateKey,
 		ksWrapper:  ksWrapper,
 		bridge:     bridge,
+		nodePubKey: nodePubKey,
 	}
 
 	var path string // if not set later, will in memory storage
