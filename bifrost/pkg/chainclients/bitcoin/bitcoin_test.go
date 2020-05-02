@@ -105,7 +105,7 @@ func (s *BitcoinSuite) SetUpTest(c *C) {
 		case r.Method == "getblockhash":
 			httpTestHandler(c, rw, "../../../../test/fixtures/btc/blockhash.json")
 		case r.Method == "getblock":
-			httpTestHandler(c, rw, "../../../../test/fixtures/btc/block.json")
+			httpTestHandler(c, rw, "../../../../test/fixtures/btc/block_verbose.json")
 		case r.Method == "gettransaction":
 			if r.Params[0] == "27de3e1865c098cd4fded71bae1e8236fd27ce5dce6e524a9ac5cd1a17b5c241" {
 				httpTestHandler(c, rw, "../../../../test/fixtures/btc/tx-c241.json")
