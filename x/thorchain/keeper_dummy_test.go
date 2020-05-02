@@ -249,7 +249,7 @@ func NewDummyIterator() *DummyIterator {
 	}
 }
 
-func (iter *DummyIterator) AddItem(key []byte, value []byte) {
+func (iter *DummyIterator) AddItem(key, value []byte) {
 	iter.keys = append(iter.keys, key)
 	iter.values = append(iter.values, value)
 }
@@ -278,6 +278,6 @@ func (iter *DummyIterator) Error() error {
 	return iter.err
 }
 
-func (iter *DummyIterator) Domain() (start []byte, end []byte) {
+func (iter *DummyIterator) Domain() (start, end []byte) {
 	return nil, nil
 }
