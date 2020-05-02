@@ -79,6 +79,7 @@ type AppModule struct {
 	versionedVaultManager    VersionedVaultManager
 	versionedGasManager      VersionedGasManager
 	versionedObserverManager VersionedObserverManager
+	versionedEventManager    VersionedEventManager
 }
 
 // NewAppModule creates a new AppModule Object
@@ -96,6 +97,7 @@ func NewAppModule(k Keeper, bankKeeper bank.Keeper, supplyKeeper supply.Keeper) 
 		versionedVaultManager:    versionedVaultMgr,
 		versionedGasManager:      NewVersionedGasMgr(),
 		versionedObserverManager: NewVersionedObserverMgr(),
+		versionedEventManager:    NewVersionedEventMgr(),
 	}
 }
 
@@ -132,6 +134,13 @@ func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 		return
 	}
 	obMgr.BeginBlock()
+
+	eventMgr, err := am.versionedEventManager.GetEventManager(ctx, version)
+	if err != nil {
+		ctx.Logger().Error(fmt.Sprintf("Event manager that compatible with version :%s is not available", version))
+		return
+	}
+	eventMgr.BeginBlock(ctx)
 
 	gasMgr, err := am.versionedGasManager.GetGasManager(ctx, version)
 	if err != nil {
@@ -244,6 +253,13 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 		ctx.Logger().Error("unable to fund yggdrasil", "error", err)
 	}
 	gasMgr.EndBlock(ctx, am.keeper)
+	eventMgr, err := am.versionedEventManager.GetEventManager(ctx, version)
+	if err != nil {
+		ctx.Logger().Error(fmt.Sprintf("Event manager that compatible with version :%s is not available", version))
+	}
+	if eventMgr != nil {
+		eventMgr.EndBlock(ctx, am.keeper)
+	}
 	return validators
 }
 
