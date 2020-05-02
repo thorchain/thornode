@@ -60,7 +60,7 @@ func GetMetricForTest(c *C) *metrics.Metrics {
 	return m
 }
 
-func (s *BitcoinSuite) SetUpSuite(c *C) {
+func (s *BitcoinSuite) SetUpTest(c *C) {
 	s.m = GetMetricForTest(c)
 	s.cfg = config.ChainConfiguration{
 		ChainID:     "BTC",
@@ -106,6 +106,10 @@ func (s *BitcoinSuite) SetUpSuite(c *C) {
 			httpTestHandler(c, rw, "../../../../test/fixtures/btc/blockhash.json")
 		case r.Method == "getblock":
 			httpTestHandler(c, rw, "../../../../test/fixtures/btc/block_verbose.json")
+		case r.Method == "gettransaction":
+			if r.Params[0] == "27de3e1865c098cd4fded71bae1e8236fd27ce5dce6e524a9ac5cd1a17b5c241" {
+				httpTestHandler(c, rw, "../../../../test/fixtures/btc/tx-c241.json")
+			}
 		case r.Method == "getrawtransaction":
 			if r.Params[0] == "5b0876dcc027d2f0c671fc250460ee388df39697c3ff082007b6ddd9cb9a7513" {
 				httpTestHandler(c, rw, "../../../../test/fixtures/btc/tx-5b08.json")
@@ -123,7 +127,7 @@ func (s *BitcoinSuite) SetUpSuite(c *C) {
 	c.Assert(s.client, NotNil)
 }
 
-func (s *BitcoinSuite) TearDownSuite(c *C) {
+func (s *BitcoinSuite) TearDownTest(c *C) {
 	s.server.Close()
 }
 
@@ -656,4 +660,31 @@ func (s *BitcoinSuite) TestOnObservedTxIn(c *C) {
 	utxos = blockMeta.GetUTXOs(pkey)
 	c.Assert(err, IsNil)
 	c.Assert(len(utxos), Equals, 2)
+}
+
+func (s *BitcoinSuite) TestProcessReOrg(c *C) {
+	// can't get previous block meta should not error
+	var result btcjson.GetBlockVerboseTxResult
+	blockContent, err := ioutil.ReadFile("../../../../test/fixtures/btc/block.json")
+	c.Assert(err, IsNil)
+	c.Assert(json.Unmarshal(blockContent, &result), IsNil)
+	// should not trigger re-org process
+	c.Assert(s.client.processReorg(&result), IsNil)
+
+	// add one UTXO which will trigger the re-org process next
+	previousHeight := result.Height - 1
+	blockMeta := NewBlockMeta(ttypes.GetRandomTxHash().String(), previousHeight, ttypes.GetRandomTxHash().String())
+	hash, err := chainhash.NewHashFromStr("27de3e1865c098cd4fded71bae1e8236fd27ce5dce6e524a9ac5cd1a17b5c241")
+	utxo := NewUnspentTransactionOutput(*hash, 0, 1.5, previousHeight, ttypes.GetRandomPubKey())
+	blockMeta.AddUTXO(utxo)
+	c.Assert(s.client.blockMetaAccessor.SaveBlockMeta(previousHeight, blockMeta), IsNil)
+	s.client.globalErrataQueue = make(chan types.ErrataBlock, 1)
+	c.Assert(s.client.processReorg(&result), IsNil)
+	// make sure there is errata block in the queue
+	c.Assert(s.client.globalErrataQueue, HasLen, 1)
+	blockMeta, err = s.client.blockMetaAccessor.GetBlockMeta(previousHeight)
+	c.Assert(err, IsNil)
+	c.Assert(blockMeta, NotNil)
+	// make sure the UTXO had been removed , thus signer won't spend it
+	c.Assert(blockMeta.UnspentTransactionOutputs, HasLen, 0)
 }
