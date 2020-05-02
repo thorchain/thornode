@@ -16,19 +16,19 @@ func NewDummyEventMgr() *DummyEventMgr {
 }
 
 func (m *DummyEventMgr) BeginBlock(ctx sdk.Context) {
-
 }
+
 func (m *DummyEventMgr) EndBlock(ctx sdk.Context, keeper Keeper) {
-
 }
+
 func (m *DummyEventMgr) GetBlockEvents(ctx sdk.Context, keeper Keeper, height int64) (*BlockEvents, error) {
 	return nil, nil
 }
+
 func (m *DummyEventMgr) CompleteEvents(ctx sdk.Context, keeper Keeper, height int64, txID common.TxID, txs common.Txs, eventStatus EventStatus) {
-
 }
-func (m *DummyEventMgr) AddEvent(ctx sdk.Context, event Event) {
 
+func (m *DummyEventMgr) AddEvent(ctx sdk.Context, event Event) {
 }
 
 type DummyVersionedEventMgr struct{}
