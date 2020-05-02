@@ -15,7 +15,7 @@ func calcPoolDeficit(stakerDeficit, totalFees, poolFees sdk.Uint) sdk.Uint {
 func calcBlockRewards(totalStaked, totalBonded, totalReserve, totalContrib, totalLiquidityFees sdk.Uint, emissionCurve, blocksPerYear int64) (sdk.Uint, sdk.Uint, sdk.Uint) {
 	surplusReserve := sdk.ZeroUint()
 	if totalReserve.GT(totalContrib) {
-		surplusReserve = totalReserve.Sub(totalContrib)
+		// surplusReserve = totalReserve.Sub(totalContrib)
 		totalReserve = totalReserve.Sub(surplusReserve)
 	}
 	// Block Rewards will take the latest reserve, divide it by the emission

@@ -97,13 +97,6 @@ func (k KVStore) UpdateVaultData(ctx sdk.Context, constAccessor constants.Consta
 		return nil // If no Rune is staked, then don't give out block rewards.
 	}
 
-	// First subsidise the gas that was consumed from reserves, any
-	// reserves we take, minus from the gas we owe.
-	vault.TotalReserve, vault.Gas, err = subtractGas(ctx, k, vault.TotalReserve, vault.Gas, gasManager)
-	if err != nil {
-		return fmt.Errorf("fail to subtract gas from reserve: %w", err)
-	}
-
 	// get total liquidity fees
 	totalLiquidityFees, err := k.GetTotalLiquidityFees(ctx, currentHeight)
 	if err != nil {
@@ -136,7 +129,6 @@ func (k KVStore) UpdateVaultData(ctx sdk.Context, constAccessor constants.Consta
 
 	// Move Rune from the Reserve to the Bond and Pool Rewards
 	vault.TotalReserve = common.SafeSub(vault.TotalReserve, bondReward.Add(totalPoolRewards))
-	fmt.Printf(">>>>>>>> New Reserve: %d\n", vault.TotalReserve.Uint64())
 	vault.BondRewardRune = vault.BondRewardRune.Add(bondReward) // Add here for individual Node collection later
 
 	var evtPools []PoolAmt
@@ -223,41 +215,6 @@ func getTotalActiveNodeWithBond(ctx sdk.Context, k Keeper) (int64, error) {
 		}
 	}
 	return total, nil
-}
-
-// substractGas to subsidise the pool with RUNE for the gas they have spent
-func subtractGas(ctx sdk.Context, keeper Keeper, val sdk.Uint, gas common.Gas, gasManager GasManager) (sdk.Uint, common.Gas, error) {
-	for i, coin := range gas {
-		// if the coin is zero amount, don't need to do anything
-		if coin.Amount.IsZero() {
-			continue
-		}
-
-		pool, err := keeper.GetPool(ctx, coin.Asset)
-		if err != nil {
-			return sdk.ZeroUint(), nil, fmt.Errorf("fail to get pool(%s): %w", coin.Asset, err)
-		}
-		// if the asset pool is not enabled, then THORNode will have no way to figure out the RUNE value of the asset, thus can't subsidise the pool for the gas spent
-		if !pool.IsEnabled() {
-			continue
-		}
-		runeGas := pool.AssetValueInRune(coin.Amount) // Convert to Rune (gas will never be RUNE)
-		// If Rune owed now exceeds the Total Reserve, return it all
-		if runeGas.GT(val) {
-			runeGas = val
-		}
-		gas[i].Amount = common.SafeSub(gas[i].Amount, pool.RuneValueInAsset(runeGas))
-		val = common.SafeSub(val, runeGas)               // Deduct from the Reserve.
-		pool.BalanceRune = pool.BalanceRune.Add(runeGas) // Add to the pool
-
-		if err := keeper.SetPool(ctx, pool); err != nil {
-			return sdk.ZeroUint(), nil, fmt.Errorf("fail to set pool(%s): %w", coin.Asset, err)
-		}
-
-		gasManager.AddRune(coin.Asset, runeGas) // Declare for the event
-	}
-
-	return val, gas, nil
 }
 
 // Pays out Rewards

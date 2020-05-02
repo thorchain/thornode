@@ -16,13 +16,10 @@ func (s TxOutStoreSuite) TestAddGasFees(c *C) {
 	ctx, k := setupKeeperForTest(c)
 	tx := GetRandomObservedTx()
 
-	err := AddGasFees(ctx, k, tx, NewDummyGasManager())
+	gasMgr := NewGasMgr()
+	err := AddGasFees(ctx, k, tx, gasMgr)
 	c.Assert(err, IsNil)
-	vault, err := k.GetVaultData(ctx)
-	c.Assert(err, IsNil)
-	c.Assert(vault.Gas, HasLen, 1)
-	c.Check(vault.Gas[0].Asset.Equals(common.BNBAsset), Equals, true)
-	c.Check(vault.Gas[0].Amount.Equal(sdk.NewUint(37500)), Equals, true)
+	c.Assert(gasMgr.gas, HasLen, 1)
 }
 
 func (s TxOutStoreSuite) TestAddOutTxItem(c *C) {
