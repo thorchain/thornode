@@ -233,6 +233,17 @@ func (k KVStoreDummy) GetBanVoter(_ sdk.Context, _ sdk.AccAddress) (BanVoter, er
 	return BanVoter{}, kaboom
 }
 
+func (k KVStoreDummy) GetBlockEvents(ctx sdk.Context, height int64) (*BlockEvents, error) {
+	return nil, kaboom
+}
+
+func (k KVStoreDummy) GetBlockEventsIterator(ctx sdk.Context) sdk.Iterator {
+	return nil
+}
+
+func (k KVStoreDummy) SetBlockEvents(ctx sdk.Context, blockEvents *BlockEvents) {
+}
+
 // a mock sdk.Iterator implementation for testing purposes
 type DummyIterator struct {
 	sdk.Iterator
