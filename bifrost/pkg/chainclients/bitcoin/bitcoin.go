@@ -253,6 +253,13 @@ func (c *Client) reConfirmTx() error {
 			Height: blockMeta.Height,
 			Txs:    errataTxs,
 		}
+		// Let's get the block again to fix the block hash
+		r, err := c.getBlock(blockMeta.Height)
+		if err != nil {
+			c.logger.Err(err).Msgf("fail to get block verbose tx result: %d", blockMeta.Height)
+		}
+		blockMeta.PreviousHash = r.PreviousHash
+		blockMeta.BlockHash = r.Hash
 		if err := c.blockMetaAccessor.SaveBlockMeta(blockMeta.Height, blockMeta); err != nil {
 			c.logger.Err(err).Msgf("fail to save block meta of height: %d ", blockMeta.Height)
 		}
