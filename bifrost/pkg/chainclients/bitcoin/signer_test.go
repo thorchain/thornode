@@ -96,7 +96,7 @@ func (s *BitcoinSignerSuite) SetUpTest(c *C) {
 			case "getbestblockhash":
 				httpTestHandler(c, rw, "../../../../test/fixtures/btc/getbestblockhash.json")
 			case "getblock":
-				httpTestHandler(c, rw, "../../../../test/fixtures/btc/getblock.json")
+				httpTestHandler(c, rw, "../../../../test/fixtures/btc/block.json")
 			case "getrawtransaction":
 				httpTestHandler(c, rw, "../../../../test/fixtures/btc/tx.json")
 			case "getinfo":
