@@ -192,11 +192,14 @@ func (c *Client) OnObservedTxIn(txIn types.TxInItem, blockHeight int64) {
 	}
 }
 
-func (c *Client) hasReorg(block *btcjson.GetBlockVerboseTxResult) error {
+func (c *Client) processReorg(block *btcjson.GetBlockVerboseTxResult) error {
 	previousHeight := block.Height - 1
 	prevBlockMeta, err := c.blockMetaAccessor.GetBlockMeta(previousHeight)
 	if err != nil {
 		return fmt.Errorf("fail to get block meta of height(%d) : %w", previousHeight, err)
+	}
+	if prevBlockMeta == nil {
+		return nil
 	}
 	// the block's previous hash need to be the same as the block hash chain client recorded in block meta
 	// blockMetas[PreviousHeight].BlockHash == Block.PreviousHash
@@ -208,6 +211,11 @@ func (c *Client) hasReorg(block *btcjson.GetBlockVerboseTxResult) error {
 	return c.reConfirmTx()
 }
 
+// reConfirmTx will be kicked off only when chain client detected a re-org on bitcoin chain
+// it will read through all the block meta data from local storage , and go through all the UTXOes.
+// For each UTXO , it will send a RPC request to bitcoin chain , double check whether the TX exist or not
+// if the tx still exist , then it is all good, if a transaction previous we detected , however doesn't exist anymore , that means
+// the transaction had been removed from chain,  chain client should report to thorchain
 func (c *Client) reConfirmTx() error {
 	blockMetas, err := c.blockMetaAccessor.GetBlockMetas()
 	if err != nil {
@@ -220,14 +228,14 @@ func (c *Client) reConfirmTx() error {
 			result, err := c.client.GetTransaction(&utxo.TxID)
 			if err != nil {
 				if rpcErr, ok := err.(*btcjson.RPCError); ok && rpcErr.Code == btcjson.ErrRPCNoTxInfo {
-					// this means the tx had been broadcast to chain, it must be another signer finished quicker then us
-					// log error
+					// this means the tx doesn't exist in chain ,thus should errata it
 					errataTxs = append(errataTxs, types.ErrataTx{
 						TxID:  common.TxID(utxo.TxID.String()),
 						Chain: common.BTCChain,
 					})
-					// remove the UTXO from block meta
+					// remove the UTXO from block meta , so signer will not spend it
 					blockMeta.RemoveUTXO(utxo.GetKey())
+					continue
 				}
 			}
 			c.logger.Info().Msgf("block height: %d, tx: %s still exist", blockMeta.Height, result.TxID)
@@ -243,6 +251,7 @@ func (c *Client) reConfirmTx() error {
 			c.logger.Err(err).Msgf("fail to save block meta of height: %d ", blockMeta.Height)
 		}
 	}
+	return nil
 }
 
 // FetchTxs retrieves txs for a block height
@@ -256,7 +265,9 @@ func (c *Client) FetchTxs(height int64) (types.TxIn, error) {
 		}
 		return types.TxIn{}, fmt.Errorf("fail to get block: %w", err)
 	}
-
+	if err := c.processReorg(block); err != nil {
+		c.logger.Err(err).Msg("fail to process bitcoin re-org")
+	}
 	blockMeta, err := c.blockMetaAccessor.GetBlockMeta(block.Height)
 	if err != nil {
 		return types.TxIn{}, fmt.Errorf("fail to get block meta from storage: %w", err)
