@@ -39,6 +39,7 @@ type Keeper interface {
 	KeeperTxMarker
 	KeeperErrataTx
 	KeeperBanVoter
+	KeeperBlockEvent
 }
 
 // NOTE: Always end a dbPrefix with a slash ("/"). This is to ensure that there
@@ -77,6 +78,7 @@ const (
 	prefixErrataTx           dbPrefix = "errata/"
 	prefixBanVoter           dbPrefix = "ban/"
 	prefixNodeSlashPoints    dbPrefix = "slash/"
+	prefixBlockEvents        dbPrefix = "block_events/"
 )
 
 func dbError(ctx sdk.Context, wrapper string, err error) error {
