@@ -232,6 +232,7 @@ func (k KVStoreDummy) SetBanVoter(_ sdk.Context, _ BanVoter) {}
 func (k KVStoreDummy) GetBanVoter(_ sdk.Context, _ sdk.AccAddress) (BanVoter, error) {
 	return BanVoter{}, kaboom
 }
+
 func (k KVStoreDummy) GetBlockEvents(ctx sdk.Context, height int64) (*BlockEvents, error) {
 	return nil, kaboom
 }
