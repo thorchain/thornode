@@ -89,11 +89,10 @@ func (gm *GasMgr) ProcessGas(ctx sdk.Context, keeper Keeper) {
 		}
 		runeGas := pool.AssetValueInRune(gas.Amount) // Convert to Rune (gas will never be RUNE)
 		// If Rune owed now exceeds the Total Reserve, return it all
-		if runeGas.GT(vault.TotalReserve) {
-			continue // looks like we don't have enough in reserve to pay the fee
+		if runeGas.LT(vault.TotalReserve) {
+			vault.TotalReserve = common.SafeSub(vault.TotalReserve, runeGas) // Deduct from the Reserve.
+			pool.BalanceRune = pool.BalanceRune.Add(runeGas)                 // Add to the pool
 		}
-		vault.TotalReserve = common.SafeSub(vault.TotalReserve, runeGas) // Deduct from the Reserve.
-		pool.BalanceRune = pool.BalanceRune.Add(runeGas)                 // Add to the pool
 		pool.BalanceAsset = common.SafeSub(pool.BalanceAsset, gas.Amount)
 
 		if err := keeper.SetPool(ctx, pool); err != nil {
