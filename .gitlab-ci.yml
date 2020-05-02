@@ -9,8 +9,9 @@ variables:
   DOCKER_TLS_CERTDIR: "/certs"
   DOCKER_HOST: tcp://docker:2376
 
-tags:
-  - thorchain
+job:
+  tags:
+    - thorchain
 
 before_script:
   - mkdir -p .cache
