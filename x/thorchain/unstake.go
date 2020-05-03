@@ -34,7 +34,7 @@ func validateUnstake(ctx sdk.Context, keeper Keeper, msg MsgSetUnStake) error {
 
 // unstake withdraw all the asset
 // it returns runeAmt,assetAmount,units, lastUnstake,err
-func unstake(ctx sdk.Context, version semver.Version, keeper Keeper, msg MsgSetUnStake) (sdk.Uint, sdk.Uint, sdk.Uint, sdk.Uint, sdk.Error) {
+func unstake(ctx sdk.Context, version semver.Version, keeper Keeper, msg MsgSetUnStake, eventManager EventManager) (sdk.Uint, sdk.Uint, sdk.Uint, sdk.Uint, sdk.Error) {
 	if err := validateUnstake(ctx, keeper, msg); err != nil {
 		ctx.Logger().Error("msg unstake fail validation", "error", err)
 		return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), sdk.NewError(DefaultCodespace, CodeUnstakeFailValidation, err.Error())
@@ -118,6 +118,10 @@ func unstake(ctx sdk.Context, version semver.Version, keeper Keeper, msg MsgSetU
 
 	// Create a pool event if THORNode have no rune or assets
 	if pool.BalanceAsset.IsZero() || pool.BalanceRune.IsZero() {
+		poolEvt := NewEventPool(pool.Asset, PoolBootstrap)
+		if err := eventManager.EmitPoolEvent(ctx, keeper, common.BlankTxID, EventSuccess, poolEvt); nil != err {
+			ctx.Logger().Error("fail to emit pool event", "error", err)
+		}
 		pool.Status = PoolBootstrap
 	}
 

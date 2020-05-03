@@ -45,7 +45,9 @@ func (s *QuerierSuite) TestQueryKeysign(c *C) {
 
 	versionedTxOutStoreDummy := NewVersionedTxOutStoreDummy()
 	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(versionedTxOutStoreDummy)
-	validatorMgr := NewVersionedValidatorMgr(keeper, versionedTxOutStoreDummy, versionedVaultMgrDummy)
+	versionedEventManagerDummy := NewDummyVersionedEventMgr()
+
+	validatorMgr := NewVersionedValidatorMgr(keeper, versionedTxOutStoreDummy, versionedVaultMgrDummy, versionedEventManagerDummy)
 
 	querier := NewQuerier(keeper, validatorMgr)
 
@@ -64,7 +66,9 @@ func (s *QuerierSuite) TestQueryPool(c *C) {
 
 	versionedTxOutStoreDummy := NewVersionedTxOutStoreDummy()
 	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(versionedTxOutStoreDummy)
-	validatorMgr := NewVersionedValidatorMgr(keeper, versionedTxOutStoreDummy, versionedVaultMgrDummy)
+	versionedEventManagerDummy := NewDummyVersionedEventMgr()
+
+	validatorMgr := NewVersionedValidatorMgr(keeper, versionedTxOutStoreDummy, versionedVaultMgrDummy, versionedEventManagerDummy)
 
 	querier := NewQuerier(keeper, validatorMgr)
 	path := []string{"pools"}
@@ -112,7 +116,9 @@ func (s *QuerierSuite) TestQueryNodeAccounts(c *C) {
 
 	versionedTxOutStoreDummy := NewVersionedTxOutStoreDummy()
 	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(versionedTxOutStoreDummy)
-	validatorMgr := NewVersionedValidatorMgr(keeper, versionedTxOutStoreDummy, versionedVaultMgrDummy)
+	versionedEventManagerDummy := NewDummyVersionedEventMgr()
+
+	validatorMgr := NewVersionedValidatorMgr(keeper, versionedTxOutStoreDummy, versionedVaultMgrDummy, versionedEventManagerDummy)
 
 	querier := NewQuerier(keeper, validatorMgr)
 	path := []string{"nodeaccounts"}
@@ -162,7 +168,9 @@ func (s *QuerierSuite) TestQueryCompEvents(c *C) {
 
 	versionedTxOutStoreDummy := NewVersionedTxOutStoreDummy()
 	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(versionedTxOutStoreDummy)
-	validatorMgr := NewVersionedValidatorMgr(keeper, versionedTxOutStoreDummy, versionedVaultMgrDummy)
+	versionedEventManagerDummy := NewDummyVersionedEventMgr()
+
+	validatorMgr := NewVersionedValidatorMgr(keeper, versionedTxOutStoreDummy, versionedVaultMgrDummy, versionedEventManagerDummy)
 
 	querier := NewQuerier(keeper, validatorMgr)
 	path := []string{"comp_events_chain", "1", "BNB"}

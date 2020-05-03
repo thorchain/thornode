@@ -188,4 +188,5 @@ type (
 	EventGas              = types.EventGas
 	TxMarker              = types.TxMarker
 	TxMarkers             = types.TxMarkers
+	EventPool             = types.EventPool
 )

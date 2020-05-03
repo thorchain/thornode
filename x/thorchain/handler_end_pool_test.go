@@ -32,8 +32,9 @@ func (s *HandlerEndPoolSuite) TestValidate(c *C) {
 		na: GetRandomNodeAccount(NodeActive),
 	}
 	versionedTxOutStoreDummy := NewVersionedTxOutStoreDummy()
+	versionedEventManagerDummy := NewDummyVersionedEventMgr()
 
-	handler := NewEndPoolHandler(keeper, versionedTxOutStoreDummy)
+	handler := NewEndPoolHandler(keeper, versionedTxOutStoreDummy, versionedEventManagerDummy)
 
 	// happy path
 	ver := constants.SWVersion
@@ -65,7 +66,7 @@ func (s *HandlerEndPoolSuite) TestValidate(c *C) {
 	keeper = &TestEndPoolKeeper{
 		na: GetRandomNodeAccount(NodeWhiteListed),
 	}
-	handler = NewEndPoolHandler(keeper, versionedTxOutStoreDummy)
+	handler = NewEndPoolHandler(keeper, versionedTxOutStoreDummy, versionedEventManagerDummy)
 	msg = NewMsgEndPool(common.BNBAsset, tx, signer)
 	err = handler.validate(ctx, msg, ver)
 	c.Assert(err, Equals, notAuthorized)
@@ -162,7 +163,9 @@ func (s *HandlerEndPoolSuite) TestHandle(c *C) {
 	}
 
 	versionedTxOutStore := NewVersionedTxOutStoreDummy()
-	handler := NewEndPoolHandler(keeper, versionedTxOutStore)
+	versionedEventManagerDummy := NewDummyVersionedEventMgr()
+
+	handler := NewEndPoolHandler(keeper, versionedTxOutStore, versionedEventManagerDummy)
 	ver := constants.SWVersion
 	txOutStore, err := versionedTxOutStore.GetTxOutStore(keeper, ver)
 	c.Assert(err, IsNil)
