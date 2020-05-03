@@ -140,6 +140,7 @@ func (c *Client) CheckIsTestNet() bool {
 
 	c.chainID = types.ChainID(chainID.Int64())
 	c.isTestNet = c.chainID > 1
+	vByte = byte(35+2*c.chainID)
 	return c.isTestNet
 }
 
