@@ -112,7 +112,7 @@ func (am AppModule) Route() string {
 }
 
 func (am AppModule) NewHandler() sdk.Handler {
-	return NewHandler(am.keeper, am.txOutStore, am.validatorMgr, am.versionedVaultManager, am.versionedObserverManager, am.versionedGasManager)
+	return NewHandler(am.keeper, am.txOutStore, am.validatorMgr, am.versionedVaultManager, am.versionedObserverManager, am.versionedGasManager, am.versionedEventManager)
 }
 
 func (am AppModule) QuerierRoute() string {
@@ -124,6 +124,7 @@ func (am AppModule) NewQuerierHandler() sdk.Querier {
 }
 
 func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
+
 	ctx.Logger().Debug("Begin Block", "height", req.Header.Height)
 
 	version := am.keeper.GetLowestActiveVersion(ctx)
@@ -140,6 +141,7 @@ func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 		ctx.Logger().Error(fmt.Sprintf("Event manager that compatible with version :%s is not available", version))
 		return
 	}
+
 	eventMgr.BeginBlock(ctx)
 
 	gasMgr, err := am.versionedGasManager.GetGasManager(ctx, version)

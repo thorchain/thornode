@@ -13,12 +13,16 @@ import (
 
 // StakeHandler is to handle stake
 type StakeHandler struct {
-	keeper Keeper
+	keeper                Keeper
+	versionedEventManager VersionedEventManager
 }
 
 // NewStakeHandler create a new instance of StakeHandler
-func NewStakeHandler(keeper Keeper) StakeHandler {
-	return StakeHandler{keeper: keeper}
+func NewStakeHandler(keeper Keeper, versionedEventManager VersionedEventManager) StakeHandler {
+	return StakeHandler{
+		keeper:                keeper,
+		versionedEventManager: versionedEventManager,
+	}
 }
 
 func (h StakeHandler) validate(ctx sdk.Context, msg MsgSetStakeData, version semver.Version, constAccessor constants.ConstantValues) sdk.Error {
@@ -127,14 +131,14 @@ func (h StakeHandler) handle(ctx sdk.Context, msg MsgSetStakeData, version semve
 		return sdk.ErrUnknownRequest(fmt.Errorf("fail to process stake request: %w", err).Error())
 	}
 
-	if err := processStakeEvent(ctx, h.keeper, msg, stakeUnits, EventSuccess); err != nil {
+	if err := h.processStakeEvent(ctx, h.keeper, msg, stakeUnits, EventSuccess, version); err != nil {
 		return sdk.ErrInternal(fmt.Errorf("fail to save stake event: %w", err).Error())
 	}
 
 	return nil
 }
 
-func processStakeEvent(ctx sdk.Context, keeper Keeper, msg MsgSetStakeData, stakeUnits sdk.Uint, eventStatus EventStatus) error {
+func (h StakeHandler) processStakeEvent(ctx sdk.Context, keeper Keeper, msg MsgSetStakeData, stakeUnits sdk.Uint, eventStatus EventStatus, version semver.Version) error {
 	var stakeEvt EventStake
 	stakeEvt = NewEventStake(
 		msg.Asset,
@@ -153,7 +157,12 @@ func processStakeEvent(ctx sdk.Context, keeper Keeper, msg MsgSetStakeData, stak
 	)
 	tx := common.Tx{ID: common.BlankTxID}
 	evt.OutTxs = common.Txs{tx}
-	return keeper.UpsertEvent(ctx, evt)
+	eventMgr, err := h.versionedEventManager.GetEventManager(ctx, version)
+	if err != nil {
+		return fmt.Errorf("fail to get event manager: %w", err)
+	}
+	eventMgr.AddEvent(ctx, evt)
+	return nil
 }
 
 // getTotalBond

@@ -58,19 +58,9 @@ func (k KVStore) SetPool(ctx sdk.Context, pool Pool) error {
 	key := k.GetKey(ctx, prefixPool, pool.Asset.String())
 
 	if pool.Asset.IsEmpty() {
-		return errors.New("Cannot save a pool with an empty asset")
+		return errors.New("cannot save a pool with an empty asset")
 	}
 
-	prePool, err := k.GetPool(ctx, pool.Asset)
-	if err != nil {
-		return err
-	}
-
-	if prePool.Status != pool.Status {
-		if err := eventPoolStatusWrapper(ctx, k, pool); err != nil {
-			return err
-		}
-	}
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(pool))
 	return nil
 }

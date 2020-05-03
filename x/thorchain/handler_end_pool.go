@@ -11,14 +11,16 @@ import (
 )
 
 type EndPoolHandler struct {
-	keeper              Keeper
-	versionedTxOutStore VersionedTxOutStore
+	keeper                Keeper
+	versionedTxOutStore   VersionedTxOutStore
+	versionedEventManager VersionedEventManager
 }
 
-func NewEndPoolHandler(keeper Keeper, versionedTxOutStore VersionedTxOutStore) EndPoolHandler {
+func NewEndPoolHandler(keeper Keeper, versionedTxOutStore VersionedTxOutStore, versionedEventManager VersionedEventManager) EndPoolHandler {
 	return EndPoolHandler{
-		keeper:              keeper,
-		versionedTxOutStore: versionedTxOutStore,
+		keeper:                keeper,
+		versionedTxOutStore:   versionedTxOutStore,
+		versionedEventManager: versionedEventManager,
 	}
 }
 
@@ -91,7 +93,7 @@ func (h EndPoolHandler) handleV1(ctx sdk.Context, msg MsgEndPool, version semver
 			staker.Asset,
 			msg.Signer,
 		)
-		unstakeHandler := NewUnstakeHandler(h.keeper, h.versionedTxOutStore)
+		unstakeHandler := NewUnstakeHandler(h.keeper, h.versionedTxOutStore, h.versionedEventManager)
 		result := unstakeHandler.Run(ctx, unstakeMsg, version, constAccessor)
 		if !result.IsOK() {
 			ctx.Logger().Error("fail to unstake", "staker", staker.RuneAddress, "error", result.Log)

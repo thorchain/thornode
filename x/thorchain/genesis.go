@@ -6,6 +6,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 	tmtypes "github.com/tendermint/tendermint/types"
+
 	"gitlab.com/thorchain/thornode/common"
 )
 
@@ -17,7 +18,7 @@ type GenesisState struct {
 	TxOuts           []TxOut               `json:"txouts"`
 	NodeAccounts     NodeAccounts          `json:"node_accounts"`
 	CurrentEventID   int64                 `json:"current_event_id"`
-	Events           Events                `json:"events"`
+	BlockEvents      []BlockEvents         `json:"block_events"`
 	Vaults           Vaults                `json:"vaults"`
 	Gas              map[string][]sdk.Uint `json:"gas"`
 }
@@ -79,7 +80,7 @@ func DefaultGenesisState() GenesisState {
 		CurrentEventID:   1,
 		TxOuts:           make([]TxOut, 0),
 		Stakers:          make([]Staker, 0),
-		Events:           make(Events, 0),
+		BlockEvents:      make([]BlockEvents, 0),
 		Vaults:           make(Vaults, 0),
 		ObservedTxVoters: make(ObservedTxVoters, 0),
 		Gas:              make(map[string][]sdk.Uint, 0),
@@ -136,10 +137,8 @@ func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) []abci.Valid
 		}
 	}
 
-	for _, e := range data.Events {
-		if err := keeper.UpsertEvent(ctx, e); err != nil {
-			panic(err)
-		}
+	for _, e := range data.BlockEvents {
+		keeper.SetBlockEvents(ctx, &e)
 	}
 
 	for k, v := range data.Gas {
@@ -203,11 +202,11 @@ func ExportGenesis(ctx sdk.Context, k Keeper) GenesisState {
 		outs = append(outs, out)
 	}
 
-	var events []Event
-	iterator = k.GetEventsIterator(ctx)
+	var events []BlockEvents
+	iterator = k.GetBlockEventsIterator(ctx)
 	defer iterator.Close()
 	for ; iterator.Valid(); iterator.Next() {
-		var e Event
+		var e BlockEvents
 		k.Cdc().MustUnmarshalBinaryBare(iterator.Value(), &e)
 		events = append(events, e)
 	}
@@ -228,7 +227,7 @@ func ExportGenesis(ctx sdk.Context, k Keeper) GenesisState {
 		ObservedTxVoters: votes,
 		TxOuts:           outs,
 		CurrentEventID:   currentEventID,
-		Events:           events,
+		BlockEvents:      events,
 		Gas:              gas,
 	}
 }

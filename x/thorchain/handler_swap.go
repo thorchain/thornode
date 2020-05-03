@@ -12,14 +12,18 @@ import (
 )
 
 type SwapHandler struct {
-	keeper              Keeper
-	versionedTxOutStore VersionedTxOutStore
+	keeper                Keeper
+	versionedTxOutStore   VersionedTxOutStore
+	versionedEventManager VersionedEventManager
 }
 
-func NewSwapHandler(keeper Keeper, versionedTxOutStore VersionedTxOutStore) SwapHandler {
+func NewSwapHandler(keeper Keeper,
+	versionedTxOutStore VersionedTxOutStore,
+	versionedEventManager VersionedEventManager) SwapHandler {
 	return SwapHandler{
-		keeper:              keeper,
-		versionedTxOutStore: versionedTxOutStore,
+		keeper:                keeper,
+		versionedTxOutStore:   versionedTxOutStore,
+		versionedEventManager: versionedEventManager,
 	}
 }
 
@@ -80,10 +84,13 @@ func (h SwapHandler) handleV1(ctx sdk.Context, msg MsgSwap, version semver.Versi
 		ctx.Logger().Error("fail to process swap message", "error", swapErr)
 		return swapErr.Result()
 	}
+	eventMgr, err := h.versionedEventManager.GetEventManager(ctx, version)
+	if err != nil {
+		ctx.Logger().Error("fail to event manager", "error", err)
+		return sdk.ErrInternal("fail to get event manager").Result()
+	}
 	for _, evt := range events {
-		if err := h.keeper.UpsertEvent(ctx, evt); err != nil {
-			return sdk.ErrInternal(err.Error()).Result()
-		}
+		eventMgr.AddEvent(ctx, evt)
 
 		var swap EventSwap
 		if err := json.Unmarshal(evt.Event, &swap); err != nil {

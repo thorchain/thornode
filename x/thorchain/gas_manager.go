@@ -10,7 +10,7 @@ import (
 
 type GasManager interface {
 	BeginBlock()
-	EndBlock(ctx sdk.Context, keeper Keeper)
+	EndBlock(ctx sdk.Context, keeper Keeper, eventManager EventManager)
 	AddGasAsset(gas common.Gas)
 	AddRune(asset common.Asset, amt sdk.Uint)
 }
@@ -63,7 +63,7 @@ func (gm *GasMgr) AddRune(asset common.Asset, amt sdk.Uint) {
 }
 
 // EndBlock emit the events
-func (gm *GasMgr) EndBlock(ctx sdk.Context, keeper Keeper) {
+func (gm *GasMgr) EndBlock(ctx sdk.Context, keeper Keeper, eventManager EventManager) {
 	if len(gm.gasEvent.Pools) == 0 {
 		return
 	}
@@ -73,7 +73,5 @@ func (gm *GasMgr) EndBlock(ctx sdk.Context, keeper Keeper) {
 		return
 	}
 	evt := NewEvent(gm.gasEvent.Type(), ctx.BlockHeight(), common.Tx{ID: common.BlankTxID}, buf, EventSuccess)
-	if err := keeper.UpsertEvent(ctx, evt); err != nil {
-		ctx.Logger().Error("fail to upsert event", "error", err)
-	}
+	eventManager.AddEvent(ctx, evt)
 }

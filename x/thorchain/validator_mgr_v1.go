@@ -21,15 +21,17 @@ type validatorMgrV1 struct {
 	k                     Keeper
 	versionedVaultManager VersionedVaultManager
 	versionedTxOutStore   VersionedTxOutStore
+	versionedEventManager VersionedEventManager
 }
 
 // newValidatorMgrV1 create a new instance of ValidatorManager
-func newValidatorMgrV1(k Keeper, versionedTxOutStore VersionedTxOutStore, versionedVaultManager VersionedVaultManager) *validatorMgrV1 {
+func newValidatorMgrV1(k Keeper, versionedTxOutStore VersionedTxOutStore, versionedVaultManager VersionedVaultManager, versionedEventManager VersionedEventManager) *validatorMgrV1 {
 	return &validatorMgrV1{
 		version:               semver.MustParse("0.1.0"),
 		k:                     k,
 		versionedVaultManager: versionedVaultManager,
 		versionedTxOutStore:   versionedTxOutStore,
+		versionedEventManager: versionedEventManager,
 	}
 }
 
@@ -603,7 +605,7 @@ func (vm *validatorMgrV1) ragnarokPools(ctx sdk.Context, nth int64, constAccesso
 				na.NodeAddress,
 			)
 
-			unstakeHandler := NewUnstakeHandler(vm.k, vm.versionedTxOutStore)
+			unstakeHandler := NewUnstakeHandler(vm.k, vm.versionedTxOutStore, vm.versionedEventManager)
 			result := unstakeHandler.Run(ctx, unstakeMsg, version, constAccessor)
 			if !result.IsOK() {
 				ctx.Logger().Error("fail to unstake", "staker", staker.RuneAddress, "error", result.Log)

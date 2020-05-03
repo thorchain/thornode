@@ -13,7 +13,6 @@ import (
 type KeeperEvents interface {
 	GetEvent(ctx sdk.Context, eventID int64) (Event, error)
 	GetEventsIterator(ctx sdk.Context) sdk.Iterator
-	UpsertEvent(ctx sdk.Context, event Event) error
 	GetPendingEventID(ctx sdk.Context, txID common.TxID) ([]int64, error)
 	GetCurrentEventID(ctx sdk.Context) (int64, error)
 	SetCurrentEventID(ctx sdk.Context, eventID int64)
@@ -33,40 +32,6 @@ func (k KVStore) GetEvent(ctx sdk.Context, eventID int64) (Event, error) {
 		return Event{}, fmt.Errorf("fail to unmarshal event: %w", err)
 	}
 	return e, nil
-}
-
-// UpsertEvent add one event to data store
-func (k KVStore) UpsertEvent(ctx sdk.Context, event Event) error {
-	if event.InTx.ID.IsEmpty() {
-		return fmt.Errorf("cant save event with empty TxIn ID")
-	}
-	if event.Height == 0 {
-		return fmt.Errorf("cant save event with height equal to zero")
-	}
-	if event.ID == 0 {
-		nextEventID, err := k.getNextEventID(ctx)
-		if err != nil {
-			return fmt.Errorf("fail to get next event id: %w", err)
-		}
-		event.ID = nextEventID
-		// keep a map between tx hash and event id
-		if err := k.upsertEventTxHash(ctx, event); err != nil {
-			return err
-		}
-	}
-
-	key := k.GetKey(ctx, prefixEvents, strconv.FormatInt(event.ID, 10))
-	store := ctx.KVStore(k.storeKey)
-	buf, err := k.cdc.MarshalBinaryBare(&event)
-	if err != nil {
-		return fmt.Errorf("fail to marshal event: %w", err)
-	}
-	store.Set([]byte(key), buf)
-	if event.Status == EventPending {
-		return k.setEventPending(ctx, event)
-	}
-	k.removeEventPending(ctx, event)
-	return nil
 }
 
 func (k KVStore) removeEventPending(ctx sdk.Context, event Event) {

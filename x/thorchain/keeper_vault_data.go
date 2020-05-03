@@ -14,7 +14,7 @@ import (
 type KeeperVaultData interface {
 	GetVaultData(ctx sdk.Context) (VaultData, error)
 	SetVaultData(ctx sdk.Context, data VaultData) error
-	UpdateVaultData(ctx sdk.Context, constAccessor constants.ConstantValues, gasManager GasManager) error
+	UpdateVaultData(ctx sdk.Context, constAccessor constants.ConstantValues, gasManager GasManager, eventManager EventManager) error
 }
 
 // GetVaultData retrieve vault data from key value store
@@ -77,7 +77,7 @@ func (k KVStore) getTotalActiveBond(ctx sdk.Context) (sdk.Uint, error) {
 }
 
 // UpdateVaultData Update the vault data to reflect changing in this block
-func (k KVStore) UpdateVaultData(ctx sdk.Context, constAccessor constants.ConstantValues, gasManager GasManager) error {
+func (k KVStore) UpdateVaultData(ctx sdk.Context, constAccessor constants.ConstantValues, gasManager GasManager, eventManager EventManager) error {
 	vault, err := k.GetVaultData(ctx)
 	if err != nil {
 		return fmt.Errorf("fail to get existing vault data: %w", err)
@@ -192,9 +192,7 @@ func (k KVStore) UpdateVaultData(ctx sdk.Context, constAccessor constants.Consta
 		evtBytes,
 		EventSuccess,
 	)
-	if err := k.UpsertEvent(ctx, evt); err != nil {
-		return fmt.Errorf("fail to save event: %w", err)
-	}
+	eventManager.AddEvent(ctx, evt)
 
 	i, err := getTotalActiveNodeWithBond(ctx, k)
 	if err != nil {

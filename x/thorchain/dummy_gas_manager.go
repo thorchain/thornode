@@ -17,7 +17,7 @@ func NewDummyGasManager() *DummyGasManager {
 func (m *DummyGasManager) BeginBlock() {
 }
 
-func (m *DummyGasManager) EndBlock(ctx sdk.Context, keeper Keeper) {
+func (m *DummyGasManager) EndBlock(ctx sdk.Context, keeper Keeper, eventManager EventManager) {
 }
 
 func (m *DummyGasManager) AddGasAsset(gas common.Gas) {
