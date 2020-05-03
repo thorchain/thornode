@@ -622,6 +622,9 @@ func queryBlockEvents(ctx sdk.Context, path []string, req abci.RequestQuery, kee
 		ctx.Logger().Error("fail to convert block height", "error", err)
 		return nil, sdk.ErrInternal(fmt.Sprintf("fail to convert block height(%s)", path[0]))
 	}
+	if blockHeight >= ctx.BlockHeight() {
+		return nil, sdk.ErrUnknownRequest("block height not available yet")
+	}
 	blockEvents, err := keeper.GetBlockEvents(ctx, blockHeight)
 	if err != nil {
 		ctx.Logger().Error("fail to get block events", "error", err)
