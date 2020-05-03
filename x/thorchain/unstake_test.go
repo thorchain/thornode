@@ -469,7 +469,10 @@ func (UnstakeSuite) TestUnstake(c *C) {
 		ctx, _ := setupKeeperForTest(c)
 		c.Logf("name:%s", tc.name)
 		version := constants.SWVersion
-		r, asset, _, _, err := unstake(ctx, version, tc.ps, tc.msg)
+		versionedEventManagerDummy := NewDummyVersionedEventMgr()
+		eventManager, err := versionedEventManagerDummy.GetEventManager(ctx, version)
+		c.Assert(err, IsNil)
+		r, asset, _, _, err := unstake(ctx, version, tc.ps, tc.msg, eventManager)
 		if tc.expectedError != nil {
 			c.Assert(err, NotNil)
 			c.Check(err.Error(), Equals, tc.expectedError.Error())
@@ -500,7 +503,7 @@ func getUnstakeTestKeeper(c *C) Keeper {
 		PoolAddress:  runeAddress,
 		Status:       PoolEnabled,
 	}
-	store.SetPool(ctx, pool)
+	c.Assert(store.SetPool(ctx, pool), IsNil)
 	staker := Staker{
 		Asset:        pool.Asset,
 		RuneAddress:  runeAddress,

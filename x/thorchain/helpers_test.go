@@ -1,6 +1,7 @@
 package thorchain
 
 import (
+	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	. "gopkg.in/check.v1"
 
@@ -243,7 +244,9 @@ func (s *HelperSuite) TestRefundBondHappyPath(c *C) {
 func (s *HelperSuite) TestEnableNextPool(c *C) {
 	var err error
 	ctx, k := setupKeeperForTest(c)
-
+	versionedEventManagerDummy := NewDummyVersionedEventMgr()
+	eventMgr, err := versionedEventManagerDummy.GetEventManager(ctx, semver.MustParse("0.1.0"))
+	c.Assert(err, IsNil)
 	pool := NewPool()
 	pool.Asset = common.BNBAsset
 	pool.Status = PoolEnabled
@@ -286,17 +289,17 @@ func (s *HelperSuite) TestEnableNextPool(c *C) {
 	pool.BalanceAsset = sdk.NewUint(0 * common.One)
 	c.Assert(k.SetPool(ctx, pool), IsNil)
 	// should enable BTC
-	c.Assert(enableNextPool(ctx, k), IsNil)
+	c.Assert(enableNextPool(ctx, k, eventMgr), IsNil)
 	pool, err = k.GetPool(ctx, common.BTCAsset)
 	c.Check(pool.Status, Equals, PoolEnabled)
 
 	// should enable ETH
-	c.Assert(enableNextPool(ctx, k), IsNil)
+	c.Assert(enableNextPool(ctx, k, eventMgr), IsNil)
 	pool, err = k.GetPool(ctx, ethAsset)
 	c.Check(pool.Status, Equals, PoolEnabled)
 
 	// should NOT enable XMR, since it has no assets
-	c.Assert(enableNextPool(ctx, k), IsNil)
+	c.Assert(enableNextPool(ctx, k, eventMgr), IsNil)
 	pool, err = k.GetPool(ctx, xmrAsset)
 	c.Assert(pool.Empty(), Equals, false)
 	c.Check(pool.Status, Equals, PoolBootstrap)

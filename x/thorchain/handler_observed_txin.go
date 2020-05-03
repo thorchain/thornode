@@ -17,6 +17,7 @@ type ObservedTxInHandler struct {
 	versionedVaultManager    VersionedVaultManager
 	versionedGasMgr          VersionedGasManager
 	versionedObserverManager VersionedObserverManager
+	versionedEventManager    VersionedEventManager
 }
 
 // NewObservedTxInHandler create a new instance of ObservedTxInHandler
@@ -25,7 +26,8 @@ func NewObservedTxInHandler(keeper Keeper,
 	versionedTxOutStore VersionedTxOutStore,
 	validatorMgr VersionedValidatorManager,
 	versionedVaultManager VersionedVaultManager,
-	versionedGasMgr VersionedGasManager) ObservedTxInHandler {
+	versionedGasMgr VersionedGasManager,
+	versionedEventManager VersionedEventManager) ObservedTxInHandler {
 	return ObservedTxInHandler{
 		keeper:                   keeper,
 		versionedTxOutStore:      versionedTxOutStore,
@@ -33,6 +35,7 @@ func NewObservedTxInHandler(keeper Keeper,
 		versionedVaultManager:    versionedVaultManager,
 		versionedGasMgr:          versionedGasMgr,
 		versionedObserverManager: versionedObserverManager,
+		versionedEventManager:    versionedEventManager,
 	}
 }
 
@@ -119,7 +122,7 @@ func (h ObservedTxInHandler) handleV1(ctx sdk.Context, version semver.Version, m
 		ctx.Logger().Error("fail to get observer manager", "error", err)
 		return errBadVersion.Result()
 	}
-	handler := NewHandler(h.keeper, h.versionedTxOutStore, h.validatorMgr, h.versionedVaultManager, h.versionedObserverManager, h.versionedGasMgr)
+	handler := NewHandler(h.keeper, h.versionedTxOutStore, h.validatorMgr, h.versionedVaultManager, h.versionedObserverManager, h.versionedGasMgr, h.versionedEventManager)
 
 	for _, tx := range msg.Txs {
 

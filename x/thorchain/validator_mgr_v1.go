@@ -21,15 +21,17 @@ type validatorMgrV1 struct {
 	k                     Keeper
 	versionedVaultManager VersionedVaultManager
 	versionedTxOutStore   VersionedTxOutStore
+	versionedEventManager VersionedEventManager
 }
 
 // newValidatorMgrV1 create a new instance of ValidatorManager
-func newValidatorMgrV1(k Keeper, versionedTxOutStore VersionedTxOutStore, versionedVaultManager VersionedVaultManager) *validatorMgrV1 {
+func newValidatorMgrV1(k Keeper, versionedTxOutStore VersionedTxOutStore, versionedVaultManager VersionedVaultManager, versionedEventManager VersionedEventManager) *validatorMgrV1 {
 	return &validatorMgrV1{
 		version:               semver.MustParse("0.1.0"),
 		k:                     k,
 		versionedVaultManager: versionedVaultManager,
 		versionedTxOutStore:   versionedTxOutStore,
+		versionedEventManager: versionedEventManager,
 	}
 }
 
@@ -572,9 +574,20 @@ func (vm *validatorMgrV1) ragnarokPools(ctx sdk.Context, nth int64, constAccesso
 		ctx.Logger().Error("can't get pools", "error", err)
 		return err
 	}
-
+	eventManager, err := vm.versionedEventManager.GetEventManager(ctx, vm.version)
+	if err != nil {
+		ctx.Logger().Error("fail to get event manager", "error", err)
+		return err
+	}
 	// set all pools to bootstrap mode
 	for _, pool := range pools {
+		if pool.Status != PoolBootstrap {
+			poolEvent := NewEventPool(pool.Asset, PoolBootstrap)
+			if err := eventManager.EmitPoolEvent(ctx, vm.k, common.BlankTxID, EventSuccess, poolEvent); err != nil {
+				ctx.Logger().Error("fail to emit pool event", "error", err)
+			}
+		}
+
 		pool.Status = PoolBootstrap
 		if err := vm.k.SetPool(ctx, pool); err != nil {
 			ctx.Logger().Error(err.Error())
@@ -603,7 +616,7 @@ func (vm *validatorMgrV1) ragnarokPools(ctx sdk.Context, nth int64, constAccesso
 				na.NodeAddress,
 			)
 
-			unstakeHandler := NewUnstakeHandler(vm.k, vm.versionedTxOutStore)
+			unstakeHandler := NewUnstakeHandler(vm.k, vm.versionedTxOutStore, vm.versionedEventManager)
 			result := unstakeHandler.Run(ctx, unstakeMsg, version, constAccessor)
 			if !result.IsOK() {
 				ctx.Logger().Error("fail to unstake", "staker", staker.RuneAddress, "error", result.Log)

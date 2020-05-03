@@ -79,7 +79,9 @@ func newTssKeysignHandlerTestHelper(c *C) tssKeysignFailHandlerTestHelper {
 	c.Assert(keeper.SetNodeAccount(ctx, nodeAccount), IsNil)
 	constAccessor := constants.GetConstantValues(version)
 	versionedTxOutStore := NewVersionedTxOutStore()
-	vaultMgr := NewVersionedVaultMgr(versionedTxOutStore)
+	versionedEventManagerDummy := NewDummyVersionedEventMgr()
+
+	vaultMgr := NewVersionedVaultMgr(versionedTxOutStore, versionedEventManagerDummy)
 	var members []string
 	for i := 0; i < 8; i++ {
 		na := GetRandomNodeAccount(NodeStandby)
