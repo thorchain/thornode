@@ -46,8 +46,8 @@ func (tos *TxOutStorageV2) ClearOutboundItems(_ sdk.Context) {} // do nothing
 // TryAddTxOutItem add an outbound tx to block
 // return bool indicate whether the transaction had been added successful or not
 // return error indicate error
-func (tos *TxOutStorageV2) TryAddTxOutItem(ctx sdk.Context, toi *TxOutItem) (bool, error) {
-	success, err := tos.prepareTxOutItem(ctx, toi)
+func (tos *TxOutStorageV2) TryAddTxOutItem(ctx sdk.Context, toi *TxOutItem, eventManager EventManager) (bool, error) {
+	success, err := tos.prepareTxOutItem(ctx, toi, eventManager)
 	if err != nil {
 		return success, fmt.Errorf("fail to prepare outbound tx: %w", err)
 	}
@@ -72,7 +72,7 @@ func (tos *TxOutStorageV2) UnSafeAddTxOutItem(ctx sdk.Context, toi *TxOutItem) e
 // 2. choose an appropriate pool,Yggdrasil or Asgard
 // 3. deduct transaction fee, keep in mind, only take transaction fee when active nodes are  more then minimumBFT
 // return bool indicated whether the given TxOutItem should be added into block or not
-func (tos *TxOutStorageV2) prepareTxOutItem(ctx sdk.Context, toi *TxOutItem) (bool, error) {
+func (tos *TxOutStorageV2) prepareTxOutItem(ctx sdk.Context, toi *TxOutItem, eventManager EventManager) (bool, error) {
 	// Default the memo to the standard outbound memo
 	if toi.Memo == "" {
 		toi.Memo = NewOutboundMemo(toi.InHash).String()
@@ -170,10 +170,8 @@ func (tos *TxOutStorageV2) prepareTxOutItem(ctx sdk.Context, toi *TxOutItem) (bo
 			}
 			toi.Coin.Amount = common.SafeSub(toi.Coin.Amount, runeFee)
 			fee := common.NewFee(common.Coins{common.NewCoin(toi.Coin.Asset, runeFee)}, sdk.ZeroUint())
-			err := updateEventFee(ctx, tos.keeper, toi.InHash, fee)
-			if err != nil {
-				ctx.Logger().Error("Failed to update event fee", "error", err)
-			}
+			eventManager.UpdateEventFee(ctx, toi.InHash, fee)
+
 			if err := tos.keeper.AddFeeToReserve(ctx, runeFee); err != nil {
 				// Add to reserve
 				ctx.Logger().Error("fail to add fee to reserve", "error", err)
@@ -204,10 +202,7 @@ func (tos *TxOutStorageV2) prepareTxOutItem(ctx sdk.Context, toi *TxOutItem) (bo
 			}
 			pool.BalanceRune = common.SafeSub(pool.BalanceRune, runeFee) // Deduct Rune from Pool
 			fee := common.NewFee(common.Coins{common.NewCoin(toi.Coin.Asset, assetFee)}, poolDeduct)
-			err = updateEventFee(ctx, tos.keeper, toi.InHash, fee)
-			if err != nil {
-				ctx.Logger().Error("Failed to update event fee", "error", err)
-			}
+			eventManager.UpdateEventFee(ctx, toi.InHash, fee)
 			if err := tos.keeper.SetPool(ctx, pool); err != nil { // Set Pool
 				return false, fmt.Errorf("fail to save pool: %w", err)
 			}

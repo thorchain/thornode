@@ -436,6 +436,11 @@ func (vm *validatorMgrV1) ragnarokReserve(ctx sdk.Context, nth int64) error {
 		ctx.Logger().Error("can't get tx out store", "error", err)
 		return err
 	}
+	eventMgr, err := vm.versionedEventManager.GetEventManager(ctx, vm.version)
+	if err != nil {
+		ctx.Logger().Error("fail to get event manager", "error", err)
+		return err
+	}
 	totalReserve := vaultData.TotalReserve
 	totalContributions := sdk.ZeroUint()
 	for _, contrib := range contribs {
@@ -470,7 +475,7 @@ func (vm *validatorMgrV1) ragnarokReserve(ctx sdk.Context, nth int64) error {
 			Coin:      common.NewCoin(common.RuneAsset(), amt),
 			Memo:      NewRagnarokMemo(ctx.BlockHeight()).String(),
 		}
-		_, err = txOutStore.TryAddTxOutItem(ctx, txOutItem)
+		_, err = txOutStore.TryAddTxOutItem(ctx, txOutItem, eventMgr)
 		if err != nil {
 			return fmt.Errorf("fail to add outbound transaction")
 		}
@@ -496,6 +501,11 @@ func (vm *validatorMgrV1) ragnarokBond(ctx sdk.Context, nth int64) error {
 	txOutStore, err := vm.versionedTxOutStore.GetTxOutStore(vm.k, vm.version)
 	if err != nil {
 		ctx.Logger().Error("can't get tx out store", "error", err)
+		return err
+	}
+	eventMgr, err := vm.versionedEventManager.GetEventManager(ctx, vm.version)
+	if err != nil {
+		ctx.Logger().Error("fail to get event manager", "error", err)
 		return err
 	}
 	// nth * 10 == the amount of the bond we want to send
@@ -527,7 +537,7 @@ func (vm *validatorMgrV1) ragnarokBond(ctx sdk.Context, nth int64) error {
 			Coin:      common.NewCoin(common.RuneAsset(), amt),
 			Memo:      NewRagnarokMemo(ctx.BlockHeight()).String(),
 		}
-		ok, err := txOutStore.TryAddTxOutItem(ctx, txOutItem)
+		ok, err := txOutStore.TryAddTxOutItem(ctx, txOutItem, eventMgr)
 		if err != nil {
 			return err
 		}

@@ -34,6 +34,7 @@ func (m *DummyEventMgr) AddEvent(event Event) {
 }
 func (m *DummyEventMgr) FailStalePendingEvents(ctx sdk.Context, constantValues constants.ConstantValues, keeper Keeper) {
 }
+func (m *DummyEventMgr) UpdateEventFee(ctx sdk.Context, txID common.TxID, fee common.Fee) {}
 
 type DummyVersionedEventMgr struct{}
 

@@ -94,6 +94,11 @@ func (vm *VaultMgr) EndBlock(ctx sdk.Context, version semver.Version, constAcces
 		ctx.Logger().Error("fail to get txout store", "error", err)
 		return errBadVersion
 	}
+	eventMgr, err := vm.versionedEventManager.GetEventManager(ctx, version)
+	if err != nil {
+		ctx.Logger().Error("fail to get event manager", "error", err)
+		return err
+	}
 	for _, vault := range retiring {
 		if !vault.HasFunds() {
 			vault.Status = InactiveVault
@@ -172,7 +177,7 @@ func (vm *VaultMgr) EndBlock(ctx sdk.Context, version semver.Version, constAcces
 					},
 					Memo: NewMigrateMemo(ctx.BlockHeight()).String(),
 				}
-				ok, err := txOutStore.TryAddTxOutItem(ctx, toi)
+				ok, err := txOutStore.TryAddTxOutItem(ctx, toi, eventMgr)
 				if err != nil {
 					return err
 				}

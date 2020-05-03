@@ -16,6 +16,7 @@ type EventManager interface {
 	GetBlockEvents(ctx sdk.Context, keeper Keeper, height int64) (*BlockEvents, error)
 	CompleteEvents(ctx sdk.Context, keeper Keeper, height int64, txID common.TxID, txs common.Txs, eventStatus EventStatus) error
 	FailStalePendingEvents(ctx sdk.Context, constantValues constants.ConstantValues, keeper Keeper)
+	UpdateEventFee(ctx sdk.Context, txID common.TxID, fee common.Fee)
 	AddEvent(event Event)
 }
 
@@ -89,31 +90,31 @@ func (m *EventMgr) CompleteEvents(ctx sdk.Context, keeper Keeper, height int64, 
 	keeper.SetBlockEvents(ctx, blockEvent)
 	return nil
 }
-func (m *EventMgr) updateEventFee(ctx sdk.Context, keeper Keeper, height int64, txID common.TxID, fee common.Fee) error {
+
+// UpdateEventFee
+func (m *EventMgr) UpdateEventFee(ctx sdk.Context, txID common.TxID, fee common.Fee) {
 	ctx.Logger().Info("update event fee txid", "tx", txID.String())
-	return nil
-	// eventIDs, err := keeper.GetEventsIDByTxHash(ctx, txID)
-	// if err != nil {
-	// 	if err == ErrEventNotFound {
-	// 		ctx.Logger().Error(fmt.Sprintf("could not find the event(%s)", txID))
-	// 		return nil
-	// 	}
-	// 	return fmt.Errorf("fail to get event id: %w", err)
-	// }
-	// if len(eventIDs) == 0 {
-	// 	return errors.New("no event found")
-	// }
-	// // There are two events for double swap with the same the same txID. Only the second one has fee
-	// eventID := eventIDs[len(eventIDs)-1]
-	// event, err := keeper.GetEvent(ctx, eventID)
-	// if err != nil {
-	// 	return fmt.Errorf("fail to get event: %w", err)
-	// }
-	//
-	// ctx.Logger().Info(fmt.Sprintf("Update fee for event %d, fee:%s", eventID, fee))
-	// event.Fee.Coins = append(event.Fee.Coins, fee.Coins...)
-	// event.Fee.PoolDeduct = event.Fee.PoolDeduct.Add(fee.PoolDeduct)
-	// return keeper.UpsertEvent(ctx, event)
+	var swapEventIdxes []int
+	for idx, e := range m.blockEvents.Events {
+		if !e.InTx.ID.Equals(txID) {
+			continue
+		}
+		// special treatment for swap events, as double swap will emit two events, which share the same txID,Only the second one has fee
+		if e.Type != SwapEventType {
+			ctx.Logger().Info(fmt.Sprintf("Update fee for event %s, fee:%s", txID, fee))
+			m.blockEvents.Events[idx].Fee.Coins = append(m.blockEvents.Events[idx].Fee.Coins, fee.Coins...)
+			m.blockEvents.Events[idx].Fee.PoolDeduct = m.blockEvents.Events[idx].Fee.PoolDeduct.Add(fee.PoolDeduct)
+			continue
+		}
+		swapEventIdxes = append(swapEventIdxes, idx)
+	}
+	if len(swapEventIdxes) == 0 {
+		return
+	}
+	ctx.Logger().Info(fmt.Sprintf("update fee for event %s, fee: %s", txID, fee))
+	idx := swapEventIdxes[len(swapEventIdxes)-1]
+	m.blockEvents.Events[idx].Fee.Coins = append(m.blockEvents.Events[idx].Fee.Coins, fee.Coins...)
+	m.blockEvents.Events[idx].Fee.PoolDeduct = m.blockEvents.Events[idx].Fee.PoolDeduct.Add(fee.PoolDeduct)
 }
 
 // AddEvent add an event to block event

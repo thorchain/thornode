@@ -37,6 +37,9 @@ const (
 	BondPaid     = types.BondPaid
 	BondReturned = types.BondReturned
 	AsgardKeygen = types.AsgardKeygen
+
+	// EventType
+	SwapEventType = types.SwapEventType
 )
 
 var (

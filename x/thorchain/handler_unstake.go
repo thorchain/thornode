@@ -160,7 +160,7 @@ func (h UnstakeHandler) handle(ctx sdk.Context, msg MsgSetUnStake, version semve
 			}
 		}
 	}
-	ok, err := txOutStore.TryAddTxOutItem(ctx, toi)
+	ok, err := txOutStore.TryAddTxOutItem(ctx, toi, eventMgr)
 	if err != nil {
 		ctx.Logger().Error("fail to prepare outbound tx", "error", err)
 		return nil, sdk.NewError(DefaultCodespace, CodeFailAddOutboundTx, "fail to prepare outbound tx")
@@ -188,7 +188,7 @@ func (h UnstakeHandler) handle(ctx sdk.Context, msg MsgSetUnStake, version semve
 		}
 	}
 
-	ok, err = txOutStore.TryAddTxOutItem(ctx, toi)
+	ok, err = txOutStore.TryAddTxOutItem(ctx, toi, eventMgr)
 	if err != nil {
 		ctx.Logger().Error("fail to prepare outbound tx", "error", err)
 		return nil, sdk.NewError(DefaultCodespace, CodeFailAddOutboundTx, "fail to prepare outbound tx")

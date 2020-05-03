@@ -123,7 +123,7 @@ func (h SwapHandler) handleV1(ctx sdk.Context, msg MsgSwap, version semver.Versi
 		ToAddress: msg.Destination,
 		Coin:      common.NewCoin(msg.TargetAsset, amount),
 	}
-	ok, err := txOutStore.TryAddTxOutItem(ctx, toi)
+	ok, err := txOutStore.TryAddTxOutItem(ctx, toi, eventMgr)
 	if err != nil {
 		ctx.Logger().Error("fail to add outbound tx", "error", err)
 		return sdk.ErrInternal(fmt.Errorf("fail to add outbound tx: %w", err).Error()).Result()

@@ -16,7 +16,7 @@ type TxOutStore interface {
 	GetBlockOut(ctx sdk.Context) (*TxOut, error)
 	ClearOutboundItems(ctx sdk.Context)
 	GetOutboundItems(ctx sdk.Context) ([]*TxOutItem, error)
-	TryAddTxOutItem(ctx sdk.Context, toi *TxOutItem) (bool, error)
+	TryAddTxOutItem(ctx sdk.Context, toi *TxOutItem, eventManager EventManager) (bool, error)
 	UnSafeAddTxOutItem(ctx sdk.Context, toi *TxOutItem) error
 }
 

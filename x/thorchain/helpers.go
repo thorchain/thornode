@@ -43,7 +43,7 @@ func refundTx(ctx sdk.Context,
 				Memo:        NewRefundMemo(tx.Tx.ID).String(),
 			}
 
-			success, err := store.TryAddTxOutItem(ctx, toi)
+			success, err := store.TryAddTxOutItem(ctx, toi, eventManager)
 			if err != nil {
 				return fmt.Errorf("fail to prepare outbund tx: %w", err)
 			}
@@ -232,7 +232,7 @@ func refundBond(ctx sdk.Context, tx common.Tx, nodeAcc NodeAccount, keeper Keepe
 			InHash:      tx.ID,
 			Coin:        common.NewCoin(common.RuneAsset(), nodeAcc.Bond),
 		}
-		_, err = txOut.TryAddTxOutItem(ctx, txOutItem)
+		_, err = txOut.TryAddTxOutItem(ctx, txOutItem, eventManager)
 		if err != nil {
 			return fmt.Errorf("fail to add outbound tx: %w", err)
 		}
