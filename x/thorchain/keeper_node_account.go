@@ -14,7 +14,7 @@ import (
 
 type KeeperNodeAccount interface {
 	TotalActiveNodeAccount(ctx sdk.Context) (int, error)
-	ListNodeAccounts(ctx sdk.Context) (NodeAccounts, error)
+	ListNodeAccountsWithBond(ctx sdk.Context) (NodeAccounts, error)
 	ListNodeAccountsByStatus(ctx sdk.Context, status NodeStatus) (NodeAccounts, error)
 	ListActiveNodeAccounts(ctx sdk.Context) (NodeAccounts, error)
 	GetLowestActiveVersion(ctx sdk.Context) semver.Version
@@ -25,6 +25,11 @@ type KeeperNodeAccount interface {
 	SetNodeAccount(ctx sdk.Context, na NodeAccount) error
 	EnsureNodeKeysUnique(ctx sdk.Context, consensusPubKey string, pubKeys common.PubKeySet) error
 	GetNodeAccountIterator(ctx sdk.Context) sdk.Iterator
+	GetNodeAccountSlashPoints(_ sdk.Context, _ sdk.AccAddress) (int64, error)
+	SetNodeAccountSlashPoints(_ sdk.Context, _ sdk.AccAddress, _ int64)
+	IncNodeAccountSlashPoints(_ sdk.Context, _ sdk.AccAddress, _ int64) error
+	DecNodeAccountSlashPoints(_ sdk.Context, _ sdk.AccAddress, _ int64) error
+	ResetNodeAccountSlashPoints(_ sdk.Context, _ sdk.AccAddress)
 }
 
 // TotalActiveNodeAccount count the number of active node account
@@ -33,8 +38,8 @@ func (k KVStore) TotalActiveNodeAccount(ctx sdk.Context) (int, error) {
 	return len(activeNodes), err
 }
 
-// ListNodeAccounts - gets a list of all node accounts
-func (k KVStore) ListNodeAccounts(ctx sdk.Context) (NodeAccounts, error) {
+// ListNodeAccountsWithBond - gets a list of all node accounts that have bond
+func (k KVStore) ListNodeAccountsWithBond(ctx sdk.Context) (NodeAccounts, error) {
 	nodeAccounts := make(NodeAccounts, 0)
 	naIterator := k.GetNodeAccountIterator(ctx)
 	defer naIterator.Close()
@@ -43,7 +48,9 @@ func (k KVStore) ListNodeAccounts(ctx sdk.Context) (NodeAccounts, error) {
 		if err := k.cdc.UnmarshalBinaryBare(naIterator.Value(), &na); err != nil {
 			return nodeAccounts, dbError(ctx, "Unmarshal: node account", err)
 		}
-		nodeAccounts = append(nodeAccounts, na)
+		if !na.Bond.IsZero() {
+			nodeAccounts = append(nodeAccounts, na)
+		}
 	}
 	return nodeAccounts, nil
 }
@@ -52,13 +59,15 @@ func (k KVStore) ListNodeAccounts(ctx sdk.Context) (NodeAccounts, error) {
 // if status = NodeUnknown, then it return everything
 func (k KVStore) ListNodeAccountsByStatus(ctx sdk.Context, status NodeStatus) (NodeAccounts, error) {
 	nodeAccounts := make(NodeAccounts, 0)
-	allNodeAccounts, err := k.ListNodeAccounts(ctx)
-	if err != nil {
-		return nodeAccounts, err
-	}
-	for _, item := range allNodeAccounts {
-		if item.Status == status {
-			nodeAccounts = append(nodeAccounts, item)
+	naIterator := k.GetNodeAccountIterator(ctx)
+	defer naIterator.Close()
+	for ; naIterator.Valid(); naIterator.Next() {
+		var na NodeAccount
+		if err := k.cdc.UnmarshalBinaryBare(naIterator.Value(), &na); err != nil {
+			return nodeAccounts, dbError(ctx, "Unmarshal: node account", err)
+		}
+		if na.Status == status {
+			nodeAccounts = append(nodeAccounts, na)
 		}
 	}
 	return nodeAccounts, nil
@@ -171,18 +180,19 @@ func (k KVStore) GetNodeAccountByPubKey(ctx sdk.Context, pk common.PubKey) (Node
 
 // GetNodeAccountByBondAddress go through data store to get node account by it's signer bnb address
 func (k KVStore) GetNodeAccountByBondAddress(ctx sdk.Context, addr common.Address) (NodeAccount, error) {
-	ctx.Logger().Debug("GetNodeAccountByBondAddress", "signer bnb address", addr.String())
-	var na NodeAccount
-	nodeAccounts, err := k.ListNodeAccounts(ctx)
-	if err != nil {
-		return na, err
-	}
-	for _, item := range nodeAccounts {
-		if item.BondAddress.Equals(addr) {
-			return item, nil
+	naIterator := k.GetNodeAccountIterator(ctx)
+	defer naIterator.Close()
+	for ; naIterator.Valid(); naIterator.Next() {
+		var na NodeAccount
+		if err := k.cdc.UnmarshalBinaryBare(naIterator.Value(), &na); err != nil {
+			return na, dbError(ctx, "Unmarshal: node account", err)
+		}
+		if na.BondAddress.Equals(addr) {
+			return na, nil
 		}
 	}
-	return na, nil
+
+	return NodeAccount{}, nil
 }
 
 // SetNodeAccount save the given node account into datastore
@@ -199,7 +209,7 @@ func (k KVStore) SetNodeAccount(ctx sdk.Context, na NodeAccount) error {
 			// became active. This must be the first block they are active, so
 			// THORNode will set it now.
 			na.ActiveBlockHeight = ctx.BlockHeight()
-			na.SlashPoints = 0 // reset slash points
+			k.ResetNodeAccountSlashPoints(ctx, na.NodeAddress) // reset slash points
 		}
 	}
 
@@ -246,4 +256,58 @@ func (k KVStore) EnsureNodeKeysUnique(ctx sdk.Context, consensusPubKey string, p
 func (k KVStore) GetNodeAccountIterator(ctx sdk.Context) sdk.Iterator {
 	store := ctx.KVStore(k.storeKey)
 	return sdk.KVStorePrefixIterator(store, []byte(prefixNodeAccount))
+}
+
+// GetNodeAccountSlashPoints - get the slash points associated with the given
+// node address
+func (k KVStore) GetNodeAccountSlashPoints(ctx sdk.Context, addr sdk.AccAddress) (int64, error) {
+	store := ctx.KVStore(k.storeKey)
+	key := k.GetKey(ctx, prefixNodeSlashPoints, addr.String())
+	if !store.Has([]byte(key)) {
+		return 0, nil
+	}
+	payload := store.Get([]byte(key))
+	var pts int64
+	if err := k.cdc.UnmarshalBinaryBare(payload, &pts); err != nil {
+		return pts, dbError(ctx, "Unmarshal: node account slash points", err)
+	}
+	return pts, nil
+}
+
+// SetNodeAccountSlashPoints - set the slash points associated with the given
+// node address and uint
+func (k KVStore) SetNodeAccountSlashPoints(ctx sdk.Context, addr sdk.AccAddress, pts int64) {
+	store := ctx.KVStore(k.storeKey)
+	key := k.GetKey(ctx, prefixNodeSlashPoints, addr.String())
+	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(pts))
+}
+
+// ResetNodeAccountSlashPoints - reset the slash points to zero for associated
+// with the given node address
+func (k KVStore) ResetNodeAccountSlashPoints(ctx sdk.Context, addr sdk.AccAddress) {
+	store := ctx.KVStore(k.storeKey)
+	key := k.GetKey(ctx, prefixNodeSlashPoints, addr.String())
+	store.Delete([]byte(key))
+}
+
+// IncNodeAccountSlashPoints - increments the slash points associated with the
+// given node address and uint
+func (k KVStore) IncNodeAccountSlashPoints(ctx sdk.Context, addr sdk.AccAddress, pts int64) error {
+	current, err := k.GetNodeAccountSlashPoints(ctx, addr)
+	if err != nil {
+		return err
+	}
+	k.SetNodeAccountSlashPoints(ctx, addr, current+pts)
+	return nil
+}
+
+// DecNodeAccountSlashPoints - decrements the slash points associated with the
+// given node address and uint
+func (k KVStore) DecNodeAccountSlashPoints(ctx sdk.Context, addr sdk.AccAddress, pts int64) error {
+	current, err := k.GetNodeAccountSlashPoints(ctx, addr)
+	if err != nil {
+		return err
+	}
+	k.SetNodeAccountSlashPoints(ctx, addr, current-pts)
+	return nil
 }

@@ -46,6 +46,9 @@ func (msg MsgObservedTxOut) ValidateBasic() sdk.Error {
 		if len(tx.Signers) > 0 {
 			return sdk.ErrUnknownRequest("signers must be empty")
 		}
+		if len(tx.OutHashes) > 0 {
+			return sdk.ErrUnknownRequest("out hashes must be empty")
+		}
 	}
 	return nil
 }

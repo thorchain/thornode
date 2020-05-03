@@ -29,6 +29,7 @@ echo "{
     \"rpc_host\": \"$CHAIN_RPC\",
     \"enable_scan\": true,
     \"no_events_backoff\": \"5s\",
+    \"scanners_update_interval\": \"10s\",
     \"scan_start_pos\": 1,
     \"proxied_whitelisted_endpoints\": [
       \"pool_addresses\"

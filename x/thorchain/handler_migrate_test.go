@@ -19,9 +19,12 @@ type TestMigrateKeeper struct {
 	vault             Vault
 }
 
-// IsActiveObserver see whether it is an active observer
-func (k *TestMigrateKeeper) IsActiveObserver(_ sdk.Context, addr sdk.AccAddress) bool {
-	return k.activeNodeAccount.NodeAddress.Equals(addr)
+// GetNodeAccount
+func (k *TestMigrateKeeper) GetNodeAccount(_ sdk.Context, addr sdk.AccAddress) (NodeAccount, error) {
+	if k.activeNodeAccount.NodeAddress.Equals(addr) {
+		return k.activeNodeAccount, nil
+	}
+	return NodeAccount{}, nil
 }
 
 func (HandlerMigrateSuite) TestMigrate(c *C) {

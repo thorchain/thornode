@@ -39,7 +39,7 @@ func (h LeaveHandler) validateV1(ctx sdk.Context, msg MsgLeave) sdk.Error {
 	if err := msg.ValidateBasic(); err != nil {
 		return err
 	}
-	if !isSignedByActiveObserver(ctx, h.keeper, msg.GetSigners()) {
+	if !isSignedByActiveNodeAccounts(ctx, h.keeper, msg.GetSigners()) {
 		return sdk.ErrUnauthorized("Not authorized")
 	}
 

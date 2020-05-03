@@ -58,7 +58,7 @@ func (tx ObservedTx) Valid() error {
 	return nil
 }
 
-func (tx ObservedTx) Empty() bool {
+func (tx ObservedTx) IsEmpty() bool {
 	return tx.Tx.IsEmpty()
 }
 
@@ -113,6 +113,7 @@ func (tx *ObservedTx) IsDone(numOuts int) bool {
 
 type ObservedTxVoter struct {
 	TxID         common.TxID `json:"tx_id"`
+	Tx           ObservedTx  `json:"tx"` // final consensus transaction
 	Height       int64       `json:"height"`
 	ProcessedIn  bool        `json:"processed_in"`  // used to track if has been processed txin
 	ProcessedOut bool        `json:"processed_out"` // used to track if has been processed txout
@@ -229,7 +230,10 @@ func (tx ObservedTxVoter) HasConsensus(nodeAccounts NodeAccounts) bool {
 	return false
 }
 
-func (tx ObservedTxVoter) GetTx(nodeAccounts NodeAccounts) ObservedTx {
+func (tx *ObservedTxVoter) GetTx(nodeAccounts NodeAccounts) ObservedTx {
+	if !tx.Tx.IsEmpty() {
+		return tx.Tx
+	}
 	for _, txIn := range tx.Txs {
 		var count int
 		for _, signer := range txIn.Signers {
@@ -238,6 +242,7 @@ func (tx ObservedTxVoter) GetTx(nodeAccounts NodeAccounts) ObservedTx {
 			}
 		}
 		if HasSuperMajority(count, len(nodeAccounts)) {
+			tx.Tx = txIn
 			return txIn
 		}
 	}

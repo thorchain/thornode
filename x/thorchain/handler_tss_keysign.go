@@ -108,10 +108,8 @@ func (h TssKeysignHandler) handleV1(ctx sdk.Context, msg MsgTssKeysignFail, vers
 				return sdk.ErrInternal("fail to get node account").Result()
 			}
 			// 720 blocks per hour
-			na.SlashPoints += slashPoints
-			if err := h.keeper.SetNodeAccount(ctx, na); err != nil {
-				ctx.Logger().Error("fail to save node account", "error", err)
-				return sdk.ErrInternal("fail to save node account").Result()
+			if err := h.keeper.IncNodeAccountSlashPoints(ctx, na.NodeAddress, slashPoints); err != nil {
+				ctx.Logger().Error("fail to inc slash points", "error", err)
 			}
 		}
 	}

@@ -3,6 +3,7 @@ package rest
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/types/rest"
@@ -21,6 +22,15 @@ func pingHandler(cliCtx context.CLIContext, storeName string) http.HandlerFunc {
 // Generic wrapper to generate GET handler
 func getHandlerWrapper(q query.Query, storeName string, cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		heightStr, ok := r.URL.Query()["height"]
+		if ok && len(heightStr) > 0 {
+			height, err := strconv.ParseInt(heightStr[0], 10, 64)
+			if err != nil {
+				rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			cliCtx = cliCtx.WithHeight(height)
+		}
 		param := mux.Vars(r)[restURLParam]
 		text, err := r.URL.MarshalBinary()
 		if err != nil {

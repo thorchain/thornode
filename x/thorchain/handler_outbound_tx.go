@@ -45,7 +45,7 @@ func (h OutboundTxHandler) validateV1(ctx sdk.Context, msg MsgOutboundTx) sdk.Er
 		return err
 	}
 
-	if !isSignedByActiveObserver(ctx, h.keeper, msg.GetSigners()) {
+	if !isSignedByActiveNodeAccounts(ctx, h.keeper, msg.GetSigners()) {
 		ctx.Logger().Error(notAuthorized.Error())
 		return sdk.ErrUnauthorized("Not Authorized")
 	}

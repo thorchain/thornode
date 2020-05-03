@@ -35,10 +35,7 @@ func (q Query) Path(args ...string) string {
 var (
 	QueryPool               = Query{Key: "pool", EndpointTemplate: "/%s/pool/{%s}"}
 	QueryPools              = Query{Key: "pools", EndpointTemplate: "/%s/pools"}
-	QueryPoolStakers        = Query{Key: "poolstakers", EndpointTemplate: "/%s/pool/{%s}/stakers"}
-	QueryStakerPools        = Query{Key: "stakerpools", EndpointTemplate: "/%s/staker/{%s}"}
-	QuerySwapRecord         = Query{Key: "swaprecord", EndpointTemplate: "/%s/swaprecord/{%s}"}
-	QueryUnStakeRecord      = Query{Key: "unstakerecord", EndpointTemplate: "/%s/unstakerecord/{%s}"}
+	QueryStakers            = Query{Key: "stakers", EndpointTemplate: "/%s/pool/{%s}/stakers"}
 	QueryTxIn               = Query{Key: "txin", EndpointTemplate: "/%s/tx/{%s}"}
 	QueryKeysignArray       = Query{Key: "keysign", EndpointTemplate: "/%s/keysign/{%s}"}
 	QueryKeysignArrayPubkey = Query{Key: "keysignpubkey", EndpointTemplate: "/%s/keysign/{%s}/{%s}"}
@@ -66,10 +63,7 @@ var (
 var Queries = []Query{
 	QueryPool,
 	QueryPools,
-	QueryPoolStakers,
-	QueryStakerPools,
-	QuerySwapRecord,
-	QueryUnStakeRecord,
+	QueryStakers,
 	QueryTxIn,
 	QueryKeysignArray,
 	QueryKeysignArrayPubkey,

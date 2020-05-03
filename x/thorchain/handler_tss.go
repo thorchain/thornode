@@ -143,7 +143,9 @@ func (h TssHandler) handleV1(ctx sdk.Context, msg MsgTssPool, version semver.Ver
 				}
 				if na.Status == NodeActive {
 					// 720 blocks per hour
-					na.SlashPoints += slashPoints
+					if err := h.keeper.IncNodeAccountSlashPoints(ctx, na.NodeAddress, slashPoints); err != nil {
+						ctx.Logger().Error("fail to inc slash points", "error", err)
+					}
 				} else {
 					// take out bond from the node account and add it to vault bond reward RUNE
 					// thus good behaviour node will get reward

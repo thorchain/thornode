@@ -66,35 +66,39 @@ func (h EndPoolHandler) handle(ctx sdk.Context, msg MsgEndPool, version semver.V
 }
 
 func (h EndPoolHandler) handleV1(ctx sdk.Context, msg MsgEndPool, version semver.Version, constAccessor constants.ConstantValues) sdk.Result {
-	poolStaker, err := h.keeper.GetPoolStaker(ctx, msg.Asset)
+	pool, err := h.keeper.GetPool(ctx, msg.Asset)
 	if err != nil {
-		ctx.Logger().Error("fail to get pool staker", "error", err)
+		err = fmt.Errorf("fail to set pool: %w", err)
 		return sdk.ErrInternal(err.Error()).Result()
 	}
 
-	// everyone withdraw
-	for _, item := range poolStaker.Stakers {
-		msg.Tx.FromAddress = item.AssetAddress
-		unstakeMsg := NewMsgSetUnStake(
-			msg.Tx,
-			item.RuneAddress,
-			sdk.NewUint(10000),
-			msg.Asset,
-			msg.Signer,
-		)
-		unstakeHandler := NewUnstakeHandler(h.keeper, h.versionedTxOutStore)
-		result := unstakeHandler.Run(ctx, unstakeMsg, version, constAccessor)
-		if !result.IsOK() {
-			ctx.Logger().Error("fail to unstake", "staker", item.RuneAddress, "error", result.Log)
-			return result
-		}
-	}
-	pool, err := h.keeper.GetPool(ctx, msg.Asset)
 	pool.Status = PoolBootstrap
 	if err := h.keeper.SetPool(ctx, pool); err != nil {
 		err = fmt.Errorf("fail to set pool: %w", err)
 		return sdk.ErrInternal(err.Error()).Result()
 	}
+
+	iterator := h.keeper.GetStakerIterator(ctx, msg.Asset)
+	defer iterator.Close()
+	for ; iterator.Valid(); iterator.Next() {
+		var staker Staker
+		h.keeper.Cdc().MustUnmarshalBinaryBare(iterator.Value(), &staker)
+		msg.Tx.FromAddress = staker.AssetAddress
+		unstakeMsg := NewMsgSetUnStake(
+			msg.Tx,
+			staker.RuneAddress,
+			sdk.NewUint(MaxUnstakeBasisPoints),
+			staker.Asset,
+			msg.Signer,
+		)
+		unstakeHandler := NewUnstakeHandler(h.keeper, h.versionedTxOutStore)
+		result := unstakeHandler.Run(ctx, unstakeMsg, version, constAccessor)
+		if !result.IsOK() {
+			ctx.Logger().Error("fail to unstake", "staker", staker.RuneAddress, "error", result.Log)
+			return result
+		}
+	}
+
 	return sdk.Result{
 		Code:      sdk.CodeOK,
 		Codespace: DefaultCodespace,

@@ -1,12 +1,16 @@
 package thorchain
 
 import (
+	"errors"
 	"os"
 
+	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	. "gopkg.in/check.v1"
 
 	"gitlab.com/thorchain/thornode/common"
+	"gitlab.com/thorchain/thornode/constants"
+	"gitlab.com/thorchain/thornode/x/thorchain/types"
 )
 
 type SwapSuite struct{}
@@ -19,8 +23,66 @@ func (s *SwapSuite) SetUpSuite(c *C) {
 	SetupConfigForTest()
 }
 
-func (s SwapSuite) TestSwap(c *C) {
-	poolStorage := MockPoolStorage{}
+type TestSwapKeeper struct {
+	KVStoreDummy
+}
+
+func (k *TestSwapKeeper) PoolExist(ctx sdk.Context, asset common.Asset) bool {
+	if asset.Equals(common.Asset{Chain: common.BNBChain, Symbol: "NOTEXIST", Ticker: "NOTEXIST"}) {
+		return false
+	}
+	return true
+}
+
+func (k *TestSwapKeeper) GetPool(ctx sdk.Context, asset common.Asset) (types.Pool, error) {
+	if asset.Equals(common.Asset{Chain: common.BNBChain, Symbol: "NOTEXIST", Ticker: "NOTEXIST"}) {
+		return types.Pool{}, nil
+	} else {
+		return types.Pool{
+			BalanceRune:  sdk.NewUint(100).MulUint64(common.One),
+			BalanceAsset: sdk.NewUint(100).MulUint64(common.One),
+			PoolUnits:    sdk.NewUint(100).MulUint64(common.One),
+			Status:       types.Enabled,
+			Asset:        asset,
+		}, nil
+	}
+}
+func (k *TestSwapKeeper) SetPool(ctx sdk.Context, ps types.Pool) error { return nil }
+
+func (k *TestSwapKeeper) GetStaker(ctx sdk.Context, asset common.Asset, addr common.Address) (types.Staker, error) {
+	if asset.Equals(common.Asset{Chain: common.BNBChain, Symbol: "NOTEXISTSTICKER", Ticker: "NOTEXISTSTICKER"}) {
+		return types.Staker{}, errors.New("you asked for it")
+	}
+	return Staker{
+		Asset:        asset,
+		RuneAddress:  addr,
+		AssetAddress: addr,
+		Units:        sdk.NewUint(100),
+		PendingRune:  sdk.ZeroUint(),
+	}, nil
+}
+
+func (k *TestSwapKeeper) SetStaker(ctx sdk.Context, ps types.Staker) {}
+
+func (k *TestSwapKeeper) AddToLiquidityFees(ctx sdk.Context, asset common.Asset, fs sdk.Uint) error {
+	return nil
+}
+
+func (k *TestSwapKeeper) GetLowestActiveVersion(ctx sdk.Context) semver.Version {
+	return constants.SWVersion
+}
+
+func (k *TestSwapKeeper) AddFeeToReserve(ctx sdk.Context, fee sdk.Uint) error { return nil }
+func (k *TestSwapKeeper) UpsertEvent(ctx sdk.Context, event Event) error {
+	return nil
+}
+
+func (k *TestSwapKeeper) GetGas(ctx sdk.Context, _ common.Asset) ([]sdk.Uint, error) {
+	return []sdk.Uint{sdk.NewUint(37500), sdk.NewUint(30000)}, nil
+}
+
+func (s *SwapSuite) TestSwap(c *C) {
+	poolStorage := &TestSwapKeeper{}
 	ctx, _ := setupKeeperForTest(c)
 	inputs := []struct {
 		name          string
@@ -236,7 +298,7 @@ func (s SwapSuite) TestSwap(c *C) {
 }
 
 func (s SwapSuite) TestValidatePools(c *C) {
-	keeper := MockPoolStorage{}
+	keeper := &TestSwapKeeper{}
 	ctx, _ := setupKeeperForTest(c)
 	c.Check(validatePools(ctx, keeper, common.RuneAsset()), IsNil)
 	c.Check(validatePools(ctx, keeper, common.Asset{Chain: common.BNBChain, Ticker: "NOTEXIST", Symbol: "NOTEXIST"}), NotNil)

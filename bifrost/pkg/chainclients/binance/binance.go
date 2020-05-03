@@ -284,12 +284,6 @@ func (b *Binance) getGasFee(count uint64) common.Gas {
 	return common.CalcGasPrice(common.Tx{Coins: coins}, common.BNBAsset, gasInfo)
 }
 
-func (b *Binance) ValidateMetadata(inter interface{}) bool {
-	meta := inter.(BinanceMetadata)
-	acct := b.accts.GetByAccount(meta.AccountNumber)
-	return acct.AccountNumber == meta.AccountNumber && acct.SeqNumber == meta.SeqNumber
-}
-
 // SignTx sign the the given TxArrayItem
 func (b *Binance) SignTx(tx stypes.TxOutItem, height int64) ([]byte, error) {
 	var payload []msg.Transfer
@@ -302,7 +296,7 @@ func (b *Binance) SignTx(tx stypes.TxOutItem, height int64) ([]byte, error) {
 	var gasCoin common.Coins
 
 	// for yggdrasil, need to left some coin to pay for fee, this logic is per chain, given different chain charge fees differently
-	if strings.HasPrefix(strings.ToLower(tx.Memo), thorchain.TxYggdrasilReturn.String()) {
+	if strings.EqualFold(tx.Memo, thorchain.TxYggdrasilReturn.String()) {
 		gas := b.getGasFee(uint64(len(tx.Coins)))
 		gasCoin = gas.ToCoins()
 	}

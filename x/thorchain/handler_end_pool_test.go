@@ -77,8 +77,7 @@ type TestEndPoolHandleKeeper struct {
 	activeNodeAccount NodeAccount
 	failAddEvent      bool
 	failStakeEvent    bool
-	poolStaker        PoolStaker
-	stakerPool        StakerPool
+	staker            Staker
 }
 
 func (k *TestEndPoolHandleKeeper) PoolExist(_ sdk.Context, asset common.Asset) bool {
@@ -114,20 +113,18 @@ func (k *TestEndPoolHandleKeeper) GetNodeAccount(_ sdk.Context, addr sdk.AccAddr
 	return NodeAccount{}, errors.New("not exist")
 }
 
-func (k *TestEndPoolHandleKeeper) GetPoolStaker(_ sdk.Context, _ common.Asset) (PoolStaker, error) {
-	return k.poolStaker, nil
+func (k *TestEndPoolHandleKeeper) GetStakerIterator(ctx sdk.Context, _ common.Asset) sdk.Iterator {
+	iter := NewDummyIterator()
+	iter.AddItem([]byte("key"), k.Cdc().MustMarshalBinaryBare(k.staker))
+	return iter
 }
 
-func (k *TestEndPoolHandleKeeper) GetStakerPool(_ sdk.Context, _ common.Address) (StakerPool, error) {
-	return k.stakerPool, nil
+func (k *TestEndPoolHandleKeeper) GetStaker(_ sdk.Context, _ common.Asset, _ common.Address) (Staker, error) {
+	return k.staker, nil
 }
 
-func (k *TestEndPoolHandleKeeper) SetStakerPool(_ sdk.Context, sp StakerPool) {
-	k.stakerPool = sp
-}
-
-func (k *TestEndPoolHandleKeeper) SetPoolStaker(_ sdk.Context, ps PoolStaker) {
-	k.poolStaker = ps
+func (k *TestEndPoolHandleKeeper) SetStaker(_ sdk.Context, staker Staker) {
+	k.staker = staker
 }
 
 func (k *TestEndPoolHandleKeeper) UpsertEvent(ctx sdk.Context, event Event) error {
@@ -157,15 +154,10 @@ func (s *HandlerEndPoolSuite) TestHandle(c *C) {
 			PoolAddress:  "",
 			Status:       PoolEnabled,
 		},
-		poolStaker: PoolStaker{
-			Asset:      asset,
-			TotalUnits: sdk.ZeroUint(),
-			Stakers:    nil,
-		},
-		stakerPool: StakerPool{
-			RuneAddress:  bnbAddr,
-			AssetAddress: bnbAddr,
-			PoolUnits:    nil,
+		staker: Staker{
+			Asset:       asset,
+			Units:       sdk.ZeroUint(),
+			PendingRune: sdk.ZeroUint(),
 		},
 	}
 

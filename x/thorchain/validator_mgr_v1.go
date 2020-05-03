@@ -180,7 +180,7 @@ func (vm *validatorMgrV1) EndBlock(ctx sdk.Context, constAccessor constants.Cons
 		na.UpdateStatus(NodeActive, height)
 		na.LeaveHeight = 0
 		na.RequestedToLeave = false
-		na.SlashPoints = 0
+		vm.k.ResetNodeAccountSlashPoints(ctx, na.NodeAddress)
 		if err := vm.k.SetNodeAccount(ctx, na); err != nil {
 			ctx.Logger().Error("fail to save node account", "error", err)
 		}
@@ -297,11 +297,16 @@ func (vm *validatorMgrV1) payNodeAccountBondAward(ctx sdk.Context, na NodeAccoun
 		return fmt.Errorf("fail to get vault: %w", err)
 	}
 
+	slashPts, err := vm.k.GetNodeAccountSlashPoints(ctx, na.NodeAddress)
+	if err != nil {
+		return fmt.Errorf("fail to get node slash points: %w", err)
+	}
+
 	// Find number of blocks they have been an active node
 	totalActiveBlocks := ctx.BlockHeight() - na.ActiveBlockHeight
 
 	// find number of blocks they were well behaved (ie active - slash points)
-	earnedBlocks := na.CalcBondUnits(ctx.BlockHeight())
+	earnedBlocks := na.CalcBondUnits(ctx.BlockHeight(), slashPts)
 
 	// calc number of rune they are awarded
 	reward := vault.CalcNodeRewards(earnedBlocks)
@@ -481,7 +486,7 @@ func (vm *validatorMgrV1) ragnarokReserve(ctx sdk.Context, nth int64) error {
 }
 
 func (vm *validatorMgrV1) ragnarokBond(ctx sdk.Context, nth int64) error {
-	nas, err := vm.k.ListNodeAccounts(ctx)
+	nas, err := vm.k.ListNodeAccountsWithBond(ctx)
 	if err != nil {
 		ctx.Logger().Error("can't get nodes", "error", err)
 		return err
@@ -577,34 +582,31 @@ func (vm *validatorMgrV1) ragnarokPools(ctx sdk.Context, nth int64, constAccesso
 		}
 	}
 
+	version := vm.k.GetLowestActiveVersion(ctx)
+
 	for i := len(pools) - 1; i >= 0; i-- { // iterate backwards
 		pool := pools[i]
-		poolStaker, err := vm.k.GetPoolStaker(ctx, pool.Asset)
-		if err != nil {
-			ctx.Logger().Error("fail to get pool staker", "error", err)
-			return err
-		}
-
-		// everyone withdraw
-		for i := len(poolStaker.Stakers) - 1; i >= 0; i-- { // iterate backwards
-			item := poolStaker.Stakers[i]
-			if item.Units.IsZero() {
+		iterator := vm.k.GetStakerIterator(ctx, pool.Asset)
+		defer iterator.Close()
+		for ; iterator.Valid(); iterator.Next() {
+			var staker Staker
+			vm.k.Cdc().MustUnmarshalBinaryBare(iterator.Value(), &staker)
+			if staker.Units.IsZero() {
 				continue
 			}
 
 			unstakeMsg := NewMsgSetUnStake(
-				common.GetRagnarokTx(pool.Asset.Chain, item.RuneAddress, item.RuneAddress),
-				item.RuneAddress,
+				common.GetRagnarokTx(pool.Asset.Chain, staker.RuneAddress, staker.RuneAddress),
+				staker.RuneAddress,
 				sdk.NewUint(uint64(basisPoints)),
 				pool.Asset,
 				na.NodeAddress,
 			)
 
-			version := vm.k.GetLowestActiveVersion(ctx)
 			unstakeHandler := NewUnstakeHandler(vm.k, vm.versionedTxOutStore)
 			result := unstakeHandler.Run(ctx, unstakeMsg, version, constAccessor)
 			if !result.IsOK() {
-				ctx.Logger().Error("fail to unstake", "staker", item.RuneAddress, "error", result.Log)
+				ctx.Logger().Error("fail to unstake", "staker", staker.RuneAddress, "error", result.Log)
 			}
 		}
 	}
@@ -680,7 +682,7 @@ func (vm *validatorMgrV1) RequestYggReturn(ctx sdk.Context, node NodeAccount) er
 }
 
 func (vm *validatorMgrV1) recallYggFunds(ctx sdk.Context) error {
-	nodes, err := vm.k.ListNodeAccounts(ctx)
+	nodes, err := vm.k.ListNodeAccountsWithBond(ctx)
 	if err != nil {
 		return fmt.Errorf("fail to list all node accounts: %w", err)
 	}
@@ -743,7 +745,7 @@ func (vm *validatorMgrV1) setupValidatorNodes(ctx sdk.Context, height int64, con
 
 // Iterate over active node accounts, finding bad actors with high slash points
 func (vm *validatorMgrV1) findBadActors(ctx sdk.Context) (NodeAccounts, error) {
-	badActors := NodeAccounts{}
+	badActors := make(NodeAccounts, 0)
 	nas, err := vm.k.ListActiveNodeAccounts(ctx)
 	if err != nil {
 		return badActors, err
@@ -766,7 +768,11 @@ func (vm *validatorMgrV1) findBadActors(ctx sdk.Context) (NodeAccounts, error) {
 
 	// Find bad actor relative to age / slashpoints
 	for _, na := range nas {
-		if na.SlashPoints == 0 {
+		slashPts, err := vm.k.GetNodeAccountSlashPoints(ctx, na.NodeAddress)
+		if err != nil {
+			ctx.Logger().Error("fail to get node slash points", "error", err)
+		}
+		if slashPts == 0 {
 			continue
 		}
 
@@ -775,7 +781,7 @@ func (vm *validatorMgrV1) findBadActors(ctx sdk.Context) (NodeAccounts, error) {
 			// this node account is too new (1 hour) to be considered for removal
 			continue
 		}
-		score := age.Quo(sdk.NewDecWithPrec(na.SlashPoints, 5))
+		score := age.Quo(sdk.NewDecWithPrec(slashPts, 5))
 		totalScore = totalScore.Add(score)
 
 		tracker = append(tracker, badTracker{

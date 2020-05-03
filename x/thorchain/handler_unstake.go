@@ -62,7 +62,7 @@ func (h UnstakeHandler) validateV1(ctx sdk.Context, msg MsgSetUnStake) sdk.Error
 		ctx.Logger().Error("unstake msg fail validation", "error", err.ABCILog())
 		return sdk.NewError(DefaultCodespace, CodeUnstakeFailValidation, err.Error())
 	}
-	if !isSignedByActiveObserver(ctx, h.keeper, msg.GetSigners()) {
+	if !isSignedByActiveNodeAccounts(ctx, h.keeper, msg.GetSigners()) {
 		ctx.Logger().Error("message signed by unauthorized account",
 			"request tx hash", msg.Tx.ID,
 			"rune address", msg.RuneAddress,
@@ -87,14 +87,13 @@ func (h UnstakeHandler) validateV1(ctx sdk.Context, msg MsgSetUnStake) sdk.Error
 }
 
 func (h UnstakeHandler) handle(ctx sdk.Context, msg MsgSetUnStake, version semver.Version) ([]byte, sdk.Error) {
-	poolStaker, err := h.keeper.GetPoolStaker(ctx, msg.Asset)
+	staker, err := h.keeper.GetStaker(ctx, msg.Asset, msg.RuneAddress)
 	if err != nil {
-		ctx.Logger().Error("fail to get pool staker", "error", err)
-		return nil, sdk.NewError(DefaultCodespace, CodeFailGetPoolStaker, "fail to get pool staker")
+		ctx.Logger().Error("fail to get staker", "error", err)
+		return nil, sdk.NewError(DefaultCodespace, CodeFailGetStaker, "fail to get staker")
 	}
-	stakerUnit := poolStaker.GetStakerUnit(msg.RuneAddress)
 
-	runeAmt, assetAmount, units, err := unstake(ctx, version, h.keeper, msg)
+	runeAmt, assetAmount, units, gasAsset, err := unstake(ctx, version, h.keeper, msg)
 	if err != nil {
 		return nil, sdk.ErrInternal(fmt.Errorf("fail to process UnStake request: %w", err).Error())
 	}
@@ -147,9 +146,16 @@ func (h UnstakeHandler) handle(ctx sdk.Context, msg MsgSetUnStake, version semve
 	toi := &TxOutItem{
 		Chain:     common.RuneAsset().Chain,
 		InHash:    msg.Tx.ID,
-		ToAddress: stakerUnit.RuneAddress,
+		ToAddress: staker.RuneAddress,
 		Coin:      common.NewCoin(common.RuneAsset(), runeAmt),
 		Memo:      memo,
+	}
+	if !gasAsset.IsZero() {
+		if msg.Asset.IsBNB() {
+			toi.MaxGas = common.Gas{
+				common.NewCoin(common.RuneAsset().Chain.GetGasAsset(), gasAsset.QuoUint64(2)),
+			}
+		}
 	}
 	ok, err := txOutStore.TryAddTxOutItem(ctx, toi)
 	if err != nil {
@@ -163,10 +169,22 @@ func (h UnstakeHandler) handle(ctx sdk.Context, msg MsgSetUnStake, version semve
 	toi = &TxOutItem{
 		Chain:     msg.Asset.Chain,
 		InHash:    msg.Tx.ID,
-		ToAddress: stakerUnit.AssetAddress,
+		ToAddress: staker.AssetAddress,
 		Coin:      common.NewCoin(msg.Asset, assetAmount),
 		Memo:      memo,
 	}
+	if !gasAsset.IsZero() {
+		if msg.Asset.IsBNB() {
+			toi.MaxGas = common.Gas{
+				common.NewCoin(common.RuneAsset().Chain.GetGasAsset(), gasAsset.QuoUint64(2)),
+			}
+		} else if msg.Asset.Chain.GetGasAsset().Equals(msg.Asset) {
+			toi.MaxGas = common.Gas{
+				common.NewCoin(msg.Asset.Chain.GetGasAsset(), gasAsset),
+			}
+		}
+	}
+
 	ok, err = txOutStore.TryAddTxOutItem(ctx, toi)
 	if err != nil {
 		ctx.Logger().Error("fail to prepare outbound tx", "error", err)

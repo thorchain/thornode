@@ -6,6 +6,7 @@ import (
 	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	"gitlab.com/thorchain/thornode/common"
 	"gitlab.com/thorchain/thornode/constants"
 )
 
@@ -60,7 +61,7 @@ func (h ObservedTxOutHandler) validateV1(ctx sdk.Context, msg MsgObservedTxOut) 
 		return err
 	}
 
-	if !isSignedByActiveObserver(ctx, h.keeper, msg.GetSigners()) {
+	if !isSignedByActiveNodeAccounts(ctx, h.keeper, msg.GetSigners()) {
 		ctx.Logger().Error(notAuthorized.Error())
 		return notAuthorized
 	}
@@ -137,6 +138,16 @@ func (h ObservedTxOutHandler) handleV1(ctx sdk.Context, version semver.Version, 
 			continue
 		}
 		tx.Tx.Memo = fetchMemo(ctx, constAccessor, h.keeper, tx.Tx)
+		if len(tx.Tx.Memo) == 0 {
+			// we didn't find our memo, it might be yggdrasil return. These are
+			// tx markers without coin amounts because we allow yggdrasil to
+			// figure out the coin amounts
+			txYgg := tx.Tx
+			txYgg.Coins = common.Coins{
+				common.NewCoin(common.RuneAsset(), sdk.ZeroUint()),
+			}
+			tx.Tx.Memo = fetchMemo(ctx, constAccessor, h.keeper, txYgg)
+		}
 		ctx.Logger().Info("handleMsgObservedTxOut request", "Tx:", tx.String())
 
 		// if memo isn't valid or its an inbound memo, and its funds moving

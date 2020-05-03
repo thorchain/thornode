@@ -24,10 +24,8 @@ func NewQuerier(keeper Keeper, validatorMgr VersionedValidatorManager) sdk.Queri
 			return queryPool(ctx, path[1:], req, keeper)
 		case q.QueryPools.Key:
 			return queryPools(ctx, req, keeper)
-		case q.QueryPoolStakers.Key:
-			return queryPoolStakers(ctx, path[1:], req, keeper)
-		case q.QueryStakerPools.Key:
-			return queryStakerPool(ctx, path[1:], req, keeper)
+		case q.QueryStakers.Key:
+			return queryStakers(ctx, path[1:], req, keeper)
 		case q.QueryTxIn.Key:
 			return queryTxIn(ctx, path[1:], req, keeper)
 		case q.QueryKeysignArray.Key:
@@ -275,7 +273,15 @@ func queryNodeAccount(ctx sdk.Context, path []string, req abci.RequestQuery, kee
 	if err != nil {
 		return nil, sdk.ErrInternal("fail to get node accounts")
 	}
-	res, err := codec.MarshalJSONIndent(keeper.Cdc(), nodeAcc)
+
+	slashPts, err := keeper.GetNodeAccountSlashPoints(ctx, addr)
+	if err != nil {
+		return nil, sdk.ErrInternal("fail to get node slash points")
+	}
+
+	result := NewQueryNodeAccount(nodeAcc)
+	result.SlashPoints = slashPts
+	res, err := codec.MarshalJSONIndent(keeper.Cdc(), result)
 	if err != nil {
 		ctx.Logger().Error("fail to marshal node account to json", "error", err)
 		return nil, sdk.ErrInternal("fail to marshal node account to json")
@@ -285,16 +291,21 @@ func queryNodeAccount(ctx sdk.Context, path []string, req abci.RequestQuery, kee
 }
 
 func queryNodeAccounts(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
-	nodeAccounts, err := keeper.ListNodeAccounts(ctx)
+	nodeAccounts, err := keeper.ListNodeAccountsWithBond(ctx)
 	if err != nil {
 		return nil, sdk.ErrInternal("fail to get node accounts")
 	}
-	result := NodeAccounts{}
-	for _, node := range nodeAccounts {
-		if !node.Bond.IsZero() {
-			result = append(result, node)
+
+	result := make([]QueryNodeAccount, len(nodeAccounts))
+	for i, na := range nodeAccounts {
+		slashPts, err := keeper.GetNodeAccountSlashPoints(ctx, na.NodeAddress)
+		if err != nil {
+			return nil, sdk.ErrInternal("fail to get node slash points")
 		}
+		result[i] = NewQueryNodeAccount(na)
+		result[i].SlashPoints = slashPts
 	}
+
 	res, err := codec.MarshalJSONIndent(keeper.Cdc(), result)
 	if err != nil {
 		ctx.Logger().Error("fail to marshal observers to json", "error", err)
@@ -343,43 +354,25 @@ func queryObserver(ctx sdk.Context, path []string, req abci.RequestQuery, keeper
 	return res, nil
 }
 
-// queryPoolStakers
-func queryPoolStakers(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
+// queryStakers
+func queryStakers(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
 	asset, err := common.NewAsset(path[0])
 	if err != nil {
 		ctx.Logger().Error("fail to get parse asset", "error", err)
 		return nil, sdk.ErrInternal("fail to parse asset")
 	}
-	ps, err := keeper.GetPoolStaker(ctx, asset)
-	if err != nil {
-		ctx.Logger().Error("fail to get pool staker", "error", err)
-		return nil, sdk.ErrInternal("fail to get pool staker")
+	var stakers []Staker
+	iterator := keeper.GetStakerIterator(ctx, asset)
+	defer iterator.Close()
+	for ; iterator.Valid(); iterator.Next() {
+		var staker Staker
+		keeper.Cdc().MustUnmarshalBinaryBare(iterator.Value(), &staker)
+		stakers = append(stakers, staker)
 	}
-	res, err := codec.MarshalJSONIndent(keeper.Cdc(), ps)
+	res, err := codec.MarshalJSONIndent(keeper.Cdc(), stakers)
 	if err != nil {
-		ctx.Logger().Error("fail to marshal pool staker to json", "error", err)
-		return nil, sdk.ErrInternal("fail to marshal pool staker to json")
-	}
-	return res, nil
-}
-
-// queryStakerPool
-func queryStakerPool(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
-	addr, err := common.NewAddress(path[0])
-	if err != nil {
-		ctx.Logger().Error("fail to parse bnb address", "error", err)
-		return nil, sdk.ErrInternal("fail to parse bnb address")
-	}
-
-	ps, err := keeper.GetStakerPool(ctx, addr)
-	if err != nil {
-		ctx.Logger().Error("fail to get staker pool", "error", err)
-		return nil, sdk.ErrInternal("fail to get staker pool")
-	}
-	res, err := codec.MarshalJSONIndent(keeper.Cdc(), ps)
-	if err != nil {
-		ctx.Logger().Error("fail to marshal staker pool to json", "error", err)
-		return nil, sdk.ErrInternal("fail to marshal staker pool to json")
+		ctx.Logger().Error("fail to marshal stakers to json", "error", err)
+		return nil, sdk.ErrInternal("fail to marshal stakers to json")
 	}
 	return res, nil
 }
@@ -497,7 +490,7 @@ func queryKeygen(ctx sdk.Context, path []string, req abci.RequestQuery, keeper K
 		return nil, sdk.ErrInternal("fail to parse block height")
 	}
 
-	if height >= ctx.BlockHeight() {
+	if height > ctx.BlockHeight() {
 		return nil, sdk.ErrInternal("block height not available yet")
 	}
 
@@ -539,7 +532,7 @@ func queryKeysign(ctx sdk.Context, path []string, req abci.RequestQuery, keeper 
 		return nil, sdk.ErrInternal("fail to parse block height")
 	}
 
-	if height >= ctx.BlockHeight() {
+	if height > ctx.BlockHeight() {
 		return nil, sdk.ErrInternal("block height not available yet")
 	}
 
@@ -667,7 +660,7 @@ func queryCompEvents(ctx sdk.Context, path []string, req abci.RequestQuery, keep
 	}
 
 	chain := common.EmptyChain
-	if len(path[1]) > 0 {
+	if len(path) > 1 && len(path[1]) > 0 {
 		chain, err = common.NewChain(path[1])
 		if err != nil {
 			ctx.Logger().Error("fail to discover chain name", "error", err)
@@ -697,14 +690,25 @@ func queryCompEvents(ctx sdk.Context, path []string, req abci.RequestQuery, keep
 		if len(event.OutTxs) > 0 {
 			evtChain = common.RuneAsset().Chain
 			for _, outTx := range event.OutTxs {
-				if !evtChain.Equals(outTx.Chain) {
+				if !outTx.Chain.IsEmpty() && !evtChain.Equals(outTx.Chain) {
 					evtChain = outTx.Chain
 					break
 				}
 			}
 		}
+		// if event is pending, get the chain event from memo
+		if event.Status == EventPending {
+			memo, _ := ParseMemo(event.InTx.Memo)
+			asset := memo.GetAsset()
+			if asset.Chain != "" {
+				evtChain = asset.Chain
+			}
+		}
 
-		if !chain.IsEmpty() && !evtChain.Equals(chain) {
+		if !chain.IsEmpty() && !evtChain.Equals(chain) && !evtChain.IsEmpty() {
+			continue
+		}
+		if evtChain.IsEmpty() && !chain.IsBNB() && !chain.IsEmpty() {
 			continue
 		}
 		if event.Empty() {

@@ -72,6 +72,9 @@ func (msg MsgTssPool) ValidateBasic() sdk.Error {
 	if len(msg.PubKeys) < 2 {
 		return sdk.ErrUnknownRequest("Must have at least 2 pub keys")
 	}
+	if len(msg.PubKeys) > 100 {
+		return sdk.ErrUnknownRequest("Must have no more then 100 pub keys")
+	}
 	for _, pk := range msg.PubKeys {
 		if pk.IsEmpty() {
 			return sdk.ErrUnknownRequest("Pubkey cannot be empty")
