@@ -5,6 +5,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"gitlab.com/thorchain/thornode/common"
+	"gitlab.com/thorchain/thornode/constants"
 )
 
 // DummyEventMgr used for test purpose , and it implement EventManager interface
@@ -25,10 +26,13 @@ func (m *DummyEventMgr) GetBlockEvents(ctx sdk.Context, keeper Keeper, height in
 	return nil, nil
 }
 
-func (m *DummyEventMgr) CompleteEvents(ctx sdk.Context, keeper Keeper, height int64, txID common.TxID, txs common.Txs, eventStatus EventStatus) {
+func (m *DummyEventMgr) CompleteEvents(ctx sdk.Context, keeper Keeper, height int64, txID common.TxID, txs common.Txs, eventStatus EventStatus) error {
+	return nil
 }
 
-func (m *DummyEventMgr) AddEvent(ctx sdk.Context, event Event) {
+func (m *DummyEventMgr) AddEvent(event Event) {
+}
+func (m *DummyEventMgr) FailStalePendingEvents(ctx sdk.Context, constantValues constants.ConstantValues, keeper Keeper) {
 }
 
 type DummyVersionedEventMgr struct{}

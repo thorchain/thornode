@@ -105,6 +105,6 @@ func (h ReserveContributorHandler) HandleV1(ctx sdk.Context, msg MsgReserveContr
 	if err != nil {
 		ctx.Logger().Error("fail to get event manager", "error", err)
 	}
-	eventMgr.AddEvent(ctx, e)
+	eventMgr.AddEvent(e)
 	return nil
 }

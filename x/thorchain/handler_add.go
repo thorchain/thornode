@@ -102,6 +102,6 @@ func (ah AddHandler) handle(ctx sdk.Context, msg MsgAdd, version semver.Version)
 	if err != nil {
 		return sdk.ErrInternal(fmt.Sprintf("fail to get event manager fro version: %s", version))
 	}
-	eventMgr.AddEvent(ctx, evt)
+	eventMgr.AddEvent(evt)
 	return nil
 }

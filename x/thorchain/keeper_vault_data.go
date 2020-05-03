@@ -192,7 +192,7 @@ func (k KVStore) UpdateVaultData(ctx sdk.Context, constAccessor constants.Consta
 		evtBytes,
 		EventSuccess,
 	)
-	eventManager.AddEvent(ctx, evt)
+	eventManager.AddEvent(evt)
 
 	i, err := getTotalActiveNodeWithBond(ctx, k)
 	if err != nil {

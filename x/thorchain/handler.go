@@ -91,9 +91,9 @@ func getHandlerMapping(keeper Keeper,
 	versionedEventManager VersionedEventManager) map[string]MsgHandler {
 	// New arch handlers
 	m := make(map[string]MsgHandler)
-	m[MsgOutboundTx{}.Type()] = NewOutboundTxHandler(keeper)
+	m[MsgOutboundTx{}.Type()] = NewOutboundTxHandler(keeper, versionedEventManager)
 	m[MsgTssPool{}.Type()] = NewTssHandler(keeper, versionedVaultManager)
-	m[MsgYggdrasil{}.Type()] = NewYggdrasilHandler(keeper, versionedTxOutStore, validatorMgr)
+	m[MsgYggdrasil{}.Type()] = NewYggdrasilHandler(keeper, versionedTxOutStore, validatorMgr, versionedEventManager)
 	m[MsgEndPool{}.Type()] = NewEndPoolHandler(keeper, versionedTxOutStore, versionedEventManager)
 	m[MsgSetNodeKeys{}.Type()] = NewSetNodeKeysHandler(keeper)
 	m[MsgSwap{}.Type()] = NewSwapHandler(keeper, versionedTxOutStore, versionedEventManager)
@@ -103,14 +103,14 @@ func getHandlerMapping(keeper Keeper,
 	m[MsgBond{}.Type()] = NewBondHandler(keeper, versionedEventManager)
 	m[MsgObservedTxIn{}.Type()] = NewObservedTxInHandler(keeper, versionedObserverManager, versionedTxOutStore, validatorMgr, versionedVaultManager, versionedGasMgr, versionedEventManager)
 	m[MsgObservedTxOut{}.Type()] = NewObservedTxOutHandler(keeper, versionedObserverManager, versionedTxOutStore, validatorMgr, versionedVaultManager, versionedGasMgr, versionedEventManager)
-	m[MsgLeave{}.Type()] = NewLeaveHandler(keeper, validatorMgr, versionedTxOutStore)
+	m[MsgLeave{}.Type()] = NewLeaveHandler(keeper, validatorMgr, versionedTxOutStore, versionedEventManager)
 	m[MsgAdd{}.Type()] = NewAddHandler(keeper, versionedEventManager)
 	m[MsgSetUnStake{}.Type()] = NewUnstakeHandler(keeper, versionedTxOutStore, versionedEventManager)
 	m[MsgSetStakeData{}.Type()] = NewStakeHandler(keeper, versionedEventManager)
-	m[MsgRefundTx{}.Type()] = NewRefundHandler(keeper)
+	m[MsgRefundTx{}.Type()] = NewRefundHandler(keeper, versionedEventManager)
 	m[MsgTssKeysignFail{}.Type()] = NewTssKeysignHandler(keeper)
-	m[MsgMigrate{}.Type()] = NewMigrateHandler(keeper)
-	m[MsgRagnarok{}.Type()] = NewRagnarokHandler(keeper)
+	m[MsgMigrate{}.Type()] = NewMigrateHandler(keeper, versionedEventManager)
+	m[MsgRagnarok{}.Type()] = NewRagnarokHandler(keeper, versionedEventManager)
 	m[MsgErrataTx{}.Type()] = NewErrataTxHandler(keeper, versionedEventManager)
 	return m
 }

@@ -90,7 +90,7 @@ func (h SwapHandler) handleV1(ctx sdk.Context, msg MsgSwap, version semver.Versi
 		return sdk.ErrInternal("fail to get event manager").Result()
 	}
 	for _, evt := range events {
-		eventMgr.AddEvent(ctx, evt)
+		eventMgr.AddEvent(evt)
 
 		var swap EventSwap
 		if err := json.Unmarshal(evt.Event, &swap); err != nil {

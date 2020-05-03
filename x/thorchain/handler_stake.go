@@ -161,7 +161,7 @@ func (h StakeHandler) processStakeEvent(ctx sdk.Context, keeper Keeper, msg MsgS
 	if err != nil {
 		return fmt.Errorf("fail to get event manager: %w", err)
 	}
-	eventMgr.AddEvent(ctx, evt)
+	eventMgr.AddEvent(evt)
 	return nil
 }
 

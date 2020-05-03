@@ -21,14 +21,16 @@ type VaultManager interface {
 
 // VersionedVaultMgr is an implementation of versioned Vault Manager
 type VersionedVaultMgr struct {
-	vaultMgrV1          *VaultMgr
-	versionedTxOutStore VersionedTxOutStore
+	vaultMgrV1            *VaultMgr
+	versionedTxOutStore   VersionedTxOutStore
+	versionedEventManager VersionedEventManager
 }
 
 // NewVersionedVaultMgr create a new instance of VersionedVaultMgr
-func NewVersionedVaultMgr(versionedTxOutStore VersionedTxOutStore) *VersionedVaultMgr {
+func NewVersionedVaultMgr(versionedTxOutStore VersionedTxOutStore, versionedEventManager VersionedEventManager) *VersionedVaultMgr {
 	return &VersionedVaultMgr{
-		versionedTxOutStore: versionedTxOutStore,
+		versionedTxOutStore:   versionedTxOutStore,
+		versionedEventManager: versionedEventManager,
 	}
 }
 
@@ -36,7 +38,7 @@ func NewVersionedVaultMgr(versionedTxOutStore VersionedTxOutStore) *VersionedVau
 func (v *VersionedVaultMgr) GetVaultManager(ctx sdk.Context, keeper Keeper, version semver.Version) (VaultManager, error) {
 	if version.GTE(semver.MustParse("0.1.0")) {
 		if v.vaultMgrV1 == nil {
-			v.vaultMgrV1 = NewVaultMgr(keeper, v.versionedTxOutStore)
+			v.vaultMgrV1 = NewVaultMgr(keeper, v.versionedTxOutStore, v.versionedEventManager)
 		}
 		return v.vaultMgrV1, nil
 	}

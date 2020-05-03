@@ -73,5 +73,5 @@ func (gm *GasMgr) EndBlock(ctx sdk.Context, keeper Keeper, eventManager EventMan
 		return
 	}
 	evt := NewEvent(gm.gasEvent.Type(), ctx.BlockHeight(), common.Tx{ID: common.BlankTxID}, buf, EventSuccess)
-	eventManager.AddEvent(ctx, evt)
+	eventManager.AddEvent(evt)
 }

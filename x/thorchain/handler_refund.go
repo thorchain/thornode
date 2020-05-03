@@ -15,10 +15,10 @@ type RefundHandler struct {
 }
 
 // NewRefundHandler create a new refund handler
-func NewRefundHandler(keeper Keeper) RefundHandler {
+func NewRefundHandler(keeper Keeper, versionedEventManager VersionedEventManager) RefundHandler {
 	return RefundHandler{
 		keeper: keeper,
-		ch:     NewCommonOutboundTxHandler(keeper),
+		ch:     NewCommonOutboundTxHandler(keeper, versionedEventManager),
 	}
 }
 

@@ -86,7 +86,7 @@ func (h BondHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version, con
 	if err != nil {
 		ctx.Logger().Error("fail to get event manager for version:%s", version, "error", err)
 	}
-	evtMgr.AddEvent(ctx, e)
+	evtMgr.AddEvent(e)
 	return sdk.Result{
 		Code:      sdk.CodeOK,
 		Codespace: DefaultCodespace,

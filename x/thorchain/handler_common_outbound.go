@@ -12,17 +12,21 @@ import (
 // CommonOutboundTxHandler is the place where those common logic can be shared between multiple different kind of outbound tx handler
 // at the moment, handler_refund, and handler_outbound_tx are largely the same , only some small difference
 type CommonOutboundTxHandler struct {
-	keeper Keeper
+	keeper                Keeper
+	versionedEventManager VersionedEventManager
 }
 
 // NewCommonOutboundTxHandler create a new instance of the CommonOutboundTxHandler
-func NewCommonOutboundTxHandler(k Keeper) CommonOutboundTxHandler {
-	return CommonOutboundTxHandler{keeper: k}
+func NewCommonOutboundTxHandler(k Keeper, versionedEventManager VersionedEventManager) CommonOutboundTxHandler {
+	return CommonOutboundTxHandler{
+		keeper:                k,
+		versionedEventManager: versionedEventManager,
+	}
 }
 
 func (h CommonOutboundTxHandler) slash(ctx sdk.Context, version semver.Version, tx ObservedTx) error {
 	var returnErr error
-	slasher, err := NewSlasher(h.keeper, version)
+	slasher, err := NewSlasher(h.keeper, version, h.versionedEventManager)
 	if err != nil {
 		return fmt.Errorf("fail to create new slasher,error:%w", err)
 	}
@@ -91,11 +95,12 @@ func (h CommonOutboundTxHandler) handle(ctx sdk.Context, version semver.Version,
 
 	// complete events
 	if voter.IsDone() {
-		err := completeEvents(ctx, h.keeper, inTxID, voter.OutTxs, status)
+		eventMgr, err := h.versionedEventManager.GetEventManager(ctx, version)
 		if err != nil {
-			ctx.Logger().Error("unable to complete events", "error", err)
-			return sdk.ErrInternal(err.Error()).Result()
+			ctx.Logger().Error("fail to get event manager", "error", err)
+			return errFailGetEventManager.Result()
 		}
+		eventMgr.CompleteEvents(ctx, h.keeper, voter.Height, inTxID, voter.OutTxs, status)
 	}
 
 	return sdk.Result{

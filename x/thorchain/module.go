@@ -85,7 +85,8 @@ type AppModule struct {
 // NewAppModule creates a new AppModule Object
 func NewAppModule(k Keeper, bankKeeper bank.Keeper, supplyKeeper supply.Keeper) AppModule {
 	versionedTxOutStore := NewVersionedTxOutStore()
-	versionedVaultMgr := NewVersionedVaultMgr(versionedTxOutStore)
+	versionedEventManager := NewVersionedEventMgr()
+	versionedVaultMgr := NewVersionedVaultMgr(versionedTxOutStore, versionedEventManager)
 
 	return AppModule{
 		AppModuleBasic:           AppModuleBasic{},
@@ -93,11 +94,11 @@ func NewAppModule(k Keeper, bankKeeper bank.Keeper, supplyKeeper supply.Keeper) 
 		coinKeeper:               bankKeeper,
 		supplyKeeper:             supplyKeeper,
 		txOutStore:               versionedTxOutStore,
-		validatorMgr:             NewVersionedValidatorMgr(k, versionedTxOutStore, versionedVaultMgr),
+		validatorMgr:             NewVersionedValidatorMgr(k, versionedTxOutStore, versionedVaultMgr, versionedEventManager),
 		versionedVaultManager:    versionedVaultMgr,
 		versionedGasManager:      NewVersionedGasMgr(),
 		versionedObserverManager: NewVersionedObserverMgr(),
-		versionedEventManager:    NewVersionedEventMgr(),
+		versionedEventManager:    versionedEventManager,
 	}
 }
 
@@ -156,7 +157,7 @@ func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 		return
 	}
 
-	slasher, err := NewSlasher(am.keeper, version)
+	slasher, err := NewSlasher(am.keeper, version, am.versionedEventManager)
 	if err != nil {
 		ctx.Logger().Error("fail to create slasher", "error", err)
 	}
@@ -187,7 +188,12 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 		ctx.Logger().Error("fail to get tx out store", "error", err)
 		return nil
 	}
-	slasher, err := NewSlasher(am.keeper, version)
+	eventMgr, err := am.versionedEventManager.GetEventManager(ctx, version)
+	if err != nil {
+		ctx.Logger().Error(fmt.Sprintf("Event manager that compatible with version :%s is not available", version))
+		return nil
+	}
+	slasher, err := NewSlasher(am.keeper, version, am.versionedEventManager)
 	if err != nil {
 		ctx.Logger().Error("fail to create slasher", "error", err)
 		return nil
@@ -207,20 +213,8 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 		}
 	}
 
-	// fail stale pending events
-	signingTransPeriod := constantValues.GetInt64Value(constants.SigningTransactionPeriod)
-	pendingEvents, err := am.keeper.GetAllPendingEvents(ctx)
-	if err != nil {
-		ctx.Logger().Error("Unable to get all pending events", "error", err)
-	}
-	for _, evt := range pendingEvents {
-		if evt.Height+(2*signingTransPeriod) < ctx.BlockHeight() {
-			evt.Status = EventFail
-			if err := am.keeper.UpsertEvent(ctx, evt); err != nil {
-				ctx.Logger().Error("Unable to update pending event", "error", err)
-			}
-		}
-	}
+	// mark those stale pending events to fail
+	eventMgr.FailStalePendingEvents(ctx, constantValues, am.keeper)
 	obMgr, err := am.versionedObserverManager.GetObserverManager(ctx, version)
 	if err != nil {
 		ctx.Logger().Error(fmt.Sprintf("observer manager that compatible with version :%s is not available", version))
@@ -233,7 +227,7 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 		return nil
 	}
 	// update vault data to account for block rewards and reward units
-	if err := am.keeper.UpdateVaultData(ctx, constantValues, gasMgr); err != nil {
+	if err := am.keeper.UpdateVaultData(ctx, constantValues, gasMgr, eventMgr); err != nil {
 		ctx.Logger().Error("fail to save vault", "error", err)
 	}
 	vaultMgr, err := am.versionedVaultManager.GetVaultManager(ctx, am.keeper, version)
@@ -254,11 +248,9 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 	if err := Fund(ctx, am.keeper, txStore, constantValues); err != nil {
 		ctx.Logger().Error("unable to fund yggdrasil", "error", err)
 	}
-	gasMgr.EndBlock(ctx, am.keeper)
-	eventMgr, err := am.versionedEventManager.GetEventManager(ctx, version)
-	if err != nil {
-		ctx.Logger().Error(fmt.Sprintf("Event manager that compatible with version :%s is not available", version))
-	}
+	gasMgr.EndBlock(ctx, am.keeper, eventMgr)
+
+	// make sure event manager is the last one here , thus it will not miss any events
 	if eventMgr != nil {
 		eventMgr.EndBlock(ctx, am.keeper)
 	}

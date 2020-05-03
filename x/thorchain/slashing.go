@@ -16,16 +16,18 @@ import (
 
 // Slasher implements SlashingModule interface provide the necessary functionality to slash node accounts
 type Slasher struct {
-	keeper  Keeper
-	version semver.Version
+	keeper                Keeper
+	version               semver.Version
+	versionedEventManager VersionedEventManager
 }
 
 // NewSlasher create a new instance of Slasher
-func NewSlasher(keeper Keeper, version semver.Version) (*Slasher, error) {
+func NewSlasher(keeper Keeper, version semver.Version, versionedEventManager VersionedEventManager) (*Slasher, error) {
 	if version.GTE(semver.MustParse("0.1.0")) {
 		return &Slasher{
-			keeper:  keeper,
-			version: version,
+			keeper:                keeper,
+			version:               version,
+			versionedEventManager: versionedEventManager,
 		}, nil
 	}
 	return nil, errBadVersion
@@ -291,9 +293,10 @@ func (s *Slasher) SlashNodeAccount(ctx sdk.Context, observedPubKey common.PubKey
 		slashBuf,
 		EventSuccess,
 	)
-	if err := s.keeper.UpsertEvent(ctx, event); err != nil {
-		return fmt.Errorf("fail to save event: %w", err)
+	eventMgr, err := s.versionedEventManager.GetEventManager(ctx, s.version)
+	if err != nil {
+		return fmt.Errorf("fail to get event manager: %w", err)
 	}
-
+	eventMgr.AddEvent(event)
 	return s.keeper.SetNodeAccount(ctx, nodeAccount)
 }

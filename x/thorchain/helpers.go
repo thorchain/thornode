@@ -11,7 +11,14 @@ import (
 	"gitlab.com/thorchain/thornode/constants"
 )
 
-func refundTx(ctx sdk.Context, tx ObservedTx, store TxOutStore, keeper Keeper, constAccessor constants.ConstantValues, refundCode sdk.CodeType, refundReason string) error {
+func refundTx(ctx sdk.Context,
+	tx ObservedTx,
+	store TxOutStore,
+	keeper Keeper,
+	constAccessor constants.ConstantValues,
+	refundCode sdk.CodeType,
+	refundReason string,
+	eventManager EventManager) error {
 	// If THORNode recognize one of the coins, and therefore able to refund
 	// withholding fees, refund all coins.
 	eventRefund := NewEventRefund(refundCode, refundReason)
@@ -54,18 +61,14 @@ func refundTx(ctx sdk.Context, tx ObservedTx, store TxOutStore, keeper Keeper, c
 		event := NewEvent(eventRefund.Type(), ctx.BlockHeight(), newTx, buf, EventPending)
 		transactionFee := constAccessor.GetInt64Value(constants.TransactionFee)
 		event.Fee = getFee(tx.Tx.Coins, refundCoins, transactionFee)
-		if err := keeper.UpsertEvent(ctx, event); err != nil {
-			return fmt.Errorf("fail to save refund event: %w", err)
-		}
+		eventManager.AddEvent(event)
 		return nil
 	}
 	// event thorchain didn't actually refund anything , still create an event thus front-end ui can keep track of what happened
 	// this event is final doesn't need to be completed
-	event := NewEvent(eventRefund.Type(), ctx.BlockHeight(), tx.Tx, buf, EventRefund)
-	if err := keeper.UpsertEvent(ctx, event); err != nil {
-		return fmt.Errorf("fail to save refund event: %w", err)
-	}
 
+	eventManager.AddEvent(
+		NewEvent(eventRefund.Type(), ctx.BlockHeight(), tx.Tx, buf, EventRefund))
 	return nil
 }
 
@@ -171,7 +174,7 @@ func getTotalYggValueInRune(ctx sdk.Context, keeper Keeper, ygg Vault) (sdk.Uint
 	return yggRune, nil
 }
 
-func refundBond(ctx sdk.Context, tx common.Tx, nodeAcc NodeAccount, keeper Keeper, txOut TxOutStore) error {
+func refundBond(ctx sdk.Context, tx common.Tx, nodeAcc NodeAccount, keeper Keeper, txOut TxOutStore, eventManager EventManager) error {
 	if nodeAcc.Status == NodeActive {
 		ctx.Logger().Info("node still active , cannot refund bond", "node address", nodeAcc.NodeAddress, "node pub key", nodeAcc.PubKeySet.Secp256k1)
 		return nil
@@ -220,10 +223,7 @@ func refundBond(ctx sdk.Context, tx common.Tx, nodeAcc NodeAccount, keeper Keepe
 		if err != nil {
 			return fmt.Errorf("fail to marshal bond event: %w", err)
 		}
-		e := NewEvent(bondEvent.Type(), ctx.BlockHeight(), tx, buf, EventPending)
-		if err := keeper.UpsertEvent(ctx, e); err != nil {
-			return fmt.Errorf("fail to save bond return event: %w", err)
-		}
+		eventManager.AddEvent(NewEvent(bondEvent.Type(), ctx.BlockHeight(), tx, buf, EventPending))
 		// refund bond
 		txOutItem := &TxOutItem{
 			Chain:       common.RuneAsset().Chain,
@@ -285,90 +285,6 @@ func isSignedByActiveNodeAccounts(ctx sdk.Context, keeper Keeper, signers []sdk.
 		}
 	}
 	return true
-}
-
-func updateEventStatus(ctx sdk.Context, keeper Keeper, eventID int64, txs common.Txs, eventStatus EventStatus) error {
-	event, err := keeper.GetEvent(ctx, eventID)
-	if err != nil {
-		return fmt.Errorf("fail to get event: %w", err)
-	}
-
-	// if the event is already successful, don't append more transactions
-	if event.Status == EventSuccess {
-		return nil
-	}
-
-	ctx.Logger().Info(fmt.Sprintf("set event to %s,eventID (%d) , txs:%s", eventStatus, eventID, txs))
-	outTxs := append(event.OutTxs, txs...)
-	for i := 0; i < len(outTxs); i++ {
-		duplicate := false
-		for j := i + 1; j < len(outTxs); j++ {
-			if outTxs[i].Equals(outTxs[j]) {
-				duplicate = true
-			}
-		}
-		if !duplicate {
-			event.OutTxs = append(event.OutTxs, outTxs[i])
-		}
-	}
-	if eventStatus == EventRefund {
-		// we need to check we refunded all the coins that need to be refunded from in tx
-		// before updating status to complete, we use the count of voter actions to check
-		voter, err := keeper.GetObservedTxVoter(ctx, event.InTx.ID)
-		if err != nil {
-			return fmt.Errorf("fail to get observed tx voter: %w", err)
-		}
-		if len(voter.Actions) == len(event.OutTxs) {
-			event.Status = eventStatus
-		}
-	} else {
-		event.Status = eventStatus
-	}
-	return keeper.UpsertEvent(ctx, event)
-}
-
-func updateEventFee(ctx sdk.Context, keeper Keeper, txID common.TxID, fee common.Fee) error {
-	ctx.Logger().Info("update event fee txid", "tx", txID.String())
-	eventIDs, err := keeper.GetEventsIDByTxHash(ctx, txID)
-	if err != nil {
-		if err == ErrEventNotFound {
-			ctx.Logger().Error(fmt.Sprintf("could not find the event(%s)", txID))
-			return nil
-		}
-		return fmt.Errorf("fail to get event id: %w", err)
-	}
-	if len(eventIDs) == 0 {
-		return errors.New("no event found")
-	}
-	// There are two events for double swap with the same the same txID. Only the second one has fee
-	eventID := eventIDs[len(eventIDs)-1]
-	event, err := keeper.GetEvent(ctx, eventID)
-	if err != nil {
-		return fmt.Errorf("fail to get event: %w", err)
-	}
-
-	ctx.Logger().Info(fmt.Sprintf("Update fee for event %d, fee:%s", eventID, fee))
-	event.Fee.Coins = append(event.Fee.Coins, fee.Coins...)
-	event.Fee.PoolDeduct = event.Fee.PoolDeduct.Add(fee.PoolDeduct)
-	return keeper.UpsertEvent(ctx, event)
-}
-
-func completeEvents(ctx sdk.Context, keeper Keeper, txID common.TxID, txs common.Txs, eventStatus EventStatus) error {
-	ctx.Logger().Info(fmt.Sprintf("txid(%s)", txID))
-	eventIDs, err := keeper.GetPendingEventID(ctx, txID)
-	if err != nil {
-		if err == ErrEventNotFound {
-			ctx.Logger().Error(fmt.Sprintf("could not find the event(%s)", txID))
-			return nil
-		}
-		return fmt.Errorf("fail to get pending event id: %w", err)
-	}
-	for _, item := range eventIDs {
-		if err := updateEventStatus(ctx, keeper, item, txs, eventStatus); err != nil {
-			return fmt.Errorf("fail to set event(%d) to %s: %w", item, eventStatus, err)
-		}
-	}
-	return nil
 }
 
 func enableNextPool(ctx sdk.Context, keeper Keeper) error {

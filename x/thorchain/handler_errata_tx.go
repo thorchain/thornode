@@ -190,7 +190,7 @@ func (h ErrataTxHandler) handleV1(ctx sdk.Context, msg MsgErrataTx, version semv
 	if err != nil {
 		ctx.Logger().Error("fail to get event manager", "error", err)
 	}
-	eventMgr.AddEvent(ctx, evt)
+	eventMgr.AddEvent(evt)
 
 	return sdk.Result{
 		Code:      sdk.CodeOK,

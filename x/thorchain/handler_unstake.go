@@ -134,7 +134,7 @@ func (h UnstakeHandler) handle(ctx sdk.Context, msg MsgSetUnStake, version semve
 		ctx.Logger().Error("fail to get event manager", "error", err)
 		return nil, errFailGetEventManager
 	}
-	eventMgr.AddEvent(ctx, evt)
+	eventMgr.AddEvent(evt)
 	txOutStore, err := h.txOutStore.GetTxOutStore(h.keeper, version)
 	if err != nil {
 		ctx.Logger().Error("fail to get txout store", "error", err)
