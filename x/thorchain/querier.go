@@ -68,6 +68,8 @@ func NewQuerier(keeper Keeper, validatorMgr VersionedValidatorManager) sdk.Queri
 			return queryConstantValues(ctx, path[1:], req, keeper)
 		case q.QueryBan.Key:
 			return queryBan(ctx, path[1:], req, keeper)
+		case q.QueryBlockEvents.Key:
+			return queryBlockEvents(ctx, path[1:], req, keeper)
 		default:
 			return nil, sdk.ErrUnknownRequest(
 				fmt.Sprintf("unknown thorchain query endpoint: %s", path[0]),
@@ -612,6 +614,25 @@ func getEventStatusFromQuery(u *url.URL) EventStatuses {
 		return result
 	}
 	return GetEventStatuses(values)
+}
+
+func queryBlockEvents(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
+	blockHeight, err := strconv.ParseInt(path[0], 10, 64)
+	if err != nil {
+		ctx.Logger().Error("fail to convert block height", "error", err)
+		return nil, sdk.ErrInternal(fmt.Sprintf("fail to convert block height(%s)", path[0]))
+	}
+	blockEvents, err := keeper.GetBlockEvents(ctx, blockHeight)
+	if err != nil {
+		ctx.Logger().Error("fail to get block events", "error", err)
+		return nil, sdk.ErrInternal(fmt.Sprintf("fail to get block events at height %d", blockHeight))
+	}
+	res, err := codec.MarshalJSONIndent(keeper.Cdc(), blockEvents)
+	if err != nil {
+		ctx.Logger().Error("fail to marshal events to json", "error", err)
+		return nil, sdk.ErrInternal("fail to marshal events to json")
+	}
+	return res, nil
 }
 
 func queryEventsByTxHash(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
