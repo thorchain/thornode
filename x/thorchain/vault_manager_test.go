@@ -197,7 +197,9 @@ func (s *ValidatorManagerTestSuite) TestRagnarokChain(c *C) {
 	}
 
 	versionedTxOutStoreDummy := NewVersionedTxOutStoreDummy()
-	vaultMgr := NewVaultMgr(keeper, versionedTxOutStoreDummy)
+	versionedEventManagerDummy := NewDummyVersionedEventMgr()
+
+	vaultMgr := NewVaultMgr(keeper, versionedTxOutStoreDummy, versionedEventManagerDummy)
 
 	err := vaultMgr.manageChains(ctx, constAccessor)
 	c.Assert(err, IsNil)

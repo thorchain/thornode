@@ -119,7 +119,7 @@ func (HandlerUnstakeSuite) TestUnstakeHandler(c *C) {
 	c.Assert(err, IsNil)
 	c.Logf("stake unit: %d", unit)
 	// let's just unstake
-	unstakeHandler := NewUnstakeHandler(k, NewVersionedTxOutStoreDummy())
+	unstakeHandler := NewUnstakeHandler(k, NewVersionedTxOutStoreDummy(), NewDummyVersionedEventMgr())
 
 	msgUnstake := NewMsgSetUnStake(GetRandomTx(), runeAddr, sdk.NewUint(uint64(MaxUnstakeBasisPoints)), common.BNBAsset, activeNodeAccount.NodeAddress)
 	result := unstakeHandler.Run(ctx, msgUnstake, ver, constAccessor)
@@ -171,7 +171,7 @@ func (HandlerUnstakeSuite) TestUnstakeHandler_Validation(c *C) {
 	ver := constants.SWVersion
 	constAccessor := constants.GetConstantValues(ver)
 	for _, tc := range testCases {
-		unstakeHandler := NewUnstakeHandler(k, NewVersionedTxOutStoreDummy())
+		unstakeHandler := NewUnstakeHandler(k, NewVersionedTxOutStoreDummy(), NewDummyVersionedEventMgr())
 		c.Assert(unstakeHandler.Run(ctx, tc.msg, ver, constAccessor).Code, Equals, tc.expectedResult, Commentf(tc.name))
 	}
 }
@@ -237,7 +237,7 @@ func (HandlerUnstakeSuite) TestUnstakeHandler_mockFailScenarios(c *C) {
 
 	for _, tc := range testCases {
 		ctx, _ := setupKeeperForTest(c)
-		unstakeHandler := NewUnstakeHandler(tc.k, NewVersionedTxOutStoreDummy())
+		unstakeHandler := NewUnstakeHandler(tc.k, NewVersionedTxOutStoreDummy(), NewDummyVersionedEventMgr())
 		msgUnstake := NewMsgSetUnStake(GetRandomTx(), GetRandomBNBAddress(), sdk.NewUint(uint64(MaxUnstakeBasisPoints)), common.BNBAsset, activeNodeAccount.NodeAddress)
 		c.Assert(unstakeHandler.Run(ctx, msgUnstake, ver, constAccessor).Code, Equals, tc.expectedResult, Commentf(tc.name))
 	}

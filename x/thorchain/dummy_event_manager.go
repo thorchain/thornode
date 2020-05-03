@@ -30,6 +30,7 @@ func (m *DummyEventMgr) CompleteEvents(ctx sdk.Context, keeper Keeper, height in
 
 func (m *DummyEventMgr) AddEvent(event Event) {
 }
+
 func (m *DummyEventMgr) EmitPoolEvent(ctx sdk.Context, keeper Keeper, txIn common.TxID, status EventStatus, poolEvt EventPool) error {
 	return nil
 }

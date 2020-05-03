@@ -31,6 +31,7 @@ func newValidatorMgrV1(k Keeper, versionedTxOutStore VersionedTxOutStore, versio
 		k:                     k,
 		versionedVaultManager: versionedVaultManager,
 		versionedTxOutStore:   versionedTxOutStore,
+		versionedEventManager: versionedEventManager,
 	}
 }
 

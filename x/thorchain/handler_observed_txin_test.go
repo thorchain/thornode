@@ -51,7 +51,9 @@ func (s *HandlerObservedTxInSuite) TestValidate(c *C) {
 	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(w.versionedTxOutStore)
 	versionedGasMgr := NewDummyVersionedGasMgr()
 	versionedObMgr := NewDummyVersionedObserverMgr()
-	handler := NewObservedTxInHandler(keeper, versionedObMgr, w.versionedTxOutStore, w.validatorMgr, versionedVaultMgrDummy, versionedGasMgr)
+	versionedEventManagerDummy := NewDummyVersionedEventMgr()
+
+	handler := NewObservedTxInHandler(keeper, versionedObMgr, w.versionedTxOutStore, w.validatorMgr, versionedVaultMgrDummy, versionedGasMgr, versionedEventManagerDummy)
 
 	// happy path
 	ver := constants.SWVersion
@@ -245,7 +247,9 @@ func (s *HandlerObservedTxInSuite) TestHandle(c *C) {
 	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(versionedTxOutStore)
 	versionedGasMgr := NewVersionedGasMgr()
 	versionedObMgr := NewVersionedObserverMgr()
-	handler := NewObservedTxInHandler(keeper, versionedObMgr, versionedTxOutStore, w.validatorMgr, versionedVaultMgrDummy, versionedGasMgr)
+	versionedEventManagerDummy := NewDummyVersionedEventMgr()
+
+	handler := NewObservedTxInHandler(keeper, versionedObMgr, versionedTxOutStore, w.validatorMgr, versionedVaultMgrDummy, versionedGasMgr, versionedEventManagerDummy)
 
 	c.Assert(err, IsNil)
 	msg := NewMsgObservedTxIn(txs, keeper.nas[0].NodeAddress)
@@ -317,7 +321,9 @@ func (s *HandlerObservedTxInSuite) TestMigrateMemo(c *C) {
 	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(versionedTxOutStore)
 	versionedGasMgr := NewVersionedGasMgr()
 	versionedObMgr := NewDummyVersionedObserverMgr()
-	handler := NewObservedTxInHandler(keeper, versionedObMgr, versionedTxOutStore, w.validatorMgr, versionedVaultMgrDummy, versionedGasMgr)
+	versionedEventManagerDummy := NewDummyVersionedEventMgr()
+
+	handler := NewObservedTxInHandler(keeper, versionedObMgr, versionedTxOutStore, w.validatorMgr, versionedVaultMgrDummy, versionedGasMgr, versionedEventManagerDummy)
 
 	c.Assert(err, IsNil)
 	msg := NewMsgObservedTxIn(txs, keeper.nas[0].NodeAddress)
