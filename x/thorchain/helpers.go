@@ -371,7 +371,7 @@ func completeEvents(ctx sdk.Context, keeper Keeper, txID common.TxID, txs common
 	return nil
 }
 
-func enableNextPool(ctx sdk.Context, keeper Keeper) error {
+func enableNextPool(ctx sdk.Context, keeper Keeper, eventManager EventManager) error {
 	var pools []Pool
 	iterator := keeper.GetPoolIterator(ctx)
 	defer iterator.Close()
@@ -396,6 +396,11 @@ func enableNextPool(ctx sdk.Context, keeper Keeper) error {
 		if pool.BalanceRune.LT(p.BalanceRune) {
 			pool = p
 		}
+	}
+
+	poolEvt := NewEventPool(pool.Asset, PoolEnabled)
+	if err := eventManager.EmitPoolEvent(ctx, keeper, common.BlankTxID, EventSuccess, poolEvt); err != nil {
+		return fmt.Errorf("fail to emit pool event: %w", err)
 	}
 
 	pool.Status = PoolEnabled

@@ -17,6 +17,7 @@ type ObservedTxOutHandler struct {
 	versionedVaultManager    VersionedVaultManager
 	versionedGasMgr          VersionedGasManager
 	versionedObserverManager VersionedObserverManager
+	versionedEventManager    VersionedEventManager
 }
 
 func NewObservedTxOutHandler(keeper Keeper,
@@ -24,7 +25,8 @@ func NewObservedTxOutHandler(keeper Keeper,
 	txOutStore VersionedTxOutStore,
 	validatorMgr VersionedValidatorManager,
 	versionedVaultManager VersionedVaultManager,
-	versionedGasMgr VersionedGasManager) ObservedTxOutHandler {
+	versionedGasMgr VersionedGasManager,
+	versionedEventManager VersionedEventManager) ObservedTxOutHandler {
 	return ObservedTxOutHandler{
 		keeper:                   keeper,
 		versionedTxOutStore:      txOutStore,
@@ -32,6 +34,7 @@ func NewObservedTxOutHandler(keeper Keeper,
 		versionedVaultManager:    versionedVaultManager,
 		versionedGasMgr:          versionedGasMgr,
 		versionedObserverManager: versionedObserverManager,
+		versionedEventManager:    versionedEventManager,
 	}
 }
 
@@ -113,7 +116,7 @@ func (h ObservedTxOutHandler) handleV1(ctx sdk.Context, version semver.Version, 
 		return sdk.ErrInternal("fail to get gas manager").Result()
 	}
 
-	handler := NewHandler(h.keeper, h.versionedTxOutStore, h.validatorMgr, h.versionedVaultManager, h.versionedObserverManager, h.versionedGasMgr)
+	handler := NewHandler(h.keeper, h.versionedTxOutStore, h.validatorMgr, h.versionedVaultManager, h.versionedObserverManager, h.versionedGasMgr, h.versionedEventManager)
 
 	for _, tx := range msg.Txs {
 		// check we are sending from a valid vault

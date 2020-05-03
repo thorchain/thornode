@@ -1,6 +1,9 @@
 package thorchain
 
 import (
+	"encoding/json"
+	"fmt"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"gitlab.com/thorchain/thornode/common"
@@ -12,7 +15,8 @@ type EventManager interface {
 	EndBlock(ctx sdk.Context, keeper Keeper)
 	GetBlockEvents(ctx sdk.Context, keeper Keeper, height int64) (*BlockEvents, error)
 	CompleteEvents(ctx sdk.Context, keeper Keeper, height int64, txID common.TxID, txs common.Txs, eventStatus EventStatus)
-	AddEvent(ctx sdk.Context, event Event)
+	AddEvent(event Event)
+	EmitPoolEvent(ctx sdk.Context, keeper Keeper, txIn common.TxID, status EventStatus, poolEvt EventPool) error
 }
 
 // EventMgr implement EventManager interface
@@ -45,6 +49,24 @@ func (m *EventMgr) CompleteEvents(ctx sdk.Context, keeper Keeper, height int64, 
 }
 
 // AddEvent add an event to block event
-func (m *EventMgr) AddEvent(ctx sdk.Context, event Event) {
+func (m *EventMgr) AddEvent(event Event) {
 	m.blockEvents.AddEvent(event)
+}
+
+// EmitPoolEvent is going to save a pool event to storage
+func (m *EventMgr) EmitPoolEvent(ctx sdk.Context, keeper Keeper, txIn common.TxID, status EventStatus, poolEvt EventPool) error {
+	bytes, err := json.Marshal(poolEvt)
+	if err != nil {
+		return fmt.Errorf("fail to marshal pool event: %w", err)
+	}
+
+	tx := common.Tx{
+		ID: txIn,
+	}
+	evt := NewEvent(poolEvt.Type(), ctx.BlockHeight(), tx, bytes, status)
+	if err := keeper.UpsertEvent(ctx, evt); err != nil {
+		return fmt.Errorf("fail to save pool status change event: %w", err)
+	}
+	m.AddEvent(evt)
+	return nil
 }
