@@ -32,7 +32,7 @@ const (
 	DefaultObserverLevelDBFolder = `observer_data`
 	GasPriceUpdateInterval       = 100
 	DefaultGasPrice              = 1
-	ETHTransferGas               = uint64(21000)
+	ETHTransferGas               = uint64(25000)
 )
 
 // BlockScanner is to scan the blocks
@@ -107,6 +107,7 @@ func (e *BlockScanner) processBlock(block blockscanner.Block) (stypes.TxIn, erro
 		if err != nil {
 			return noTx, nil
 		}
+		e.gasPrice.Div(e.gasPrice, Gwei)
 	}
 
 	var txIn stypes.TxIn
@@ -228,7 +229,6 @@ func (e *BlockScanner) BlockRequest(height int64) string {
 }
 
 func (e *BlockScanner) UnmarshalBlock(buf []byte) ([]string, error) {
-	e.logger.Debug().Msgf("lol block %s", string(buf))
 	type Request struct {
 		Jsonrpc string          `json:"jsonrpc"`
 		Id      int             `json:"id"`
@@ -287,7 +287,7 @@ func (e *BlockScanner) fromTxToTxIn(encodedTx string) (*stypes.TxInItem, error) 
 		e.errCounter.WithLabelValues("fail_create_ticker", "ETH").Inc()
 		return nil, fmt.Errorf("fail to create asset, ETH is not valid: %w", err)
 	}
-	txInItem.Coins = append(txInItem.Coins, common.NewCoin(asset, sdk.NewUint(tx.Value().Uint64())))
+	txInItem.Coins = append(txInItem.Coins, common.NewCoin(asset, sdk.NewUintFromBigInt(tx.Value().Div(tx.Value(), Gwei))))
 	txInItem.Gas = common.GetETHGasFee(e.gasPrice)
 
 	return txInItem, nil

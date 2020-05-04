@@ -25,6 +25,8 @@ import (
 	"gitlab.com/thorchain/thornode/common"
 )
 
+var Gwei = big.NewInt(1000000000)
+
 // Client is a structure to sign and broadcast tx to Ethereum chain used by signer mostly
 type Client struct {
 	logger          zerolog.Logger
@@ -221,8 +223,9 @@ func (c *Client) SignTx(tx stypes.TxOutItem, height int64) ([]byte, error) {
 
 	gasPrice := c.ethScanner.GetGasPrice()
 	encodedData := []byte(hex.EncodeToString([]byte("ETH.ETH")))
-
-	createdTx := etypes.NewTransaction(meta.Nonce, ecommon.HexToAddress(toAddr), big.NewInt(int64(value)), ETHTransferGas, gasPrice, encodedData)
+	scaledValue := big.NewInt(int64(value))
+	scaledValue = scaledValue.Mul(scaledValue, Gwei)
+	createdTx := etypes.NewTransaction(meta.Nonce, ecommon.HexToAddress(toAddr), scaledValue, ETHTransferGas, gasPrice, encodedData)
 
 	rawTx, err := c.sign(createdTx, fromAddr, tx.VaultPubKey, currentHeight, tx)
 	if err != nil || len(rawTx) == 0 {

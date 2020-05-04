@@ -15,7 +15,7 @@ func (s *GasSuite) TestETHGasFee(c *C) {
 	gas := GetETHGasFee(big.NewInt(20))
 	amt := gas[0].Amount
 	c.Check(
-		amt.Equal(sdk.NewUint(420000)),
+		amt.Equal(sdk.NewUint(10000000)),
 		Equals,
 		true,
 		Commentf("%d", amt.Uint64()),
