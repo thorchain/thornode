@@ -1,7 +1,6 @@
 package thorchain
 
 import (
-	"fmt"
 	"sort"
 
 	"github.com/blang/semver"
@@ -71,6 +70,7 @@ func (vm *SwapQv1) EndBlock(ctx sdk.Context, version semver.Version, constAccess
 		if !result.IsOK() {
 			ctx.Logger().Error("fail to swap", "msg", swaps[i].msg.Tx.String(), "error", result.Log)
 		}
+		vm.k.RemoveSwapQueueItem(ctx, swaps[i].msg.Tx.ID)
 	}
 
 	return nil
@@ -170,6 +170,7 @@ func (items swapItems) Sort() swapItems {
 		for j, score := range scores {
 			if score.msg.Tx.ID.Equals(item.msg.Tx.ID) {
 				scores[j].score += i
+				break
 			}
 		}
 	}
@@ -182,7 +183,6 @@ func (items swapItems) Sort() swapItems {
 	// sort our items by score
 	sorted := make(swapItems, len(items))
 	for i, score := range scores {
-		fmt.Printf("Score: %d %s\n", score.score, score.msg.Tx.Coins[0])
 		for _, item := range items {
 			if item.msg.Tx.ID.Equals(score.msg.Tx.ID) {
 				sorted[i] = item
