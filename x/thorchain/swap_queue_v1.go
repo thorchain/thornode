@@ -120,7 +120,6 @@ func (vm *SwapQv1) ScoreMsgs(ctx sdk.Context, msgs []MsgSwap) (swapItems, error)
 
 		pool := pools[msg.TargetAsset]
 		if pool.Empty() || !pool.IsEnabled() || pool.BalanceRune.IsZero() || pool.BalanceAsset.IsZero() {
-			fmt.Printf(">>>>>>>>>>>>>>>>>>>>> GOT HERE")
 			items = append(items, item)
 			continue
 		}
