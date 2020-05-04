@@ -195,7 +195,9 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 	if err != nil {
 		ctx.Logger().Error("fail to get swap queue", "error", err)
 	} else {
-		swapQueue.EndBlock(ctx, version, constantValues)
+		if err := swapQueue.EndBlock(ctx, version, constantValues); err != nil {
+			ctx.Logger().Error("fail to process swap queue", "error", err)
+		}
 	}
 
 	slasher, err := NewSlasher(am.keeper, version)
