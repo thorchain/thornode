@@ -9,7 +9,7 @@ services:
       dockerfile: ./build/docker/Dockerfile
       args:
         TAG: ${TAG:-mainnet}
-    image: registry.gitlab.com/thorchain/thornode:${TAG:-latest}
+    image: registry.gitlab.com/thorchain/thornode:testnet
     restart: unless-stopped
     environment:
       NET: ${NET}
@@ -43,7 +43,7 @@ services:
       dockerfile: ./build/docker/Dockerfile
       args:
         TAG: ${TAG:-mainnet}
-    image: registry.gitlab.com/thorchain/thornode:${TAG:-latest}
+    image: registry.gitlab.com/thorchain/thornode:testnet
     restart: unless-stopped
     environment:
       NET: ${NET}
@@ -77,7 +77,7 @@ services:
       dockerfile: ./build/docker/Dockerfile
       args:
         TAG: ${TAG:-mainnet}
-    image: registry.gitlab.com/thorchain/thornode:${TAG:-latest}
+    image: registry.gitlab.com/thorchain/thornode:testnet
     restart: unless-stopped
     environment:
       NET: ${NET}
