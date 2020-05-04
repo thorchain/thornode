@@ -1,7 +1,7 @@
 package thorchain
 
 import (
-	"math/rand"
+	"fmt"
 	"sort"
 
 	"github.com/blang/semver"
@@ -32,6 +32,22 @@ func NewSwapQv1(k Keeper, versionedTxOutStore VersionedTxOutStore) *SwapQv1 {
 	}
 }
 
+// FetchQueue - grabs all swap queue items from the kvstore and returns them
+func (vm *SwapQv1) FetchQueue(ctx sdk.Context) ([]MsgSwap, error) {
+	msgs := make([]MsgSwap, 0)
+	iterator := vm.k.GetSwapQueueIterator(ctx)
+	defer iterator.Close()
+	for ; iterator.Valid(); iterator.Next() {
+		var msg MsgSwap
+		if err := vm.k.Cdc().UnmarshalBinaryBare(iterator.Value(), &msg); err != nil {
+			return msgs, err
+		}
+		msgs = append(msgs, msg)
+	}
+
+	return msgs, nil
+}
+
 // EndBlock move funds from retiring asgard vaults
 func (vm *SwapQv1) EndBlock(ctx sdk.Context, version semver.Version, constAccessor constants.ConstantValues) error {
 	handler := NewSwapHandler(vm.k, vm.versionedTxOutStore)
@@ -48,35 +64,33 @@ func (vm *SwapQv1) EndBlock(ctx sdk.Context, version semver.Version, constAccess
 		// continue, don't exit, just do them out of order (instead of not
 		// at all)
 	}
+	swaps = swaps.Sort()
 
-	// determine how many swaps to do.
+	for i := 0; i < vm.getTodoNum(len(swaps)); i++ {
+		result := handler.handle(ctx, swaps[i].msg, version, constAccessor)
+		if !result.IsOK() {
+			ctx.Logger().Error("fail to swap", "msg", swaps[i].msg.Tx.String(), "error", result.Log)
+		}
+	}
+
+	return nil
+}
+
+// getTodoNum - determine how many swaps to do.
+func (vm *SwapQv1) getTodoNum(queueLen int) int {
 	// Do half the length of the queue. Unless...
 	//	1. The queue length is greater than 200
 	//  2. The queue legnth is less than 10
 	maxSwaps := 100 // TODO: make this a constant
 	minSwaps := 10  // TODO: make this a constant
-	todo := len(swaps) / 2
+	todo := queueLen / 2
 	if maxSwaps < todo {
 		todo = maxSwaps
 	}
-	if minSwaps >= len(swaps) {
-		todo = len(swaps)
+	if minSwaps >= queueLen {
+		todo = queueLen
 	}
-
-	var pick swapItem
-	r := rand.New(rand.NewSource(swaps.randSeed()))
-	for i := 0; i < todo; i++ {
-		pick, swaps = swaps.PickRandom(r)
-
-		// TODO: process msg
-		result := handler.handle(ctx, pick.msg, version, constAccessor)
-		if !result.IsOK() {
-			ctx.Logger().Error("fail to swap", "msg", pick.msg.Tx.String(), "error", result.Log)
-		}
-
-	}
-
-	return nil
+	return todo
 }
 
 // ScoreMsgs - this takes a list of MsgSwap, and converts them to a scored
@@ -124,56 +138,7 @@ func (vm *SwapQv1) ScoreMsgs(ctx sdk.Context, msgs []MsgSwap) (swapItems, error)
 	return items, nil
 }
 
-// FetchQueue - grabs all swap queue items from the kvstore and returns them
-func (vm *SwapQv1) FetchQueue(ctx sdk.Context) ([]MsgSwap, error) {
-	msgs := make([]MsgSwap, 0)
-	iterator := vm.k.GetSwapQueueIterator(ctx)
-	defer iterator.Close()
-	for ; iterator.Valid(); iterator.Next() {
-		var msg MsgSwap
-		if err := vm.k.Cdc().UnmarshalBinaryBare(iterator.Value(), &msg); err != nil {
-			return msgs, err
-		}
-		msgs = append(msgs, msg)
-	}
-
-	return msgs, nil
-}
-
-// randSeed - builds a rand generator based on the tx hash of all swaps in the
-// queue
-func (items swapItems) randSeed() int64 {
-	var ans int64
-	for _, item := range items {
-		txID := []byte(item.msg.Tx.ID)
-		for _, b := range txID {
-			ans += int64(b)
-		}
-	}
-	return ans
-}
-
-// Pick - picks a random transaction based on weight of liquidity fee
-// Much of this code borrowed from https://github.com/mroth/weightedrand
-func (items swapItems) PickRandom(r *rand.Rand) (swapItem, swapItems) {
-	sort.Slice(items, func(i, j int) bool {
-		return items[i].fee.LT(items[j].fee)
-	})
-	totals := make([]int, len(items))
-	var runningTotal int
-	for i, item := range items {
-		runningTotal = runningTotal + int(item.fee.Uint64())
-		totals[i] = runningTotal
-	}
-
-	r2 := r.Intn(runningTotal + 1)
-	i := sort.SearchInts(totals, r2)
-	item := items[i]
-	items = append(items[:i], items[i+1:]...)
-	return item, items
-}
-
-func (items swapItems) PickBySlip() (swapItem, swapItems) {
+func (items swapItems) Sort() swapItems {
 	// sort by liquidity fee
 	byFee := items
 	sort.Slice(byFee, func(i, j int) bool {
@@ -211,20 +176,20 @@ func (items swapItems) PickBySlip() (swapItem, swapItems) {
 
 	// sort by score
 	sort.Slice(scores, func(i, j int) bool {
-		return scores[i].score > scores[j].score
+		return scores[i].score < scores[j].score
 	})
 
-	// take our top score, and find its index in our items slice
-	msg := scores[0].msg
-	for i, item := range items {
-		if item.msg.Tx.ID.Equals(msg.Tx.ID) {
-			item := items[i]
-			items = append(items[:i], items[i+1:]...)
-			return item, items
+	// sort our items by score
+	sorted := make(swapItems, len(items))
+	for i, score := range scores {
+		fmt.Printf("Score: %d %s\n", score.score, score.msg.Tx.Coins[0])
+		for _, item := range items {
+			if item.msg.Tx.ID.Equals(score.msg.Tx.ID) {
+				sorted[i] = item
+				break
+			}
 		}
 	}
 
-	item := items[0]
-	items = items[1:]
-	return item, items
+	return sorted
 }
