@@ -1,6 +1,7 @@
 package thorchain
 
 import (
+	"fmt"
 	"sort"
 
 	"github.com/blang/semver"
@@ -66,11 +67,13 @@ func (vm *SwapQv1) EndBlock(ctx sdk.Context, version semver.Version, constAccess
 	swaps = swaps.Sort()
 
 	for i := 0; i < vm.getTodoNum(len(swaps)); i++ {
-		result := handler.handle(ctx, swaps[i].msg, version, constAccessor)
+		pick := swaps[i]
+
+		result := handler.handle(ctx, pick.msg, version, constAccessor)
 		if !result.IsOK() {
-			ctx.Logger().Error("fail to swap", "msg", swaps[i].msg.Tx.String(), "error", result.Log)
+			ctx.Logger().Error("fail to swap", "msg", pick.msg.Tx.String(), "error", result.Log)
 		}
-		vm.k.RemoveSwapQueueItem(ctx, swaps[i].msg.Tx.ID)
+		vm.k.RemoveSwapQueueItem(ctx, pick.msg.Tx.ID)
 	}
 
 	return nil
@@ -97,22 +100,35 @@ func (vm *SwapQv1) getTodoNum(queueLen int) int {
 // swapItem list
 func (vm *SwapQv1) ScoreMsgs(ctx sdk.Context, msgs []MsgSwap) (swapItems, error) {
 	pools := make(map[common.Asset]Pool, 0)
-	items := make(swapItems, len(msgs))
+	items := make(swapItems, 0)
 
-	for i, msg := range msgs {
+	for _, msg := range msgs {
 		if _, ok := pools[msg.TargetAsset]; !ok {
 			var err error
+			fmt.Printf("Get Pool: %s\n", msg.TargetAsset)
 			pools[msg.TargetAsset], err = vm.k.GetPool(ctx, msg.TargetAsset)
 			if err != nil {
 				return items, err
 			}
 		}
 
+		item := swapItem{
+			msg:  msg,
+			fee:  sdk.ZeroUint(),
+			slip: sdk.ZeroUint(),
+		}
+
 		pool := pools[msg.TargetAsset]
+		if pool.Empty() || !pool.IsEnabled() || pool.BalanceRune.IsZero() || pool.BalanceAsset.IsZero() {
+			fmt.Printf(">>>>>>>>>>>>>>>>>>>>> GOT HERE")
+			items = append(items, item)
+			continue
+		}
+
 		sourceCoin := msg.Tx.Coins[0]
 
 		// Get our X, x, Y values
-		var X, x, Y, liquidityFee, slip sdk.Uint
+		var X, x, Y sdk.Uint
 		x = sourceCoin.Amount
 		if sourceCoin.Asset.IsRune() {
 			X = pool.BalanceRune
@@ -122,17 +138,13 @@ func (vm *SwapQv1) ScoreMsgs(ctx sdk.Context, msgs []MsgSwap) (swapItems, error)
 			X = pool.BalanceAsset
 		}
 
-		liquidityFee = calcLiquidityFee(X, x, Y)
+		item.fee = calcLiquidityFee(X, x, Y)
 		if sourceCoin.Asset.IsRune() {
-			liquidityFee = pool.AssetValueInRune(liquidityFee)
+			item.fee = pool.AssetValueInRune(item.fee)
 		}
-		slip = calcTradeSlip(X, x)
+		item.slip = calcTradeSlip(X, x)
 
-		items[i] = swapItem{
-			msg:  msg,
-			fee:  liquidityFee,
-			slip: slip,
-		}
+		items = append(items, item)
 	}
 
 	return items, nil
