@@ -14,11 +14,11 @@ func NewDummyGasManager() *DummyGasManager {
 	return &DummyGasManager{}
 }
 
-func (m *DummyGasManager) BeginBlock()                               {}
-func (m *DummyGasManager) EndBlock(ctx sdk.Context, keeper Keeper)   {}
-func (m *DummyGasManager) AddGasAsset(gas common.Gas)                {}
-func (m *DummyGasManager) GetGas() common.Gas                        { return nil }
-func (m *DummyGasManager) ProcessGas(ctx sdk.Context, keeper Keeper) {}
+func (m *DummyGasManager) BeginBlock()                                                        {}
+func (m *DummyGasManager) EndBlock(ctx sdk.Context, keeper Keeper, eventManager EventManager) {}
+func (m *DummyGasManager) AddGasAsset(gas common.Gas)                                         {}
+func (m *DummyGasManager) GetGas() common.Gas                                                 { return nil }
+func (m *DummyGasManager) ProcessGas(ctx sdk.Context, keeper Keeper)                          {}
 
 type DummyVersionedGasMgr struct {
 }

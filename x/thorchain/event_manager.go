@@ -18,7 +18,7 @@ type EventManager interface {
 	AddEvent(event Event)
 	EmitPoolEvent(ctx sdk.Context, keeper Keeper, txIn common.TxID, status EventStatus, poolEvt EventPool) error
 	EmitErrataEvent(ctx sdk.Context, keeper Keeper, txIn common.TxID, errataEvent EventErrata) error
-	EmitGasEvent(ctx sdk.Context, keeper Keeper, gasEvent EventGas) error
+	EmitGasEvent(ctx sdk.Context, keeper Keeper, gasEvent *EventGas) error
 }
 
 // EventMgr implement EventManager interface
@@ -65,6 +65,7 @@ func (m *EventMgr) EmitPoolEvent(ctx sdk.Context, keeper Keeper, txIn common.TxI
 	tx := common.Tx{
 		ID: txIn,
 	}
+
 	evt := NewEvent(poolEvt.Type(), ctx.BlockHeight(), tx, bytes, status)
 	if err := keeper.UpsertEvent(ctx, evt); err != nil {
 		return fmt.Errorf("fail to save pool status change event: %w", err)
@@ -95,7 +96,10 @@ func (m *EventMgr) EmitErrataEvent(ctx sdk.Context, keeper Keeper, txIn common.T
 	return nil
 }
 
-func (m *EventMgr) EmitGasEvent(ctx sdk.Context, keeper Keeper, gasEvent EventGas) error {
+func (m *EventMgr) EmitGasEvent(ctx sdk.Context, keeper Keeper, gasEvent *EventGas) error {
+	if gasEvent == nil {
+		return nil
+	}
 	buf, err := json.Marshal(gasEvent)
 	if err != nil {
 		ctx.Logger().Error("fail to marshal gas event", "error", err)
