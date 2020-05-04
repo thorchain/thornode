@@ -4,6 +4,20 @@
 [![Go Report Card](https://goreportcard.com/badge/gitlab.com/thorchain/thornode)](https://goreportcard.com/report/gitlab.com/thorchain/thornode)
 
 # THORChain
+
+****
+
+> **Mirror**
+>
+> This repo mirrors from THORChain Gitlab to Github. 
+> To contribute, please contact the team and commit to the Gitlab repo:
+>
+> https://gitlab.com/thorchain/thornode
+
+
+****
+
+
 ======================================
 
 THORChain is a decentralised liquidity network built with [CosmosSDK](cosmos.network). 
