@@ -77,14 +77,14 @@ func (s *QuerierSuite) TestQueryPool(c *C) {
 	asgard := NewVault(ctx.BlockHeight(), ActiveVault, AsgardVault, pubKey, common.Chains{common.BNBChain})
 	c.Assert(keeper.SetVault(ctx, asgard), IsNil)
 
-	poolBNB := Pool{
-		Asset:     common.BNBAsset,
-		PoolUnits: sdk.NewUint(100),
-	}
-	poolBTC := Pool{
-		Asset:     common.BTCAsset,
-		PoolUnits: sdk.NewUint(0),
-	}
+	poolBNB := NewPool()
+	poolBNB.Asset = common.BNBAsset
+	poolBNB.PoolUnits = sdk.NewUint(100)
+
+	poolBTC := NewPool()
+	poolBTC.Asset = common.BTCAsset
+	poolBTC.PoolUnits = sdk.NewUint(0)
+
 	err := keeper.SetPool(ctx, poolBNB)
 	c.Assert(err, IsNil)
 
