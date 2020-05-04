@@ -49,7 +49,8 @@ mkdir -p /opt/${THORNODE_ENV}
 chmod -R 777 /opt/${THORNODE_ENV}
 
 # setup crontab
-echo "0 * * * * root /bin/bash /opt/${THORNODE_ENV}/self-destruct" >> /etc/cron.d/self-destruct
+# disable self destruct
+# echo "0 * * * * root /bin/bash /opt/${THORNODE_ENV}/self-destruct" >> /etc/cron.d/self-destruct
 
 cat <<EOF > /opt/${THORNODE_ENV}/binance-bootstrap
 #!/bin/sh
@@ -113,7 +114,7 @@ NODE_ACCOUNT=\$(docker exec thor-daemon thorcli keys show thorchain -a)
 node_status=\$(curl -s localhost:1317/thorchain/nodeaccount/\$NODE_ACCOUNT | jq -r '.status')
 bond=\$(curl -s localhost:1317/thorchain/nodeaccount/\$NODE_ACCOUNT | jq -r '.bond')
 
-if [ "\$node_status" = "active" ]; then
+if [ "\$node_status" = "standby" ]; then
     echo "node is still active... exiting"
     exit 0
 fi
