@@ -191,6 +191,13 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 		return nil
 	}
 
+	swapQueue, err := NewVersionedSwapQ(am.txOutStore).GetSwapQueue(ctx, am.keeper, version)
+	if err != nil {
+		ctx.Logger().Error("fail to get swap queue", "error", err)
+	} else {
+		swapQueue.EndBlock(ctx, version, constantValues)
+	}
+
 	slasher, err := NewSlasher(am.keeper, version)
 	if err != nil {
 		ctx.Logger().Error("fail to create slasher", "error", err)

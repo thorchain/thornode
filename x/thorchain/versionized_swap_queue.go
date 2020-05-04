@@ -3,6 +3,7 @@ package thorchain
 import (
 	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"gitlab.com/thorchain/thornode/constants"
 )
 
 // VersionedSwapQueue
@@ -12,6 +13,7 @@ type VersionedSwapQueue interface {
 
 // SwapQueue interface define the contract of Swap Queue
 type SwapQueue interface {
+	EndBlock(ctx sdk.Context, version semver.Version, constAccessor constants.ConstantValues) error
 }
 
 // VersionedSwapQ is an implementation of versioned Vault Manager
