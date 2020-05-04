@@ -35,6 +35,10 @@ func (m *DummyEventMgr) EmitPoolEvent(ctx sdk.Context, keeper Keeper, txIn commo
 	return nil
 }
 
+func (m *DummyEventMgr) EmitErrataEvent(ctx sdk.Context, keeper Keeper, txIn common.TxID, errataEvent EventErrata) error {
+	return nil
+}
+
 type DummyVersionedEventMgr struct{}
 
 func NewDummyVersionedEventMgr() *DummyVersionedEventMgr {

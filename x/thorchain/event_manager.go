@@ -17,6 +17,7 @@ type EventManager interface {
 	CompleteEvents(ctx sdk.Context, keeper Keeper, height int64, txID common.TxID, txs common.Txs, eventStatus EventStatus)
 	AddEvent(event Event)
 	EmitPoolEvent(ctx sdk.Context, keeper Keeper, txIn common.TxID, status EventStatus, poolEvt EventPool) error
+	EmitErrataEvent(ctx sdk.Context, keeper Keeper, txIn common.TxID, errataEvent EventErrata) error
 }
 
 // EventMgr implement EventManager interface
@@ -66,6 +67,27 @@ func (m *EventMgr) EmitPoolEvent(ctx sdk.Context, keeper Keeper, txIn common.TxI
 	evt := NewEvent(poolEvt.Type(), ctx.BlockHeight(), tx, bytes, status)
 	if err := keeper.UpsertEvent(ctx, evt); err != nil {
 		return fmt.Errorf("fail to save pool status change event: %w", err)
+	}
+	m.AddEvent(evt)
+	return nil
+}
+
+func (m *EventMgr) EmitErrataEvent(ctx sdk.Context, keeper Keeper, txIn common.TxID, errataEvent EventErrata) error {
+	errataBuf, err := json.Marshal(errataEvent)
+	if err != nil {
+		ctx.Logger().Error("fail to marshal errata event to buf", "error", err)
+		return fmt.Errorf("fail to marshal errata event to json: %w", err)
+	}
+	evt := NewEvent(
+		errataEvent.Type(),
+		ctx.BlockHeight(),
+		common.Tx{ID: txIn},
+		errataBuf,
+		EventSuccess,
+	)
+	if err := keeper.UpsertEvent(ctx, evt); err != nil {
+		ctx.Logger().Error("fail to save errata event", "error", err)
+		return fmt.Errorf("fail to save errata event: %w", err)
 	}
 	m.AddEvent(evt)
 	return nil
