@@ -1,7 +1,6 @@
 package thorchain
 
 import (
-	"fmt"
 	"sort"
 
 	"github.com/blang/semver"
@@ -11,7 +10,7 @@ import (
 	"gitlab.com/thorchain/thornode/constants"
 )
 
-// SwapQv1 is going to manage the vaults
+// SwapQv1 is going to manage the swaps queue
 type SwapQv1 struct {
 	k                   Keeper
 	versionedTxOutStore VersionedTxOutStore
@@ -105,7 +104,6 @@ func (vm *SwapQv1) ScoreMsgs(ctx sdk.Context, msgs []MsgSwap) (swapItems, error)
 	for _, msg := range msgs {
 		if _, ok := pools[msg.TargetAsset]; !ok {
 			var err error
-			fmt.Printf("Get Pool: %s\n", msg.TargetAsset)
 			pools[msg.TargetAsset], err = vm.k.GetPool(ctx, msg.TargetAsset)
 			if err != nil {
 				return items, err
@@ -152,13 +150,13 @@ func (vm *SwapQv1) ScoreMsgs(ctx sdk.Context, msgs []MsgSwap) (swapItems, error)
 func (items swapItems) Sort() swapItems {
 	// sort by liquidity fee
 	byFee := items
-	sort.Slice(byFee, func(i, j int) bool {
+	sort.SliceStable(byFee, func(i, j int) bool {
 		return byFee[i].fee.GT(byFee[j].fee)
 	})
 
 	// sort by slip fee
 	bySlip := items
-	sort.Slice(bySlip, func(i, j int) bool {
+	sort.SliceStable(bySlip, func(i, j int) bool {
 		return bySlip[i].fee.GT(bySlip[j].fee)
 	})
 
@@ -187,7 +185,7 @@ func (items swapItems) Sort() swapItems {
 	}
 
 	// sort by score
-	sort.Slice(scores, func(i, j int) bool {
+	sort.SliceStable(scores, func(i, j int) bool {
 		return scores[i].score < scores[j].score
 	})
 

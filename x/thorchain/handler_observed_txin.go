@@ -217,7 +217,7 @@ func (h ObservedTxInHandler) handleV1(ctx sdk.Context, version semver.Version, m
 		obMgr.AppendObserver(tx.Tx.Chain, txIn.Signers)
 
 		// if its a swap, send it to our queue for processing later
-		if m.Type() == "swap" {
+		if _, ok := m.(MsgSwap); ok {
 			if err := h.keeper.SetSwapQueueItem(ctx, m.(MsgSwap)); err != nil {
 				return sdk.ErrInternal(err.Error()).Result()
 			}
