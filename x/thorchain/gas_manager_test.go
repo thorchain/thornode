@@ -39,7 +39,9 @@ func (GasManagerTestSuite) TestGasManager(c *C) {
 		common.NewCoin(common.ETHAsset, sdk.NewUint(38500)),
 	})
 	c.Assert(gasMgr.GetGas(), HasLen, 3)
-	gasMgr.EndBlock(ctx, k)
+	eventMgr := NewEventMgr()
+	eventMgr.BeginBlock(ctx)
+	gasMgr.EndBlock(ctx, k, eventMgr)
 	eventID, err := k.GetCurrentEventID(ctx)
 	c.Assert(err, IsNil)
 	event, err := k.GetEvent(ctx, eventID-1)
