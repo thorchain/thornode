@@ -39,6 +39,10 @@ func (m *DummyEventMgr) EmitErrataEvent(ctx sdk.Context, keeper Keeper, txIn com
 	return nil
 }
 
+func (m *DummyEventMgr) EmitGasEvent(ctx sdk.Context, keeper Keeper, gasEvent *EventGas) error {
+	return nil
+}
+
 type DummyVersionedEventMgr struct{}
 
 func NewDummyVersionedEventMgr() *DummyVersionedEventMgr {

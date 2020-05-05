@@ -1,8 +1,6 @@
 package thorchain
 
 import (
-	"encoding/json"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"gitlab.com/thorchain/thornode/common"
@@ -10,7 +8,7 @@ import (
 
 type GasManager interface {
 	BeginBlock()
-	EndBlock(ctx sdk.Context, keeper Keeper)
+	EndBlock(ctx sdk.Context, keeper Keeper, eventManager EventManager)
 	AddGasAsset(gas common.Gas)
 	ProcessGas(ctx sdk.Context, keeper Keeper)
 	GetGas() common.Gas
@@ -53,21 +51,15 @@ func (gm *GasMgr) GetGas() common.Gas {
 }
 
 // EndBlock emit the events
-func (gm *GasMgr) EndBlock(ctx sdk.Context, keeper Keeper) {
+func (gm *GasMgr) EndBlock(ctx sdk.Context, keeper Keeper, eventManager EventManager) {
 	gm.ProcessGas(ctx, keeper)
 
 	if len(gm.gasEvent.Pools) == 0 {
 		return
 	}
 
-	buf, err := json.Marshal(gm.gasEvent)
-	if err != nil {
-		ctx.Logger().Error("fail to marshal gas event", "error", err)
-		return
-	}
-	evt := NewEvent(gm.gasEvent.Type(), ctx.BlockHeight(), common.Tx{ID: common.BlankTxID}, buf, EventSuccess)
-	if err := keeper.UpsertEvent(ctx, evt); err != nil {
-		ctx.Logger().Error("fail to upsert event", "error", err)
+	if err := eventManager.EmitGasEvent(ctx, keeper, gm.gasEvent); nil != err {
+		ctx.Logger().Error("fail to emit gas event", "error", err)
 	}
 }
 

@@ -258,7 +258,7 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 	if err := Fund(ctx, am.keeper, txStore, constantValues); err != nil {
 		ctx.Logger().Error("unable to fund yggdrasil", "error", err)
 	}
-	gasMgr.EndBlock(ctx, am.keeper)
+	gasMgr.EndBlock(ctx, am.keeper, eventMgr)
 
 	if eventMgr != nil {
 		eventMgr.EndBlock(ctx, am.keeper)
