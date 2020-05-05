@@ -30,7 +30,7 @@ func (MsgSwapSuite) TestMsgSwap(c *C) {
 
 	m := NewMsgSwap(tx, common.BNBAsset, bnbAddress, sdk.NewUint(200000000), addr)
 	EnsureMsgBasicCorrect(m, c)
-	c.Check(m.Type(), Equals, "set_swap")
+	c.Check(m.Type(), Equals, "swap")
 
 	inputs := []struct {
 		requestTxHash common.TxID

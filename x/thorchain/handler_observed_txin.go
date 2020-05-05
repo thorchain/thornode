@@ -216,6 +216,17 @@ func (h ObservedTxInHandler) handleV1(ctx sdk.Context, version semver.Version, m
 		// active/inactive observing node accounts
 		obMgr.AppendObserver(tx.Tx.Chain, txIn.Signers)
 
+		// if its a swap, send it to our queue for processing later
+		if _, ok := m.(MsgSwap); ok {
+			if err := h.keeper.SetSwapQueueItem(ctx, m.(MsgSwap)); err != nil {
+				return sdk.ErrInternal(err.Error()).Result()
+			}
+			return sdk.Result{
+				Code:      sdk.CodeOK,
+				Codespace: DefaultCodespace,
+			}
+		}
+
 		result := handler(ctx, m)
 		if !result.IsOK() {
 			refundMsg, err := getErrMessageFromABCILog(result.Log)

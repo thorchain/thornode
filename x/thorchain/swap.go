@@ -235,10 +235,10 @@ func calcLiquidityFee(X, x, Y sdk.Uint) sdk.Uint {
 // calcTradeSlip - calculate the trade slip, expressed in basis points (10000)
 func calcTradeSlip(Xi, xi sdk.Uint) sdk.Uint {
 	// Cast to DECs
-	xD := sdk.NewDec(int64(xi.Uint64()))
-	XD := sdk.NewDec(int64(Xi.Uint64()))
-	dec2 := sdk.NewDec(int64(sdk.NewUint(2).Uint64()))
-	dec10k := sdk.NewDec(int64(sdk.NewUint(10000).Uint64()))
+	xD := sdk.NewDecFromBigInt(xi.BigInt())
+	XD := sdk.NewDecFromBigInt(Xi.BigInt())
+	dec2 := sdk.NewDec(2)
+	dec10k := sdk.NewDec(10000)
 
 	// x * (2*X + x) / (X * X)
 	numD := xD.Mul((dec2.Mul(XD)).Add(xD))

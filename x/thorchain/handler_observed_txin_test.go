@@ -128,10 +128,16 @@ type TestObservedTxInHandleKeeper struct {
 	voter     ObservedTxVoter
 	yggExists bool
 	height    int64
+	msg       MsgSwap
 	pool      Pool
 	observing []sdk.AccAddress
 	vault     Vault
 	txOut     *TxOut
+}
+
+func (k *TestObservedTxInHandleKeeper) SetSwapQueueItem(_ sdk.Context, msg MsgSwap) error {
+	k.msg = msg
+	return nil
 }
 
 func (k *TestObservedTxInHandleKeeper) ListActiveNodeAccounts(_ sdk.Context) (NodeAccounts, error) {
@@ -242,8 +248,6 @@ func (s *HandlerObservedTxInSuite) TestHandle(c *C) {
 		yggExists: true,
 	}
 	versionedTxOutStore := NewVersionedTxOutStoreDummy()
-	txOutStore, err := versionedTxOutStore.GetTxOutStore(keeper, ver)
-	c.Assert(err, IsNil)
 	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(versionedTxOutStore)
 	versionedGasMgr := NewVersionedGasMgr()
 	versionedObMgr := NewVersionedObserverMgr()
@@ -258,10 +262,8 @@ func (s *HandlerObservedTxInSuite) TestHandle(c *C) {
 	c.Assert(err, IsNil)
 	obMgr.EndBlock(ctx, keeper)
 
-	c.Assert(result.IsOK(), Equals, true)
-	items, err := txOutStore.GetOutboundItems(ctx)
-	c.Assert(err, IsNil)
-	c.Check(items, HasLen, 1)
+	c.Assert(result.IsOK(), Equals, true, Commentf("%s", result.Log))
+	c.Check(keeper.msg.Tx.ID.Equals(tx.ID), Equals, true)
 	c.Check(keeper.observing, HasLen, 1)
 	c.Check(keeper.height, Equals, int64(12))
 	bnbCoin := keeper.vault.Coins.GetCoin(common.BNBAsset)
