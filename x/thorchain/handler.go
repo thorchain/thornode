@@ -99,6 +99,7 @@ func getHandlerMapping(keeper Keeper,
 	m[MsgObservedTxOut{}.Type()] = NewObservedTxOutHandler(keeper, versionedObserverManager, versionedTxOutStore, validatorMgr, versionedVaultManager, versionedGasMgr, versionedEventManager)
 	m[MsgTssKeysignFail{}.Type()] = NewTssKeysignHandler(keeper)
 	m[MsgErrataTx{}.Type()] = NewErrataTxHandler(keeper, versionedEventManager)
+	m[MsgSend{}.Type()] = NewSendHandler(keeper)
 	return m
 }
 
