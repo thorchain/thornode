@@ -12,7 +12,7 @@ type Gas Coins
 var (
 	bnbSingleTxFee = sdk.NewUint(37500)
 	bnbMultiTxFee  = sdk.NewUint(30000)
-	ethTransferFee = sdk.NewUint(21000)
+	ethTransferFee = sdk.NewUint(500000)
 )
 
 // Gas Fees
