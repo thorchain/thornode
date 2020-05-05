@@ -37,6 +37,11 @@ add_gas_config () {
     done
 }
 
+disable_bank_send () {
+    jq '.app_state.bank.send_enabled = false' <~/.thord/config/genesis.json >/tmp/genesis.json
+    mv /tmp/genesis.json ~/.thord/config/genesis.json
+}
+
 add_vault () {
     POOL_PUBKEY=$1; shift
 
