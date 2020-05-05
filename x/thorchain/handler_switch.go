@@ -94,6 +94,11 @@ func (h SwitchHandler) handleV1(ctx sdk.Context, msg MsgSwitch, version semver.V
 			ctx.Logger().Error("fail to parse thor address", "error", err)
 			return sdk.ErrInternal("fail to parse thor address").Result()
 		}
+
+		if !bank.HasCoins(ctx, addr, sdk.NewCoins(coin)) {
+			ctx.Logger().Error("insufficient funds", "error", err)
+			return sdk.ErrInternal("insufficient funds").Result()
+		}
 		if _, err := bank.SubtractCoins(ctx, addr, sdk.NewCoins(coin)); err != nil {
 			ctx.Logger().Error("fail to burn native rune coins", "error", err)
 			return sdk.ErrInternal("fail to burn native rune coins").Result()
