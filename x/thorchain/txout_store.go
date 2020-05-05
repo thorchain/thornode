@@ -31,12 +31,7 @@ func NewVersionedTxOutStore() *VersionedTxOutStorage {
 
 // GetTxOutStore will return an implementation of the txout store that
 func (s *VersionedTxOutStorage) GetTxOutStore(keeper Keeper, version semver.Version) (TxOutStore, error) {
-	if version.GTE(semver.MustParse("0.2.0")) {
-		if s.txOutStorage == nil {
-			s.txOutStorage = NewTxOutStorageV2(keeper)
-		}
-		return s.txOutStorage, nil
-	} else if version.GTE(semver.MustParse("0.1.0")) {
+	if version.GTE(semver.MustParse("0.1.0")) {
 		if s.txOutStorage == nil {
 			s.txOutStorage = NewTxOutStorageV1(keeper)
 		}
