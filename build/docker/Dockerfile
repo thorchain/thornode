@@ -18,7 +18,7 @@ RUN go mod download
 
 COPY . .
 
-ARG TAG=mainnet
+ARG TAG=mocknet
 RUN go build -a -tags $TAG -installsuffix cgo -o $GOBIN/generate ./tools/generate
 RUN go build -a -tags $TAG -installsuffix cgo -o $GOBIN/thord ./cmd/thord
 RUN go build -a -tags $TAG -installsuffix cgo -o $GOBIN/thorcli ./cmd/thorcli
