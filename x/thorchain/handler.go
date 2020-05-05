@@ -112,6 +112,7 @@ func getHandlerMapping(keeper Keeper,
 	m[MsgMigrate{}.Type()] = NewMigrateHandler(keeper)
 	m[MsgRagnarok{}.Type()] = NewRagnarokHandler(keeper)
 	m[MsgErrataTx{}.Type()] = NewErrataTxHandler(keeper, versionedEventManager)
+	m[MsgSwitch{}.Type()] = NewSwitchHandler(keeper, versionedTxOutStore)
 	return m
 }
 
@@ -218,6 +219,8 @@ func processOneTxIn(ctx sdk.Context, keeper Keeper, tx ObservedTx, signer sdk.Ac
 	case ReserveMemo:
 		res := NewReserveContributor(tx.Tx.FromAddress, tx.Tx.Coins[0].Amount)
 		newMsg = NewMsgReserveContributor(tx.Tx, res, signer)
+	case SwitchMemo:
+		newMsg = NewMsgSwitch(tx.Tx, memo.GetDestination(), signer)
 
 	default:
 		return nil, sdk.NewError(DefaultCodespace, CodeInvalidMemo, "invalid memo")
@@ -380,5 +383,5 @@ func getMsgBondFromMemo(memo BondMemo, tx ObservedTx, signer sdk.AccAddress) (sd
 	if runeAmount.IsZero() {
 		return nil, errors.New("RUNE amount is 0")
 	}
-	return NewMsgBond(tx.Tx, memo.GetNodeAddress(), runeAmount, tx.Tx.FromAddress, signer), nil
+	return NewMsgBond(tx.Tx, memo.GetAccAddress(), runeAmount, tx.Tx.FromAddress, signer), nil
 }
