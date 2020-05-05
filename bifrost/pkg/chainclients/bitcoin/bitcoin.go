@@ -193,6 +193,7 @@ func (c *Client) OnObservedTxIn(txIn types.TxInItem, blockHeight int64) {
 	}
 	utxo := NewUnspentTransactionOutput(*hash, 0, value, blockHeight, txIn.ObservedVaultPubKey)
 	blockMeta.AddUTXO(utxo)
+	blockMeta.AddTxID(txIn.Tx)
 	if err := c.blockMetaAccessor.SaveBlockMeta(blockHeight, blockMeta); err != nil {
 		c.logger.Err(err).Msgf("fail to save block meta to storage,block height(%d)", blockHeight)
 	}
@@ -230,21 +231,18 @@ func (c *Client) reConfirmTx() error {
 
 	for _, blockMeta := range blockMetas {
 		var errataTxs []types.ErrataTx
-		for _, utxo := range blockMeta.UnspentTransactionOutputs {
-			result, err := c.client.GetTransaction(&utxo.TxID)
-			if err != nil {
-				if rpcErr, ok := err.(*btcjson.RPCError); ok && rpcErr.Code == btcjson.ErrRPCNoTxInfo {
-					// this means the tx doesn't exist in chain ,thus should errata it
-					errataTxs = append(errataTxs, types.ErrataTx{
-						TxID:  common.TxID(utxo.TxID.String()),
-						Chain: common.BTCChain,
-					})
-					// remove the UTXO from block meta , so signer will not spend it
-					blockMeta.RemoveUTXO(utxo.GetKey())
-					continue
-				}
+		for _, txID := range blockMeta.TxIDs {
+			if c.confirmTx(txID) {
+				c.logger.Info().Msgf("block height: %d, tx: %s still exist", blockMeta.Height, txID)
+				continue
 			}
-			c.logger.Info().Msgf("block height: %d, tx: %s still exist", blockMeta.Height, result.TxID)
+			// this means the tx doesn't exist in chain ,thus should errata it
+			errataTxs = append(errataTxs, types.ErrataTx{
+				TxID:  common.TxID(strings.ToUpper(txID)),
+				Chain: common.BTCChain,
+			})
+			// remove the UTXO from block meta , so signer will not spend it
+			blockMeta.RemoveUTXO(fmt.Sprintf("%s:0", txID))
 		}
 		if len(errataTxs) == 0 {
 			continue
@@ -265,6 +263,26 @@ func (c *Client) reConfirmTx() error {
 		}
 	}
 	return nil
+}
+
+// confirmTx check a tx is valid on chain post reorg
+func (c *Client) confirmTx(txID string) bool {
+	txHash, err := chainhash.NewHashFromStr(txID)
+	if err != nil {
+		return false
+	}
+	result, err := c.client.GetTransaction(txHash)
+	if err != nil {
+		if rpcErr, ok := err.(*btcjson.RPCError); ok && rpcErr.Code == btcjson.ErrRPCNoTxInfo {
+			return false
+		}
+		// TODO if other error retry?
+		return false
+	}
+	if result.Confirmations == 0 && result.BlockTime == 0 {
+		return false
+	}
+	return true
 }
 
 // FetchTxs retrieves txs for a block height

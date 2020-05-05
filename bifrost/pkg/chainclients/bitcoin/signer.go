@@ -338,6 +338,19 @@ func (c *Client) BroadcastTx(txOut stypes.TxOutItem, payload []byte) error {
 	if err := redeemTx.Deserialize(buf); err != nil {
 		return fmt.Errorf("fail to deserialize payload: %w", err)
 	}
+	// retrieve block meta
+	chainBlockHeight, err := c.getBlockHeight()
+	if err != nil {
+		return fmt.Errorf("fail to get chain block height: %w", err)
+	}
+	blockMeta, err := c.blockMetaAccessor.GetBlockMeta(chainBlockHeight)
+	if err != nil {
+		return fmt.Errorf("fail to get block meta: %w", err)
+	}
+	if blockMeta == nil {
+		blockMeta = NewBlockMeta("", chainBlockHeight, "")
+	}
+
 	txHash, err := c.client.SendRawTransaction(redeemTx, true)
 	if err != nil {
 
@@ -345,7 +358,20 @@ func (c *Client) BroadcastTx(txOut stypes.TxOutItem, payload []byte) error {
 			// this means the tx had been broadcast to chain, it must be another signer finished quicker then us
 			return nil
 		}
+		// Delete tx utxo
+		key := fmt.Sprintf("%s:0", redeemTx.TxHash().String())
+		blockMeta.RemoveUTXO(key)
+		err2 := c.blockMetaAccessor.SaveBlockMeta(chainBlockHeight, blockMeta)
+		if err2 != nil {
+			return fmt.Errorf("fail to save block meta: %w", err2)
+		}
 		return fmt.Errorf("fail to broadcast transaction to chain: %w", err)
+	}
+	// save tx id to block meta in case we need to errata later
+	blockMeta.AddTxID(txHash.String())
+	err = c.blockMetaAccessor.SaveBlockMeta(chainBlockHeight, blockMeta)
+	if err != nil {
+		return fmt.Errorf("fail to save block meta: %w", err)
 	}
 	c.logger.Info().Str("hash", txHash.String()).Msg("broadcast to BTC chain successfully")
 	return nil
