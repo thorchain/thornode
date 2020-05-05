@@ -28,7 +28,7 @@ import (
 )
 
 const (
-	DefaultObserverLevelDBFolder = `observer_eth_data`
+	DefaultObserverLevelDBFolder = `observer_data`
 	GasPriceUpdateInterval       = 100
 	DefaultGasPrice              = 1
 	ETHTransferGas               = uint64(25000)
