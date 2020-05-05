@@ -95,6 +95,7 @@ func getHandlerMapping(keeper Keeper,
 	m[MsgSetNodeKeys{}.Type()] = NewSetNodeKeysHandler(keeper)
 	m[MsgSetVersion{}.Type()] = NewVersionHandler(keeper)
 	m[MsgSetIPAddress{}.Type()] = NewIPAddressHandler(keeper)
+	m[MsgNativeTx{}.Type()] = NewNativeTxHandler(keeper, versionedObserverManager, versionedTxOutStore, validatorMgr, versionedVaultManager, versionedGasMgr, versionedEventManager)
 	m[MsgObservedTxIn{}.Type()] = NewObservedTxInHandler(keeper, versionedObserverManager, versionedTxOutStore, validatorMgr, versionedVaultManager, versionedGasMgr, versionedEventManager)
 	m[MsgObservedTxOut{}.Type()] = NewObservedTxOutHandler(keeper, versionedObserverManager, versionedTxOutStore, validatorMgr, versionedVaultManager, versionedGasMgr, versionedEventManager)
 	m[MsgTssKeysignFail{}.Type()] = NewTssKeysignHandler(keeper)

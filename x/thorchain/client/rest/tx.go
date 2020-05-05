@@ -13,6 +13,50 @@ import (
 	"gitlab.com/thorchain/thornode/x/thorchain/types"
 )
 
+type nativeTx struct {
+	BaseReq rest.BaseReq `json:"base_req"`
+	Coins   common.Coins `json:"coins"`
+}
+
+func newNativeTxHandler(cliCtx context.CLIContext) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var req nativeTx
+
+		if !rest.ReadRESTReq(w, r, cliCtx.Codec, &req) {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, "failed to parse request")
+			return
+		}
+
+		baseReq := req.BaseReq.Sanitize()
+		if !baseReq.ValidateBasic(w) {
+			return
+		}
+		baseReq.Gas = "auto"
+		addr, err := sdk.AccAddressFromBech32(req.BaseReq.From)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		// ensure all assets are native to thorchain
+		for _, coin := range req.Coins {
+			if !coin.IsNative() {
+				rest.WriteErrorResponse(w, http.StatusBadRequest, "must only be THORChain native assets")
+				return
+			}
+		}
+
+		msg := types.NewMsgNativeTx(req.Coins, req.BaseReq.Memo, addr)
+		err = msg.ValidateBasic()
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		utils.WriteGenerateStdTxResponse(w, cliCtx, baseReq, []sdk.Msg{msg})
+	}
+}
+
 type newErrataTx struct {
 	BaseReq rest.BaseReq `json:"base_req"`
 	TxID    common.TxID  `json:"txid"`
