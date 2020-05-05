@@ -39,7 +39,6 @@ type Keeper interface {
 	KeeperTxMarker
 	KeeperErrataTx
 	KeeperBanVoter
-	KeeperBlockEvent
 }
 
 // NOTE: Always end a dbPrefix with a slash ("/"). This is to ensure that there

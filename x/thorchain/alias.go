@@ -112,7 +112,6 @@ var (
 	GetRandomPubKeySet             = types.GetRandomPubKeySet
 	SetupConfigForTest             = types.SetupConfigForTest
 	GetEventStatuses               = types.GetEventStatuses
-	NewBlockEvents                 = types.NewBlockEvents
 )
 
 type (
@@ -167,7 +166,6 @@ type (
 	KeygenBlock           = types.KeygenBlock
 	Event                 = types.Event
 	Events                = types.Events
-	BlockEvents           = types.BlockEvents
 	EventSwap             = types.EventSwap
 	EventStake            = types.EventStake
 	EventStatus           = types.EventStatus

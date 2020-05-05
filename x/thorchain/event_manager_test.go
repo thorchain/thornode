@@ -17,8 +17,6 @@ func (s *EventManagerTestSuite) TestEventMgr(c *C) {
 	c.Assert(eventMgr, NotNil)
 	ctx = ctx.WithBlockHeight(1024)
 	eventMgr.BeginBlock(ctx)
-	c.Assert(eventMgr.blockEvents, NotNil)
-	c.Assert(eventMgr.blockEvents.Height, Equals, int64(1024))
 	eventMgr.EndBlock(ctx, k)
 }
 
