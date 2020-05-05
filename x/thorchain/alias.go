@@ -6,6 +6,8 @@ import (
 
 const (
 	ModuleName       = types.ModuleName
+	ReserveName      = types.ReserveName
+	AsgardName       = types.AsgardName
 	RouterKey        = types.RouterKey
 	StoreKey         = types.StoreKey
 	DefaultCodespace = types.DefaultCodespace

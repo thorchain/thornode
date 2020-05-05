@@ -57,6 +57,7 @@ func (AppModuleBasic) ValidateGenesis(bz json.RawMessage) error {
 func (AppModuleBasic) RegisterRESTRoutes(ctx context.CLIContext, rtr *mux.Router) {
 	rest.RegisterRoutes(ctx, rtr, StoreKey)
 	sdkRest.RegisterTxRoutes(ctx, rtr)
+	sdkRest.RegisterRoutes(ctx, rtr, StoreKey)
 }
 
 // Get the root query command of this module
