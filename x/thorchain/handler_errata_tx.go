@@ -1,7 +1,6 @@
 package thorchain
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"github.com/blang/semver"
@@ -13,13 +12,15 @@ import (
 
 // ErrataTxHandler is to handle ErrataTx message
 type ErrataTxHandler struct {
-	keeper Keeper
+	keeper                Keeper
+	versionedEventManager VersionedEventManager
 }
 
 // NewErrataTxHandler create new instance of ErrataTxHandler
-func NewErrataTxHandler(keeper Keeper) ErrataTxHandler {
+func NewErrataTxHandler(keeper Keeper, versionedEventManager VersionedEventManager) ErrataTxHandler {
 	return ErrataTxHandler{
-		keeper: keeper,
+		keeper:                keeper,
+		versionedEventManager: versionedEventManager,
 	}
 }
 
@@ -59,14 +60,14 @@ func (h ErrataTxHandler) validateV1(ctx sdk.Context, msg MsgErrataTx) sdk.Error 
 func (h ErrataTxHandler) handle(ctx sdk.Context, msg MsgErrataTx, version semver.Version) sdk.Result {
 	ctx.Logger().Info("handleMsgErrataTx request", "txid", msg.TxID.String())
 	if version.GTE(semver.MustParse("0.1.0")) {
-		return h.handleV1(ctx, msg)
+		return h.handleV1(ctx, msg, version)
 	} else {
 		ctx.Logger().Error(errInvalidVersion.Error())
 		return errBadVersion.Result()
 	}
 }
 
-func (h ErrataTxHandler) handleV1(ctx sdk.Context, msg MsgErrataTx) sdk.Result {
+func (h ErrataTxHandler) handleV1(ctx sdk.Context, msg MsgErrataTx, version semver.Version) sdk.Result {
 	active, err := h.keeper.ListActiveNodeAccounts(ctx)
 	if err != nil {
 		err = wrapError(ctx, err, "fail to get list of active node accounts")
@@ -173,21 +174,14 @@ func (h ErrataTxHandler) handleV1(ctx sdk.Context, msg MsgErrataTx) sdk.Result {
 	}
 
 	eventErrata := NewEventErrata(mods)
-	errataBuf, err := json.Marshal(eventErrata)
+	eventMgr, err := h.versionedEventManager.GetEventManager(ctx, version)
 	if err != nil {
-		ctx.Logger().Error("fail to marshal errata event to buf", "error", err)
+		return errFailGetEventManager.Result()
 	}
-	evt := NewEvent(
-		eventErrata.Type(),
-		ctx.BlockHeight(),
-		common.Tx{ID: msg.TxID},
-		errataBuf,
-		EventSuccess,
-	)
-	if err := h.keeper.UpsertEvent(ctx, evt); err != nil {
-		ctx.Logger().Error("fail to save errata event", "error", err)
+	if err := eventMgr.EmitErrataEvent(ctx, h.keeper, msg.TxID, eventErrata); err != nil {
+		ctx.Logger().Error("fail to emit errata event", "error", err)
+		return sdk.ErrInternal("fail to emit errata event").Result()
 	}
-
 	return sdk.Result{
 		Code:      sdk.CodeOK,
 		Codespace: DefaultCodespace,

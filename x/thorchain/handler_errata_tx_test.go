@@ -5,9 +5,10 @@ import (
 
 	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	. "gopkg.in/check.v1"
+
 	"gitlab.com/thorchain/thornode/common"
 	"gitlab.com/thorchain/thornode/constants"
-	. "gopkg.in/check.v1"
 )
 
 var _ = Suite(&HandlerErrataTxSuite{})
@@ -78,7 +79,7 @@ func (s *HandlerErrataTxSuite) TestValidate(c *C) {
 		na: GetRandomNodeAccount(NodeActive),
 	}
 
-	handler := NewErrataTxHandler(keeper)
+	handler := NewErrataTxHandler(keeper, NewDummyVersionedEventMgr())
 	// happy path
 	ver := constants.SWVersion
 	msg := NewMsgErrataTx(GetRandomTxHash(), common.BNBChain, keeper.na.NodeAddress)
@@ -140,8 +141,11 @@ func (s *HandlerErrataTxSuite) TestHandle(c *C) {
 			},
 		},
 	}
-
-	handler := NewErrataTxHandler(keeper)
+	versionedEventManager := NewVersionedEventMgr()
+	eventMgr, err := versionedEventManager.GetEventManager(ctx, ver)
+	c.Assert(err, IsNil)
+	eventMgr.BeginBlock(ctx)
+	handler := NewErrataTxHandler(keeper, versionedEventManager)
 
 	msg := NewMsgErrataTx(txID, common.BNBChain, na.NodeAddress)
 	result := handler.handle(ctx, msg, ver)
