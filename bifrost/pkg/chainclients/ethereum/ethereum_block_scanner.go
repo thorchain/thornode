@@ -24,7 +24,6 @@ import (
 	"gitlab.com/thorchain/thornode/bifrost/blockscanner"
 	"gitlab.com/thorchain/thornode/bifrost/config"
 	"gitlab.com/thorchain/thornode/bifrost/metrics"
-	etypes2 "gitlab.com/thorchain/thornode/bifrost/pkg/chainclients/ethereum/types"
 	stypes "gitlab.com/thorchain/thornode/bifrost/thorclient/types"
 )
 
@@ -32,7 +31,7 @@ const (
 	DefaultObserverLevelDBFolder = `observer_data`
 	GasPriceUpdateInterval       = 100
 	DefaultGasPrice              = 1
-	ETHTransferGas               = uint64(21000)
+	ETHTransferGas               = uint64(25000)
 )
 
 // BlockScanner is to scan the blocks
@@ -102,11 +101,11 @@ func (e *BlockScanner) processBlock(block blockscanner.Block) (stypes.TxIn, erro
 	}
 	// Update gas price once per 100 blocks
 	if e.gasPrice.Uint64() == DefaultGasPrice || block.Height%GasPriceUpdateInterval == 0 {
-		ctx := context.Background()
-		e.gasPrice, err = e.client.SuggestGasPrice(ctx)
+		e.gasPrice, err = e.client.SuggestGasPrice(context.Background())
 		if err != nil {
 			return noTx, nil
 		}
+		e.gasPrice.Div(e.gasPrice, Gwei)
 	}
 
 	var txIn stypes.TxIn
@@ -208,49 +207,24 @@ func (e *BlockScanner) getRPCBlock(height int64) ([]string, error) {
 		duration := time.Since(start)
 		e.m.GetHistograms(metrics.BlockDiscoveryDuration).Observe(duration.Seconds())
 	}()
-	body := e.BlockRequest(height)
-	buf, err := e.getFromHttp(e.cfg.RPCHost, body)
+	block, err := e.client.BlockByNumber(context.Background(), big.NewInt(height))
 	if err != nil {
-		e.errCounter.WithLabelValues("fail_get_block", e.cfg.RPCHost).Inc()
-		time.Sleep(300 * time.Millisecond)
+		e.logger.Error().Err(err).Int64("block", height).Msg("fail to fetch block")
 		return nil, err
 	}
-
-	rawTxs, err := e.UnmarshalBlock(buf)
+	rawTxs, err := e.getTransactionsFromBlock(block)
 	if err != nil {
-		e.errCounter.WithLabelValues("fail_unmarshal_block", e.cfg.RPCHost).Inc()
+		e.errCounter.WithLabelValues("fail_to_get_txs", e.cfg.RPCHost).Inc()
 	}
 	return rawTxs, err
 }
 
-func (e *BlockScanner) BlockRequest(height int64) string {
-	return `{"jsonrpc":"2.0","method":"eth_getBlockByNumber","params":["0x` + fmt.Sprintf("%x", height) + `", true],"id":1}`
-}
-
-func (e *BlockScanner) UnmarshalBlock(buf []byte) ([]string, error) {
-	e.logger.Debug().Msgf("lol block %s", string(buf))
-	type Request struct {
-		Jsonrpc string          `json:"jsonrpc"`
-		Id      int             `json:"id"`
-		Result  json.RawMessage `json:"result"`
-	}
-	var dec Request
-	if err := json.Unmarshal(buf, &dec); err != nil {
-		return nil, err
-	}
-	var head etypes.Header
-	var body etypes2.RPCBlock
-	if err := json.Unmarshal(dec.Result, &head); err != nil {
-		return nil, err
-	}
-	if err := json.Unmarshal(dec.Result, &body); err != nil {
-		return nil, err
-	}
+func (e *BlockScanner) getTransactionsFromBlock(block *etypes.Block) ([]string, error) {
 	txs := make([]string, 0)
-	for _, tx := range body.Transactions {
-		bytes, err := tx.Transaction.MarshalJSON()
+	for _, tx := range block.Transactions() {
+		bytes, err := tx.MarshalJSON()
 		if err != nil {
-			return nil, fmt.Errorf("fail to unmarshal tx from block: %w", err)
+			return nil, fmt.Errorf("fail to marshal tx from block: %w", err)
 		}
 		txs = append(txs, string(bytes))
 	}
@@ -287,7 +261,7 @@ func (e *BlockScanner) fromTxToTxIn(encodedTx string) (*stypes.TxInItem, error) 
 		e.errCounter.WithLabelValues("fail_create_ticker", "ETH").Inc()
 		return nil, fmt.Errorf("fail to create asset, ETH is not valid: %w", err)
 	}
-	txInItem.Coins = append(txInItem.Coins, common.NewCoin(asset, sdk.NewUint(tx.Value().Uint64())))
+	txInItem.Coins = append(txInItem.Coins, common.NewCoin(asset, sdk.NewUintFromBigInt(tx.Value().Div(tx.Value(), Gwei))))
 	txInItem.Gas = common.GetETHGasFee(e.gasPrice)
 
 	return txInItem, nil

@@ -50,8 +50,7 @@ func (s *BlockScannerTestSuite) TestNewBlockScanner(c *C) {
 	storage, err := blockscanner.NewBlockScannerStorage("")
 	c.Assert(err, IsNil)
 	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {}))
-	ctx := context.Background()
-	ethClient, err := ethclient.DialContext(ctx, server.URL)
+	ethClient, err := ethclient.DialContext(context.Background(), server.URL)
 	c.Assert(err, IsNil)
 	bs, err := NewBlockScanner(getConfigForTest(""), storage, true, ethClient, s.m)
 	c.Assert(err, NotNil)
@@ -84,7 +83,7 @@ func (s *BlockScannerTestSuite) TestProcessBlock(c *C) {
 		err = json.Unmarshal(body, &rpcRequest)
 		c.Assert(err, IsNil)
 		if rpcRequest.Method == "eth_gasPrice" {
-			_, err := rw.Write([]byte(`{"jsonrpc":"2.0","id":1,"result":"0x1"}`))
+			_, err := rw.Write([]byte(`{"jsonrpc":"2.0","id":1,"result":"0x3b9aca00"}`))
 			c.Assert(err, IsNil)
 		}
 		if rpcRequest.Method == "eth_getBlockByNumber" {
@@ -127,8 +126,7 @@ func (s *BlockScannerTestSuite) TestProcessBlock(c *C) {
 			c.Assert(err, IsNil)
 		}
 	}))
-	ctx := context.Background()
-	ethClient, err := ethclient.DialContext(ctx, server.URL)
+	ethClient, err := ethclient.DialContext(context.Background(), server.URL)
 	c.Assert(err, IsNil)
 	c.Assert(ethClient, NotNil)
 	bs, err := NewBlockScanner(getConfigForTest(server.URL), blockscanner.NewMockScannerStorage(), true, ethClient, s.m)
@@ -176,8 +174,7 @@ func (s *BlockScannerTestSuite) TestFromTxToTxIn(c *C) {
 			c.Assert(err, IsNil)
 		}
 	}))
-	ctx := context.Background()
-	ethClient, err := ethclient.DialContext(ctx, server.URL)
+	ethClient, err := ethclient.DialContext(context.Background(), server.URL)
 	c.Assert(err, IsNil)
 	c.Assert(ethClient, NotNil)
 	bs, err := NewBlockScanner(getConfigForTest(server.URL), blockscanner.NewMockScannerStorage(), true, ethClient, s.m)
@@ -207,12 +204,12 @@ func (s *BlockScannerTestSuite) TestFromTxToTxIn(c *C) {
 	c.Check(len(txInItem.Coins), Equals, 1)
 	c.Check(txInItem.Coins[0].Asset.String(), Equals, "ETH.ETH")
 	c.Check(
-		txInItem.Coins[0].Amount.Equal(sdk.NewUint(4290000000000000)),
+		txInItem.Coins[0].Amount.Equal(sdk.NewUint(4290000)),
 		Equals,
 		true,
 	)
 	c.Check(
-		txInItem.Gas[0].Amount.Equal(sdk.NewUint(21000)),
+		txInItem.Gas[0].Amount.Equal(sdk.NewUint(500000)),
 		Equals,
 		true,
 	)

@@ -25,6 +25,8 @@ import (
 	"gitlab.com/thorchain/thornode/common"
 )
 
+var Gwei = big.NewInt(1000000000)
+
 // Client is a structure to sign and broadcast tx to Ethereum chain used by signer mostly
 type Client struct {
 	logger          zerolog.Logger
@@ -72,13 +74,10 @@ func NewClient(thorKeys *thorclient.Keys, cfg config.ChainConfiguration, server 
 		tssKeyManager: tssKm,
 		logger:        log.With().Str("module", "local_signer").Str("chain", common.ETHChain.String()).Logger(),
 	}
-
-	ctx := context.Background()
-	ethClient, err := ethclient.DialContext(ctx, cfg.RPCHost)
+	ethClient, err := ethclient.Dial(cfg.RPCHost)
 	if err != nil {
 		return nil, err
 	}
-
 	c := &Client{
 		logger:          log.With().Str("module", "ethereum").Logger(),
 		cfg:             cfg,
@@ -88,7 +87,6 @@ func NewClient(thorKeys *thorclient.Keys, cfg config.ChainConfiguration, server 
 		kw:              keysignWrapper,
 		thorchainBridge: thorchainBridge,
 	}
-
 	c.CheckIsTestNet()
 
 	var path string // if not set later, will in memory storage
@@ -119,6 +117,7 @@ func (c *Client) Start(globalTxsQueue chan stypes.TxIn, globalErrataQueue chan s
 
 func (c *Client) Stop() {
 	c.blockScanner.Stop()
+	c.client.Close()
 }
 
 func (c *Client) GetConfig() config.ChainConfiguration {
@@ -131,15 +130,14 @@ func (c *Client) CheckIsTestNet() bool {
 	if c.chainID > 0 {
 		return c.isTestNet
 	}
-	ctx := context.Background()
-	chainID, err := c.client.ChainID(ctx)
+	chainID, err := c.client.ChainID(context.Background())
 	if err != nil {
-		log.Fatal().Msgf("Unable to get chain id %s", err.Error())
-		return false
+		c.logger.Error().Err(err).Msg("Unable to get chain id")
+		chainID = big.NewInt(types.Localnet)
 	}
-
 	c.chainID = types.ChainID(chainID.Int64())
-	c.isTestNet = c.chainID > 1
+	c.isTestNet = c.chainID > types.Mainnet
+	vByte = byte(int(vByte) + int(2*c.chainID))
 	return c.isTestNet
 }
 
@@ -148,8 +146,7 @@ func (c *Client) GetChain() common.Chain {
 }
 
 func (c *Client) GetHeight() (int64, error) {
-	ctx := context.Background()
-	block, err := c.client.BlockByNumber(ctx, nil)
+	block, err := c.client.BlockByNumber(context.Background(), nil)
 	if err != nil {
 		return -1, err
 	}
@@ -171,13 +168,11 @@ func (c *Client) GetGasFee(count uint64) common.Gas {
 }
 
 func (c *Client) GetGasPrice() (*big.Int, error) {
-	ctx := context.Background()
-	return c.client.SuggestGasPrice(ctx)
+	return c.client.SuggestGasPrice(context.Background())
 }
 
 func (c *Client) GetNonce(addr string) (uint64, error) {
-	ctx := context.Background()
-	nonce, err := c.client.NonceAt(ctx, ecommon.HexToAddress(addr), nil)
+	nonce, err := c.client.NonceAt(context.Background(), ecommon.HexToAddress(addr), nil)
 	if err != nil {
 		return 0, fmt.Errorf("fail to get account nonce: %w", err)
 	}
@@ -219,9 +214,10 @@ func (c *Client) SignTx(tx stypes.TxOutItem, height int64) ([]byte, error) {
 	c.logger.Info().Uint64("nonce", meta.Nonce).Msg("account info")
 
 	gasPrice := c.ethScanner.GetGasPrice()
-	encodedData := []byte(hex.EncodeToString([]byte("ETH.ETH")))
-
-	createdTx := etypes.NewTransaction(meta.Nonce, ecommon.HexToAddress(toAddr), big.NewInt(int64(value)), ETHTransferGas, gasPrice, encodedData)
+	encodedData := []byte(hex.EncodeToString([]byte(tx.Memo)))
+	scaledValue := big.NewInt(int64(value))
+	scaledValue = scaledValue.Mul(scaledValue, Gwei)
+	createdTx := etypes.NewTransaction(meta.Nonce, ecommon.HexToAddress(toAddr), scaledValue, ETHTransferGas, gasPrice, encodedData)
 
 	rawTx, err := c.sign(createdTx, fromAddr, tx.VaultPubKey, currentHeight, tx)
 	if err != nil || len(rawTx) == 0 {
@@ -265,12 +261,11 @@ func (c *Client) sign(tx *etypes.Transaction, from string, poolPubKey common.Pub
 // GetAccount gets account by address in eth client
 func (c *Client) GetAccount(pkey common.PubKey) (common.Account, error) {
 	addr := c.GetAddress(pkey)
-	ctx := context.Background()
 	nonce, err := c.GetNonce(addr)
 	if err != nil {
 		return common.Account{}, err
 	}
-	balance, err := c.client.BalanceAt(ctx, ecommon.HexToAddress(addr), nil)
+	balance, err := c.client.BalanceAt(context.Background(), ecommon.HexToAddress(addr), nil)
 	if err != nil {
 		return common.Account{}, fmt.Errorf("fail to get account nonce: %w", err)
 	}
@@ -284,8 +279,7 @@ func (c *Client) BroadcastTx(stx stypes.TxOutItem, hexTx []byte) error {
 	if err := json.Unmarshal(hexTx, tx); err != nil {
 		return err
 	}
-	ctx := context.Background()
-	if err := c.client.SendTransaction(ctx, tx); err != nil {
+	if err := c.client.SendTransaction(context.Background(), tx); err != nil {
 		return err
 	}
 	c.accts.NonceInc(stx.VaultPubKey)
