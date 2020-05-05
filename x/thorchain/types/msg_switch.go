@@ -8,12 +8,12 @@ import (
 // MsgSwitch defines a MsgSwitch message
 type MsgSwitch struct {
 	Tx          common.Tx      `json:"tx"`
-	Destination sdk.AccAddress `json:"destination"`
+	Destination common.Address `json:"destination"`
 	Signer      sdk.AccAddress `json:"signer"`
 }
 
 // NewMsgSwitch is a constructor function for NewMsgSwitch
-func NewMsgSwitch(tx common.Tx, addr, signer sdk.AccAddress) MsgSwitch {
+func NewMsgSwitch(tx common.Tx, addr common.Address, signer sdk.AccAddress) MsgSwitch {
 	return MsgSwitch{
 		Tx:          tx,
 		Destination: addr,
@@ -32,7 +32,7 @@ func (msg MsgSwitch) ValidateBasic() sdk.Error {
 	if msg.Signer.Empty() {
 		return sdk.ErrInvalidAddress(msg.Signer.String())
 	}
-	if msg.Destination.Empty() {
+	if msg.Destination.IsEmpty() {
 		return sdk.ErrInvalidAddress(msg.Destination.String())
 	}
 	if err := msg.Tx.IsValid(); err != nil {

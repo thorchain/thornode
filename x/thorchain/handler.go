@@ -112,7 +112,7 @@ func getHandlerMapping(keeper Keeper,
 	m[MsgMigrate{}.Type()] = NewMigrateHandler(keeper)
 	m[MsgRagnarok{}.Type()] = NewRagnarokHandler(keeper)
 	m[MsgErrataTx{}.Type()] = NewErrataTxHandler(keeper, versionedEventManager)
-	m[MsgSwitch{}.Type()] = NewSwitchHandler(keeper)
+	m[MsgSwitch{}.Type()] = NewSwitchHandler(keeper, versionedTxOutStore)
 	return m
 }
 
@@ -220,7 +220,7 @@ func processOneTxIn(ctx sdk.Context, keeper Keeper, tx ObservedTx, signer sdk.Ac
 		res := NewReserveContributor(tx.Tx.FromAddress, tx.Tx.Coins[0].Amount)
 		newMsg = NewMsgReserveContributor(tx.Tx, res, signer)
 	case SwitchMemo:
-		newMsg = NewMsgSwitch(tx.Tx, memo.GetAccAddress(), signer)
+		newMsg = NewMsgSwitch(tx.Tx, memo.GetDestination(), signer)
 
 	default:
 		return nil, sdk.NewError(DefaultCodespace, CodeInvalidMemo, "invalid memo")

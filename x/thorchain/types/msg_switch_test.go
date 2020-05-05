@@ -18,10 +18,10 @@ func (MsgSwitchSuite) TestMsgSwitchSuite(c *C) {
 		common.NewCoin(common.RuneAsset(), sdk.NewUint(100*common.One)),
 	}
 
-	acc1 := GetRandomBech32Addr()
+	acc1 := GetRandomBNBAddress()
 	acc2 := GetRandomBech32Addr()
 
-	c.Assert(acc1.Empty(), Equals, false)
+	c.Assert(acc1.IsEmpty(), Equals, false)
 	msg := NewMsgSwitch(tx, acc1, acc2)
 	c.Assert(msg.Route(), Equals, RouterKey)
 	c.Assert(msg.Type(), Equals, "switch")
