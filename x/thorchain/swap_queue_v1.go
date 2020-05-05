@@ -51,6 +51,12 @@ func (vm *SwapQv1) FetchQueue(ctx sdk.Context) ([]MsgSwap, error) {
 func (vm *SwapQv1) EndBlock(ctx sdk.Context, version semver.Version, constAccessor constants.ConstantValues) error {
 	handler := NewSwapHandler(vm.k, vm.versionedTxOutStore)
 
+	txOutStore, err := vm.versionedTxOutStore.GetTxOutStore(vm.k, version)
+	if err != nil {
+		ctx.Logger().Error("fail to get txout store", "error", err)
+		return err
+	}
+
 	msgs, err := vm.FetchQueue(ctx)
 	if err != nil {
 		ctx.Logger().Error("fail to fetch swap queue from store", "error", err)
@@ -71,6 +77,13 @@ func (vm *SwapQv1) EndBlock(ctx sdk.Context, version semver.Version, constAccess
 		result := handler.handle(ctx, pick.msg, version, constAccessor)
 		if !result.IsOK() {
 			ctx.Logger().Error("fail to swap", "msg", pick.msg.Tx.String(), "error", result.Log)
+			refundMsg, err := getErrMessageFromABCILog(result.Log)
+			if err != nil {
+				ctx.Logger().Error("fail to get refund msg", "err", err.Error())
+			}
+			if newErr := refundTx(ctx, ObservedTx{Tx: pick.msg.Tx}, txOutStore, vm.k, constAccessor, result.Code, refundMsg); nil != newErr {
+				ctx.Logger().Error("fail to refund swap", "error", err)
+			}
 		}
 		vm.k.RemoveSwapQueueItem(ctx, pick.msg.Tx.ID)
 	}
@@ -86,11 +99,11 @@ func (vm *SwapQv1) getTodoNum(queueLen int) int {
 	maxSwaps := 100 // TODO: make this a constant
 	minSwaps := 10  // TODO: make this a constant
 	todo := queueLen / 2
-	if maxSwaps < todo {
-		todo = maxSwaps
-	}
 	if minSwaps >= queueLen {
 		todo = queueLen
+	}
+	if maxSwaps < todo {
+		todo = maxSwaps
 	}
 	return todo
 }
