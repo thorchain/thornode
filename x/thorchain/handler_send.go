@@ -74,7 +74,7 @@ func (h SendHandler) handleV1(ctx sdk.Context, msg MsgSend, version semver.Versi
 	totalCoins := sdk.NewCoins(gasFee).Add(msg.Amount)
 	if !banker.HasCoins(ctx, msg.FromAddress, totalCoins) {
 		ctx.Logger().Error("insufficient funds", "error", err)
-		return sdk.ErrInternal("insufficient funds").Result()
+		return sdk.ErrInsufficientCoins("insufficient funds").Result()
 	}
 
 	// send gas to reserve
