@@ -11,7 +11,7 @@ const One = 100000000
 
 // GetShare this method will panic if any of the input parameter can't be convert to sdk.Dec
 // which shouldn't happen
-func GetShare(part sdk.Uint, total sdk.Uint, allocation sdk.Uint) sdk.Uint {
+func GetShare(part, total, allocation sdk.Uint) sdk.Uint {
 	if part.IsZero() || total.IsZero() {
 		return sdk.ZeroUint()
 	}

@@ -31,7 +31,7 @@ const (
 	CodeSwapFailNotEnoughBalance sdk.CodeType = 115
 
 	CodeStakeFailValidation    sdk.CodeType = 120
-	CodeFailGetPoolStaker      sdk.CodeType = 122
+	CodeFailGetStaker          sdk.CodeType = 122
 	CodeStakeMismatchAssetAddr sdk.CodeType = 123
 	CodeStakeInvalidPoolAsset  sdk.CodeType = 124
 	CodeStakeRUNEOverLimit     sdk.CodeType = 125
@@ -40,20 +40,21 @@ const (
 	CodeUnstakeFailValidation sdk.CodeType = 130
 	CodeFailAddOutboundTx     sdk.CodeType = 131
 	CodeFailSaveEvent         sdk.CodeType = 132
-	CodePoolStakerNotExist    sdk.CodeType = 133
-	CodeStakerPoolNotExist    sdk.CodeType = 134
+	CodeStakerNotExist        sdk.CodeType = 133
 	CodeNoStakeUnitLeft       sdk.CodeType = 135
 	CodeUnstakeWithin24Hours  sdk.CodeType = 136
 	CodeUnstakeFail           sdk.CodeType = 137
 	CodeEmptyChain            sdk.CodeType = 138
+	CodeFailEventManager      sdk.CodeType = 139
 )
 
 var (
-	notAuthorized        = fmt.Errorf("not authorized")
-	errInvalidVersion    = fmt.Errorf("bad version")
-	errBadVersion        = sdk.NewError(DefaultCodespace, CodeBadVersion, errInvalidVersion.Error())
-	errInvalidMessage    = sdk.NewError(DefaultCodespace, CodeInvalidMessage, "invalid message")
-	errConstNotAvailable = sdk.NewError(DefaultCodespace, CodeConstantsNotAvailable, "constant values not available")
+	notAuthorized          = fmt.Errorf("not authorized")
+	errInvalidVersion      = fmt.Errorf("bad version")
+	errBadVersion          = sdk.NewError(DefaultCodespace, CodeBadVersion, errInvalidVersion.Error())
+	errInvalidMessage      = sdk.NewError(DefaultCodespace, CodeInvalidMessage, "invalid message")
+	errConstNotAvailable   = sdk.NewError(DefaultCodespace, CodeConstantsNotAvailable, "constant values not available")
+	errFailGetEventManager = sdk.NewError(DefaultCodespace, CodeFailEventManager, "fail to get event manager")
 )
 
 // NewHandler returns a handler for "thorchain" type messages.
@@ -62,8 +63,9 @@ func NewHandler(keeper Keeper,
 	validatorMgr VersionedValidatorManager,
 	versionedVaultManager VersionedVaultManager,
 	versionedObserverManager VersionedObserverManager,
-	versionedGasMgr VersionedGasManager) sdk.Handler {
-	handlerMap := getHandlerMapping(keeper, versionedTxOutStore, validatorMgr, versionedVaultManager, versionedObserverManager, versionedGasMgr)
+	versionedGasMgr VersionedGasManager,
+	versionedEventManager VersionedEventManager) sdk.Handler {
+	handlerMap := getHandlerMapping(keeper, versionedTxOutStore, validatorMgr, versionedVaultManager, versionedObserverManager, versionedGasMgr, versionedEventManager)
 
 	return func(ctx sdk.Context, msg sdk.Msg) sdk.Result {
 		version := keeper.GetLowestActiveVersion(ctx)
@@ -85,29 +87,31 @@ func getHandlerMapping(keeper Keeper,
 	validatorMgr VersionedValidatorManager,
 	versionedVaultManager VersionedVaultManager,
 	versionedObserverManager VersionedObserverManager,
-	versionedGasMgr VersionedGasManager) map[string]MsgHandler {
+	versionedGasMgr VersionedGasManager,
+	versionedEventManager VersionedEventManager) map[string]MsgHandler {
 	// New arch handlers
 	m := make(map[string]MsgHandler)
 	m[MsgOutboundTx{}.Type()] = NewOutboundTxHandler(keeper)
 	m[MsgTssPool{}.Type()] = NewTssHandler(keeper, versionedVaultManager)
 	m[MsgYggdrasil{}.Type()] = NewYggdrasilHandler(keeper, versionedTxOutStore, validatorMgr)
-	m[MsgEndPool{}.Type()] = NewEndPoolHandler(keeper, versionedTxOutStore)
+	m[MsgEndPool{}.Type()] = NewEndPoolHandler(keeper, versionedTxOutStore, versionedEventManager)
 	m[MsgSetNodeKeys{}.Type()] = NewSetNodeKeysHandler(keeper)
 	m[MsgSwap{}.Type()] = NewSwapHandler(keeper, versionedTxOutStore)
 	m[MsgReserveContributor{}.Type()] = NewReserveContributorHandler(keeper)
 	m[MsgSetVersion{}.Type()] = NewVersionHandler(keeper)
 	m[MsgSetIPAddress{}.Type()] = NewIPAddressHandler(keeper)
 	m[MsgBond{}.Type()] = NewBondHandler(keeper)
-	m[MsgObservedTxIn{}.Type()] = NewObservedTxInHandler(keeper, versionedObserverManager, versionedTxOutStore, validatorMgr, versionedVaultManager, versionedGasMgr)
-	m[MsgObservedTxOut{}.Type()] = NewObservedTxOutHandler(keeper, versionedObserverManager, versionedTxOutStore, validatorMgr, versionedVaultManager, versionedGasMgr)
+	m[MsgObservedTxIn{}.Type()] = NewObservedTxInHandler(keeper, versionedObserverManager, versionedTxOutStore, validatorMgr, versionedVaultManager, versionedGasMgr, versionedEventManager)
+	m[MsgObservedTxOut{}.Type()] = NewObservedTxOutHandler(keeper, versionedObserverManager, versionedTxOutStore, validatorMgr, versionedVaultManager, versionedGasMgr, versionedEventManager)
 	m[MsgLeave{}.Type()] = NewLeaveHandler(keeper, validatorMgr, versionedTxOutStore)
 	m[MsgAdd{}.Type()] = NewAddHandler(keeper)
-	m[MsgSetUnStake{}.Type()] = NewUnstakeHandler(keeper, versionedTxOutStore)
+	m[MsgSetUnStake{}.Type()] = NewUnstakeHandler(keeper, versionedTxOutStore, versionedEventManager)
 	m[MsgSetStakeData{}.Type()] = NewStakeHandler(keeper)
 	m[MsgRefundTx{}.Type()] = NewRefundHandler(keeper)
 	m[MsgTssKeysignFail{}.Type()] = NewTssKeysignHandler(keeper)
 	m[MsgMigrate{}.Type()] = NewMigrateHandler(keeper)
 	m[MsgRagnarok{}.Type()] = NewRagnarokHandler(keeper)
+	m[MsgErrataTx{}.Type()] = NewErrataTxHandler(keeper, versionedEventManager)
 	return m
 }
 

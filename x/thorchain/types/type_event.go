@@ -80,7 +80,7 @@ func (evt Event) Empty() bool {
 type Events []Event
 
 // PopByInHash Pops an event out of the event list by hash ID
-func (evts Events) PopByInHash(txID common.TxID) (found Events, events Events) {
+func (evts Events) PopByInHash(txID common.TxID) (found, events Events) {
 	for _, evt := range evts {
 		if evt.InTx.ID.Equals(txID) {
 			found = append(found, evt)
@@ -289,6 +289,7 @@ type GasPool struct {
 	Asset    common.Asset `json:"asset"`
 	AssetAmt sdk.Uint     `json:"asset_amt"`
 	RuneAmt  sdk.Uint     `json:"rune_amt"`
+	Count    int64        `json:"transaction_count"`
 }
 
 // EventGas represent the events happened in thorchain related to Gas

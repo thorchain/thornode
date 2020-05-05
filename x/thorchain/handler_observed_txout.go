@@ -6,6 +6,7 @@ import (
 	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	"gitlab.com/thorchain/thornode/common"
 	"gitlab.com/thorchain/thornode/constants"
 )
 
@@ -16,6 +17,7 @@ type ObservedTxOutHandler struct {
 	versionedVaultManager    VersionedVaultManager
 	versionedGasMgr          VersionedGasManager
 	versionedObserverManager VersionedObserverManager
+	versionedEventManager    VersionedEventManager
 }
 
 func NewObservedTxOutHandler(keeper Keeper,
@@ -23,7 +25,8 @@ func NewObservedTxOutHandler(keeper Keeper,
 	txOutStore VersionedTxOutStore,
 	validatorMgr VersionedValidatorManager,
 	versionedVaultManager VersionedVaultManager,
-	versionedGasMgr VersionedGasManager) ObservedTxOutHandler {
+	versionedGasMgr VersionedGasManager,
+	versionedEventManager VersionedEventManager) ObservedTxOutHandler {
 	return ObservedTxOutHandler{
 		keeper:                   keeper,
 		versionedTxOutStore:      txOutStore,
@@ -31,6 +34,7 @@ func NewObservedTxOutHandler(keeper Keeper,
 		versionedVaultManager:    versionedVaultManager,
 		versionedGasMgr:          versionedGasMgr,
 		versionedObserverManager: versionedObserverManager,
+		versionedEventManager:    versionedEventManager,
 	}
 }
 
@@ -60,7 +64,7 @@ func (h ObservedTxOutHandler) validateV1(ctx sdk.Context, msg MsgObservedTxOut) 
 		return err
 	}
 
-	if !isSignedByActiveObserver(ctx, h.keeper, msg.GetSigners()) {
+	if !isSignedByActiveNodeAccounts(ctx, h.keeper, msg.GetSigners()) {
 		ctx.Logger().Error(notAuthorized.Error())
 		return notAuthorized
 	}
@@ -112,7 +116,7 @@ func (h ObservedTxOutHandler) handleV1(ctx sdk.Context, version semver.Version, 
 		return sdk.ErrInternal("fail to get gas manager").Result()
 	}
 
-	handler := NewHandler(h.keeper, h.versionedTxOutStore, h.validatorMgr, h.versionedVaultManager, h.versionedObserverManager, h.versionedGasMgr)
+	handler := NewHandler(h.keeper, h.versionedTxOutStore, h.validatorMgr, h.versionedVaultManager, h.versionedObserverManager, h.versionedGasMgr, h.versionedEventManager)
 
 	for _, tx := range msg.Txs {
 		// check we are sending from a valid vault
@@ -137,6 +141,16 @@ func (h ObservedTxOutHandler) handleV1(ctx sdk.Context, version semver.Version, 
 			continue
 		}
 		tx.Tx.Memo = fetchMemo(ctx, constAccessor, h.keeper, tx.Tx)
+		if len(tx.Tx.Memo) == 0 {
+			// we didn't find our memo, it might be yggdrasil return. These are
+			// tx markers without coin amounts because we allow yggdrasil to
+			// figure out the coin amounts
+			txYgg := tx.Tx
+			txYgg.Coins = common.Coins{
+				common.NewCoin(common.RuneAsset(), sdk.ZeroUint()),
+			}
+			tx.Tx.Memo = fetchMemo(ctx, constAccessor, h.keeper, txYgg)
+		}
 		ctx.Logger().Info("handleMsgObservedTxOut request", "Tx:", tx.String())
 
 		// if memo isn't valid or its an inbound memo, and its funds moving

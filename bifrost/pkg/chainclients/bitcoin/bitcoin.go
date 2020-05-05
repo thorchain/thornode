@@ -27,17 +27,22 @@ import (
 	"gitlab.com/thorchain/thornode/common"
 )
 
+// BlockCacheSize the number of block meta that get store in storage.
+const BlockCacheSize = 100
+
 // Client observes bitcoin chain and allows to sign and broadcast tx
 type Client struct {
-	logger       zerolog.Logger
-	cfg          config.ChainConfiguration
-	client       *rpcclient.Client
-	chain        common.Chain
-	privateKey   *btcec.PrivateKey
-	blockScanner *blockscanner.BlockScanner
-	utxoAccessor UnspentTransactionOutputAccessor
-	ksWrapper    *KeySignWrapper
-	bridge       *thorclient.ThorchainBridge
+	logger            zerolog.Logger
+	cfg               config.ChainConfiguration
+	client            *rpcclient.Client
+	chain             common.Chain
+	privateKey        *btcec.PrivateKey
+	blockScanner      *blockscanner.BlockScanner
+	blockMetaAccessor BlockMetaAccessor
+	ksWrapper         *KeySignWrapper
+	bridge            *thorclient.ThorchainBridge
+	globalErrataQueue chan<- types.ErrataBlock
+	nodePubKey        common.PubKey
 }
 
 // NewClient generates a new Client
@@ -69,6 +74,10 @@ func NewClient(thorKeys *thorclient.Keys, cfg config.ChainConfiguration, server 
 	if err != nil {
 		return nil, fmt.Errorf("fail to create keysign wrapper: %w", err)
 	}
+	nodePubKey, err := common.NewPubKeyFromCrypto(thorKeys.GetSignerInfo().GetPubKey())
+	if err != nil {
+		return nil, fmt.Errorf("fail to get the node pubkey: %w", err)
+	}
 
 	c := &Client{
 		logger:     log.Logger.With().Str("module", "bitcoin").Logger(),
@@ -78,6 +87,7 @@ func NewClient(thorKeys *thorclient.Keys, cfg config.ChainConfiguration, server 
 		privateKey: btcPrivateKey,
 		ksWrapper:  ksWrapper,
 		bridge:     bridge,
+		nodePubKey: nodePubKey,
 	}
 
 	var path string // if not set later, will in memory storage
@@ -94,7 +104,7 @@ func NewClient(thorKeys *thorclient.Keys, cfg config.ChainConfiguration, server 
 		return c, fmt.Errorf("fail to create block scanner: %w", err)
 	}
 
-	c.utxoAccessor, err = NewLevelDBUTXOAccessor(storage.GetInternalDb())
+	c.blockMetaAccessor, err = NewLevelDBBlockMetaAccessor(storage.GetInternalDb())
 	if err != nil {
 		return c, fmt.Errorf("fail to create utxo accessor: %w", err)
 	}
@@ -105,6 +115,7 @@ func NewClient(thorKeys *thorclient.Keys, cfg config.ChainConfiguration, server 
 // Start starts the block scanner
 func (c *Client) Start(globalTxsQueue chan types.TxIn, globalErrataQueue chan types.ErrataBlock) {
 	c.blockScanner.Start(globalTxsQueue)
+	c.globalErrataQueue = globalErrataQueue
 }
 
 // Stop stops the block scanner
@@ -127,11 +138,6 @@ func (c *Client) GetHeight() (int64, error) {
 	return c.client.GetBlockCount()
 }
 
-// ValidateMetadata validates metadata
-func (c *Client) ValidateMetadata(inter interface{}) bool {
-	return true
-}
-
 // GetAddress returns address from pubkey
 func (c *Client) GetAddress(poolPubKey common.PubKey) string {
 	addr, err := poolPubKey.GetAddress(common.BTCChain)
@@ -143,16 +149,19 @@ func (c *Client) GetAddress(poolPubKey common.PubKey) string {
 }
 
 // GetAccount returns account with balance for an address
-func (c *Client) GetAccount(addr string) (common.Account, error) {
+func (c *Client) GetAccount(pkey common.PubKey) (common.Account, error) {
 	acct := common.Account{}
-	utxoes, err := c.utxoAccessor.GetUTXOs()
+	blockMetas, err := c.blockMetaAccessor.GetBlockMetas()
 	if err != nil {
-		return acct, fmt.Errorf("fail to get UTXO: %w", err)
+		return acct, fmt.Errorf("fail to get block meta: %w", err)
 	}
 	total := 0.0
-	for _, item := range utxoes {
-		total += item.Value
+	for _, item := range blockMetas {
+		for _, utxo := range item.GetUTXOs(pkey) {
+			total += utxo.Value
+		}
 	}
+
 	totalAmt, err := btcutil.NewAmount(total)
 	if err != nil {
 		return acct, fmt.Errorf("fail to convert total amount: %w", err)
@@ -167,26 +176,95 @@ func (c *Client) GetAccount(addr string) (common.Account, error) {
 
 // OnObservedTxIn gets called from observer when we have a valid observation
 // For bitcoin chain client we want to save the utxo we can spend later to sign
-func (c *Client) OnObservedTxIn(txIn types.TxIn) {
-	for _, tx := range txIn.TxArray {
-		hash, err := chainhash.NewHashFromStr(tx.Tx)
-		if err != nil {
-			c.logger.Error().Err(err).Str("txID", tx.Tx).Msg("fail to add spendable utxo to storage")
+func (c *Client) OnObservedTxIn(txIn types.TxInItem, blockHeight int64) {
+	hash, err := chainhash.NewHashFromStr(txIn.Tx)
+	if err != nil {
+		c.logger.Error().Err(err).Str("txID", txIn.Tx).Msg("fail to add spendable utxo to storage")
+		return
+	}
+	value := float64(txIn.Coins.GetCoin(common.BTCAsset).Amount.Uint64()) / common.One
+	blockMeta, err := c.blockMetaAccessor.GetBlockMeta(blockHeight)
+	if nil != err {
+		c.logger.Err(err).Msgf("fail to get block meta on block height(%d)", blockHeight)
+	}
+	if nil == blockMeta {
+		c.logger.Error().Msgf("can't get block meta for height: %d", blockHeight)
+		return
+	}
+	utxo := NewUnspentTransactionOutput(*hash, 0, value, blockHeight, txIn.ObservedVaultPubKey)
+	blockMeta.AddUTXO(utxo)
+	if err := c.blockMetaAccessor.SaveBlockMeta(blockHeight, blockMeta); err != nil {
+		c.logger.Err(err).Msgf("fail to save block meta to storage,block height(%d)", blockHeight)
+	}
+}
+
+func (c *Client) processReorg(block *btcjson.GetBlockVerboseTxResult) error {
+	previousHeight := block.Height - 1
+	prevBlockMeta, err := c.blockMetaAccessor.GetBlockMeta(previousHeight)
+	if err != nil {
+		return fmt.Errorf("fail to get block meta of height(%d) : %w", previousHeight, err)
+	}
+	if prevBlockMeta == nil {
+		return nil
+	}
+	// the block's previous hash need to be the same as the block hash chain client recorded in block meta
+	// blockMetas[PreviousHeight].BlockHash == Block.PreviousHash
+	if strings.EqualFold(prevBlockMeta.BlockHash, block.PreviousHash) {
+		return nil
+	}
+
+	c.logger.Info().Msgf("re-org detected, current block height:%d ,previous block hash is : %s , however block meta at height: %d, block hash is %s", block.Height, block.PreviousHash, prevBlockMeta.Height, prevBlockMeta.BlockHash)
+	return c.reConfirmTx()
+}
+
+// reConfirmTx will be kicked off only when chain client detected a re-org on bitcoin chain
+// it will read through all the block meta data from local storage , and go through all the UTXOes.
+// For each UTXO , it will send a RPC request to bitcoin chain , double check whether the TX exist or not
+// if the tx still exist , then it is all good, if a transaction previous we detected , however doesn't exist anymore , that means
+// the transaction had been removed from chain,  chain client should report to thorchain
+func (c *Client) reConfirmTx() error {
+	blockMetas, err := c.blockMetaAccessor.GetBlockMetas()
+	if err != nil {
+		return fmt.Errorf("fail to get block metas from local storage: %w", err)
+	}
+
+	for _, blockMeta := range blockMetas {
+		var errataTxs []types.ErrataTx
+		for _, utxo := range blockMeta.UnspentTransactionOutputs {
+			result, err := c.client.GetTransaction(&utxo.TxID)
+			if err != nil {
+				if rpcErr, ok := err.(*btcjson.RPCError); ok && rpcErr.Code == btcjson.ErrRPCNoTxInfo {
+					// this means the tx doesn't exist in chain ,thus should errata it
+					errataTxs = append(errataTxs, types.ErrataTx{
+						TxID:  common.TxID(utxo.TxID.String()),
+						Chain: common.BTCChain,
+					})
+					// remove the UTXO from block meta , so signer will not spend it
+					blockMeta.RemoveUTXO(utxo.GetKey())
+					continue
+				}
+			}
+			c.logger.Info().Msgf("block height: %d, tx: %s still exist", blockMeta.Height, result.TxID)
+		}
+		if len(errataTxs) == 0 {
 			continue
 		}
-		value := float64(tx.Coins.GetCoin(common.BTCAsset).Amount.Uint64()) / common.One
-		blockHeight, err := strconv.ParseInt(txIn.BlockHeight, 10, 64)
-		if err != nil {
-			c.logger.Error().Err(err).Str("txID", tx.Tx).Msg("fail to add spendable utxo to storage")
-			continue
+		c.globalErrataQueue <- types.ErrataBlock{
+			Height: blockMeta.Height,
+			Txs:    errataTxs,
 		}
-		utxo := NewUnspentTransactionOutput(*hash, 0, value, blockHeight)
-		err = c.utxoAccessor.AddUTXO(utxo)
+		// Let's get the block again to fix the block hash
+		r, err := c.getBlock(blockMeta.Height)
 		if err != nil {
-			c.logger.Error().Err(err).Str("txID", tx.Tx).Msg("fail to add spendable utxo to storage")
-			continue
+			c.logger.Err(err).Msgf("fail to get block verbose tx result: %d", blockMeta.Height)
+		}
+		blockMeta.PreviousHash = r.PreviousHash
+		blockMeta.BlockHash = r.Hash
+		if err := c.blockMetaAccessor.SaveBlockMeta(blockMeta.Height, blockMeta); err != nil {
+			c.logger.Err(err).Msgf("fail to save block meta of height: %d ", blockMeta.Height)
 		}
 	}
+	return nil
 }
 
 // FetchTxs retrieves txs for a block height
@@ -199,6 +277,31 @@ func (c *Client) FetchTxs(height int64) (types.TxIn, error) {
 			return types.TxIn{}, btypes.UnavailableBlock
 		}
 		return types.TxIn{}, fmt.Errorf("fail to get block: %w", err)
+	}
+	if err := c.processReorg(block); err != nil {
+		c.logger.Err(err).Msg("fail to process bitcoin re-org")
+	}
+	blockMeta, err := c.blockMetaAccessor.GetBlockMeta(block.Height)
+	if err != nil {
+		return types.TxIn{}, fmt.Errorf("fail to get block meta from storage: %w", err)
+	}
+	if blockMeta == nil {
+		blockMeta = NewBlockMeta(block.PreviousHash, block.Height, block.Hash)
+	} else {
+		blockMeta.PreviousHash = block.PreviousHash
+		blockMeta.BlockHash = block.Hash
+	}
+
+	if err := c.blockMetaAccessor.SaveBlockMeta(block.Height, blockMeta); err != nil {
+		return types.TxIn{}, fmt.Errorf("fail to save block meta into storage: %w", err)
+	}
+	pruneHeight := height - BlockCacheSize
+	if pruneHeight > 0 {
+		defer func() {
+			if err := c.blockMetaAccessor.PruneBlockMeta(pruneHeight); err != nil {
+				c.logger.Err(err).Msgf("fail to prune block meta, height(%d)", pruneHeight)
+			}
+		}()
 	}
 	txs, err := c.extractTxs(block)
 	if err != nil {
@@ -239,17 +342,20 @@ func (c *Client) extractTxs(block *btcjson.GetBlockVerboseTxResult) (types.TxIn,
 		if err != nil {
 			return types.TxIn{}, fmt.Errorf("fail to get gas from tx: %w", err)
 		}
-		amount := uint64(tx.Vout[0].Value * common.One)
+
+		output := c.getOutput(sender, &tx)
+		amount := uint64(output.Value * common.One)
 		txItems = append(txItems, types.TxInItem{
 			Tx:     tx.Txid,
 			Sender: sender,
-			To:     tx.Vout[0].ScriptPubKey.Addresses[0],
+			To:     output.ScriptPubKey.Addresses[0],
 			Coins: common.Coins{
 				common.NewCoin(common.BTCAsset, sdk.NewUint(amount)),
 			},
 			Memo: memo,
 			Gas:  gas,
 		})
+
 	}
 	txIn.TxArray = txItems
 	txIn.Count = strconv.Itoa(len(txItems))
@@ -282,16 +388,31 @@ func (c *Client) ignoreTx(tx *btcjson.TxRawResult) bool {
 	if len(tx.Vout[0].ScriptPubKey.Addresses) != 1 {
 		return true
 	}
-	countWithCoins := 0
+	countWithOutput := 0
 	for _, vout := range tx.Vout {
 		if vout.Value > 0 {
-			countWithCoins++
+			countWithOutput++
 		}
 	}
-	if countWithCoins > 2 {
+	if countWithOutput > 2 {
 		return true
 	}
 	return false
+}
+
+// getOutput retrieve the correct output for both inbound
+// outbound tx.
+// logic is if FROM == TO then its an outbound change output
+// back to the vault and we need to select the other output
+// as Bifrost already filtered the txs to only have here
+// txs with max 2 outputs with values
+func (c *Client) getOutput(sender string, tx *btcjson.TxRawResult) btcjson.Vout {
+	for _, vout := range tx.Vout {
+		if vout.Value > 0 && vout.ScriptPubKey.Addresses[0] != sender {
+			return vout
+		}
+	}
+	return btcjson.Vout{}
 }
 
 // getSender returns sender address for a btc tx, using vin:0
@@ -334,13 +455,13 @@ func (c *Client) getMemo(tx *btcjson.TxRawResult) (string, error) {
 func (c *Client) getGas(tx *btcjson.TxRawResult) (common.Gas, error) {
 	var sumVin uint64 = 0
 	for _, vin := range tx.Vin {
-		txHash, err := chainhash.NewHashFromStr(tx.Vin[0].Txid)
+		txHash, err := chainhash.NewHashFromStr(vin.Txid)
 		if err != nil {
 			return common.Gas{}, fmt.Errorf("fail to get tx hash from tx id string")
 		}
 		vinTx, err := c.client.GetRawTransactionVerbose(txHash)
 		if err != nil {
-			return common.Gas{}, fmt.Errorf("fail to query raw tx from btcd")
+			return common.Gas{}, fmt.Errorf("fail to query raw tx from bitcoin node")
 		}
 		sumVin += uint64(vinTx.Vout[vin.Vout].Value * common.One)
 	}

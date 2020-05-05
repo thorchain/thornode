@@ -19,15 +19,17 @@ const (
 
 // VaultMgr is going to manage the vaults
 type VaultMgr struct {
-	k                   Keeper
-	versionedTxOutStore VersionedTxOutStore
+	k                     Keeper
+	versionedTxOutStore   VersionedTxOutStore
+	versionedEventManager VersionedEventManager
 }
 
 // NewVaultMgr create a new vault manager
-func NewVaultMgr(k Keeper, versionedTxOutStore VersionedTxOutStore) *VaultMgr {
+func NewVaultMgr(k Keeper, versionedTxOutStore VersionedTxOutStore, versionedEventManager VersionedEventManager) *VaultMgr {
 	return &VaultMgr{
-		k:                   k,
-		versionedTxOutStore: versionedTxOutStore,
+		k:                     k,
+		versionedTxOutStore:   versionedTxOutStore,
+		versionedEventManager: versionedEventManager,
 	}
 }
 
@@ -341,7 +343,7 @@ func (vm *VaultMgr) findChainsToRetire(ctx sdk.Context) (common.Chains, error) {
 // associated with given chain
 func (vm *VaultMgr) recallChainFunds(ctx sdk.Context, chain common.Chain) error {
 	version := vm.k.GetLowestActiveVersion(ctx)
-	allNodes, err := vm.k.ListNodeAccounts(ctx)
+	allNodes, err := vm.k.ListNodeAccountsWithBond(ctx)
 	if err != nil {
 		return fmt.Errorf("fail to list all node accounts: %w", err)
 	}
@@ -424,7 +426,7 @@ func (vm *VaultMgr) ragnarokChain(ctx sdk.Context, chain common.Chain, nth int64
 	if err != nil {
 		return err
 	}
-	unstakeHandler := NewUnstakeHandler(vm.k, vm.versionedTxOutStore)
+	unstakeHandler := NewUnstakeHandler(vm.k, vm.versionedTxOutStore, vm.versionedEventManager)
 
 	active, err := vm.k.GetAsgardVaultsByStatus(ctx, ActiveVault)
 	if err != nil {
@@ -440,22 +442,18 @@ func (vm *VaultMgr) ragnarokChain(ctx sdk.Context, chain common.Chain, nth int64
 		if !pool.Asset.Chain.Equals(chain) || pool.PoolUnits.IsZero() {
 			continue
 		}
-
-		poolStaker, err := vm.k.GetPoolStaker(ctx, pool.Asset)
-		if err != nil {
-			return err
-		}
-
-		// everyone withdraw
-		for i := len(poolStaker.Stakers) - 1; i >= 0; i-- { // iterate backwards
-			item := poolStaker.Stakers[i]
-			if item.Units.IsZero() {
+		iterator := vm.k.GetStakerIterator(ctx, pool.Asset)
+		defer iterator.Close()
+		for ; iterator.Valid(); iterator.Next() {
+			var staker Staker
+			vm.k.Cdc().MustUnmarshalBinaryBare(iterator.Value(), &staker)
+			if staker.Units.IsZero() {
 				continue
 			}
 
 			unstakeMsg := NewMsgSetUnStake(
-				common.GetRagnarokTx(pool.Asset.Chain, item.RuneAddress, item.RuneAddress),
-				item.RuneAddress,
+				common.GetRagnarokTx(pool.Asset.Chain, staker.RuneAddress, staker.RuneAddress),
+				staker.RuneAddress,
 				sdk.NewUint(uint64(MaxUnstakeBasisPoints/100*(nth*10))),
 				pool.Asset,
 				na.NodeAddress,
@@ -463,7 +461,7 @@ func (vm *VaultMgr) ragnarokChain(ctx sdk.Context, chain common.Chain, nth int64
 
 			result := unstakeHandler.Run(ctx, unstakeMsg, version, constAccessor)
 			if !result.IsOK() {
-				ctx.Logger().Error("fail to unstake", "staker", item.RuneAddress, "error", result.Log)
+				ctx.Logger().Error("fail to unstake", "staker", staker.RuneAddress, "error", result.Log)
 			}
 		}
 	}

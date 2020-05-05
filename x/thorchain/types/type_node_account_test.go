@@ -83,19 +83,6 @@ func (NodeAccountSuite) TestNodeAccount(c *C) {
 	c.Assert(invalidBondAddr.IsValid(), NotNil)
 }
 
-func (NodeAccountSuite) TestNodeAccountsSortWithSlash(c *C) {
-	var accounts NodeAccountsBySlashingPoint
-	for i := 0; i < 100; i++ {
-		n := GetRandomNodeAccount(Active)
-		n.SlashPoints = int64(i)
-		accounts = append(accounts, n)
-	}
-	sort.Sort(accounts)
-	for idx, a := range accounts {
-		c.Assert(a.SlashPoints, Equals, int64(99-idx))
-	}
-}
-
 func (NodeAccountSuite) TestNodeAccountsSort(c *C) {
 	var accounts NodeAccounts
 	for {
@@ -164,36 +151,31 @@ func (NodeAccountSuite) TestTryAddSignerPubKey(c *C) {
 func (s *NodeAccountSuite) TestCalcNodeRewards(c *C) {
 	na := NodeAccount{
 		ActiveBlockHeight: 30,
-		SlashPoints:       2,
 	}
-	blocks := na.CalcBondUnits(50)
+	blocks := na.CalcBondUnits(50, 2)
 	c.Check(blocks.Uint64(), Equals, uint64(18))
 
 	na = NodeAccount{
 		ActiveBlockHeight: 30,
-		SlashPoints:       100000,
 	}
-	blocks = na.CalcBondUnits(50)
+	blocks = na.CalcBondUnits(50, 100000)
 	c.Check(blocks.Uint64(), Equals, uint64(0))
 
 	na = NodeAccount{
 		ActiveBlockHeight: 100,
-		SlashPoints:       0,
 	}
-	blocks = na.CalcBondUnits(50)
+	blocks = na.CalcBondUnits(50, 0)
 	c.Check(blocks.Uint64(), Equals, uint64(0))
 
 	na = NodeAccount{
 		ActiveBlockHeight: 30,
-		SlashPoints:       0,
 	}
-	blocks = na.CalcBondUnits(-50)
+	blocks = na.CalcBondUnits(-50, 0)
 	c.Check(blocks.Uint64(), Equals, uint64(0))
 
 	na = NodeAccount{
 		ActiveBlockHeight: -100,
-		SlashPoints:       0,
 	}
-	blocks = na.CalcBondUnits(50)
+	blocks = na.CalcBondUnits(50, 0)
 	c.Check(blocks.Uint64(), Equals, uint64(0), Commentf("%d", blocks.Uint64()))
 }

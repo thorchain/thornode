@@ -7,7 +7,7 @@ import (
 )
 
 // Calculate pool deficit based on the pool's accrued fees compared with total fees.
-func calcPoolDeficit(stakerDeficit, totalFees sdk.Uint, poolFees sdk.Uint) sdk.Uint {
+func calcPoolDeficit(stakerDeficit, totalFees, poolFees sdk.Uint) sdk.Uint {
 	return common.GetShare(poolFees, totalFees, stakerDeficit)
 }
 

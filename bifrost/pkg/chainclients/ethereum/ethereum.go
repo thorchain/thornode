@@ -184,12 +184,6 @@ func (c *Client) GetNonce(addr string) (uint64, error) {
 	return nonce, nil
 }
 
-func (c *Client) ValidateMetadata(inter interface{}) bool {
-	meta := inter.(EthereumMetadata)
-	acct := c.accts.GetByAccount(meta.Address)
-	return acct.Address == meta.Address && acct.Nonce == meta.Nonce
-}
-
 // SignTx sign the the given TxArrayItem
 func (c *Client) SignTx(tx stypes.TxOutItem, height int64) ([]byte, error) {
 	toAddr := tx.ToAddress.String()
@@ -269,7 +263,8 @@ func (c *Client) sign(tx *etypes.Transaction, from string, poolPubKey common.Pub
 }
 
 // GetAccount gets account by address in eth client
-func (c *Client) GetAccount(addr string) (common.Account, error) {
+func (c *Client) GetAccount(pkey common.PubKey) (common.Account, error) {
+	addr := c.GetAddress(pkey)
 	ctx := context.Background()
 	nonce, err := c.GetNonce(addr)
 	if err != nil {

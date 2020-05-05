@@ -19,7 +19,7 @@ var kaboom = errors.New("Kaboom!!!")
 
 type KVStoreDummy struct{}
 
-func (k KVStoreDummy) Cdc() *codec.Codec       { return codec.New() }
+func (k KVStoreDummy) Cdc() *codec.Codec       { return makeTestCodec() }
 func (k KVStoreDummy) Supply() supply.Keeper   { return supply.Keeper{} }
 func (k KVStoreDummy) CoinKeeper() bank.Keeper { return bank.BaseKeeper{} }
 func (k KVStoreDummy) Logger(ctx sdk.Context) log.Logger {
@@ -57,29 +57,24 @@ func (k KVStoreDummy) GetPoolIterator(_ sdk.Context) sdk.Iterator {
 func (k KVStoreDummy) SetPoolData(_ sdk.Context, _ common.Asset, _ PoolStatus) {}
 func (k KVStoreDummy) GetPoolDataIterator(_ sdk.Context) sdk.Iterator          { return nil }
 func (k KVStoreDummy) EnableAPool(_ sdk.Context)                               {}
-func (k KVStoreDummy) GetPoolIndex(_ sdk.Context) (PoolIndex, error)           { return nil, kaboom }
-func (k KVStoreDummy) SetPoolIndex(_ sdk.Context, _ PoolIndex)                 {}
-func (k KVStoreDummy) AddToPoolIndex(_ sdk.Context, _ common.Asset) error      { return kaboom }
-func (k KVStoreDummy) RemoveFromPoolIndex(_ sdk.Context, _ common.Asset) error { return kaboom }
 
 func (k KVStoreDummy) GetPool(_ sdk.Context, _ common.Asset) (Pool, error) {
 	return Pool{}, kaboom
 }
-func (k KVStoreDummy) GetPools(_ sdk.Context) (Pools, error)            { return nil, kaboom }
-func (k KVStoreDummy) SetPool(_ sdk.Context, _ Pool) error              { return kaboom }
-func (k KVStoreDummy) PoolExist(_ sdk.Context, _ common.Asset) bool     { return false }
-func (k KVStoreDummy) GetPoolStakerIterator(_ sdk.Context) sdk.Iterator { return nil }
-func (k KVStoreDummy) GetPoolStaker(_ sdk.Context, _ common.Asset) (PoolStaker, error) {
-	return PoolStaker{}, kaboom
+func (k KVStoreDummy) GetPools(_ sdk.Context) (Pools, error)                        { return nil, kaboom }
+func (k KVStoreDummy) SetPool(_ sdk.Context, _ Pool) error                          { return kaboom }
+func (k KVStoreDummy) PoolExist(_ sdk.Context, _ common.Asset) bool                 { return false }
+func (k KVStoreDummy) GetStakerIterator(_ sdk.Context, _ common.Asset) sdk.Iterator { return nil }
+func (k KVStoreDummy) GetStaker(_ sdk.Context, _ common.Asset, _ common.Address) (Staker, error) {
+	return Staker{}, kaboom
 }
-func (k KVStoreDummy) SetPoolStaker(_ sdk.Context, _ PoolStaker)        {}
-func (k KVStoreDummy) GetStakerPoolIterator(_ sdk.Context) sdk.Iterator { return nil }
-func (k KVStoreDummy) GetStakerPool(_ sdk.Context, _ common.Address) (StakerPool, error) {
-	return StakerPool{}, kaboom
+func (k KVStoreDummy) SetStaker(_ sdk.Context, _ Staker)                 {}
+func (k KVStoreDummy) RemoveStaker(_ sdk.Context, _ Staker)              {}
+func (k KVStoreDummy) TotalActiveNodeAccount(_ sdk.Context) (int, error) { return 0, kaboom }
+func (k KVStoreDummy) ListNodeAccountsWithBond(_ sdk.Context) (NodeAccounts, error) {
+	return nil, kaboom
 }
-func (k KVStoreDummy) SetStakerPool(_ sdk.Context, _ StakerPool)            {}
-func (k KVStoreDummy) TotalActiveNodeAccount(_ sdk.Context) (int, error)    { return 0, kaboom }
-func (k KVStoreDummy) ListNodeAccounts(_ sdk.Context) (NodeAccounts, error) { return nil, kaboom }
+
 func (k KVStoreDummy) ListNodeAccountsByStatus(_ sdk.Context, _ NodeStatus) (NodeAccounts, error) {
 	return nil, kaboom
 }
@@ -104,7 +99,20 @@ func (k KVStoreDummy) SetNodeAccount(_ sdk.Context, _ NodeAccount) error { retur
 func (k KVStoreDummy) EnsureNodeKeysUnique(_ sdk.Context, _ string, _ common.PubKeySet) error {
 	return kaboom
 }
-func (k KVStoreDummy) GetNodeAccountIterator(_ sdk.Context) sdk.Iterator     { return nil }
+func (k KVStoreDummy) GetNodeAccountIterator(_ sdk.Context) sdk.Iterator { return nil }
+
+func (k KVStoreDummy) GetNodeAccountSlashPoints(_ sdk.Context, _ sdk.AccAddress) (int64, error) {
+	return 0, kaboom
+}
+func (k KVStoreDummy) SetNodeAccountSlashPoints(_ sdk.Context, _ sdk.AccAddress, _ int64) {}
+func (k KVStoreDummy) ResetNodeAccountSlashPoints(_ sdk.Context, _ sdk.AccAddress)        {}
+func (k KVStoreDummy) IncNodeAccountSlashPoints(_ sdk.Context, _ sdk.AccAddress, _ int64) error {
+	return kaboom
+}
+
+func (k KVStoreDummy) DecNodeAccountSlashPoints(_ sdk.Context, _ sdk.AccAddress, _ int64) error {
+	return kaboom
+}
 func (k KVStoreDummy) SetActiveObserver(_ sdk.Context, _ sdk.AccAddress)     {}
 func (k KVStoreDummy) RemoveActiveObserver(_ sdk.Context, _ sdk.AccAddress)  {}
 func (k KVStoreDummy) IsActiveObserver(_ sdk.Context, _ sdk.AccAddress) bool { return false }
@@ -219,4 +227,68 @@ func (k KVStoreDummy) SetErrataTxVoter(_ sdk.Context, _ ErrataTxVoter)     {}
 func (k KVStoreDummy) GetErrataTxVoterIterator(_ sdk.Context) sdk.Iterator { return nil }
 func (k KVStoreDummy) GetErrataTxVoter(_ sdk.Context, _ common.TxID, _ common.Chain) (ErrataTxVoter, error) {
 	return ErrataTxVoter{}, kaboom
+}
+func (k KVStoreDummy) SetBanVoter(_ sdk.Context, _ BanVoter) {}
+func (k KVStoreDummy) GetBanVoter(_ sdk.Context, _ sdk.AccAddress) (BanVoter, error) {
+	return BanVoter{}, kaboom
+}
+
+func (k KVStoreDummy) GetBlockEvents(ctx sdk.Context, height int64) (*BlockEvents, error) {
+	return nil, kaboom
+}
+
+func (k KVStoreDummy) GetBlockEventsIterator(ctx sdk.Context) sdk.Iterator {
+	return nil
+}
+
+func (k KVStoreDummy) SetBlockEvents(ctx sdk.Context, blockEvents *BlockEvents) {
+}
+
+// a mock sdk.Iterator implementation for testing purposes
+type DummyIterator struct {
+	sdk.Iterator
+	placeholder int
+	keys        [][]byte
+	values      [][]byte
+	err         error
+}
+
+func NewDummyIterator() *DummyIterator {
+	return &DummyIterator{
+		keys:   make([][]byte, 0),
+		values: make([][]byte, 0),
+	}
+}
+
+func (iter *DummyIterator) AddItem(key, value []byte) {
+	iter.keys = append(iter.keys, key)
+	iter.values = append(iter.values, value)
+}
+
+func (iter *DummyIterator) Next() {
+	iter.placeholder++
+}
+
+func (iter *DummyIterator) Valid() bool {
+	return iter.placeholder < len(iter.keys)
+}
+
+func (iter *DummyIterator) Key() []byte {
+	return iter.keys[iter.placeholder]
+}
+
+func (iter *DummyIterator) Value() []byte {
+	return iter.values[iter.placeholder]
+}
+
+func (iter *DummyIterator) Close() {
+	iter.placeholder = 0
+}
+
+func (iter *DummyIterator) Error() error {
+	return iter.err
+}
+
+func (iter *DummyIterator) Domain() (start, end []byte) {
+	return nil, nil
 }

@@ -79,7 +79,9 @@ func newTssKeysignHandlerTestHelper(c *C) tssKeysignFailHandlerTestHelper {
 	c.Assert(keeper.SetNodeAccount(ctx, nodeAccount), IsNil)
 	constAccessor := constants.GetConstantValues(version)
 	versionedTxOutStore := NewVersionedTxOutStore()
-	vaultMgr := NewVersionedVaultMgr(versionedTxOutStore)
+	versionedEventManagerDummy := NewDummyVersionedEventMgr()
+
+	vaultMgr := NewVersionedVaultMgr(versionedTxOutStore, versionedEventManagerDummy)
 	var members []string
 	for i := 0; i < 8; i++ {
 		na := GetRandomNodeAccount(NodeStandby)
@@ -215,17 +217,6 @@ func (h HandlerTssKeysignSuite) TestTssKeysignFailHandler(c *C) {
 			},
 			runner: func(handler TssKeysignHandler, msg sdk.Msg, helper tssKeysignFailHandlerTestHelper) sdk.Result {
 				helper.keeper.errFailToGetNodeAccountByPubKey = true
-				return handler.Run(helper.ctx, msg, constants.SWVersion, helper.constAccessor)
-			},
-			expectedResult: sdk.CodeInternal,
-		},
-		{
-			name: "fail to set node account should return an error",
-			messageCreator: func(helper tssKeysignFailHandlerTestHelper) sdk.Msg {
-				return NewMsgTssKeysignFail(helper.ctx.BlockHeight(), helper.blame, "hello", common.Coins{common.NewCoin(common.BNBAsset, sdk.NewUint(100))}, helper.nodeAccount.NodeAddress)
-			},
-			runner: func(handler TssKeysignHandler, msg sdk.Msg, helper tssKeysignFailHandlerTestHelper) sdk.Result {
-				helper.keeper.errFailSetNodeAccount = true
 				return handler.Run(helper.ctx, msg, constants.SWVersion, helper.constAccessor)
 			},
 			expectedResult: sdk.CodeInternal,

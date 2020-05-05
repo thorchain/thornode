@@ -211,14 +211,17 @@ func (h YggdrasilHandler) handleYggdrasilReturn(ctx sdk.Context, msg MsgYggdrasi
 				Codespace: DefaultCodespace,
 			}
 		}
-		txOutStore, err := h.txOutStore.GetTxOutStore(h.keeper, version)
-		if err != nil {
-			ctx.Logger().Error("fail to get txout store", "error", err)
-			return errBadVersion.Result()
-		}
-		if err := refundBond(ctx, msg.Tx, na, h.keeper, txOutStore); err != nil {
-			ctx.Logger().Error("fail to refund bond", "error", err)
-			return sdk.ErrInternal(err.Error()).Result()
+
+		if !vault.HasFunds() {
+			txOutStore, err := h.txOutStore.GetTxOutStore(h.keeper, version)
+			if err != nil {
+				ctx.Logger().Error("fail to get txout store", "error", err)
+				return errBadVersion.Result()
+			}
+			if err := refundBond(ctx, msg.Tx, na, h.keeper, txOutStore); err != nil {
+				ctx.Logger().Error("fail to refund bond", "error", err)
+				return sdk.ErrInternal(err.Error()).Result()
+			}
 		}
 		return sdk.Result{
 			Code:      sdk.CodeOK,

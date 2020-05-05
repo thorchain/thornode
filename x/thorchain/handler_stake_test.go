@@ -44,7 +44,7 @@ func (m *MockStackKeeper) SetPool(_ sdk.Context, pool Pool) error {
 	return nil
 }
 
-func (m *MockStackKeeper) ListNodeAccounts(_ sdk.Context) (NodeAccounts, error) {
+func (m *MockStackKeeper) ListNodeAccountsWithBond(_ sdk.Context) (NodeAccounts, error) {
 	return NodeAccounts{m.activeNodeAccount}, nil
 }
 
@@ -55,19 +55,12 @@ func (m *MockStackKeeper) GetNodeAccount(_ sdk.Context, addr sdk.AccAddress) (No
 	return NodeAccount{}, errors.New("not exist")
 }
 
-func (m *MockStackKeeper) GetPoolStaker(_ sdk.Context, asset common.Asset) (PoolStaker, error) {
-	return PoolStaker{
-		Asset:      asset,
-		TotalUnits: sdk.ZeroUint(),
-		Stakers:    nil,
-	}, nil
-}
-
-func (m *MockStackKeeper) GetStakerPool(_ sdk.Context, addr common.Address) (StakerPool, error) {
-	return StakerPool{
+func (m *MockStackKeeper) GetStaker(_ sdk.Context, asset common.Asset, addr common.Address) (Staker, error) {
+	return Staker{
+		Asset:        asset,
 		RuneAddress:  addr,
 		AssetAddress: addr,
-		PoolUnits:    nil,
+		Units:        sdk.ZeroUint(),
 	}, nil
 }
 

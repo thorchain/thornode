@@ -62,14 +62,13 @@ func stake(ctx sdk.Context, keeper Keeper,
 		pool.Status = GetPoolStatus(defaultPoolStatus)
 	}
 
-	ps, err := keeper.GetPoolStaker(ctx, asset)
+	su, err := keeper.GetStaker(ctx, asset, runeAddr)
 	if err != nil {
-		ctx.Logger().Error("fail to get pool staker record", "error", err)
-		return sdk.ZeroUint(), sdk.NewError(DefaultCodespace, CodeFailGetPoolStaker, "fail to get pool staker record")
+		ctx.Logger().Error("fail to get staker", "error", err)
+		return sdk.ZeroUint(), sdk.NewError(DefaultCodespace, CodeFailGetStaker, "fail to get staker")
 	}
 
-	su := ps.GetStakerUnit(runeAddr)
-	su.Height = ctx.BlockHeight()
+	su.LastStakeHeight = ctx.BlockHeight()
 	if su.RuneAddress.IsEmpty() {
 		su.RuneAddress = runeAddr
 	}
@@ -86,8 +85,7 @@ func stake(ctx sdk.Context, keeper Keeper,
 	if !asset.Chain.IsBNB() {
 		if stakeAssetAmount.IsZero() {
 			su.PendingRune = su.PendingRune.Add(stakeRuneAmount)
-			ps.UpsertStakerUnit(su)
-			keeper.SetPoolStaker(ctx, ps)
+			keeper.SetStaker(ctx, su)
 			return sdk.ZeroUint(), nil
 		}
 		stakeRuneAmount = su.PendingRune.Add(stakeRuneAmount)
@@ -121,27 +119,13 @@ func stake(ctx sdk.Context, keeper Keeper,
 		ctx.Logger().Error("fail to save pool", "error", err)
 		return sdk.ZeroUint(), sdk.ErrInternal("fail to save pool")
 	}
-	// maintain pool staker structure
+	// maintain staker structure
 
-	ps.TotalUnits = pool.PoolUnits
 	fex := su.Units
 	totalStakerUnits := fex.Add(stakerUnits)
 
 	su.Units = totalStakerUnits
-	ps.UpsertStakerUnit(su)
-	keeper.SetPoolStaker(ctx, ps)
-	// maintain stake pool structure
-	sp, err := keeper.GetStakerPool(ctx, runeAddr)
-	if err != nil {
-		ctx.Logger().Error("fail to get staker pool object", "error", err)
-		return sdk.ZeroUint(), sdk.ErrInternal("fail to get staker pool object")
-	}
-	stakerPoolItem := sp.GetStakerPoolItem(asset)
-	existUnit := stakerPoolItem.Units
-	stakerPoolItem.Units = totalStakerUnits.Add(existUnit)
-	stakerPoolItem.AddStakerTxDetail(requestTxHash, stakeRuneAmount, stakeAssetAmount)
-	sp.UpsertStakerPoolItem(stakerPoolItem)
-	keeper.SetStakerPool(ctx, sp)
+	keeper.SetStaker(ctx, su)
 	return stakerUnits, nil
 }
 

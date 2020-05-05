@@ -14,22 +14,12 @@ import (
 
 type HandlerSwapSuite struct{}
 
-type TestSwapKeeper struct {
-	KVStoreDummy
-	activeNodeAccount NodeAccount
-}
-
-// IsActiveObserver see whether it is an active observer
-func (k *TestSwapKeeper) IsActiveObserver(_ sdk.Context, addr sdk.AccAddress) bool {
-	return k.activeNodeAccount.NodeAddress.Equals(addr)
-}
-
 var _ = Suite(&HandlerSwapSuite{})
 
 func (s *HandlerSwapSuite) TestValidate(c *C) {
 	ctx, _ := setupKeeperForTest(c)
 
-	keeper := &TestSwapKeeper{
+	keeper := &TestSwapHandleKeeper{
 		activeNodeAccount: GetRandomNodeAccount(NodeActive),
 	}
 

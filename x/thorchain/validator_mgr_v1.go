@@ -21,15 +21,17 @@ type validatorMgrV1 struct {
 	k                     Keeper
 	versionedVaultManager VersionedVaultManager
 	versionedTxOutStore   VersionedTxOutStore
+	versionedEventManager VersionedEventManager
 }
 
 // newValidatorMgrV1 create a new instance of ValidatorManager
-func newValidatorMgrV1(k Keeper, versionedTxOutStore VersionedTxOutStore, versionedVaultManager VersionedVaultManager) *validatorMgrV1 {
+func newValidatorMgrV1(k Keeper, versionedTxOutStore VersionedTxOutStore, versionedVaultManager VersionedVaultManager, versionedEventManager VersionedEventManager) *validatorMgrV1 {
 	return &validatorMgrV1{
 		version:               semver.MustParse("0.1.0"),
 		k:                     k,
 		versionedVaultManager: versionedVaultManager,
 		versionedTxOutStore:   versionedTxOutStore,
+		versionedEventManager: versionedEventManager,
 	}
 }
 
@@ -180,7 +182,7 @@ func (vm *validatorMgrV1) EndBlock(ctx sdk.Context, constAccessor constants.Cons
 		na.UpdateStatus(NodeActive, height)
 		na.LeaveHeight = 0
 		na.RequestedToLeave = false
-		na.SlashPoints = 0
+		vm.k.ResetNodeAccountSlashPoints(ctx, na.NodeAddress)
 		if err := vm.k.SetNodeAccount(ctx, na); err != nil {
 			ctx.Logger().Error("fail to save node account", "error", err)
 		}
@@ -196,7 +198,7 @@ func (vm *validatorMgrV1) EndBlock(ctx sdk.Context, constAccessor constants.Cons
 	}
 	for _, na := range removedNodes {
 		status := NodeStandby
-		if na.RequestedToLeave {
+		if na.RequestedToLeave || na.ForcedToLeave {
 			status = NodeDisabled
 		}
 
@@ -297,11 +299,16 @@ func (vm *validatorMgrV1) payNodeAccountBondAward(ctx sdk.Context, na NodeAccoun
 		return fmt.Errorf("fail to get vault: %w", err)
 	}
 
+	slashPts, err := vm.k.GetNodeAccountSlashPoints(ctx, na.NodeAddress)
+	if err != nil {
+		return fmt.Errorf("fail to get node slash points: %w", err)
+	}
+
 	// Find number of blocks they have been an active node
 	totalActiveBlocks := ctx.BlockHeight() - na.ActiveBlockHeight
 
 	// find number of blocks they were well behaved (ie active - slash points)
-	earnedBlocks := na.CalcBondUnits(ctx.BlockHeight())
+	earnedBlocks := na.CalcBondUnits(ctx.BlockHeight(), slashPts)
 
 	// calc number of rune they are awarded
 	reward := vault.CalcNodeRewards(earnedBlocks)
@@ -481,7 +488,7 @@ func (vm *validatorMgrV1) ragnarokReserve(ctx sdk.Context, nth int64) error {
 }
 
 func (vm *validatorMgrV1) ragnarokBond(ctx sdk.Context, nth int64) error {
-	nas, err := vm.k.ListNodeAccounts(ctx)
+	nas, err := vm.k.ListNodeAccountsWithBond(ctx)
 	if err != nil {
 		ctx.Logger().Error("can't get nodes", "error", err)
 		return err
@@ -567,9 +574,20 @@ func (vm *validatorMgrV1) ragnarokPools(ctx sdk.Context, nth int64, constAccesso
 		ctx.Logger().Error("can't get pools", "error", err)
 		return err
 	}
-
+	eventManager, err := vm.versionedEventManager.GetEventManager(ctx, vm.version)
+	if err != nil {
+		ctx.Logger().Error("fail to get event manager", "error", err)
+		return err
+	}
 	// set all pools to bootstrap mode
 	for _, pool := range pools {
+		if pool.Status != PoolBootstrap {
+			poolEvent := NewEventPool(pool.Asset, PoolBootstrap)
+			if err := eventManager.EmitPoolEvent(ctx, vm.k, common.BlankTxID, EventSuccess, poolEvent); err != nil {
+				ctx.Logger().Error("fail to emit pool event", "error", err)
+			}
+		}
+
 		pool.Status = PoolBootstrap
 		if err := vm.k.SetPool(ctx, pool); err != nil {
 			ctx.Logger().Error(err.Error())
@@ -577,34 +595,31 @@ func (vm *validatorMgrV1) ragnarokPools(ctx sdk.Context, nth int64, constAccesso
 		}
 	}
 
+	version := vm.k.GetLowestActiveVersion(ctx)
+
 	for i := len(pools) - 1; i >= 0; i-- { // iterate backwards
 		pool := pools[i]
-		poolStaker, err := vm.k.GetPoolStaker(ctx, pool.Asset)
-		if err != nil {
-			ctx.Logger().Error("fail to get pool staker", "error", err)
-			return err
-		}
-
-		// everyone withdraw
-		for i := len(poolStaker.Stakers) - 1; i >= 0; i-- { // iterate backwards
-			item := poolStaker.Stakers[i]
-			if item.Units.IsZero() {
+		iterator := vm.k.GetStakerIterator(ctx, pool.Asset)
+		defer iterator.Close()
+		for ; iterator.Valid(); iterator.Next() {
+			var staker Staker
+			vm.k.Cdc().MustUnmarshalBinaryBare(iterator.Value(), &staker)
+			if staker.Units.IsZero() {
 				continue
 			}
 
 			unstakeMsg := NewMsgSetUnStake(
-				common.GetRagnarokTx(pool.Asset.Chain, item.RuneAddress, item.RuneAddress),
-				item.RuneAddress,
+				common.GetRagnarokTx(pool.Asset.Chain, staker.RuneAddress, staker.RuneAddress),
+				staker.RuneAddress,
 				sdk.NewUint(uint64(basisPoints)),
 				pool.Asset,
 				na.NodeAddress,
 			)
 
-			version := vm.k.GetLowestActiveVersion(ctx)
-			unstakeHandler := NewUnstakeHandler(vm.k, vm.versionedTxOutStore)
+			unstakeHandler := NewUnstakeHandler(vm.k, vm.versionedTxOutStore, vm.versionedEventManager)
 			result := unstakeHandler.Run(ctx, unstakeMsg, version, constAccessor)
 			if !result.IsOK() {
-				ctx.Logger().Error("fail to unstake", "staker", item.RuneAddress, "error", result.Log)
+				ctx.Logger().Error("fail to unstake", "staker", staker.RuneAddress, "error", result.Log)
 			}
 		}
 	}
@@ -680,7 +695,7 @@ func (vm *validatorMgrV1) RequestYggReturn(ctx sdk.Context, node NodeAccount) er
 }
 
 func (vm *validatorMgrV1) recallYggFunds(ctx sdk.Context) error {
-	nodes, err := vm.k.ListNodeAccounts(ctx)
+	nodes, err := vm.k.ListNodeAccountsWithBond(ctx)
 	if err != nil {
 		return fmt.Errorf("fail to list all node accounts: %w", err)
 	}
@@ -743,7 +758,7 @@ func (vm *validatorMgrV1) setupValidatorNodes(ctx sdk.Context, height int64, con
 
 // Iterate over active node accounts, finding bad actors with high slash points
 func (vm *validatorMgrV1) findBadActors(ctx sdk.Context) (NodeAccounts, error) {
-	badActors := NodeAccounts{}
+	badActors := make(NodeAccounts, 0)
 	nas, err := vm.k.ListActiveNodeAccounts(ctx)
 	if err != nil {
 		return badActors, err
@@ -766,7 +781,11 @@ func (vm *validatorMgrV1) findBadActors(ctx sdk.Context) (NodeAccounts, error) {
 
 	// Find bad actor relative to age / slashpoints
 	for _, na := range nas {
-		if na.SlashPoints == 0 {
+		slashPts, err := vm.k.GetNodeAccountSlashPoints(ctx, na.NodeAddress)
+		if err != nil {
+			ctx.Logger().Error("fail to get node slash points", "error", err)
+		}
+		if slashPts == 0 {
 			continue
 		}
 
@@ -775,7 +794,7 @@ func (vm *validatorMgrV1) findBadActors(ctx sdk.Context) (NodeAccounts, error) {
 			// this node account is too new (1 hour) to be considered for removal
 			continue
 		}
-		score := age.Quo(sdk.NewDecWithPrec(na.SlashPoints, 5))
+		score := age.Quo(sdk.NewDecWithPrec(slashPts, 5))
 		totalScore = totalScore.Add(score)
 
 		tracker = append(tracker, badTracker{
@@ -925,6 +944,11 @@ func (vm *validatorMgrV1) markReadyActors(ctx sdk.Context, constAccessor constan
 			na.UpdateStatus(NodeStandby, ctx.BlockHeight())
 		}
 
+		// ensure banned nodes can't get churned in again
+		if na.ForcedToLeave {
+			na.UpdateStatus(NodeDisabled, ctx.BlockHeight())
+		}
+
 		// Check that the node account has an IP address
 		if net.ParseIP(na.IPAddress) == nil {
 			na.UpdateStatus(NodeStandby, ctx.BlockHeight())
@@ -967,13 +991,24 @@ func (vm *validatorMgrV1) nextVaultNodeAccounts(ctx sdk.Context, targetCount int
 	if err != nil {
 		return nil, false, err
 	}
-	// sort by LeaveHeight, giving preferential treatment to people who
-	// requested to leave
+	// sort by LeaveHeight ascending
+	// giving preferential treatment to people who are forced to leave
+	//  and then requested to leave
 	sort.SliceStable(active, func(i, j int) bool {
+		if active[i].ForcedToLeave != active[j].ForcedToLeave {
+			return active[i].ForcedToLeave
+		}
 		if active[i].RequestedToLeave != active[j].RequestedToLeave {
 			return active[i].RequestedToLeave
 		}
-		return active[i].LeaveHeight > active[j].LeaveHeight
+		// sort by LeaveHeight ascending , but exclude LeaveHeight == 0 , because that's the default value
+		if active[i].LeaveHeight == 0 && active[j].LeaveHeight > 0 {
+			return false
+		}
+		if active[i].LeaveHeight > 0 && active[j].LeaveHeight == 0 {
+			return true
+		}
+		return active[i].LeaveHeight < active[j].LeaveHeight
 	})
 
 	artificialRagnarokBlockHeight := constAccessor.GetInt64Value(constants.ArtificialRagnarokBlockHeight)
@@ -1007,15 +1042,14 @@ func findCountToRemove(blockHeight, artificalRagnarok int64, active NodeAccounts
 			candidateCount += 1
 			continue
 		}
-		break
 	}
 
 	maxRemove := findMaxAbleToLeave(len(active))
 	if len(active) > 0 {
 		if maxRemove == 0 {
-			// we can't remove any mathematically, but we always leave room for node
-			// accounts requesting to leave
-			if active[0].RequestedToLeave || (artificalRagnarok > 0 && blockHeight >= artificalRagnarok) {
+			// we can't remove any mathematically, but we always leave room for
+			// node accounts requesting to leave or are being banned
+			if active[0].ForcedToLeave || active[0].RequestedToLeave || (artificalRagnarok > 0 && blockHeight >= artificalRagnarok) {
 				toRemove = 1
 			}
 		} else {

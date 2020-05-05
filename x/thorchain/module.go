@@ -79,23 +79,25 @@ type AppModule struct {
 	versionedVaultManager    VersionedVaultManager
 	versionedGasManager      VersionedGasManager
 	versionedObserverManager VersionedObserverManager
+	versionedEventManager    VersionedEventManager
 }
 
 // NewAppModule creates a new AppModule Object
 func NewAppModule(k Keeper, bankKeeper bank.Keeper, supplyKeeper supply.Keeper) AppModule {
 	versionedTxOutStore := NewVersionedTxOutStore()
-	versionedVaultMgr := NewVersionedVaultMgr(versionedTxOutStore)
-
+	versionedEventManager := NewVersionedEventMgr()
+	versionedVaultMgr := NewVersionedVaultMgr(versionedTxOutStore, versionedEventManager)
 	return AppModule{
 		AppModuleBasic:           AppModuleBasic{},
 		keeper:                   k,
 		coinKeeper:               bankKeeper,
 		supplyKeeper:             supplyKeeper,
 		txOutStore:               versionedTxOutStore,
-		validatorMgr:             NewVersionedValidatorMgr(k, versionedTxOutStore, versionedVaultMgr),
+		validatorMgr:             NewVersionedValidatorMgr(k, versionedTxOutStore, versionedVaultMgr, versionedEventManager),
 		versionedVaultManager:    versionedVaultMgr,
 		versionedGasManager:      NewVersionedGasMgr(),
 		versionedObserverManager: NewVersionedObserverMgr(),
+		versionedEventManager:    versionedEventManager,
 	}
 }
 
@@ -110,7 +112,7 @@ func (am AppModule) Route() string {
 }
 
 func (am AppModule) NewHandler() sdk.Handler {
-	return NewHandler(am.keeper, am.txOutStore, am.validatorMgr, am.versionedVaultManager, am.versionedObserverManager, am.versionedGasManager)
+	return NewHandler(am.keeper, am.txOutStore, am.validatorMgr, am.versionedVaultManager, am.versionedObserverManager, am.versionedGasManager, am.versionedEventManager)
 }
 
 func (am AppModule) QuerierRoute() string {
@@ -133,6 +135,13 @@ func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 	}
 	obMgr.BeginBlock()
 
+	eventMgr, err := am.versionedEventManager.GetEventManager(ctx, version)
+	if err != nil {
+		ctx.Logger().Error(fmt.Sprintf("Event manager that compatible with version :%s is not available", version))
+		return
+	}
+	eventMgr.BeginBlock(ctx)
+
 	gasMgr, err := am.versionedGasManager.GetGasManager(ctx, version)
 	if err != nil {
 		ctx.Logger().Error(fmt.Sprintf("gas manager that compatible with version :%s is not available", version))
@@ -144,6 +153,13 @@ func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 		ctx.Logger().Error(fmt.Sprintf("constants for version(%s) is not available", version))
 		return
 	}
+
+	slasher, err := NewSlasher(am.keeper, version)
+	if err != nil {
+		ctx.Logger().Error("fail to create slasher", "error", err)
+	}
+	slasher.BeginBlock(ctx, req, constantValues)
+
 	if err := am.validatorMgr.BeginBlock(ctx, version, constantValues); err != nil {
 		ctx.Logger().Error("Fail to begin block on validator", "error", err)
 	}
@@ -169,6 +185,12 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 		ctx.Logger().Error("fail to get tx out store", "error", err)
 		return nil
 	}
+	eventMgr, err := am.versionedEventManager.GetEventManager(ctx, version)
+	if err != nil {
+		ctx.Logger().Error(fmt.Sprintf("Event manager that compatible with version :%s is not available", version))
+		return nil
+	}
+
 	slasher, err := NewSlasher(am.keeper, version)
 	if err != nil {
 		ctx.Logger().Error("fail to create slasher", "error", err)
@@ -184,7 +206,7 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 	newPoolCycle := constantValues.GetInt64Value(constants.NewPoolCycle)
 	// Enable a pool every newPoolCycle
 	if ctx.BlockHeight()%newPoolCycle == 0 {
-		if err := enableNextPool(ctx, am.keeper); err != nil {
+		if err := enableNextPool(ctx, am.keeper, eventMgr); err != nil {
 			ctx.Logger().Error("Unable to enable a pool", "error", err)
 		}
 	}
@@ -236,7 +258,11 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 	if err := Fund(ctx, am.keeper, txStore, constantValues); err != nil {
 		ctx.Logger().Error("unable to fund yggdrasil", "error", err)
 	}
-	gasMgr.EndBlock(ctx, am.keeper)
+	gasMgr.EndBlock(ctx, am.keeper, eventMgr)
+
+	if eventMgr != nil {
+		eventMgr.EndBlock(ctx, am.keeper)
+	}
 	return validators
 }
 

@@ -19,6 +19,8 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/tendermint/tendermint/crypto"
 
+	. "gopkg.in/check.v1"
+
 	"gitlab.com/thorchain/thornode/bifrost/blockscanner"
 	"gitlab.com/thorchain/thornode/bifrost/config"
 	"gitlab.com/thorchain/thornode/bifrost/metrics"
@@ -29,7 +31,6 @@ import (
 	"gitlab.com/thorchain/thornode/common"
 	"gitlab.com/thorchain/thornode/x/thorchain"
 	types2 "gitlab.com/thorchain/thornode/x/thorchain/types"
-	. "gopkg.in/check.v1"
 )
 
 func TestPackage(t *testing.T) { TestingT(t) }
@@ -65,11 +66,6 @@ var _ = Suite(&SignSuite{})
 
 type MockCheckTransactionChain struct {
 	chainclients.DummyChain
-	validateMetaData bool
-}
-
-func (m *MockCheckTransactionChain) ValidateMetadata(_ interface{}) bool {
-	return m.validateMetaData
 }
 
 func (s *SignSuite) SetUpSuite(c *C) {
@@ -207,10 +203,6 @@ func (b *MockChainClient) GetChain() common.Chain {
 	return common.BNBChain
 }
 
-func (b *MockChainClient) ValidateMetadata(inter interface{}) bool {
-	return true
-}
-
 func (b *MockChainClient) BroadcastTx(_ stypes.TxOutItem, tx []byte) error {
 	return nil
 }
@@ -219,7 +211,7 @@ func (b *MockChainClient) GetAddress(poolPubKey common.PubKey) string {
 	return "0dd3d0a4a6eacc98cc4894791702e46c270bde76"
 }
 
-func (b *MockChainClient) GetAccount(addr string) (common.Account, error) {
+func (b *MockChainClient) GetAccount(poolPubKey common.PubKey) (common.Account, error) {
 	return b.account, nil
 }
 
@@ -243,8 +235,9 @@ func (s *SignSuite) TestHandleYggReturn_Success_FeeSingleton(c *C) {
 				},
 			},
 		},
+		pubkeyMgr: pubkeymanager.NewMockPoolAddressValidator(),
 	}
-	input := `{ "chain": "BNB", "memo": "yggdrasil-:30", "to": "tbnb1yxfyeda8pnlxlmx0z3cwx74w9xevspwdpzdxpj", "coins": [] }`
+	input := `{ "chain": "BNB", "memo": "", "to": "tbnb1yycn4mh6ffwpjf584t8lpp7c27ghu03gpvqkfj", "coins": [] }`
 	var item stypes.TxOutItem
 	err := json.Unmarshal([]byte(input), &item)
 	c.Check(err, IsNil)
@@ -266,8 +259,9 @@ func (s *SignSuite) TestHandleYggReturn_Success_FeeMulti(c *C) {
 				},
 			},
 		},
+		pubkeyMgr: pubkeymanager.NewMockPoolAddressValidator(),
 	}
-	input := `{ "chain": "BNB", "memo": "yggdrasil-:30", "to": "tbnb1yxfyeda8pnlxlmx0z3cwx74w9xevspwdpzdxpj", "coins": [] }`
+	input := `{ "chain": "BNB", "memo": "", "to": "tbnb1yycn4mh6ffwpjf584t8lpp7c27ghu03gpvqkfj", "coins": [] }`
 	var item stypes.TxOutItem
 	err := json.Unmarshal([]byte(input), &item)
 	c.Check(err, IsNil)
@@ -288,8 +282,9 @@ func (s *SignSuite) TestHandleYggReturn_Success_NotEnough(c *C) {
 				},
 			},
 		},
+		pubkeyMgr: pubkeymanager.NewMockPoolAddressValidator(),
 	}
-	input := `{ "chain": "BNB", "memo": "yggdrasil-:30", "to": "tbnb1yxfyeda8pnlxlmx0z3cwx74w9xevspwdpzdxpj", "coins": [] }`
+	input := `{ "chain": "BNB", "memo": "", "to": "tbnb1yycn4mh6ffwpjf584t8lpp7c27ghu03gpvqkfj", "coins": [] }`
 	var item stypes.TxOutItem
 	err := json.Unmarshal([]byte(input), &item)
 	c.Check(err, IsNil)

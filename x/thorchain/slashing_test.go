@@ -27,6 +27,7 @@ type TestSlashObservingKeeper struct {
 	failGetObservingAddress   bool
 	failListActiveNodeAccount bool
 	failSetNodeAccount        bool
+	slashPts                  map[string]int64
 }
 
 func (k *TestSlashObservingKeeper) GetObservingAddresses(_ sdk.Context) ([]sdk.AccAddress, error) {
@@ -38,6 +39,14 @@ func (k *TestSlashObservingKeeper) GetObservingAddresses(_ sdk.Context) ([]sdk.A
 
 func (k *TestSlashObservingKeeper) ClearObservingAddresses(_ sdk.Context) {
 	k.addrs = nil
+}
+
+func (k *TestSlashObservingKeeper) IncNodeAccountSlashPoints(_ sdk.Context, addr sdk.AccAddress, pts int64) error {
+	if _, ok := k.slashPts[addr.String()]; !ok {
+		k.slashPts[addr.String()] = 0
+	}
+	k.slashPts[addr.String()] += pts
+	return nil
 }
 
 func (k *TestSlashObservingKeeper) ListActiveNodeAccounts(_ sdk.Context) (NodeAccounts, error) {
@@ -69,8 +78,9 @@ func (s *SlashingSuite) TestObservingSlashing(c *C) {
 		GetRandomNodeAccount(NodeActive),
 	}
 	keeper := &TestSlashObservingKeeper{
-		nas:   nas,
-		addrs: []sdk.AccAddress{nas[0].NodeAddress},
+		nas:      nas,
+		addrs:    []sdk.AccAddress{nas[0].NodeAddress},
+		slashPts: make(map[string]int64, 0),
 	}
 	ver := constants.SWVersion
 	constAccessor := constants.GetConstantValues(ver)
@@ -81,8 +91,8 @@ func (s *SlashingSuite) TestObservingSlashing(c *C) {
 	lackOfObservationPenalty := constAccessor.GetInt64Value(constants.LackOfObservationPenalty)
 	err = slasher.LackObserving(ctx, constAccessor)
 	c.Assert(err, IsNil)
-	c.Assert(keeper.nas[0].SlashPoints, Equals, int64(0))
-	c.Assert(keeper.nas[1].SlashPoints, Equals, lackOfObservationPenalty)
+	c.Assert(keeper.slashPts[nas[0].NodeAddress.String()], Equals, int64(0))
+	c.Assert(keeper.slashPts[nas[1].NodeAddress.String()], Equals, lackOfObservationPenalty)
 
 	// manually clear the observing address, as clear observing address had been moved to moduleManager begin block
 	keeper.ClearObservingAddresses(ctx)
@@ -90,8 +100,8 @@ func (s *SlashingSuite) TestObservingSlashing(c *C) {
 	// running it a second time should result in slashing nobody.
 	err = slasher.LackObserving(ctx, constAccessor)
 	c.Assert(err, IsNil)
-	c.Assert(keeper.nas[0].SlashPoints, Equals, int64(0))
-	c.Assert(keeper.nas[1].SlashPoints, Equals, lackOfObservationPenalty)
+	c.Assert(keeper.slashPts[nas[0].NodeAddress.String()], Equals, int64(0))
+	c.Assert(keeper.slashPts[nas[1].NodeAddress.String()], Equals, lackOfObservationPenalty)
 }
 
 func (s *SlashingSuite) TestLackObservingErrors(c *C) {
@@ -103,8 +113,9 @@ func (s *SlashingSuite) TestLackObservingErrors(c *C) {
 		GetRandomNodeAccount(NodeActive),
 	}
 	keeper := &TestSlashObservingKeeper{
-		nas:   nas,
-		addrs: []sdk.AccAddress{nas[0].NodeAddress},
+		nas:      nas,
+		addrs:    []sdk.AccAddress{nas[0].NodeAddress},
+		slashPts: make(map[string]int64, 0),
 	}
 	ver := constants.SWVersion
 	constAccessor := constants.GetConstantValues(ver)
@@ -116,9 +127,6 @@ func (s *SlashingSuite) TestLackObservingErrors(c *C) {
 	keeper.failListActiveNodeAccount = true
 	c.Assert(slasher.LackObserving(ctx, constAccessor), NotNil)
 	keeper.failListActiveNodeAccount = false
-	keeper.failSetNodeAccount = true
-	c.Assert(slasher.LackObserving(ctx, constAccessor), NotNil)
-	keeper.failSetNodeAccount = false
 }
 
 type TestSlashingLackKeeper struct {
@@ -136,6 +144,7 @@ type TestSlashingLackKeeper struct {
 	failGetAsgardByStatus      bool
 	failGetObservedTxVoter     bool
 	failSetTxOut               bool
+	slashPts                   map[string]int64
 }
 
 func (k *TestSlashingLackKeeper) GetObservedTxVoter(_ sdk.Context, _ common.TxID) (ObservedTxVoter, error) {
@@ -182,6 +191,14 @@ func (k *TestSlashingLackKeeper) SetTxOut(_ sdk.Context, tx *TxOut) error {
 		return kaboom
 	}
 	k.txOut = tx
+	return nil
+}
+
+func (k *TestSlashingLackKeeper) IncNodeAccountSlashPoints(_ sdk.Context, addr sdk.AccAddress, pts int64) error {
+	if _, ok := k.slashPts[addr.String()]; !ok {
+		k.slashPts[addr.String()] = 0
+	}
+	k.slashPts[addr.String()] += pts
 	return nil
 }
 
@@ -313,6 +330,7 @@ func (s *SlashingSuite) TestNodeSignSlashErrors(c *C) {
 			voter: ObservedTxVoter{
 				Actions: []TxOutItem{*txOutItem},
 			},
+			slashPts: make(map[string]int64, 0),
 		}
 		signingTransactionPeriod := constAccessor.GetInt64Value(constants.SigningTransactionPeriod)
 		ctx = ctx.WithBlockHeight(evt.Height + signingTransactionPeriod)
@@ -384,6 +402,7 @@ func (s *SlashingSuite) TestNotSigningSlash(c *C) {
 		voter: ObservedTxVoter{
 			Actions: []TxOutItem{*txOutItem},
 		},
+		slashPts: make(map[string]int64, 0),
 	}
 	signingTransactionPeriod := constAccessor.GetInt64Value(constants.SigningTransactionPeriod)
 	ctx = ctx.WithBlockHeight(evt.Height + signingTransactionPeriod)
@@ -392,7 +411,7 @@ func (s *SlashingSuite) TestNotSigningSlash(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(slasher.LackSigning(ctx, constAccessor, txOutStore), IsNil)
 
-	c.Check(keeper.na.SlashPoints, Equals, int64(600), Commentf("%+v\n", na))
+	c.Check(keeper.slashPts[na.NodeAddress.String()], Equals, int64(600), Commentf("%+v\n", na))
 
 	outItems, err := txOutStore.GetOutboundItems(ctx)
 	c.Assert(err, IsNil)
@@ -409,11 +428,59 @@ func (s *SlashingSuite) TestNewSlasher(c *C) {
 		GetRandomNodeAccount(NodeActive),
 	}
 	keeper := &TestSlashObservingKeeper{
-		nas:   nas,
-		addrs: []sdk.AccAddress{nas[0].NodeAddress},
+		nas:      nas,
+		addrs:    []sdk.AccAddress{nas[0].NodeAddress},
+		slashPts: make(map[string]int64, 0),
 	}
 	ver := semver.MustParse("0.0.1")
 	slasher, err := NewSlasher(keeper, ver)
 	c.Assert(err, Equals, errBadVersion)
 	c.Assert(slasher, IsNil)
+}
+
+type TestDoubleSlashKeeper struct {
+	KVStoreDummy
+	na        NodeAccount
+	vaultData VaultData
+}
+
+func (k *TestDoubleSlashKeeper) ListActiveNodeAccounts(ctx sdk.Context) (NodeAccounts, error) {
+	return NodeAccounts{k.na}, nil
+}
+
+func (k *TestDoubleSlashKeeper) SetNodeAccount(ctx sdk.Context, na NodeAccount) error {
+	k.na = na
+	return nil
+}
+
+func (k *TestDoubleSlashKeeper) GetVaultData(ctx sdk.Context) (VaultData, error) {
+	return k.vaultData, nil
+}
+
+func (k *TestDoubleSlashKeeper) SetVaultData(ctx sdk.Context, data VaultData) error {
+	k.vaultData = data
+	return nil
+}
+
+func (s *SlashingSuite) TestDoubleSign(c *C) {
+	ctx, _ := setupKeeperForTest(c)
+	constAccessor := constants.GetConstantValues(constants.SWVersion)
+
+	na := GetRandomNodeAccount(NodeActive)
+	na.Bond = sdk.NewUint(100 * common.One)
+
+	keeper := &TestDoubleSlashKeeper{
+		na:        na,
+		vaultData: NewVaultData(),
+	}
+	slasher, err := NewSlasher(keeper, constants.SWVersion)
+	c.Assert(err, IsNil)
+
+	pk, err := sdk.GetConsPubKeyBech32(na.ValidatorConsPubKey)
+	c.Assert(err, IsNil)
+	err = slasher.HandleDoubleSign(ctx, pk.Address(), 0, constAccessor)
+	c.Assert(err, IsNil)
+
+	c.Check(keeper.na.Bond.Equal(sdk.NewUint(9995000000)), Equals, true, Commentf("%d", keeper.na.Bond.Uint64()))
+	c.Check(keeper.vaultData.TotalReserve.Equal(sdk.NewUint(5000000)), Equals, true)
 }

@@ -20,9 +20,7 @@ func (s *KeeperNodeAccountSuite) TestNodeAccount(c *C) {
 	c.Assert(k.SetNodeAccount(ctx, na1), IsNil)
 	c.Assert(k.SetNodeAccount(ctx, na2), IsNil)
 	c.Check(na1.ActiveBlockHeight, Equals, int64(10))
-	c.Check(na1.SlashPoints, Equals, int64(0))
 	c.Check(na2.ActiveBlockHeight, Equals, int64(0))
-	c.Check(na2.SlashPoints, Equals, int64(0))
 
 	count, err := k.TotalActiveNodeAccount(ctx)
 	c.Assert(err, IsNil)
@@ -154,4 +152,29 @@ func (s *KeeperNodeAccountSuite) TestGetMinJoinVersion(c *C) {
 		}
 		c.Check(k.GetMinJoinVersion(ctx).Equals(item.expectedVersion), Equals, true, Commentf("%+v", k.GetMinJoinVersion(ctx)))
 	}
+}
+
+func (s *KeeperNodeAccountSuite) TestNodeAccountSlashPoints(c *C) {
+	ctx, k := setupKeeperForTest(c)
+	addr := GetRandomBech32Addr()
+
+	pts, err := k.GetNodeAccountSlashPoints(ctx, addr)
+	c.Assert(err, IsNil)
+	c.Check(pts, Equals, int64(0))
+
+	pts = 5
+	k.SetNodeAccountSlashPoints(ctx, addr, pts)
+	pts, err = k.GetNodeAccountSlashPoints(ctx, addr)
+	c.Assert(err, IsNil)
+	c.Check(pts, Equals, int64(5))
+
+	c.Assert(k.IncNodeAccountSlashPoints(ctx, addr, 12), IsNil)
+	pts, err = k.GetNodeAccountSlashPoints(ctx, addr)
+	c.Assert(err, IsNil)
+	c.Check(pts, Equals, int64(17))
+
+	c.Assert(k.DecNodeAccountSlashPoints(ctx, addr, 7), IsNil)
+	pts, err = k.GetNodeAccountSlashPoints(ctx, addr)
+	c.Assert(err, IsNil)
+	c.Check(pts, Equals, int64(10))
 }

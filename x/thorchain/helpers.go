@@ -265,19 +265,6 @@ func isCurrentVaultPubKey(ctx sdk.Context, keeper Keeper, tx ObservedTx) bool {
 	return keeper.VaultExists(ctx, tx.ObservedPubKey)
 }
 
-// isSignedByActiveObserver check whether the signers are all active observer
-func isSignedByActiveObserver(ctx sdk.Context, keeper Keeper, signers []sdk.AccAddress) bool {
-	if len(signers) == 0 {
-		return false
-	}
-	for _, signer := range signers {
-		if !keeper.IsActiveObserver(ctx, signer) {
-			return false
-		}
-	}
-	return true
-}
-
 func isSignedByActiveNodeAccounts(ctx sdk.Context, keeper Keeper, signers []sdk.AccAddress) bool {
 	if len(signers) == 0 {
 		return false
@@ -341,7 +328,7 @@ func updateEventStatus(ctx sdk.Context, keeper Keeper, eventID int64, txs common
 }
 
 func updateEventFee(ctx sdk.Context, keeper Keeper, txID common.TxID, fee common.Fee) error {
-	ctx.Logger().Info("update event fee txid(%s)", txID.String())
+	ctx.Logger().Info("update event fee txid", "tx", txID.String())
 	eventIDs, err := keeper.GetEventsIDByTxHash(ctx, txID)
 	if err != nil {
 		if err == ErrEventNotFound {
@@ -384,7 +371,7 @@ func completeEvents(ctx sdk.Context, keeper Keeper, txID common.TxID, txs common
 	return nil
 }
 
-func enableNextPool(ctx sdk.Context, keeper Keeper) error {
+func enableNextPool(ctx sdk.Context, keeper Keeper, eventManager EventManager) error {
 	var pools []Pool
 	iterator := keeper.GetPoolIterator(ctx)
 	defer iterator.Close()
@@ -409,6 +396,11 @@ func enableNextPool(ctx sdk.Context, keeper Keeper) error {
 		if pool.BalanceRune.LT(p.BalanceRune) {
 			pool = p
 		}
+	}
+
+	poolEvt := NewEventPool(pool.Asset, PoolEnabled)
+	if err := eventManager.EmitPoolEvent(ctx, keeper, common.BlankTxID, EventSuccess, poolEvt); err != nil {
+		return fmt.Errorf("fail to emit pool event: %w", err)
 	}
 
 	pool.Status = PoolEnabled
@@ -440,30 +432,9 @@ func AddGasFees(ctx sdk.Context, keeper Keeper, tx ObservedTx, gasManager GasMan
 		}
 	}
 
-	vaultData, err := keeper.GetVaultData(ctx)
-	if err != nil {
-		return fmt.Errorf("fail to get vaultData: %w", err)
-	}
 	gasManager.AddGasAsset(tx.Tx.Gas)
-	vaultData.Gas = vaultData.Gas.Add(tx.Tx.Gas)
-	if err := keeper.SetVaultData(ctx, vaultData); err != nil {
-		return err
-	}
 
-	// Subtract gas from pools (will be reimbursed later with rune at the end
-	// of the block)
-	for _, gas := range tx.Tx.Gas {
-		pool, err := keeper.GetPool(ctx, gas.Asset)
-		if err != nil {
-			return err
-		}
-		pool.Asset = gas.Asset
-		pool.BalanceAsset = common.SafeSub(pool.BalanceAsset, gas.Amount)
-		if err := keeper.SetPool(ctx, pool); err != nil {
-			return err
-		}
-	}
-
+	// Subtract from the vault
 	if keeper.VaultExists(ctx, tx.ObservedPubKey) {
 		vault, err := keeper.GetVault(ctx, tx.ObservedPubKey)
 		if err != nil {

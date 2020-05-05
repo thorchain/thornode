@@ -4,6 +4,7 @@ import (
 	"sort"
 	"testing"
 
+	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	. "gopkg.in/check.v1"
 
@@ -40,6 +41,9 @@ func (s *ThorchainSuite) TestStaking(c *C) {
 	user2 := GetRandomBNBAddress()
 	txID := GetRandomTxHash()
 	constAccessor := constants.GetConstantValues(constants.SWVersion)
+	versionedEventManagerDummy := NewDummyVersionedEventMgr()
+	eventManager, err := versionedEventManagerDummy.GetEventManager(ctx, semver.MustParse("0.1.0"))
+	c.Assert(err, IsNil)
 
 	// create bnb pool
 	pool := NewPool()
@@ -51,35 +55,35 @@ func (s *ThorchainSuite) TestStaking(c *C) {
 	c.Assert(err, IsNil)
 	_, err = stake(ctx, keeper, common.BNBAsset, sdk.NewUint(100*common.One), sdk.NewUint(100*common.One), user1, user1, txID, constAccessor)
 	c.Assert(err, IsNil)
-	staker1, err := keeper.GetStakerPool(ctx, user1)
+	staker1, err := keeper.GetStaker(ctx, common.BNBAsset, user1)
 	c.Assert(err, IsNil)
-	c.Check(staker1.PoolUnits, HasLen, 1)
+	c.Check(staker1.Units.IsZero(), Equals, false)
 
 	// stake for user2
 	_, err = stake(ctx, keeper, common.BNBAsset, sdk.NewUint(75*common.One), sdk.NewUint(75*common.One), user2, user2, txID, constAccessor)
 	c.Assert(err, IsNil)
 	_, err = stake(ctx, keeper, common.BNBAsset, sdk.NewUint(75*common.One), sdk.NewUint(75*common.One), user2, user2, txID, constAccessor)
 	c.Assert(err, IsNil)
-	staker2, err := keeper.GetStakerPool(ctx, user2)
+	staker2, err := keeper.GetStaker(ctx, common.BNBAsset, user2)
 	c.Assert(err, IsNil)
-	c.Check(staker2.PoolUnits, HasLen, 1)
+	c.Check(staker2.Units.IsZero(), Equals, false)
 
 	version := constants.SWVersion
 	// unstake for user1
 	msg := NewMsgSetUnStake(GetRandomTx(), user1, sdk.NewUint(10000), common.BNBAsset, GetRandomBech32Addr())
-	_, _, _, err = unstake(ctx, version, keeper, msg)
+	_, _, _, _, err = unstake(ctx, version, keeper, msg, eventManager)
 	c.Assert(err, IsNil)
-	staker1, err = keeper.GetStakerPool(ctx, user1)
+	staker1, err = keeper.GetStaker(ctx, common.BNBAsset, user1)
 	c.Assert(err, IsNil)
-	c.Check(staker1.PoolUnits, HasLen, 0)
+	c.Check(staker1.Units.IsZero(), Equals, true)
 
 	// unstake for user2
 	msg = NewMsgSetUnStake(GetRandomTx(), user2, sdk.NewUint(10000), common.BNBAsset, GetRandomBech32Addr())
-	_, _, _, err = unstake(ctx, version, keeper, msg)
+	_, _, _, _, err = unstake(ctx, version, keeper, msg, eventManager)
 	c.Assert(err, IsNil)
-	staker2, err = keeper.GetStakerPool(ctx, user2)
+	staker2, err = keeper.GetStaker(ctx, common.BNBAsset, user2)
 	c.Assert(err, IsNil)
-	c.Check(staker2.PoolUnits, HasLen, 0)
+	c.Check(staker2.Units.IsZero(), Equals, true)
 
 	// check pool is now empty
 	pool, err = keeper.GetPool(ctx, common.BNBAsset)
@@ -93,9 +97,9 @@ func (s *ThorchainSuite) TestStaking(c *C) {
 	c.Assert(err, IsNil)
 	_, err = stake(ctx, keeper, common.BNBAsset, sdk.NewUint(100*common.One), sdk.NewUint(100*common.One), user1, user1, txID, constAccessor)
 	c.Assert(err, IsNil)
-	staker1, err = keeper.GetStakerPool(ctx, user1)
+	staker1, err = keeper.GetStaker(ctx, common.BNBAsset, user1)
 	c.Assert(err, IsNil)
-	c.Check(staker1.PoolUnits, HasLen, 1)
+	c.Check(staker1.Units.IsZero(), Equals, false)
 
 	// check pool is NOT empty
 	pool, err = keeper.GetPool(ctx, common.BNBAsset)
@@ -111,10 +115,12 @@ func (s *ThorchainSuite) TestChurn(c *C) {
 	consts := constants.GetConstantValues(ver)
 
 	versionedTxOutStoreDummy := NewVersionedTxOutStoreDummy()
-	versionedVaultMgr := NewVersionedVaultMgr(versionedTxOutStoreDummy)
+	versionedEventManagerDummy := NewDummyVersionedEventMgr()
+
+	versionedVaultMgr := NewVersionedVaultMgr(versionedTxOutStoreDummy, versionedEventManagerDummy)
 	vaultMgr, err := versionedVaultMgr.GetVaultManager(ctx, keeper, ver)
 	c.Assert(err, IsNil)
-	validatorMgr := newValidatorMgrV1(keeper, versionedTxOutStoreDummy, versionedVaultMgr)
+	validatorMgr := newValidatorMgrV1(keeper, versionedTxOutStoreDummy, versionedVaultMgr, versionedEventManagerDummy)
 	txOutStore, err := versionedTxOutStoreDummy.GetTxOutStore(keeper, ver)
 	c.Assert(err, IsNil)
 
@@ -235,7 +241,9 @@ func (s *ThorchainSuite) TestRagnarok(c *C) {
 
 	versionedTxOutStoreDummy := NewVersionedTxOutStoreDummy()
 	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(versionedTxOutStoreDummy)
-	validatorMgr := newValidatorMgrV1(keeper, versionedTxOutStoreDummy, versionedVaultMgrDummy)
+	versionedEventManagerDummy := NewDummyVersionedEventMgr()
+
+	validatorMgr := newValidatorMgrV1(keeper, versionedTxOutStoreDummy, versionedVaultMgrDummy, versionedEventManagerDummy)
 	txOutStore, err := versionedTxOutStoreDummy.GetTxOutStore(keeper, ver)
 	c.Assert(err, IsNil)
 
@@ -425,7 +433,9 @@ func (s *ThorchainSuite) TestRagnarokNoOneLeave(c *C) {
 
 	versionedTxOutStoreDummy := NewVersionedTxOutStoreDummy()
 	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(versionedTxOutStoreDummy)
-	validatorMgr := newValidatorMgrV1(keeper, versionedTxOutStoreDummy, versionedVaultMgrDummy)
+	versionedEventManagerDummy := NewDummyVersionedEventMgr()
+
+	validatorMgr := newValidatorMgrV1(keeper, versionedTxOutStoreDummy, versionedVaultMgrDummy, versionedEventManagerDummy)
 
 	// create active asgard vault
 	asgard := GetRandomVault()

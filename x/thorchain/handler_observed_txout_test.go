@@ -15,11 +15,14 @@ type HandlerObservedTxOutSuite struct{}
 
 type TestObservedTxOutValidateKeeper struct {
 	KVStoreDummy
-	isActive bool
+	activeNodeAccount NodeAccount
 }
 
-func (k *TestObservedTxOutValidateKeeper) IsActiveObserver(ctx sdk.Context, signer sdk.AccAddress) bool {
-	return k.isActive
+func (k *TestObservedTxOutValidateKeeper) GetNodeAccount(ctx sdk.Context, signer sdk.AccAddress) (NodeAccount, error) {
+	if k.activeNodeAccount.NodeAddress.Equals(signer) {
+		return k.activeNodeAccount, nil
+	}
+	return NodeAccount{}, nil
 }
 
 var _ = Suite(&HandlerObservedTxOutSuite{})
@@ -28,15 +31,18 @@ func (s *HandlerObservedTxOutSuite) TestValidate(c *C) {
 	var err error
 	ctx, _ := setupKeeperForTest(c)
 	w := getHandlerTestWrapper(c, 1, true, false)
+	activeNodeAccount := GetRandomNodeAccount(NodeActive)
 
 	keeper := &TestObservedTxOutValidateKeeper{
-		isActive: true,
+		activeNodeAccount: activeNodeAccount,
 	}
 
 	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(w.versionedTxOutStore)
 	versionedGasMgr := NewVersionedGasMgr()
 	versionedObMgr := NewDummyVersionedObserverMgr()
-	handler := NewObservedTxOutHandler(keeper, versionedObMgr, w.versionedTxOutStore, w.validatorMgr, versionedVaultMgrDummy, versionedGasMgr)
+	versionedEventManagerDummy := NewDummyVersionedEventMgr()
+
+	handler := NewObservedTxOutHandler(keeper, versionedObMgr, w.versionedTxOutStore, w.validatorMgr, versionedVaultMgrDummy, versionedGasMgr, versionedEventManagerDummy)
 
 	// happy path
 	ver := constants.SWVersion
@@ -44,7 +50,7 @@ func (s *HandlerObservedTxOutSuite) TestValidate(c *C) {
 	txs := ObservedTxs{NewObservedTx(GetRandomTx(), 12, pk)}
 	txs[0].Tx.FromAddress, err = pk.GetAddress(txs[0].Tx.Coins[0].Asset.Chain)
 	c.Assert(err, IsNil)
-	msg := NewMsgObservedTxOut(txs, GetRandomBech32Addr())
+	msg := NewMsgObservedTxOut(txs, activeNodeAccount.NodeAddress)
 	err = handler.validate(ctx, msg, ver)
 	c.Assert(err, IsNil)
 
@@ -53,7 +59,6 @@ func (s *HandlerObservedTxOutSuite) TestValidate(c *C) {
 	c.Assert(err, Equals, errInvalidVersion)
 
 	// inactive node account
-	keeper.isActive = false
 	msg = NewMsgObservedTxOut(txs, GetRandomBech32Addr())
 	err = handler.validate(ctx, msg, ver)
 	c.Assert(err, Equals, notAuthorized)
@@ -219,7 +224,9 @@ func (s *HandlerObservedTxOutSuite) TestHandle(c *C) {
 	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(versionedTxOutStoreDummy)
 	versionedGasMgr := NewVersionedGasMgr()
 	versionedObMgr := NewVersionedObserverMgr()
-	handler := NewObservedTxOutHandler(keeper, versionedObMgr, versionedTxOutStoreDummy, w.validatorMgr, versionedVaultMgrDummy, versionedGasMgr)
+	versionedEventManagerDummy := NewDummyVersionedEventMgr()
+
+	handler := NewObservedTxOutHandler(keeper, versionedObMgr, versionedTxOutStoreDummy, w.validatorMgr, versionedVaultMgrDummy, versionedGasMgr, versionedEventManagerDummy)
 
 	c.Assert(err, IsNil)
 	msg := NewMsgObservedTxOut(txs, keeper.nas[0].NodeAddress)
@@ -279,7 +286,9 @@ func (s *HandlerObservedTxOutSuite) TestGasUpdate(c *C) {
 	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(versionedTxOutStoreDummy)
 	versionedGasMgr := NewVersionedGasMgr()
 	versionedObMgr := NewDummyVersionedObserverMgr()
-	handler := NewObservedTxOutHandler(keeper, versionedObMgr, versionedTxOutStoreDummy, w.validatorMgr, versionedVaultMgrDummy, versionedGasMgr)
+	versionedEventManagerDummy := NewDummyVersionedEventMgr()
+
+	handler := NewObservedTxOutHandler(keeper, versionedObMgr, versionedTxOutStoreDummy, w.validatorMgr, versionedVaultMgrDummy, versionedGasMgr, versionedEventManagerDummy)
 
 	c.Assert(err, IsNil)
 	msg := NewMsgObservedTxOut(txs, keeper.nas[0].NodeAddress)
@@ -336,7 +345,9 @@ func (s *HandlerObservedTxOutSuite) TestHandleStolenFunds(c *C) {
 	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(versionedTxOutStoreDummy)
 	versionedGasMgr := NewVersionedGasMgr()
 	versionedObMgr := NewDummyVersionedObserverMgr()
-	handler := NewObservedTxOutHandler(keeper, versionedObMgr, versionedTxOutStoreDummy, w.validatorMgr, versionedVaultMgrDummy, versionedGasMgr)
+	versionedEventManagerDummy := NewDummyVersionedEventMgr()
+
+	handler := NewObservedTxOutHandler(keeper, versionedObMgr, versionedTxOutStoreDummy, w.validatorMgr, versionedVaultMgrDummy, versionedGasMgr, versionedEventManagerDummy)
 
 	c.Assert(err, IsNil)
 	msg := NewMsgObservedTxOut(txs, keeper.nas[0].NodeAddress)

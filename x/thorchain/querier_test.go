@@ -1,6 +1,8 @@
 package thorchain
 
 import (
+	"encoding/json"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 	. "gopkg.in/check.v1"
@@ -43,7 +45,9 @@ func (s *QuerierSuite) TestQueryKeysign(c *C) {
 
 	versionedTxOutStoreDummy := NewVersionedTxOutStoreDummy()
 	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(versionedTxOutStoreDummy)
-	validatorMgr := NewVersionedValidatorMgr(keeper, versionedTxOutStoreDummy, versionedVaultMgrDummy)
+	versionedEventManagerDummy := NewDummyVersionedEventMgr()
+
+	validatorMgr := NewVersionedValidatorMgr(keeper, versionedTxOutStoreDummy, versionedVaultMgrDummy, versionedEventManagerDummy)
 
 	querier := NewQuerier(keeper, validatorMgr)
 
@@ -62,7 +66,9 @@ func (s *QuerierSuite) TestQueryPool(c *C) {
 
 	versionedTxOutStoreDummy := NewVersionedTxOutStoreDummy()
 	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(versionedTxOutStoreDummy)
-	validatorMgr := NewVersionedValidatorMgr(keeper, versionedTxOutStoreDummy, versionedVaultMgrDummy)
+	versionedEventManagerDummy := NewDummyVersionedEventMgr()
+
+	validatorMgr := NewVersionedValidatorMgr(keeper, versionedTxOutStoreDummy, versionedVaultMgrDummy, versionedEventManagerDummy)
 
 	querier := NewQuerier(keeper, validatorMgr)
 	path := []string{"pools"}
@@ -71,14 +77,14 @@ func (s *QuerierSuite) TestQueryPool(c *C) {
 	asgard := NewVault(ctx.BlockHeight(), ActiveVault, AsgardVault, pubKey, common.Chains{common.BNBChain})
 	c.Assert(keeper.SetVault(ctx, asgard), IsNil)
 
-	poolBNB := Pool{
-		Asset:     common.BNBAsset,
-		PoolUnits: sdk.NewUint(100),
-	}
-	poolBTC := Pool{
-		Asset:     common.BTCAsset,
-		PoolUnits: sdk.NewUint(0),
-	}
+	poolBNB := NewPool()
+	poolBNB.Asset = common.BNBAsset
+	poolBNB.PoolUnits = sdk.NewUint(100)
+
+	poolBTC := NewPool()
+	poolBTC.Asset = common.BTCAsset
+	poolBTC.PoolUnits = sdk.NewUint(0)
+
 	err := keeper.SetPool(ctx, poolBNB)
 	c.Assert(err, IsNil)
 
@@ -110,7 +116,9 @@ func (s *QuerierSuite) TestQueryNodeAccounts(c *C) {
 
 	versionedTxOutStoreDummy := NewVersionedTxOutStoreDummy()
 	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(versionedTxOutStoreDummy)
-	validatorMgr := NewVersionedValidatorMgr(keeper, versionedTxOutStoreDummy, versionedVaultMgrDummy)
+	versionedEventManagerDummy := NewDummyVersionedEventMgr()
+
+	validatorMgr := NewVersionedValidatorMgr(keeper, versionedTxOutStoreDummy, versionedVaultMgrDummy, versionedEventManagerDummy)
 
 	querier := NewQuerier(keeper, validatorMgr)
 	path := []string{"nodeaccounts"}
@@ -153,4 +161,139 @@ func (s *QuerierSuite) TestQueryNodeAccounts(c *C) {
 	err1 = keeper.Cdc().UnmarshalJSON(res, &out)
 	c.Assert(err1, IsNil)
 	c.Assert(len(out), Equals, 1)
+}
+
+func (s *QuerierSuite) TestQueryCompEvents(c *C) {
+	ctx, keeper := setupKeeperForTest(c)
+
+	versionedTxOutStoreDummy := NewVersionedTxOutStoreDummy()
+	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(versionedTxOutStoreDummy)
+	versionedEventManagerDummy := NewDummyVersionedEventMgr()
+
+	validatorMgr := NewVersionedValidatorMgr(keeper, versionedTxOutStoreDummy, versionedVaultMgrDummy, versionedEventManagerDummy)
+
+	querier := NewQuerier(keeper, validatorMgr)
+	path := []string{"comp_events_chain", "1", "BNB"}
+
+	txID, err := common.NewTxID("A1C7D97D5DB51FFDBC3FE29FFF6ADAA2DAF112D2CEAADA0902822333A59BD218")
+	stake := NewEventStake(
+		common.BNBAsset,
+		sdk.NewUint(5),
+	)
+	stakeBytes, _ := json.Marshal(stake)
+	evt := NewEvent(
+		stake.Type(),
+		12,
+		common.NewTx(
+			txID,
+			GetRandomBNBAddress(),
+			GetRandomBNBAddress(),
+			common.Coins{
+				common.NewCoin(common.BNBAsset, sdk.NewUint(320000000)),
+				common.NewCoin(common.RuneAsset(), sdk.NewUint(420000000)),
+			},
+			BNBGasFeeSingleton,
+			"SWAP:BNB.BNB",
+		),
+		stakeBytes,
+		EventSuccess,
+	)
+	c.Assert(keeper.UpsertEvent(ctx, evt), IsNil)
+
+	res, err := querier(ctx, path, abci.RequestQuery{})
+	c.Assert(err, IsNil)
+
+	var out Events
+	err = keeper.Cdc().UnmarshalJSON(res, &out)
+	c.Assert(err, IsNil)
+	c.Assert(len(out), Equals, 1)
+
+	// add empty tx in out tx and should be returned still
+	// because the in tx chain match
+	evt.OutTxs = common.Txs{common.Tx{ID: common.BlankTxID}}
+	c.Assert(keeper.UpsertEvent(ctx, evt), IsNil)
+
+	res, err = querier(ctx, path, abci.RequestQuery{})
+	c.Assert(err, IsNil)
+
+	err = keeper.Cdc().UnmarshalJSON(res, &out)
+	c.Assert(err, IsNil)
+	c.Assert(len(out), Equals, 2)
+
+	// add new event with BTC chain in out txs
+	evt.OutTxs = common.Txs{common.Tx{Chain: common.BTCChain, ID: common.BlankTxID}}
+	c.Assert(keeper.UpsertEvent(ctx, evt), IsNil)
+
+	res, err = querier(ctx, path, abci.RequestQuery{})
+	c.Assert(err, IsNil)
+
+	// BNB events count should be the same and BTC out tx
+	// event should be ignored
+	err = keeper.Cdc().UnmarshalJSON(res, &out)
+	c.Assert(err, IsNil)
+	c.Assert(len(out), Equals, 2)
+
+	// query BTC chain event should return only the last event
+	path = []string{"comp_events_chain", "1", "BTC"}
+	res, err = querier(ctx, path, abci.RequestQuery{})
+	c.Assert(err, IsNil)
+
+	err = keeper.Cdc().UnmarshalJSON(res, &out)
+	c.Assert(err, IsNil)
+	c.Assert(len(out), Equals, 1)
+	c.Assert(out[0].OutTxs[0].Chain.Equals(common.BTCChain), Equals, true)
+
+	// add a gas event with empty chain and make sure its return in BNB chain calls
+	evt.InTx.Chain = common.EmptyChain
+	evt.OutTxs = nil
+	c.Assert(keeper.UpsertEvent(ctx, evt), IsNil)
+
+	// regular complete events without chain should have now all 4 events
+	path = []string{"comp_events", "1"}
+	res, err = querier(ctx, path, abci.RequestQuery{})
+	c.Assert(err, IsNil)
+	err = keeper.Cdc().UnmarshalJSON(res, &out)
+	c.Assert(err, IsNil)
+	c.Assert(len(out), Equals, 4)
+
+	// BNB events should have 3 events including gas event with empty tx in chain
+	path = []string{"comp_events", "1", "BNB"}
+	res, err = querier(ctx, path, abci.RequestQuery{})
+	c.Assert(err, IsNil)
+	err = keeper.Cdc().UnmarshalJSON(res, &out)
+	c.Assert(err, IsNil)
+	c.Assert(len(out), Equals, 3)
+	c.Assert(out[2].InTx.Chain.IsEmpty(), Equals, true)
+
+	// BTC events should still have the 1 event
+	path = []string{"comp_events", "1", "BTC"}
+	res, err = querier(ctx, path, abci.RequestQuery{})
+	c.Assert(err, IsNil)
+	err = keeper.Cdc().UnmarshalJSON(res, &out)
+	c.Assert(err, IsNil)
+	c.Assert(len(out), Equals, 1)
+	c.Assert(out[0].OutTxs[0].Chain.Equals(common.BTCChain), Equals, true)
+
+	// check regular query complete events still works correctly
+	// regular complete events without chain should have now all 4 events
+	path = []string{"comp_events", "1"}
+	res, err = querier(ctx, path, abci.RequestQuery{})
+	c.Assert(err, IsNil)
+
+	err = keeper.Cdc().UnmarshalJSON(res, &out)
+	c.Assert(err, IsNil)
+	c.Assert(len(out), Equals, 4)
+	c.Assert(out[2].OutTxs[0].Chain.Equals(common.BTCChain), Equals, true)
+	c.Assert(out[3].InTx.Chain.IsEmpty(), Equals, true)
+
+	// check call with empty chain id
+	path = []string{"comp_events", "1", ""}
+	res, err = querier(ctx, path, abci.RequestQuery{})
+	c.Assert(err, IsNil)
+
+	err = keeper.Cdc().UnmarshalJSON(res, &out)
+	c.Assert(err, IsNil)
+	c.Assert(len(out), Equals, 4)
+	c.Assert(out[2].OutTxs[0].Chain.Equals(common.BTCChain), Equals, true)
+	c.Assert(out[3].InTx.Chain.IsEmpty(), Equals, true)
 }

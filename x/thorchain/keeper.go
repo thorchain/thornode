@@ -21,8 +21,7 @@ type Keeper interface {
 	// Keeper Interfaces
 	KeeperPool
 	KeeperLastHeight
-	KeeperPoolStaker
-	KeeperStakerPool
+	KeeperStaker
 	KeeperNodeAccount
 	KeeperObserver
 	KeeperObservedTx
@@ -39,6 +38,8 @@ type Keeper interface {
 	KeeperGas
 	KeeperTxMarker
 	KeeperErrataTx
+	KeeperBanVoter
+	KeeperBlockEvent
 }
 
 // NOTE: Always end a dbPrefix with a slash ("/"). This is to ensure that there
@@ -55,8 +56,7 @@ const (
 	prefixTxOut              dbPrefix = "txout/"
 	prefixTotalLiquidityFee  dbPrefix = "total_liquidity_fee/"
 	prefixPoolLiquidityFee   dbPrefix = "pool_liquidity_fee/"
-	prefixPoolStaker         dbPrefix = "pool_staker/"
-	prefixStakerPool         dbPrefix = "staker_pool/"
+	prefixStaker             dbPrefix = "staker/"
 	prefixEvents             dbPrefix = "events/"
 	prefixTxHashEvents       dbPrefix = "tx_events/"
 	prefixPendingEvents      dbPrefix = "pending_events/"
@@ -76,6 +76,9 @@ const (
 	prefixGas                dbPrefix = "gas/"
 	prefixSupportedTxMarker  dbPrefix = "marker/"
 	prefixErrataTx           dbPrefix = "errata/"
+	prefixBanVoter           dbPrefix = "ban/"
+	prefixNodeSlashPoints    dbPrefix = "slash/"
+	prefixBlockEvents        dbPrefix = "block_events/"
 )
 
 func dbError(ctx sdk.Context, wrapper string, err error) error {

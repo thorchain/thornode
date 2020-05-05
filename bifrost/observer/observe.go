@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
-	"strings"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/rs/zerolog"
@@ -18,6 +17,8 @@ import (
 	"gitlab.com/thorchain/thornode/common"
 	stypes "gitlab.com/thorchain/thornode/x/thorchain/types"
 )
+
+const maxTxArrayLen = 100
 
 // Observer observer service
 type Observer struct {
@@ -73,138 +74,86 @@ func (o *Observer) processTxIns() {
 			return
 		case txIn := <-o.globalTxsQueue:
 			txIn.TxArray = o.filterObservations(txIn.Chain, txIn.TxArray)
-			if err := o.signAndSendToThorchain(txIn); err != nil {
-				o.logger.Error().Err(err).Msg("fail to send to thorchain")
-				o.errCounter.WithLabelValues("fail_send_to_thorchain", txIn.BlockHeight).Inc()
-			}
-			// check if chain client has OnObservedTxIn method then call it
-			chainClient, err := o.getChain(txIn.Chain)
-			if err != nil {
-				o.logger.Error().Err(err).Msg("fail to retrieve chain client")
-				continue
-			}
-			i, ok := chainClient.(interface{ OnObservedTxIn(txIn types.TxIn) })
-			if ok {
-				i.OnObservedTxIn(txIn)
+			for _, txIn := range o.chunkify(txIn) {
+				if err := o.signAndSendToThorchain(txIn); err != nil {
+					o.logger.Error().Err(err).Msg("fail to send to thorchain")
+					o.errCounter.WithLabelValues("fail_send_to_thorchain", txIn.BlockHeight).Inc()
+				}
+				// check if chain client has OnObservedTxIn method then call it
+				chainClient, err := o.getChain(txIn.Chain)
+				if err != nil {
+					o.logger.Error().Err(err).Msg("fail to retrieve chain client")
+					continue
+				}
+
+				i, ok := chainClient.(interface {
+					OnObservedTxIn(txIn types.TxInItem, blockHeight int64)
+				})
+				if ok {
+					height, err := strconv.ParseInt(txIn.BlockHeight, 10, 64)
+					if err != nil {
+						o.logger.Error().Err(err).Msg("fail to parse block height")
+						continue
+					}
+					for _, item := range txIn.TxArray {
+						if o.isOutboundMsg(txIn.Chain, item.Sender) {
+							continue
+						}
+						i.OnObservedTxIn(item, height)
+					}
+				}
 			}
 		}
 	}
 }
 
+func (o *Observer) isOutboundMsg(chain common.Chain, fromAddr string) bool {
+	matchOutbound, _ := o.pubkeyMgr.IsValidPoolAddress(fromAddr, chain)
+	if matchOutbound {
+		return true
+	}
+	return false
+}
+
+// chunkify - breaks the observations into 100 transactions per observation
+func (o *Observer) chunkify(txIn types.TxIn) (result []types.TxIn) {
+	for len(txIn.TxArray) > 0 {
+		newTx := types.TxIn{
+			BlockHeight: txIn.BlockHeight,
+			Chain:       txIn.Chain,
+		}
+		if len(txIn.TxArray) > maxTxArrayLen {
+			newTx.Count = fmt.Sprintf("%d", maxTxArrayLen)
+			newTx.TxArray = txIn.TxArray[:maxTxArrayLen]
+			txIn.TxArray = txIn.TxArray[maxTxArrayLen:]
+		} else {
+			newTx.Count = fmt.Sprintf("%d", len(txIn.TxArray))
+			newTx.TxArray = txIn.TxArray
+			txIn.TxArray = nil
+		}
+		result = append(result, newTx)
+	}
+	return result
+}
+
 func (o *Observer) filterObservations(chain common.Chain, items []types.TxInItem) (txs []types.TxInItem) {
 	for _, txInItem := range items {
-		if ok := o.MatchedAddress(chain, txInItem); !ok {
-			continue
-		}
-
 		// NOTE: the following could result in the same tx being added
 		// twice, which is expected. We want to make sure we generate both
 		// a inbound and outbound txn, if we both apply.
 
 		// check if the from address is a valid pool
 		if ok, cpi := o.pubkeyMgr.IsValidPoolAddress(txInItem.Sender, chain); ok {
-			txInItem.ObservedPoolPubKey = cpi.PubKey
+			txInItem.ObservedVaultPubKey = cpi.PubKey
 			txs = append(txs, txInItem)
 		}
 		// check if the to address is a valid pool address
 		if ok, cpi := o.pubkeyMgr.IsValidPoolAddress(txInItem.To, chain); ok {
-			txInItem.ObservedPoolPubKey = cpi.PubKey
+			txInItem.ObservedVaultPubKey = cpi.PubKey
 			txs = append(txs, txInItem)
-		} else {
-			// Apparently we don't recognize where we are sending funds to.
-			// Lets check if we should because its an internal transaction
-			// moving funds between vaults (for example). If it is, lets
-			// manually trigger an update of pubkeys, then check again...
-			switch strings.ToLower(txInItem.Memo) {
-			case "migrate", "yggdrasil-", "yggdrasil+":
-				o.pubkeyMgr.FetchPubKeys()
-				if ok, cpi := o.pubkeyMgr.IsValidPoolAddress(txInItem.To, chain); ok {
-					txInItem.ObservedPoolPubKey = cpi.PubKey
-					txs = append(txs, txInItem)
-				}
-			}
 		}
 	}
 	return
-}
-
-func (o *Observer) MatchedAddress(chain common.Chain, txInItem types.TxInItem) bool {
-	// Check if we are migrating our funds...
-	if ok := o.isMigration(chain, txInItem.Sender, txInItem.Memo); ok {
-		o.logger.Debug().Str("memo", txInItem.Memo).Msg("migrate")
-		return true
-	}
-
-	// Check if our pool is registering a new yggdrasil pool. Ie
-	// sending the staked assets to the user
-	if ok := o.isRegisterYggdrasil(chain, txInItem.Sender, txInItem.Memo); ok {
-		o.logger.Debug().Str("memo", txInItem.Memo).Msg("yggdrasil+")
-		return true
-	}
-
-	// Check if out pool is de registering a yggdrasil pool. Ie sending
-	// the bond back to the user
-	if ok := o.isDeregisterYggdrasil(chain, txInItem.Sender, txInItem.Memo); ok {
-		o.logger.Debug().Str("memo", txInItem.Memo).Msg("yggdrasil-")
-		return true
-	}
-
-	// Check if THORNode are sending from a yggdrasil address
-	if ok := o.isYggdrasil(chain, txInItem.Sender); ok {
-		o.logger.Debug().Str("assets sent from yggdrasil pool", txInItem.Memo).Msg("fill order")
-		return true
-	}
-
-	// Check if THORNode are sending to a yggdrasil address
-	if ok := o.isYggdrasil(chain, txInItem.To); ok {
-		o.logger.Debug().Str("assets to yggdrasil pool", txInItem.Memo).Msg("refill")
-		return true
-	}
-
-	// outbound message from pool, when it is outbound, it does not matter how much coins THORNode send to customer for now
-	if ok := o.isOutboundMsg(chain, txInItem.Sender, txInItem.Memo); ok {
-		o.logger.Debug().Str("memo", txInItem.Memo).Msg("outbound")
-		return true
-	}
-
-	return false
-}
-
-// Check if memo is for registering an Asgard vault
-func (o *Observer) isMigration(chain common.Chain, addr, memo string) bool {
-	return o.isAddrWithMemo(chain, addr, memo, "migrate")
-}
-
-// Check if memo is for registering a Yggdrasil vault
-func (o *Observer) isRegisterYggdrasil(chain common.Chain, addr, memo string) bool {
-	return o.isAddrWithMemo(chain, addr, memo, "yggdrasil+")
-}
-
-// Check if memo is for de registering a Yggdrasil vault
-func (o *Observer) isDeregisterYggdrasil(chain common.Chain, addr, memo string) bool {
-	return o.isAddrWithMemo(chain, addr, memo, "yggdrasil-")
-}
-
-// Check if THORNode have an outbound yggdrasil transaction
-func (o *Observer) isYggdrasil(chain common.Chain, addr string) bool {
-	ok, _ := o.pubkeyMgr.IsValidPoolAddress(addr, chain)
-	return ok
-}
-
-func (o *Observer) isOutboundMsg(chain common.Chain, addr, memo string) bool {
-	return o.isAddrWithMemo(chain, addr, memo, "outbound")
-}
-
-func (o *Observer) isAddrWithMemo(chain common.Chain, addr, memo, targetMemo string) bool {
-	match, _ := o.pubkeyMgr.IsValidPoolAddress(addr, chain)
-	if !match {
-		return false
-	}
-	lowerMemo := strings.ToLower(memo)
-	if strings.HasPrefix(lowerMemo, targetMemo) {
-		return true
-	}
-	return false
 }
 
 func (o *Observer) processErrataTx() {
@@ -291,17 +240,17 @@ func (o *Observer) getThorchainTxIns(txIn types.TxIn) (stypes.ObservedTxs, error
 			o.errCounter.WithLabelValues("fail to parse block height", txIn.BlockHeight).Inc()
 			return nil, fmt.Errorf("fail to parse block height: %w", err)
 		}
-		o.logger.Debug().Msgf("pool pubkey %s", item.ObservedPoolPubKey)
-		chainAddr, _ := item.ObservedPoolPubKey.GetAddress(txIn.Chain)
+		o.logger.Debug().Msgf("pool pubkey %s", item.ObservedVaultPubKey)
+		chainAddr, _ := item.ObservedVaultPubKey.GetAddress(txIn.Chain)
 		o.logger.Debug().Msgf("%s address %s", txIn.Chain.String(), chainAddr)
 		if err != nil {
-			o.errCounter.WithLabelValues("fail to parse observed pool address", item.ObservedPoolPubKey.String()).Inc()
-			return nil, fmt.Errorf("fail to parse observed pool address: %s: %w", item.ObservedPoolPubKey.String(), err)
+			o.errCounter.WithLabelValues("fail to parse observed pool address", item.ObservedVaultPubKey.String()).Inc()
+			return nil, fmt.Errorf("fail to parse observed pool address: %s: %w", item.ObservedVaultPubKey.String(), err)
 		}
 		txs[i] = stypes.NewObservedTx(
 			common.NewTx(txID, sender, to, item.Coins, item.Gas, item.Memo),
 			h,
-			item.ObservedPoolPubKey,
+			item.ObservedVaultPubKey,
 		)
 	}
 	return txs, nil

@@ -20,7 +20,9 @@ func (vts *ValidatorManagerTestSuite) TestSetupValidatorNodes(c *C) {
 	ctx = ctx.WithBlockHeight(1)
 	versionedTxOutStoreDummy := NewVersionedTxOutStoreDummy()
 	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(versionedTxOutStoreDummy)
-	vMgr := newValidatorMgrV1(k, versionedTxOutStoreDummy, versionedVaultMgrDummy)
+	versionedEventManagerDummy := NewDummyVersionedEventMgr()
+
+	vMgr := newValidatorMgrV1(k, versionedTxOutStoreDummy, versionedVaultMgrDummy, versionedEventManagerDummy)
 	c.Assert(vMgr, NotNil)
 	ver := constants.SWVersion
 	constAccessor := constants.GetConstantValues(ver)
@@ -42,7 +44,7 @@ func (vts *ValidatorManagerTestSuite) TestSetupValidatorNodes(c *C) {
 
 	// one active node and one ready node on start up
 	// it should take both of the node as active
-	vMgr1 := newValidatorMgrV1(k, versionedTxOutStoreDummy, versionedVaultMgrDummy)
+	vMgr1 := newValidatorMgrV1(k, versionedTxOutStoreDummy, versionedVaultMgrDummy, versionedEventManagerDummy)
 
 	c.Assert(vMgr1.BeginBlock(ctx, constAccessor), IsNil)
 	activeNodes, err := k.ListActiveNodeAccounts(ctx)
@@ -56,7 +58,7 @@ func (vts *ValidatorManagerTestSuite) TestSetupValidatorNodes(c *C) {
 	c.Assert(k.SetNodeAccount(ctx, activeNode2), IsNil)
 
 	// three active nodes and 1 ready nodes, it should take them all
-	vMgr2 := newValidatorMgrV1(k, versionedTxOutStoreDummy, versionedVaultMgrDummy)
+	vMgr2 := newValidatorMgrV1(k, versionedTxOutStoreDummy, versionedVaultMgrDummy, versionedEventManagerDummy)
 	vMgr2.BeginBlock(ctx, constAccessor)
 
 	activeNodes1, err := k.ListActiveNodeAccounts(ctx)
@@ -68,7 +70,9 @@ func (vts *ValidatorManagerTestSuite) TestRagnarokForChaosnet(c *C) {
 	ctx, k := setupKeeperForTest(c)
 	versionedTxOutStoreDummy := NewVersionedTxOutStoreDummy()
 	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(versionedTxOutStoreDummy)
-	vMgr := newValidatorMgrV1(k, versionedTxOutStoreDummy, versionedVaultMgrDummy)
+	versionedEventManagerDummy := NewDummyVersionedEventMgr()
+
+	vMgr := newValidatorMgrV1(k, versionedTxOutStoreDummy, versionedVaultMgrDummy, versionedEventManagerDummy)
 	c.Assert(vMgr, NotNil)
 
 	constAccessor := constants.NewDummyConstants(map[constants.ConstantName]int64{

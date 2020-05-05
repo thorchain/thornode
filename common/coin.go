@@ -60,7 +60,7 @@ func (c Coin) IsValid() error {
 }
 
 func (c Coin) String() string {
-	return fmt.Sprintf("%s%s", c.Amount.String(), c.Asset.String())
+	return fmt.Sprintf("%d%s", c.Amount.Uint64(), c.Asset.String())
 }
 
 func (cs Coins) IsValid() error {

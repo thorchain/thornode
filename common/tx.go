@@ -75,7 +75,7 @@ func GetRagnarokTx(chain Chain, fromAddr, toAddr Address) Tx {
 	}
 }
 
-func NewTx(txID TxID, from Address, to Address, coins Coins, gas Gas, memo string) Tx {
+func NewTx(txID TxID, from, to Address, coins Coins, gas Gas, memo string) Tx {
 	var chain Chain
 	for _, coin := range coins {
 		chain = coin.Asset.Chain
@@ -154,6 +154,9 @@ func (tx Tx) IsValid() error {
 	}
 	if err := tx.Gas.IsValid(); err != nil {
 		return err
+	}
+	if len([]byte(tx.Memo)) > 150 {
+		return fmt.Errorf("Memo must not exceed 150 bytes: %d", len([]byte(tx.Memo)))
 	}
 	return nil
 }

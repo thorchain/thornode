@@ -21,10 +21,9 @@ type MockUnstakeKeeper struct {
 	currentPool       Pool
 	failPool          bool
 	suspendedPool     bool
-	failPoolStaker    bool
+	failStaker        bool
 	failAddEvents     bool
-	stakerPool        StakerPool
-	poolStaker        PoolStaker
+	staker            Staker
 }
 
 func (mfp *MockUnstakeKeeper) PoolExist(_ sdk.Context, asset common.Asset) bool {
@@ -53,28 +52,28 @@ func (mfp *MockUnstakeKeeper) SetPool(_ sdk.Context, pool Pool) error {
 	return nil
 }
 
-// IsActiveObserver see whether it is an active observer
-func (mfp *MockUnstakeKeeper) IsActiveObserver(_ sdk.Context, addr sdk.AccAddress) bool {
-	return mfp.activeNodeAccount.NodeAddress.Equals(addr)
-}
-
-func (mfp *MockUnstakeKeeper) GetPoolStaker(_ sdk.Context, _ common.Asset) (PoolStaker, error) {
-	if mfp.failPoolStaker {
-		return PoolStaker{}, errors.New("fail to get pool staker")
+func (mfp *MockUnstakeKeeper) GetNodeAccount(_ sdk.Context, addr sdk.AccAddress) (NodeAccount, error) {
+	if mfp.activeNodeAccount.NodeAddress.Equals(addr) {
+		return mfp.activeNodeAccount, nil
 	}
-	return mfp.poolStaker, nil
+	return NodeAccount{}, nil
 }
 
-func (mfp *MockUnstakeKeeper) GetStakerPool(_ sdk.Context, _ common.Address) (StakerPool, error) {
-	return mfp.stakerPool, nil
+func (mfp *MockUnstakeKeeper) GetStakerIterator(ctx sdk.Context, _ common.Asset) sdk.Iterator {
+	iter := NewDummyIterator()
+	iter.AddItem([]byte("key"), mfp.Cdc().MustMarshalBinaryBare(mfp.staker))
+	return iter
 }
 
-func (mfp *MockUnstakeKeeper) SetStakerPool(_ sdk.Context, sp StakerPool) {
-	mfp.stakerPool = sp
+func (mfp *MockUnstakeKeeper) GetStaker(_ sdk.Context, _ common.Asset, _ common.Address) (Staker, error) {
+	if mfp.failStaker {
+		return Staker{}, errors.New("fail to get staker")
+	}
+	return mfp.staker, nil
 }
 
-func (mfp *MockUnstakeKeeper) SetPoolStaker(_ sdk.Context, ps PoolStaker) {
-	mfp.poolStaker = ps
+func (mfp *MockUnstakeKeeper) SetStaker(_ sdk.Context, staker Staker) {
+	mfp.staker = staker
 }
 
 func (mfp *MockUnstakeKeeper) GetAdminConfigDefaultPoolStatus(_ sdk.Context, _ sdk.AccAddress) PoolStatus {
@@ -99,6 +98,10 @@ func (HandlerUnstakeSuite) TestUnstakeHandler(c *C) {
 			PoolUnits:    sdk.ZeroUint(),
 			Status:       PoolEnabled,
 		},
+		staker: Staker{
+			Units:       sdk.ZeroUint(),
+			PendingRune: sdk.ZeroUint(),
+		},
 	}
 	ver := constants.SWVersion
 	constAccessor := constants.GetConstantValues(ver)
@@ -116,7 +119,7 @@ func (HandlerUnstakeSuite) TestUnstakeHandler(c *C) {
 	c.Assert(err, IsNil)
 	c.Logf("stake unit: %d", unit)
 	// let's just unstake
-	unstakeHandler := NewUnstakeHandler(k, NewVersionedTxOutStoreDummy())
+	unstakeHandler := NewUnstakeHandler(k, NewVersionedTxOutStoreDummy(), NewDummyVersionedEventMgr())
 
 	msgUnstake := NewMsgSetUnStake(GetRandomTx(), runeAddr, sdk.NewUint(uint64(MaxUnstakeBasisPoints)), common.BNBAsset, activeNodeAccount.NodeAddress)
 	result := unstakeHandler.Run(ctx, msgUnstake, ver, constAccessor)
@@ -168,7 +171,7 @@ func (HandlerUnstakeSuite) TestUnstakeHandler_Validation(c *C) {
 	ver := constants.SWVersion
 	constAccessor := constants.GetConstantValues(ver)
 	for _, tc := range testCases {
-		unstakeHandler := NewUnstakeHandler(k, NewVersionedTxOutStoreDummy())
+		unstakeHandler := NewUnstakeHandler(k, NewVersionedTxOutStoreDummy(), NewDummyVersionedEventMgr())
 		c.Assert(unstakeHandler.Run(ctx, tc.msg, ver, constAccessor).Code, Equals, tc.expectedResult, Commentf(tc.name))
 	}
 }
@@ -182,6 +185,10 @@ func (HandlerUnstakeSuite) TestUnstakeHandler_mockFailScenarios(c *C) {
 		PoolUnits:    sdk.ZeroUint(),
 		Status:       PoolEnabled,
 	}
+	staker := Staker{
+		Units:       sdk.ZeroUint(),
+		PendingRune: sdk.ZeroUint(),
+	}
 	testCases := []struct {
 		name           string
 		k              Keeper
@@ -192,6 +199,7 @@ func (HandlerUnstakeSuite) TestUnstakeHandler_mockFailScenarios(c *C) {
 			k: &MockUnstakeKeeper{
 				activeNodeAccount: activeNodeAccount,
 				failPool:          true,
+				staker:            staker,
 			},
 			expectedResult: sdk.CodeInternal,
 		},
@@ -200,16 +208,18 @@ func (HandlerUnstakeSuite) TestUnstakeHandler_mockFailScenarios(c *C) {
 			k: &MockUnstakeKeeper{
 				activeNodeAccount: activeNodeAccount,
 				suspendedPool:     true,
+				staker:            staker,
 			},
 			expectedResult: CodeInvalidPoolStatus,
 		},
 		{
-			name: "fail to get pool staker unstake should fail",
+			name: "fail to get staker unstake should fail",
 			k: &MockUnstakeKeeper{
 				activeNodeAccount: activeNodeAccount,
-				failPoolStaker:    true,
+				failStaker:        true,
+				staker:            staker,
 			},
-			expectedResult: CodeFailGetPoolStaker,
+			expectedResult: CodeFailGetStaker,
 		},
 		{
 			name: "fail to add incomplete event unstake should fail",
@@ -217,6 +227,7 @@ func (HandlerUnstakeSuite) TestUnstakeHandler_mockFailScenarios(c *C) {
 				activeNodeAccount: activeNodeAccount,
 				currentPool:       currentPool,
 				failAddEvents:     true,
+				staker:            staker,
 			},
 			expectedResult: sdk.CodeInternal,
 		},
@@ -226,7 +237,7 @@ func (HandlerUnstakeSuite) TestUnstakeHandler_mockFailScenarios(c *C) {
 
 	for _, tc := range testCases {
 		ctx, _ := setupKeeperForTest(c)
-		unstakeHandler := NewUnstakeHandler(tc.k, NewVersionedTxOutStoreDummy())
+		unstakeHandler := NewUnstakeHandler(tc.k, NewVersionedTxOutStoreDummy(), NewDummyVersionedEventMgr())
 		msgUnstake := NewMsgSetUnStake(GetRandomTx(), GetRandomBNBAddress(), sdk.NewUint(uint64(MaxUnstakeBasisPoints)), common.BNBAsset, activeNodeAccount.NodeAddress)
 		c.Assert(unstakeHandler.Run(ctx, msgUnstake, ver, constAccessor).Code, Equals, tc.expectedResult, Commentf(tc.name))
 	}

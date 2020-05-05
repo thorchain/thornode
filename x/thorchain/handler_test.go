@@ -124,11 +124,13 @@ func getHandlerTestWrapper(c *C, height int64, withActiveNode, withActieBNBPool 
 	constAccessor := constants.GetConstantValues(ver)
 	versionedTxOutStore := NewVersionedTxOutStore()
 	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(versionedTxOutStore)
+	versionedEventManagerDummy := NewDummyVersionedEventMgr()
+
 	txOutStore, err := versionedTxOutStore.GetTxOutStore(k, ver)
 	c.Assert(err, IsNil)
 
 	txOutStore.NewBlock(height, constAccessor)
-	validatorMgr := NewVersionedValidatorMgr(k, versionedTxOutStore, versionedVaultMgrDummy)
+	validatorMgr := NewVersionedValidatorMgr(k, versionedTxOutStore, versionedVaultMgrDummy, versionedEventManagerDummy)
 	c.Assert(validatorMgr.BeginBlock(ctx, ver, constAccessor), IsNil)
 
 	return handlerTestWrapper{
@@ -139,13 +141,6 @@ func getHandlerTestWrapper(c *C, height int64, withActiveNode, withActieBNBPool 
 		activeNodeAccount:    acc1,
 		notActiveNodeAccount: GetRandomNodeAccount(NodeDisabled),
 	}
-}
-
-func (HandlerSuite) TestIsSignedByActiveObserver(c *C) {
-	ctx, k := setupKeeperForTest(c)
-	nodeAddr := GetRandomBech32Addr()
-	c.Check(isSignedByActiveObserver(ctx, k, []sdk.AccAddress{nodeAddr}), Equals, false)
-	c.Check(isSignedByActiveObserver(ctx, k, []sdk.AccAddress{}), Equals, false)
 }
 
 func (HandlerSuite) TestIsSignedByActiveNodeAccounts(c *C) {
@@ -194,7 +189,9 @@ func (HandlerSuite) TestHandleTxInUnstakeMemo(c *C) {
 	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(w.versionedTxOutStore)
 	versionedGasMgr := NewVersionedGasMgr()
 	versionedObMgr := NewDummyVersionedObserverMgr()
-	handler := NewHandler(w.keeper, w.versionedTxOutStore, w.validatorMgr, versionedVaultMgrDummy, versionedObMgr, versionedGasMgr)
+	versionedEventManagerDummy := NewDummyVersionedEventMgr()
+
+	handler := NewHandler(w.keeper, w.versionedTxOutStore, w.validatorMgr, versionedVaultMgrDummy, versionedObMgr, versionedGasMgr, versionedEventManagerDummy)
 	result := handler(w.ctx, msg)
 	c.Assert(result.Code, Equals, sdk.CodeOK, Commentf("%s\n", result.Log))
 
