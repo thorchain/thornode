@@ -1,6 +1,7 @@
 package thorchain
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 
@@ -55,12 +56,22 @@ func (m *EventMgr) EmitPoolEvent(ctx sdk.Context, keeper Keeper, txIn common.TxI
 	tx := common.Tx{
 		ID: txIn,
 	}
-
 	evt := NewEvent(poolEvt.Type(), ctx.BlockHeight(), tx, bytes, status)
 	if err := keeper.UpsertEvent(ctx, evt); err != nil {
 		return fmt.Errorf("fail to save pool status change event: %w", err)
 	}
-	m.AddEvent(evt)
+	return m.emitStandardEvents(ctx, poolEvt.Type(), tx, bytes, status)
+}
+
+func (m *EventMgr) emitStandardEvents(ctx sdk.Context, ty string, inTx common.Tx, evt []byte, status EventStatus) error {
+	inTxBytes, err := json.Marshal(inTx)
+	if err != nil {
+		return fmt.Errorf("fail to marshal inTx to json: %w", err)
+	}
+	ctx.EventManager().EmitEvent(sdk.NewEvent(ty,
+		sdk.NewAttribute("in_tx", base64.StdEncoding.EncodeToString(inTxBytes)),
+		sdk.NewAttribute("payload", base64.StdEncoding.EncodeToString(evt)),
+		sdk.NewAttribute("status", status.String())))
 	return nil
 }
 
@@ -82,8 +93,7 @@ func (m *EventMgr) EmitErrataEvent(ctx sdk.Context, keeper Keeper, txIn common.T
 		ctx.Logger().Error("fail to save errata event", "error", err)
 		return fmt.Errorf("fail to save errata event: %w", err)
 	}
-	m.AddEvent(evt)
-	return nil
+	return m.emitStandardEvents(ctx, errataEvent.Type(), common.Tx{ID: txIn}, errataBuf, EventSuccess)
 }
 
 func (m *EventMgr) EmitGasEvent(ctx sdk.Context, keeper Keeper, gasEvent *EventGas) error {
@@ -100,6 +110,5 @@ func (m *EventMgr) EmitGasEvent(ctx sdk.Context, keeper Keeper, gasEvent *EventG
 		ctx.Logger().Error("fail to upsert event", "error", err)
 		return fmt.Errorf("fail to save gas event: %w", err)
 	}
-
-	return nil
+	return m.emitStandardEvents(ctx, gasEvent.Type(), common.Tx{ID: common.BlankTxID}, buf, EventSuccess)
 }
