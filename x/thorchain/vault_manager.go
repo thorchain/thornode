@@ -19,15 +19,17 @@ const (
 
 // VaultMgr is going to manage the vaults
 type VaultMgr struct {
-	k                   Keeper
-	versionedTxOutStore VersionedTxOutStore
+	k                     Keeper
+	versionedTxOutStore   VersionedTxOutStore
+	versionedEventManager VersionedEventManager
 }
 
 // NewVaultMgr create a new vault manager
-func NewVaultMgr(k Keeper, versionedTxOutStore VersionedTxOutStore) *VaultMgr {
+func NewVaultMgr(k Keeper, versionedTxOutStore VersionedTxOutStore, versionedEventManager VersionedEventManager) *VaultMgr {
 	return &VaultMgr{
-		k:                   k,
-		versionedTxOutStore: versionedTxOutStore,
+		k:                     k,
+		versionedTxOutStore:   versionedTxOutStore,
+		versionedEventManager: versionedEventManager,
 	}
 }
 
@@ -424,7 +426,7 @@ func (vm *VaultMgr) ragnarokChain(ctx sdk.Context, chain common.Chain, nth int64
 	if err != nil {
 		return err
 	}
-	unstakeHandler := NewUnstakeHandler(vm.k, vm.versionedTxOutStore)
+	unstakeHandler := NewUnstakeHandler(vm.k, vm.versionedTxOutStore, vm.versionedEventManager)
 
 	active, err := vm.k.GetAsgardVaultsByStatus(ctx, ActiveVault)
 	if err != nil {

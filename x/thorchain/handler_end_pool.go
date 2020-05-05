@@ -7,18 +7,21 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	"gitlab.com/thorchain/thornode/common"
 	"gitlab.com/thorchain/thornode/constants"
 )
 
 type EndPoolHandler struct {
-	keeper              Keeper
-	versionedTxOutStore VersionedTxOutStore
+	keeper                Keeper
+	versionedTxOutStore   VersionedTxOutStore
+	versionedEventManager VersionedEventManager
 }
 
-func NewEndPoolHandler(keeper Keeper, versionedTxOutStore VersionedTxOutStore) EndPoolHandler {
+func NewEndPoolHandler(keeper Keeper, versionedTxOutStore VersionedTxOutStore, versionedEventManager VersionedEventManager) EndPoolHandler {
 	return EndPoolHandler{
-		keeper:              keeper,
-		versionedTxOutStore: versionedTxOutStore,
+		keeper:                keeper,
+		versionedTxOutStore:   versionedTxOutStore,
+		versionedEventManager: versionedEventManager,
 	}
 }
 
@@ -72,6 +75,20 @@ func (h EndPoolHandler) handleV1(ctx sdk.Context, msg MsgEndPool, version semver
 		return sdk.ErrInternal(err.Error()).Result()
 	}
 
+	// pool status changed, emit pool status change event
+	if pool.Status != PoolBootstrap {
+		poolEvt := NewEventPool(pool.Asset, PoolBootstrap)
+		eventManager, err := h.versionedEventManager.GetEventManager(ctx, version)
+		if err != nil {
+			ctx.Logger().Error("fail to get event manager", "error", err)
+			return errFailGetEventManager.Result()
+		}
+		if err := eventManager.EmitPoolEvent(ctx, h.keeper, common.BlankTxID, EventSuccess, poolEvt); err != nil {
+			ctx.Logger().Error("fail to emit pool event", "error", err)
+			return sdk.ErrInternal("fail to emit pool event").Result()
+		}
+
+	}
 	pool.Status = PoolBootstrap
 	if err := h.keeper.SetPool(ctx, pool); err != nil {
 		err = fmt.Errorf("fail to set pool: %w", err)
@@ -91,7 +108,7 @@ func (h EndPoolHandler) handleV1(ctx sdk.Context, msg MsgEndPool, version semver
 			staker.Asset,
 			msg.Signer,
 		)
-		unstakeHandler := NewUnstakeHandler(h.keeper, h.versionedTxOutStore)
+		unstakeHandler := NewUnstakeHandler(h.keeper, h.versionedTxOutStore, h.versionedEventManager)
 		result := unstakeHandler.Run(ctx, unstakeMsg, version, constAccessor)
 		if !result.IsOK() {
 			ctx.Logger().Error("fail to unstake", "staker", staker.RuneAddress, "error", result.Log)

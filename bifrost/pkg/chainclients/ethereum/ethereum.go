@@ -138,17 +138,21 @@ func (c *Client) CheckIsTestNet() bool {
 		return false
 	}
 	chainID, err := cl.ChainID(context.Background())
-	/*
-		ctx, cancel := context.WithCancel(context.Background())
-		defer cancel()
-		chainID, err := c.client.ChainID(ctx)*/ if err != nil {
+	if err != nil {
 		c.logger.Error().Err(err).Msg("Unable to get chain id")
 		chainID = big.NewInt(15)
 	}
-
-	c.chainID = types.ChainID(chainID.Int64())
-	c.isTestNet = c.chainID > 1
-	vByte = byte(35 + 2*c.chainID)
+	/*
+		chainID, err := c.client.ChainID(context.Background())
+		if err != nil {
+			c.logger.Error().Err(err).Msg("Unable to get chain id")
+			chainID = big.NewInt(types.Localnet)
+		}*/
+	if chainID != nil {
+		c.chainID = types.ChainID(chainID.Int64())
+	}
+	c.isTestNet = c.chainID > types.Mainnet
+	vByte = byte(int(vByte) + int(2*c.chainID))
 	return c.isTestNet
 }
 

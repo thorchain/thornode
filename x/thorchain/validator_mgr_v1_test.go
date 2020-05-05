@@ -21,7 +21,9 @@ func (vts *ValidatorMgrV1TestSuite) TestBadActors(c *C) {
 
 	versionedTxOutStoreDummy := NewVersionedTxOutStoreDummy()
 	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(versionedTxOutStoreDummy)
-	vMgr := newValidatorMgrV1(k, versionedTxOutStoreDummy, versionedVaultMgrDummy)
+	versionedEventManagerDummy := NewDummyVersionedEventMgr()
+
+	vMgr := newValidatorMgrV1(k, versionedTxOutStoreDummy, versionedVaultMgrDummy, versionedEventManagerDummy)
 	c.Assert(vMgr, NotNil)
 
 	// no bad actors with active node accounts
@@ -81,7 +83,9 @@ func (vts *ValidatorMgrV1TestSuite) TestRagnarokBond(c *C) {
 	c.Assert(err, IsNil)
 
 	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(versionedTxOutStoreDummy)
-	vMgr := newValidatorMgrV1(k, versionedTxOutStoreDummy, versionedVaultMgrDummy)
+	versionedEventManagerDummy := NewDummyVersionedEventMgr()
+
+	vMgr := newValidatorMgrV1(k, versionedTxOutStoreDummy, versionedVaultMgrDummy, versionedEventManagerDummy)
 	c.Assert(vMgr, NotNil)
 	constAccessor := constants.GetConstantValues(ver)
 	err = vMgr.setupValidatorNodes(ctx, 0, constAccessor)

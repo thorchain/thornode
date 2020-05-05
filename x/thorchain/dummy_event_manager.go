@@ -28,7 +28,19 @@ func (m *DummyEventMgr) GetBlockEvents(ctx sdk.Context, keeper Keeper, height in
 func (m *DummyEventMgr) CompleteEvents(ctx sdk.Context, keeper Keeper, height int64, txID common.TxID, txs common.Txs, eventStatus EventStatus) {
 }
 
-func (m *DummyEventMgr) AddEvent(ctx sdk.Context, event Event) {
+func (m *DummyEventMgr) AddEvent(event Event) {
+}
+
+func (m *DummyEventMgr) EmitPoolEvent(ctx sdk.Context, keeper Keeper, txIn common.TxID, status EventStatus, poolEvt EventPool) error {
+	return nil
+}
+
+func (m *DummyEventMgr) EmitErrataEvent(ctx sdk.Context, keeper Keeper, txIn common.TxID, errataEvent EventErrata) error {
+	return nil
+}
+
+func (m *DummyEventMgr) EmitGasEvent(ctx sdk.Context, keeper Keeper, gasEvent *EventGas) error {
+	return nil
 }
 
 type DummyVersionedEventMgr struct{}

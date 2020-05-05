@@ -1,6 +1,7 @@
 package thorchain
 
 import (
+	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	. "gopkg.in/check.v1"
 
@@ -243,7 +244,9 @@ func (s *HelperSuite) TestRefundBondHappyPath(c *C) {
 func (s *HelperSuite) TestEnableNextPool(c *C) {
 	var err error
 	ctx, k := setupKeeperForTest(c)
-
+	versionedEventManagerDummy := NewDummyVersionedEventMgr()
+	eventMgr, err := versionedEventManagerDummy.GetEventManager(ctx, semver.MustParse("0.1.0"))
+	c.Assert(err, IsNil)
 	pool := NewPool()
 	pool.Asset = common.BNBAsset
 	pool.Status = PoolEnabled
@@ -286,17 +289,17 @@ func (s *HelperSuite) TestEnableNextPool(c *C) {
 	pool.BalanceAsset = sdk.NewUint(0 * common.One)
 	c.Assert(k.SetPool(ctx, pool), IsNil)
 	// should enable BTC
-	c.Assert(enableNextPool(ctx, k), IsNil)
+	c.Assert(enableNextPool(ctx, k, eventMgr), IsNil)
 	pool, err = k.GetPool(ctx, common.BTCAsset)
 	c.Check(pool.Status, Equals, PoolEnabled)
 
 	// should enable ETH
-	c.Assert(enableNextPool(ctx, k), IsNil)
+	c.Assert(enableNextPool(ctx, k, eventMgr), IsNil)
 	pool, err = k.GetPool(ctx, ethAsset)
 	c.Check(pool.Status, Equals, PoolEnabled)
 
 	// should NOT enable XMR, since it has no assets
-	c.Assert(enableNextPool(ctx, k), IsNil)
+	c.Assert(enableNextPool(ctx, k, eventMgr), IsNil)
 	pool, err = k.GetPool(ctx, xmrAsset)
 	c.Assert(pool.Empty(), Equals, false)
 	c.Check(pool.Status, Equals, PoolBootstrap)
@@ -384,7 +387,7 @@ func newAddGasFeeTestHelper(c *C) addGasFeeTestHelper {
 		ctx:        ctx,
 		k:          keeper,
 		na:         na,
-		gasManager: NewDummyGasManager(),
+		gasManager: NewGasMgr(),
 	}
 }
 
@@ -403,50 +406,6 @@ func (s *HelperSuite) TestAddGasFees(c *C) {
 			},
 
 			expectError: false,
-		},
-		{
-			name: "fail to get vault data should return an error",
-			txCreator: func(helper addGasFeeTestHelper) ObservedTx {
-				return GetRandomObservedTx()
-			},
-			runner: func(helper addGasFeeTestHelper, tx ObservedTx) error {
-				helper.k.errGetVaultData = true
-				return AddGasFees(helper.ctx, helper.k, tx, helper.gasManager)
-			},
-			expectError: true,
-		},
-		{
-			name: "fail to set vault data should return an error",
-			txCreator: func(helper addGasFeeTestHelper) ObservedTx {
-				return GetRandomObservedTx()
-			},
-			runner: func(helper addGasFeeTestHelper, tx ObservedTx) error {
-				helper.k.errSetVaultData = true
-				return AddGasFees(helper.ctx, helper.k, tx, helper.gasManager)
-			},
-			expectError: true,
-		},
-		{
-			name: "fail to get pool should return an error",
-			txCreator: func(helper addGasFeeTestHelper) ObservedTx {
-				return GetRandomObservedTx()
-			},
-			runner: func(helper addGasFeeTestHelper, tx ObservedTx) error {
-				helper.k.errGetPool = true
-				return AddGasFees(helper.ctx, helper.k, tx, helper.gasManager)
-			},
-			expectError: true,
-		},
-		{
-			name: "fail to set pool should return an error",
-			txCreator: func(helper addGasFeeTestHelper) ObservedTx {
-				return GetRandomObservedTx()
-			},
-			runner: func(helper addGasFeeTestHelper, tx ObservedTx) error {
-				helper.k.errSetPool = true
-				return AddGasFees(helper.ctx, helper.k, tx, helper.gasManager)
-			},
-			expectError: true,
 		},
 		{
 			name: "normal BNB gas",
@@ -479,10 +438,9 @@ func (s *HelperSuite) TestAddGasFees(c *C) {
 			},
 			expectError: false,
 			validator: func(helper addGasFeeTestHelper, c *C) {
-				bnbPool, err := helper.k.GetPool(helper.ctx, common.BNBAsset)
-				c.Assert(err, IsNil)
-				expectedBNB := sdk.NewUint(100 * common.One).Sub(BNBGasFeeSingleton[0].Amount)
-				c.Assert(bnbPool.BalanceAsset.Equal(expectedBNB), Equals, true)
+				expected := common.NewCoin(common.BNBAsset, BNBGasFeeSingleton[0].Amount)
+				c.Assert(helper.gasManager.GetGas(), HasLen, 1)
+				c.Assert(helper.gasManager.GetGas()[0].Equals(expected), Equals, true)
 			},
 		},
 		{
@@ -515,10 +473,9 @@ func (s *HelperSuite) TestAddGasFees(c *C) {
 			},
 			expectError: false,
 			validator: func(helper addGasFeeTestHelper, c *C) {
-				btcPool, err := helper.k.GetPool(helper.ctx, common.BTCAsset)
-				c.Assert(err, IsNil)
-				expectedBTC := sdk.NewUint(100 * common.One).Sub(sdk.NewUint(2000))
-				c.Assert(btcPool.BalanceAsset.Equal(expectedBTC), Equals, true)
+				expected := common.NewCoin(common.BTCAsset, sdk.NewUint(2000))
+				c.Assert(helper.gasManager.GetGas(), HasLen, 1)
+				c.Assert(helper.gasManager.GetGas()[0].Equals(expected), Equals, true)
 			},
 		},
 	}

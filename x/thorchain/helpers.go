@@ -371,7 +371,7 @@ func completeEvents(ctx sdk.Context, keeper Keeper, txID common.TxID, txs common
 	return nil
 }
 
-func enableNextPool(ctx sdk.Context, keeper Keeper) error {
+func enableNextPool(ctx sdk.Context, keeper Keeper, eventManager EventManager) error {
 	var pools []Pool
 	iterator := keeper.GetPoolIterator(ctx)
 	defer iterator.Close()
@@ -396,6 +396,11 @@ func enableNextPool(ctx sdk.Context, keeper Keeper) error {
 		if pool.BalanceRune.LT(p.BalanceRune) {
 			pool = p
 		}
+	}
+
+	poolEvt := NewEventPool(pool.Asset, PoolEnabled)
+	if err := eventManager.EmitPoolEvent(ctx, keeper, common.BlankTxID, EventSuccess, poolEvt); err != nil {
+		return fmt.Errorf("fail to emit pool event: %w", err)
 	}
 
 	pool.Status = PoolEnabled
@@ -427,30 +432,9 @@ func AddGasFees(ctx sdk.Context, keeper Keeper, tx ObservedTx, gasManager GasMan
 		}
 	}
 
-	vaultData, err := keeper.GetVaultData(ctx)
-	if err != nil {
-		return fmt.Errorf("fail to get vaultData: %w", err)
-	}
 	gasManager.AddGasAsset(tx.Tx.Gas)
-	vaultData.Gas = vaultData.Gas.Add(tx.Tx.Gas)
-	if err := keeper.SetVaultData(ctx, vaultData); err != nil {
-		return err
-	}
 
-	// Subtract gas from pools (will be reimbursed later with rune at the end
-	// of the block)
-	for _, gas := range tx.Tx.Gas {
-		pool, err := keeper.GetPool(ctx, gas.Asset)
-		if err != nil {
-			return err
-		}
-		pool.Asset = gas.Asset
-		pool.BalanceAsset = common.SafeSub(pool.BalanceAsset, gas.Amount)
-		if err := keeper.SetPool(ctx, pool); err != nil {
-			return err
-		}
-	}
-
+	// Subtract from the vault
 	if keeper.VaultExists(ctx, tx.ObservedPubKey) {
 		vault, err := keeper.GetVault(ctx, tx.ObservedPubKey)
 		if err != nil {

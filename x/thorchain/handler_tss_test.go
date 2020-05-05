@@ -104,7 +104,9 @@ func newTssHandlerTestHelper(c *C) tssHandlerTestHelper {
 
 	constAccessor := constants.GetConstantValues(version)
 	versionedTxOutStore := NewVersionedTxOutStore()
-	vaultMgr := NewVersionedVaultMgr(versionedTxOutStore)
+	versionedEventManagerDummy := NewDummyVersionedEventMgr()
+
+	vaultMgr := NewVersionedVaultMgr(versionedTxOutStore, versionedEventManagerDummy)
 	var members common.PubKeys
 	for i := 0; i < 8; i++ {
 		na := GetRandomNodeAccount(NodeStandby)

@@ -18,7 +18,7 @@ import (
 )
 
 var (
-	vByte     = byte(37)
+	vByte     = byte(35)
 	eipSigner = etypes.NewEIP155Signer(big.NewInt(1))
 )
 

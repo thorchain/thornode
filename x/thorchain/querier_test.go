@@ -45,7 +45,9 @@ func (s *QuerierSuite) TestQueryKeysign(c *C) {
 
 	versionedTxOutStoreDummy := NewVersionedTxOutStoreDummy()
 	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(versionedTxOutStoreDummy)
-	validatorMgr := NewVersionedValidatorMgr(keeper, versionedTxOutStoreDummy, versionedVaultMgrDummy)
+	versionedEventManagerDummy := NewDummyVersionedEventMgr()
+
+	validatorMgr := NewVersionedValidatorMgr(keeper, versionedTxOutStoreDummy, versionedVaultMgrDummy, versionedEventManagerDummy)
 
 	querier := NewQuerier(keeper, validatorMgr)
 
@@ -64,7 +66,9 @@ func (s *QuerierSuite) TestQueryPool(c *C) {
 
 	versionedTxOutStoreDummy := NewVersionedTxOutStoreDummy()
 	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(versionedTxOutStoreDummy)
-	validatorMgr := NewVersionedValidatorMgr(keeper, versionedTxOutStoreDummy, versionedVaultMgrDummy)
+	versionedEventManagerDummy := NewDummyVersionedEventMgr()
+
+	validatorMgr := NewVersionedValidatorMgr(keeper, versionedTxOutStoreDummy, versionedVaultMgrDummy, versionedEventManagerDummy)
 
 	querier := NewQuerier(keeper, validatorMgr)
 	path := []string{"pools"}
@@ -73,14 +77,14 @@ func (s *QuerierSuite) TestQueryPool(c *C) {
 	asgard := NewVault(ctx.BlockHeight(), ActiveVault, AsgardVault, pubKey, common.Chains{common.BNBChain})
 	c.Assert(keeper.SetVault(ctx, asgard), IsNil)
 
-	poolBNB := Pool{
-		Asset:     common.BNBAsset,
-		PoolUnits: sdk.NewUint(100),
-	}
-	poolBTC := Pool{
-		Asset:     common.BTCAsset,
-		PoolUnits: sdk.NewUint(0),
-	}
+	poolBNB := NewPool()
+	poolBNB.Asset = common.BNBAsset
+	poolBNB.PoolUnits = sdk.NewUint(100)
+
+	poolBTC := NewPool()
+	poolBTC.Asset = common.BTCAsset
+	poolBTC.PoolUnits = sdk.NewUint(0)
+
 	err := keeper.SetPool(ctx, poolBNB)
 	c.Assert(err, IsNil)
 
@@ -112,7 +116,9 @@ func (s *QuerierSuite) TestQueryNodeAccounts(c *C) {
 
 	versionedTxOutStoreDummy := NewVersionedTxOutStoreDummy()
 	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(versionedTxOutStoreDummy)
-	validatorMgr := NewVersionedValidatorMgr(keeper, versionedTxOutStoreDummy, versionedVaultMgrDummy)
+	versionedEventManagerDummy := NewDummyVersionedEventMgr()
+
+	validatorMgr := NewVersionedValidatorMgr(keeper, versionedTxOutStoreDummy, versionedVaultMgrDummy, versionedEventManagerDummy)
 
 	querier := NewQuerier(keeper, validatorMgr)
 	path := []string{"nodeaccounts"}
@@ -162,7 +168,9 @@ func (s *QuerierSuite) TestQueryCompEvents(c *C) {
 
 	versionedTxOutStoreDummy := NewVersionedTxOutStoreDummy()
 	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(versionedTxOutStoreDummy)
-	validatorMgr := NewVersionedValidatorMgr(keeper, versionedTxOutStoreDummy, versionedVaultMgrDummy)
+	versionedEventManagerDummy := NewDummyVersionedEventMgr()
+
+	validatorMgr := NewVersionedValidatorMgr(keeper, versionedTxOutStoreDummy, versionedVaultMgrDummy, versionedEventManagerDummy)
 
 	querier := NewQuerier(keeper, validatorMgr)
 	path := []string{"comp_events_chain", "1", "BNB"}

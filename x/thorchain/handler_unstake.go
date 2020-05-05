@@ -13,15 +13,17 @@ import (
 
 // UnstakeHandler to process unstake requests
 type UnstakeHandler struct {
-	keeper     Keeper
-	txOutStore VersionedTxOutStore
+	keeper                Keeper
+	txOutStore            VersionedTxOutStore
+	versionedEventManager VersionedEventManager
 }
 
 // NewUnstakeHandler create a new instance of UnstakeHandler to process unstake request
-func NewUnstakeHandler(keeper Keeper, txOutStore VersionedTxOutStore) UnstakeHandler {
+func NewUnstakeHandler(keeper Keeper, txOutStore VersionedTxOutStore, versionedEventManager VersionedEventManager) UnstakeHandler {
 	return UnstakeHandler{
-		keeper:     keeper,
-		txOutStore: txOutStore,
+		keeper:                keeper,
+		txOutStore:            txOutStore,
+		versionedEventManager: versionedEventManager,
 	}
 }
 
@@ -92,8 +94,12 @@ func (h UnstakeHandler) handle(ctx sdk.Context, msg MsgSetUnStake, version semve
 		ctx.Logger().Error("fail to get staker", "error", err)
 		return nil, sdk.NewError(DefaultCodespace, CodeFailGetStaker, "fail to get staker")
 	}
-
-	runeAmt, assetAmount, units, gasAsset, err := unstake(ctx, version, h.keeper, msg)
+	eventManager, err := h.versionedEventManager.GetEventManager(ctx, version)
+	if err != nil {
+		ctx.Logger().Error("fail to get event manager", "error", err)
+		return nil, errFailGetEventManager
+	}
+	runeAmt, assetAmount, units, gasAsset, err := unstake(ctx, version, h.keeper, msg, eventManager)
 	if err != nil {
 		return nil, sdk.ErrInternal(fmt.Errorf("fail to process UnStake request: %w", err).Error())
 	}
