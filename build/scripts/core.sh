@@ -42,11 +42,6 @@ disable_bank_send () {
     mv /tmp/genesis.json ~/.thord/config/genesis.json
 }
 
-reserve () {
-    jq --arg RESERVE $1 '.app_state.thorchain.reserve = $RESERVE' <~/.thord/config/genesis.json >/tmp/genesis.json
-    mv /tmp/genesis.json ~/.thord/config/genesis.json
-}
-
 add_vault () {
     POOL_PUBKEY=$1; shift
 

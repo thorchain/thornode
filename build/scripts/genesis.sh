@@ -75,8 +75,6 @@ if [ "$SEED" = "$(hostname)" ]; then
         # disable default bank transfer, and opt to use our own custom one
         disable_bank_send
 
-        reserve 22000000000000000
-
         cat ~/.thord/config/genesis.json
         thord validate-genesis
     fi
