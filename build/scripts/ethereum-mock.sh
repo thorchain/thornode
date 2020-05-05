@@ -26,4 +26,4 @@ echo "{
 }" >> "genesis.json"
 
 geth --datadir "data" init "genesis.json"
-geth --etherbase 0x3fd2d4ce97b082d4bce3f9fee2a3d60668d2f473 --networkid 15 --datadir "data" -mine --miner.threads 1 -rpc --rpcaddr 0.0.0.0 --rpcport 8545 -nousb --rpcapi "eth,net,web3,miner,personal" --rpccorsdomain "*" -nodiscover
+geth --etherbase 0x3fd2d4ce97b082d4bce3f9fee2a3d60668d2f473 --verbosity 5 --networkid 15 --datadir "data" -mine --miner.threads 1 -rpc --rpcaddr 0.0.0.0 --rpcport 8545 -nousb --rpcapi "eth,net,web3,miner,personal,admin,ssh,txpool,debug" --rpccorsdomain "*" -nodiscover
