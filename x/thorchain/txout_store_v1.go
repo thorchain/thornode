@@ -125,7 +125,7 @@ func (tos *TxOutStorageV1) prepareTxOutItem(ctx sdk.Context, toi *TxOutItem) (bo
 		// check that this vault has enough funds to satisfy the request
 		if toi.Coin.Amount.GT(vault.GetCoin(toi.Coin.Asset).Amount) {
 			// not enough funds
-			return false, fmt.Errorf("Vault %s, does not have enough funds. Has %s, but requires %s", vault.PubKey, vault.GetCoin(toi.Coin.Asset), toi.Coin)
+			return false, fmt.Errorf("vault %s, does not have enough funds. Has %s, but requires %s", vault.PubKey, vault.GetCoin(toi.Coin.Asset), toi.Coin)
 		}
 
 		toi.VaultPubKey = vault.PubKey
@@ -142,8 +142,23 @@ func (tos *TxOutStorageV1) prepareTxOutItem(ctx sdk.Context, toi *TxOutItem) (bo
 		return false, nil
 	}
 
-	// Deduct TransactionFee from TOI and add to Reserve
 	transactionFee := tos.constAccessor.GetInt64Value(constants.TransactionFee)
+	if toi.MaxGas.IsEmpty() {
+		gasAsset := toi.Chain.GetGasAsset()
+		pool, err := tos.keeper.GetPool(ctx, gasAsset)
+		if err != nil {
+			return false, fmt.Errorf("failed to get gas asset pool: %w", err)
+		}
+
+		// max gas amount is the transaction fee divided by two, in asset amount
+		maxAmt := pool.RuneValueInAsset(sdk.NewUint(uint64(transactionFee / 2)))
+		toi.MaxGas = common.Gas{
+			common.NewCoin(gasAsset, maxAmt),
+		}
+
+	}
+
+	// Deduct TransactionFee from TOI and add to Reserve
 	memo, err := ParseMemo(toi.Memo) // ignore err
 	if err == nil && !memo.IsType(TxYggdrasilFund) && !memo.IsType(TxYggdrasilReturn) && !memo.IsType(TxMigrate) && !memo.IsType(TxRagnarok) {
 		var runeFee sdk.Uint
@@ -224,6 +239,21 @@ func (tos *TxOutStorageV1) prepareTxOutItem(ctx sdk.Context, toi *TxOutItem) (bo
 func (tos *TxOutStorageV1) addToBlockOut(ctx sdk.Context, toi *TxOutItem) error {
 	tos.rwMutex.Lock()
 	defer tos.rwMutex.Unlock()
+
+	hash, err := toi.TxHash()
+	if err != nil {
+		return err
+	}
+
+	// add a tx marker
+	mark := NewTxMarker(tos.height, toi.Memo)
+	err = tos.keeper.AppendTxMarker(ctx, hash, mark)
+	if err != nil {
+		return err
+	}
+	// since we're storing the memo in the tx market, we can clear it
+	toi.Memo = ""
+
 	return tos.keeper.AppendTxOut(ctx, tos.height, toi)
 }
 
