@@ -61,6 +61,8 @@ func (h SendHandler) handle(ctx sdk.Context, msg MsgSend, version semver.Version
 func (h SendHandler) handleV1(ctx sdk.Context, msg MsgSend, version semver.Version, constAccessor constants.ConstantValues) sdk.Result {
 	banker := h.keeper.CoinKeeper()
 	supplier := h.keeper.Supply()
+	// TODO: this shouldn't be tied to swaps, and should be cheaper. But
+	// TransactionFee will be fine for now.
 	transactionFee := constAccessor.GetInt64Value(constants.TransactionFee)
 
 	gasFee, err := common.NewCoin(common.RuneNative, sdk.NewUint(uint64(transactionFee))).Native()
