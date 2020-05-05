@@ -33,6 +33,7 @@ const (
 	TxRefund
 	TxMigrate
 	TxRagnarok
+	TxSwitch
 )
 
 var stringToTxTypeMap = map[string]TxType{
@@ -58,6 +59,7 @@ var stringToTxTypeMap = map[string]TxType{
 	"refund":     TxRefund,
 	"migrate":    TxMigrate,
 	"ragnarok":   TxRagnarok,
+	"switch":     TxSwitch,
 }
 
 var txToStringMap = map[TxType]string{
@@ -74,6 +76,7 @@ var txToStringMap = map[TxType]string{
 	TxReserve:         "reserve",
 	TxMigrate:         "migrate",
 	TxRagnarok:        "ragnarok",
+	TxSwitch:          "switch",
 }
 
 // converts a string into a txType
@@ -88,7 +91,7 @@ func StringToTxType(s string) (TxType, error) {
 
 func (tx TxType) IsInbound() bool {
 	switch tx {
-	case TxStake, TxUnstake, TxSwap, TxAdd, TxBond, TxLeave:
+	case TxStake, TxUnstake, TxSwap, TxAdd, TxBond, TxLeave, TxSwitch, TxReserve:
 		return true
 	default:
 		return false
@@ -106,7 +109,7 @@ func (tx TxType) IsOutbound() bool {
 
 func (tx TxType) IsInternal() bool {
 	switch tx {
-	case TxYggdrasilFund, TxYggdrasilReturn, TxReserve, TxMigrate, TxRagnarok:
+	case TxYggdrasilFund, TxYggdrasilReturn, TxMigrate, TxRagnarok:
 		return true
 	default:
 		return false
@@ -143,7 +146,7 @@ type Memo interface {
 	GetKey() string
 	GetValue() string
 	GetTxID() common.TxID
-	GetNodeAddress() sdk.AccAddress
+	GetAccAddress() sdk.AccAddress
 	GetBlockHeight() int64
 }
 
@@ -230,6 +233,18 @@ type MigrateMemo struct {
 type RagnarokMemo struct {
 	MemoBase
 	BlockHeight int64
+}
+
+type SwitchMemo struct {
+	MemoBase
+	Destination common.Address
+}
+
+func NewSwitchMemo(addr common.Address) SwitchMemo {
+	return SwitchMemo{
+		MemoBase:    MemoBase{TxType: TxSwitch},
+		Destination: addr,
+	}
 }
 
 func NewLeaveMemo() LeaveMemo {
@@ -338,7 +353,7 @@ func ParseMemo(memo string) (Memo, error) {
 	noAssetMemos := []TxType{
 		TxOutbound, TxBond, TxLeave, TxRefund,
 		TxYggdrasilFund, TxYggdrasilReturn, TxReserve,
-		TxMigrate, TxRagnarok,
+		TxMigrate, TxRagnarok, TxSwitch,
 	}
 	hasAsset := true
 	for _, memoType := range noAssetMemos {
@@ -480,6 +495,18 @@ func ParseMemo(memo string) (Memo, error) {
 			return noMemo, fmt.Errorf("fail to convert (%s) to a valid block height: %w", parts[1], err)
 		}
 		return NewRagnarokMemo(blockHeight), nil
+	case TxSwitch:
+		if len(parts) < 2 {
+			return noMemo, errors.New("not enough parameters")
+		}
+		destination, err := common.NewAddress(parts[1])
+		if err != nil {
+			return noMemo, err
+		}
+		if destination.IsEmpty() {
+			return noMemo, errors.New("address cannot be empty")
+		}
+		return NewSwitchMemo(destination), nil
 	default:
 		return noMemo, fmt.Errorf("TxType not supported: %s", tx.String())
 	}
@@ -496,7 +523,7 @@ func (m MemoBase) GetSlipLimit() sdk.Uint         { return sdk.ZeroUint() }
 func (m MemoBase) GetKey() string                 { return "" }
 func (m MemoBase) GetValue() string               { return "" }
 func (m MemoBase) GetTxID() common.TxID           { return "" }
-func (m MemoBase) GetNodeAddress() sdk.AccAddress { return sdk.AccAddress{} }
+func (m MemoBase) GetAccAddress() sdk.AccAddress  { return sdk.AccAddress{} }
 func (m MemoBase) GetBlockHeight() int64          { return 0 }
 func (m MemoBase) IsOutbound() bool               { return m.TxType.IsOutbound() }
 func (m MemoBase) IsInbound() bool                { return m.TxType.IsInbound() }
@@ -509,7 +536,7 @@ func (m SwapMemo) GetDestination() common.Address  { return m.Destination }
 func (m SwapMemo) GetSlipLimit() sdk.Uint          { return m.SlipLimit }
 func (m AdminMemo) GetKey() string                 { return m.Key }
 func (m AdminMemo) GetValue() string               { return m.Value }
-func (m BondMemo) GetNodeAddress() sdk.AccAddress  { return m.NodeAddress }
+func (m BondMemo) GetAccAddress() sdk.AccAddress   { return m.NodeAddress }
 func (m StakeMemo) GetDestination() common.Address { return m.Address }
 func (m OutboundMemo) GetTxID() common.TxID        { return m.TxID }
 func (m OutboundMemo) String() string {
@@ -554,4 +581,8 @@ func (m RagnarokMemo) String() string {
 
 func (m RagnarokMemo) GetBlockHeight() int64 {
 	return m.BlockHeight
+}
+
+func (m SwitchMemo) GetDestination() common.Address {
+	return m.Destination
 }

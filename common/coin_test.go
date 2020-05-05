@@ -16,4 +16,14 @@ func (s CoinSuite) TestCoin(c *C) {
 	c.Check(coin.IsValid(), IsNil)
 	c.Check(coin.IsEmpty(), Equals, false)
 	c.Check(NoCoin.IsEmpty(), Equals, true)
+
+	c.Check(coin.IsNative(), Equals, false)
+	_, err := coin.Native()
+	c.Assert(err, NotNil)
+	coin = NewCoin(RuneNative, sdk.NewUint(230))
+	c.Check(coin.IsNative(), Equals, true)
+	sdkCoin, err := coin.Native()
+	c.Assert(err, IsNil)
+	c.Check(sdkCoin.Denom, Equals, "rune")
+	c.Check(sdkCoin.Amount.Equal(sdk.NewInt(230)), Equals, true)
 }

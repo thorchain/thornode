@@ -191,7 +191,7 @@ func (HandlerSuite) TestHandleTxInUnstakeMemo(c *C) {
 	versionedObMgr := NewDummyVersionedObserverMgr()
 	versionedEventManagerDummy := NewDummyVersionedEventMgr()
 
-	handler := NewHandler(w.keeper, w.versionedTxOutStore, w.validatorMgr, versionedVaultMgrDummy, versionedObMgr, versionedGasMgr, versionedEventManagerDummy)
+	handler := NewExternalHandler(w.keeper, w.versionedTxOutStore, w.validatorMgr, versionedVaultMgrDummy, versionedObMgr, versionedGasMgr, versionedEventManagerDummy)
 	result := handler(w.ctx, msg)
 	c.Assert(result.Code, Equals, sdk.CodeOK, Commentf("%s\n", result.Log))
 
