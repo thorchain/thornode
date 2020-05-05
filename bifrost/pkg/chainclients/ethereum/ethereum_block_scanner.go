@@ -207,9 +207,7 @@ func (e *BlockScanner) getRPCBlock(height int64) ([]string, error) {
 		duration := time.Since(start)
 		e.m.GetHistograms(metrics.BlockDiscoveryDuration).Observe(duration.Seconds())
 	}()
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	block, err := e.client.BlockByNumber(ctx, big.NewInt(height))
+	block, err := e.client.BlockByNumber(context.Background(), big.NewInt(height))
 	if err != nil {
 		e.logger.Error().Err(err).Int64("block", height).Msg("fail to fetch block")
 		return nil, err
