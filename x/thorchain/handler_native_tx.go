@@ -137,8 +137,8 @@ func (h NativeTxHandler) handleV1(ctx sdk.Context, msg MsgNativeTx, version semv
 	}
 	to, err := common.NewAddress(supplier.GetModuleAddress(AsgardName).String())
 	if err != nil {
-		ctx.Logger().Error("fail to get from address", "err", err)
-		return sdk.ErrInternal("fail to get from address").Result()
+		ctx.Logger().Error("fail to get to address", "err", err)
+		return sdk.ErrInternal("fail to get to address").Result()
 	}
 
 	tx := common.NewTx(txID, from, to, msg.Coins, common.Gas{gas}, msg.Memo)
