@@ -21,9 +21,9 @@ func (s AssetSuite) TestAsset(c *C) {
 	c.Check(asset.Ticker.Equals(Ticker("RUNE")), Equals, true)
 
 	// parse without chain
-	asset, err = NewAsset("rune-a1f")
+	asset, err = NewAsset("rune")
 	c.Assert(err, IsNil)
-	c.Check(asset.Equals(RuneA1FAsset), Equals, true)
+	c.Check(asset.Equals(RuneNative), Equals, true)
 
 	// ETH test
 	asset, err = NewAsset("eth.knc")
