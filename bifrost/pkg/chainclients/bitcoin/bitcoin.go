@@ -232,7 +232,7 @@ func (c *Client) reConfirmTx() error {
 		var errataTxs []types.ErrataTx
 		for _, utxo := range blockMeta.UnspentTransactionOutputs {
 			txID := utxo.TxID.String()
-			if c.confirmTx(txID) {
+			if c.confirmTx(&utxo.TxID) {
 				c.logger.Info().Msgf("block height: %d, tx: %s still exist", blockMeta.Height, txID)
 				continue
 			}
@@ -266,11 +266,7 @@ func (c *Client) reConfirmTx() error {
 }
 
 // confirmTx check a tx is valid on chain post reorg
-func (c *Client) confirmTx(txID string) bool {
-	txHash, err := chainhash.NewHashFromStr(txID)
-	if err != nil {
-		return false
-	}
+func (c *Client) confirmTx(txHash *chainhash.Hash) bool {
 	result, err := c.client.GetTransaction(txHash)
 	if err != nil {
 		if rpcErr, ok := err.(*btcjson.RPCError); ok && rpcErr.Code == btcjson.ErrRPCNoTxInfo {

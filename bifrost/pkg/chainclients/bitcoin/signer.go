@@ -175,7 +175,7 @@ func (c *Client) SignTx(tx stypes.TxOutItem, thorchainHeight int64) ([]byte, err
 	}
 	sourceScript, err := c.getSourceScript(tx)
 	if err != nil {
-		return nil, fmt.Errorf("fail to get source address: %w", err)
+		return nil, fmt.Errorf("fail to get source script: %w", err)
 	}
 	chainBlockHeight, err := c.getBlockHeight()
 	if err != nil {
