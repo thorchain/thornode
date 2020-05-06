@@ -1,7 +1,6 @@
 package ethereum
 
 import (
-	"context"
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
@@ -50,7 +49,7 @@ func (s *BlockScannerTestSuite) TestNewBlockScanner(c *C) {
 	storage, err := blockscanner.NewBlockScannerStorage("")
 	c.Assert(err, IsNil)
 	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {}))
-	ethClient, err := ethclient.DialContext(context.Background(), server.URL)
+	ethClient, err := ethclient.Dial(server.URL)
 	c.Assert(err, IsNil)
 	bs, err := NewBlockScanner(getConfigForTest(""), storage, true, ethClient, s.m)
 	c.Assert(err, NotNil)
@@ -126,7 +125,7 @@ func (s *BlockScannerTestSuite) TestProcessBlock(c *C) {
 			c.Assert(err, IsNil)
 		}
 	}))
-	ethClient, err := ethclient.DialContext(context.Background(), server.URL)
+	ethClient, err := ethclient.Dial(server.URL)
 	c.Assert(err, IsNil)
 	c.Assert(ethClient, NotNil)
 	bs, err := NewBlockScanner(getConfigForTest(server.URL), blockscanner.NewMockScannerStorage(), true, ethClient, s.m)
@@ -174,7 +173,7 @@ func (s *BlockScannerTestSuite) TestFromTxToTxIn(c *C) {
 			c.Assert(err, IsNil)
 		}
 	}))
-	ethClient, err := ethclient.DialContext(context.Background(), server.URL)
+	ethClient, err := ethclient.Dial(server.URL)
 	c.Assert(err, IsNil)
 	c.Assert(ethClient, NotNil)
 	bs, err := NewBlockScanner(getConfigForTest(server.URL), blockscanner.NewMockScannerStorage(), true, ethClient, s.m)
@@ -199,6 +198,7 @@ func (s *BlockScannerTestSuite) TestFromTxToTxIn(c *C) {
 	txInItem, err := bs.fromTxToTxIn(encodedTx)
 	c.Assert(err, IsNil)
 	c.Assert(txInItem, NotNil)
+	c.Check(txInItem.Memo, Equals, "hello!")
 	c.Check(txInItem.Sender, Equals, "0xa7d9ddbe1f17865597fbd27ec712455208b6b76d")
 	c.Check(txInItem.To, Equals, "0xf02c1c8e6114b1dbe8937a39260b5b0a374432bb")
 	c.Check(len(txInItem.Coins), Equals, 1)

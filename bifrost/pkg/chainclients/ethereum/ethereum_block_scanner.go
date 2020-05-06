@@ -5,26 +5,25 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"math/big"
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/ethereum/go-ethereum"
 	etypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
-	"gitlab.com/thorchain/thornode/common"
-
 	"gitlab.com/thorchain/thornode/bifrost/blockscanner"
+	btypes "gitlab.com/thorchain/thornode/bifrost/blockscanner/types"
 	"gitlab.com/thorchain/thornode/bifrost/config"
 	"gitlab.com/thorchain/thornode/bifrost/metrics"
 	stypes "gitlab.com/thorchain/thornode/bifrost/thorclient/types"
+	"gitlab.com/thorchain/thornode/common"
 )
 
 const (
@@ -137,7 +136,6 @@ func (e *BlockScanner) processBlock(block blockscanner.Block) (stypes.TxIn, erro
 		return noTx, nil
 	}
 
-	// TODO implement postponing for transactions if total transfer values per block for address to secure against attacks
 	txIn.BlockHeight = strconv.FormatInt(block.Height, 10)
 	txIn.Count = strconv.Itoa(len(txIn.TxArray))
 	txIn.Chain = common.ETHChain
@@ -171,43 +169,11 @@ func (e *BlockScanner) FetchTxs(height int64) (stypes.TxIn, error) {
 	return txIn, nil
 }
 
-func (e *BlockScanner) getFromHttp(url, body string) ([]byte, error) {
-	req, err := http.NewRequest(http.MethodGet, url, strings.NewReader(body))
-	if err != nil {
-		e.errCounter.WithLabelValues("fail_create_http_request", url).Inc()
-		return nil, fmt.Errorf("fail to create http request: %w", err)
-	}
-	if len(body) > 0 {
-		req.Header.Add("Content-Type", "application/json")
-	}
-	resp, err := e.httpClient.Do(req)
-	if err != nil {
-		e.errCounter.WithLabelValues("fail_send_http_request", url).Inc()
-		return nil, fmt.Errorf("fail to get from %s: %w", url, err)
-	}
-	defer func() {
-		if err := resp.Body.Close(); err != nil {
-			e.logger.Error().Err(err).Msg("fail to close http response body.")
-		}
-	}()
-
-	if resp.StatusCode != http.StatusOK {
-		e.errCounter.WithLabelValues("unexpected_status_code", resp.Status).Inc()
-		return nil, fmt.Errorf("unexpected status code:%d from %s", resp.StatusCode, url)
-	}
-	return ioutil.ReadAll(resp.Body)
-}
-
 func (e *BlockScanner) getRPCBlock(height int64) ([]string, error) {
-	start := time.Now()
-	defer func() {
-		if err := recover(); err != nil {
-			e.logger.Error().Msgf("fail to get RPCBlock:%s", err)
-		}
-		duration := time.Since(start)
-		e.m.GetHistograms(metrics.BlockDiscoveryDuration).Observe(duration.Seconds())
-	}()
 	block, err := e.client.BlockByNumber(context.Background(), big.NewInt(height))
+	if err == ethereum.NotFound {
+		return nil, btypes.UnavailableBlock
+	}
 	if err != nil {
 		e.logger.Error().Err(err).Int64("block", height).Msg("fail to fetch block")
 		return nil, err
