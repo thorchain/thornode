@@ -28,6 +28,10 @@ func (k *TestOutboundTxKeeper) GetNodeAccount(_ sdk.Context, addr sdk.AccAddress
 
 var _ = Suite(&HandlerOutboundTxSuite{})
 
+func (s *HandlerOutboundTxSuite) SetUpSuite(c *C) {
+	SetupConfigForTest()
+}
+
 func (s *HandlerOutboundTxSuite) TestValidate(c *C) {
 	ctx, _ := setupKeeperForTest(c)
 
@@ -156,6 +160,10 @@ func (k *outboundTxHandlerKeeperHelper) SetNodeAccount(ctx sdk.Context, na NodeA
 	return k.Keeper.SetNodeAccount(ctx, na)
 }
 
+func (k *outboundTxHandlerKeeperHelper) GetAsgardVaultsByStatus(ctx sdk.Context, status VaultStatus) (Vaults, error) {
+	return k.Keeper.GetAsgardVaultsByStatus(ctx, status)
+}
+
 func (k *outboundTxHandlerKeeperHelper) GetVault(ctx sdk.Context, _ common.PubKey) (Vault, error) {
 	return k.vault, nil
 }
@@ -190,6 +198,7 @@ func newOutboundTxHandlerTestHelper(c *C) outboundTxHandlerTestHelper {
 
 	version := constants.SWVersion
 	asgardVault := GetRandomVault()
+	c.Assert(k.SetVault(ctx, asgardVault), IsNil)
 	addr, err := asgardVault.PubKey.GetAddress(common.BNBChain)
 	yggVault := GetRandomVault()
 	c.Assert(err, IsNil)
@@ -198,7 +207,7 @@ func newOutboundTxHandlerTestHelper(c *C) outboundTxHandlerTestHelper {
 		ID:          GetRandomTxHash(),
 		Chain:       common.BNBChain,
 		Coins:       common.Coins{common.NewCoin(common.BNBAsset, sdk.NewUint(1*common.One))},
-		Memo:        "swap:RUNE-A1F",
+		Memo:        "SWAP:BNB.RUNE-A1F",
 		FromAddress: GetRandomBNBAddress(),
 		ToAddress:   addr,
 		Gas:         BNBGasFeeSingleton,
@@ -225,7 +234,7 @@ func newOutboundTxHandlerTestHelper(c *C) outboundTxHandlerTestHelper {
 		Chain:       common.BNBChain,
 		ToAddress:   tx.Tx.FromAddress,
 		VaultPubKey: yggVault.PubKey,
-		Coin:        common.NewCoin(common.RuneAsset(), sdk.NewUint(2*common.One)),
+		Coin:        common.NewCoin(common.BNBAsset, sdk.NewUint(2*common.One)),
 		Memo:        NewOutboundMemo(tx.Tx.ID).String(),
 		InHash:      tx.Tx.ID,
 	}
@@ -418,7 +427,7 @@ func (s *HandlerOutboundTxSuite) TestOutboundTxHandlerShouldUpdateTxOut(c *C) {
 			ID:    GetRandomTxHash(),
 			Chain: common.BNBChain,
 			Coins: common.Coins{
-				common.NewCoin(common.RuneAsset(), sdk.NewUint(common.One)),
+				common.NewCoin(common.BNBAsset, sdk.NewUint(common.One)),
 			},
 			Memo:        NewOutboundMemo(helper.inboundTx.Tx.ID).String(),
 			FromAddress: fromAddr,
@@ -426,7 +435,8 @@ func (s *HandlerOutboundTxSuite) TestOutboundTxHandlerShouldUpdateTxOut(c *C) {
 			Gas:         BNBGasFeeSingleton,
 		}, helper.ctx.BlockHeight(), helper.yggVault.PubKey)
 		msg := tc.messageCreator(helper, tx)
-		c.Assert(tc.runner(handler, helper, msg).Code, Equals, tc.expectedResult, Commentf("name:%s", tc.name))
+		result := tc.runner(handler, helper, msg)
+		c.Assert(result.Code, Equals, tc.expectedResult, Commentf("name: %s, Err: %s", tc.name, result.Log))
 	}
 }
 
@@ -440,7 +450,7 @@ func (s *HandlerOutboundTxSuite) TestOutboundTxNormalCase(c *C) {
 		ID:    GetRandomTxHash(),
 		Chain: common.BNBChain,
 		Coins: common.Coins{
-			common.NewCoin(common.RuneAsset(), sdk.NewUint(common.One)),
+			common.NewCoin(common.BNBAsset, sdk.NewUint(common.One)),
 		},
 		Memo:        NewOutboundMemo(helper.inboundTx.Tx.ID).String(),
 		FromAddress: fromAddr,
@@ -508,7 +518,7 @@ func (s *HandlerOutboundTxSuite) TestOutboundTxHandlerSendAdditionalCoinsShouldB
 		ToAddress:   helper.inboundTx.Tx.FromAddress,
 		Gas:         BNBGasFeeSingleton,
 	}, helper.ctx.BlockHeight(), helper.nodeAccount.PubKeySet.Secp256k1)
-	expectedBond := helper.nodeAccount.Bond.Sub(sdk.NewUint(2 * common.One).MulUint64(3).QuoUint64(2))
+	expectedBond := sdk.NewUint(9702970297)
 	// slash one BNB, and one rune
 	outMsg := NewMsgOutboundTx(tx, helper.inboundTx.Tx.ID, helper.nodeAccount.NodeAddress)
 	c.Assert(handler.Run(helper.ctx, outMsg, constants.SWVersion, helper.constAccessor).Code, Equals, sdk.CodeOK)
@@ -534,8 +544,7 @@ func (s *HandlerOutboundTxSuite) TestOutboundTxHandlerInvalidObservedTxVoterShou
 		Gas:         BNBGasFeeSingleton,
 	}, helper.ctx.BlockHeight(), helper.nodeAccount.PubKeySet.Secp256k1)
 
-	expectedBond := helper.nodeAccount.Bond.Sub(sdk.NewUint(common.One).MulUint64(3).QuoUint64(2))
-	expectedBond = common.SafeSub(expectedBond, sdk.NewUint(common.One).MulUint64(3).QuoUint64(2))
+	expectedBond := sdk.NewUint(9702970297)
 	vaultData, err := helper.keeper.GetVaultData(helper.ctx)
 	c.Assert(err, IsNil)
 	// expected 0.5 slashed RUNE be added to reserve
@@ -543,19 +552,20 @@ func (s *HandlerOutboundTxSuite) TestOutboundTxHandlerInvalidObservedTxVoterShou
 	pool, err := helper.keeper.GetPool(helper.ctx, common.BNBAsset)
 	c.Assert(err, IsNil)
 	poolBNB := common.SafeSub(pool.BalanceAsset, sdk.NewUint(common.One))
-	poolRUNE := pool.BalanceRune.Add(sdk.NewUint(common.One).MulUint64(3).QuoUint64(2))
 
-	// given the outbound tx doesn't have relevant OservedTxVoter in system , thus it should be slashed with 1.5 * the full amount of assets
+	// given the outbound tx doesn't have relevant OservedTxVoter in system ,
+	// thus it should be slashed with 1.5 * the full amount of assets
 	outMsg := NewMsgOutboundTx(tx, tx.Tx.ID, helper.nodeAccount.NodeAddress)
+	na, _ := helper.keeper.GetNodeAccount(helper.ctx, helper.nodeAccount.NodeAddress)
 	c.Assert(handler.Run(helper.ctx, outMsg, constants.SWVersion, helper.constAccessor).Code, Equals, sdk.CodeOK)
-	na, err := helper.keeper.GetNodeAccount(helper.ctx, helper.nodeAccount.NodeAddress)
-	c.Assert(na.Bond.Equal(expectedBond), Equals, true)
+	na, err = helper.keeper.GetNodeAccount(helper.ctx, helper.nodeAccount.NodeAddress)
+	c.Assert(na.Bond.Equal(expectedBond), Equals, true, Commentf("%d/%d", na.Bond.Uint64(), expectedBond.Uint64()))
 
 	vaultData, err = helper.keeper.GetVaultData(helper.ctx)
 	c.Assert(err, IsNil)
 	c.Assert(vaultData.TotalReserve.Equal(expectedVaultTotalReserve), Equals, true)
 	pool, err = helper.keeper.GetPool(helper.ctx, common.BNBAsset)
 	c.Assert(err, IsNil)
-	c.Assert(pool.BalanceRune.Equal(poolRUNE), Equals, true)
-	c.Assert(pool.BalanceAsset.Equal(poolBNB), Equals, true)
+	c.Assert(pool.BalanceRune.Equal(sdk.NewUint(10047029703)), Equals, true, Commentf("%d/%d", pool.BalanceRune.Uint64(), sdk.NewUint(10047029703)))
+	c.Assert(pool.BalanceAsset.Equal(poolBNB), Equals, true, Commentf("%d/%d", pool.BalanceAsset.Uint64(), poolBNB.Uint64()))
 }
