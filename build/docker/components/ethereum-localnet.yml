@@ -6,7 +6,7 @@ services:
     restart: unless-stopped
     image: ethereum/client-go:stable
     ports:
-      - "127.0.0.1:8545:8545"
+      - "8545:8545"
       - "30303:30303"
     volumes:
       - "../../scripts:/docker/scripts"
