@@ -23,7 +23,7 @@ func (s *HandlerSwitchSuite) TestValidate(c *C) {
 	c.Assert(k.SetNodeAccount(ctx, na), IsNil)
 	tx := GetRandomTx()
 	tx.Coins = common.Coins{
-		common.NewCoin(common.RuneAsset(), sdk.NewUint(100*common.One)),
+		common.NewCoin(common.RuneA1FAsset, sdk.NewUint(100*common.One)),
 	}
 	destination := GetRandomBNBAddress()
 
