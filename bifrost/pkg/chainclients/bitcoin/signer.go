@@ -175,7 +175,7 @@ func (c *Client) SignTx(tx stypes.TxOutItem, thorchainHeight int64) ([]byte, err
 	}
 	sourceScript, err := c.getSourceScript(tx)
 	if err != nil {
-		return nil, fmt.Errorf("fail to get source script: %w", err)
+		return nil, fmt.Errorf("fail to get source pay to address script: %w", err)
 	}
 	chainBlockHeight, err := c.getBlockHeight()
 	if err != nil {
@@ -294,7 +294,7 @@ func (c *Client) updateBlockMeta(txOut stypes.TxOutItem, blockMeta *BlockMeta, t
 	// add new balance output as spendable utxo
 	balanceScript, err := c.getSourceScript(txOut)
 	if err != nil {
-		return fmt.Errorf("fail to get balance script: %w", err)
+		return fmt.Errorf("fail to get balance pay to address script: %w", err)
 	}
 	for n, out := range tx.TxOut {
 		if bytes.Equal(out.PkScript, balanceScript) {
