@@ -173,11 +173,11 @@ func (HandlerSuite) TestHandleTxInUnstakeMemo(c *C) {
 	pool.PoolUnits = sdk.NewUint(100)
 	c.Assert(w.keeper.SetPool(w.ctx, pool), IsNil)
 
-	bnbAddr := GetRandomBNBAddress()
+	runeAddr := GetRandomRUNEAddress()
 	staker := Staker{
 		Asset:        common.BNBAsset,
-		RuneAddress:  bnbAddr,
-		AssetAddress: bnbAddr,
+		RuneAddress:  runeAddr,
+		AssetAddress: GetRandomBNBAddress(),
 		PendingRune:  sdk.ZeroUint(),
 		Units:        sdk.NewUint(100),
 	}
@@ -324,11 +324,6 @@ func (HandlerSuite) TestGetMsgSwapFromMemo(c *C) {
 			sdk.NewUint(100*common.One),
 		),
 	}
-
-	// coin and the ticker is the same, thus no point to swap
-	resultMsg1, err := getMsgSwapFromMemo(swapMemo, txin, GetRandomBech32Addr())
-	c.Assert(resultMsg1, IsNil)
-	c.Assert(err, NotNil)
 }
 
 func (HandlerSuite) TestGetMsgStakeFromMemo(c *C) {
