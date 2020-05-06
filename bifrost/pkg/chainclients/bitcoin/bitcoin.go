@@ -193,7 +193,6 @@ func (c *Client) OnObservedTxIn(txIn types.TxInItem, blockHeight int64) {
 	}
 	utxo := NewUnspentTransactionOutput(*hash, 0, value, blockHeight, txIn.ObservedVaultPubKey)
 	blockMeta.AddUTXO(utxo)
-	blockMeta.AddTxID(txIn.Tx)
 	if err := c.blockMetaAccessor.SaveBlockMeta(blockHeight, blockMeta); err != nil {
 		c.logger.Err(err).Msgf("fail to save block meta to storage,block height(%d)", blockHeight)
 	}
@@ -231,21 +230,19 @@ func (c *Client) reConfirmTx() error {
 
 	for _, blockMeta := range blockMetas {
 		var errataTxs []types.ErrataTx
-		for _, txID := range blockMeta.TxIDs {
+		for _, utxo := range blockMeta.UnspentTransactionOutputs {
+			txID := utxo.TxID.String()
 			if c.confirmTx(txID) {
 				c.logger.Info().Msgf("block height: %d, tx: %s still exist", blockMeta.Height, txID)
 				continue
 			}
 			// this means the tx doesn't exist in chain ,thus should errata it
 			errataTxs = append(errataTxs, types.ErrataTx{
-				TxID:  common.TxID(strings.ToUpper(txID)),
+				TxID:  common.TxID(txID),
 				Chain: common.BTCChain,
 			})
 			// remove the UTXO from block meta , so signer will not spend it
-			err := c.removeUTXO(txID)
-			if err != nil {
-				c.logger.Err(err).Msgf("fail to remove utxo associated to errata tx: %s", txID)
-			}
+			blockMeta.RemoveUTXO(utxo.GetKey())
 		}
 		if len(errataTxs) == 0 {
 			continue
@@ -283,6 +280,18 @@ func (c *Client) confirmTx(txID string) bool {
 		return false
 	}
 	if result.Confirmations == 0 && result.BlockTime == 0 {
+		return false
+	}
+	// check block confirmations in case the tx itself is not yet invalidated...
+	blockHash, err := chainhash.NewHashFromStr(result.BlockHash)
+	if err != nil {
+		return false
+	}
+	block, err := c.client.GetBlockVerbose(blockHash)
+	if err != nil {
+		return false
+	}
+	if block.Confirmations == -1 {
 		return false
 	}
 	return true
