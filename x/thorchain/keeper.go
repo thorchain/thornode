@@ -77,7 +77,6 @@ const (
 	prefixErrataTx           dbPrefix = "errata/"
 	prefixBanVoter           dbPrefix = "ban/"
 	prefixNodeSlashPoints    dbPrefix = "slash/"
-	prefixBlockEvents        dbPrefix = "block_events/"
 )
 
 func dbError(ctx sdk.Context, wrapper string, err error) error {

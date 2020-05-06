@@ -125,7 +125,6 @@ func (am AppModule) NewQuerierHandler() sdk.Querier {
 
 func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 	ctx.Logger().Debug("Begin Block", "height", req.Header.Height)
-
 	version := am.keeper.GetLowestActiveVersion(ctx)
 	am.keeper.ClearObservingAddresses(ctx)
 	obMgr, err := am.versionedObserverManager.GetObserverManager(ctx, version)
