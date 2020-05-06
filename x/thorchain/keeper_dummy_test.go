@@ -232,6 +232,12 @@ func (k KVStoreDummy) SetBanVoter(_ sdk.Context, _ BanVoter) {}
 func (k KVStoreDummy) GetBanVoter(_ sdk.Context, _ sdk.AccAddress) (BanVoter, error) {
 	return BanVoter{}, kaboom
 }
+func (k KVStoreDummy) SetSwapQueueItem(ctx sdk.Context, msg MsgSwap) error { return kaboom }
+func (k KVStoreDummy) GetSwapQueueIterator(ctx sdk.Context) sdk.Iterator   { return nil }
+func (k KVStoreDummy) RemoveSwapQueueItem(ctx sdk.Context, _ common.TxID)  {}
+func (k KVStoreDummy) GetSwapQueueItem(ctx sdk.Context, txID common.TxID) (MsgSwap, error) {
+	return MsgSwap{}, kaboom
+}
 
 func (k KVStoreDummy) GetBlockEvents(ctx sdk.Context, height int64) (*BlockEvents, error) {
 	return nil, kaboom

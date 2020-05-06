@@ -77,6 +77,8 @@ func (k KVStore) getTotalActiveBond(ctx sdk.Context) (sdk.Uint, error) {
 }
 
 // UpdateVaultData Update the vault data to reflect changing in this block
+// TODO: there is way too much business logic her for a keeper function. Move
+// to its own file/manager
 func (k KVStore) UpdateVaultData(ctx sdk.Context, constAccessor constants.ConstantValues, gasManager GasManager) error {
 	vault, err := k.GetVaultData(ctx)
 	if err != nil {

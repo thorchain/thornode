@@ -1,11 +1,14 @@
 package thorchain
 
 import (
+	"github.com/cosmos/cosmos-sdk/x/bank"
 	"gitlab.com/thorchain/thornode/x/thorchain/types"
 )
 
 const (
 	ModuleName       = types.ModuleName
+	ReserveName      = types.ReserveName
+	AsgardName       = types.AsgardName
 	RouterKey        = types.RouterKey
 	StoreKey         = types.StoreKey
 	DefaultCodespace = types.DefaultCodespace
@@ -116,6 +119,7 @@ var (
 )
 
 type (
+	MsgSend               = bank.MsgSend
 	MsgSwitch             = types.MsgSwitch
 	MsgBond               = types.MsgBond
 	MsgNoOp               = types.MsgNoOp
