@@ -23,9 +23,9 @@ func (MsgUnstakeSuite) TestMsgUnstake(c *C) {
 		BNBGasFeeSingleton,
 		"",
 	)
-	bnb := GetRandomBNBAddress()
+	runeAddr := GetRandomRUNEAddress()
 	acc1 := GetRandomBech32Addr()
-	m := NewMsgSetUnStake(tx, bnb, sdk.NewUint(10000), common.BNBAsset, acc1)
+	m := NewMsgSetUnStake(tx, runeAddr, sdk.NewUint(10000), common.BNBAsset, acc1)
 	EnsureMsgBasicCorrect(m, c)
 	c.Check(m.Type(), Equals, "set_unstake")
 
@@ -44,35 +44,35 @@ func (MsgUnstakeSuite) TestMsgUnstake(c *C) {
 			signer:              acc1,
 		},
 		{
-			publicAddress:       bnb,
+			publicAddress:       runeAddr,
 			withdrawBasisPoints: sdk.NewUint(12000),
 			asset:               common.BNBAsset,
 			requestTxHash:       txID,
 			signer:              acc1,
 		},
 		{
-			publicAddress:       bnb,
+			publicAddress:       runeAddr,
 			withdrawBasisPoints: sdk.ZeroUint(),
 			asset:               common.BNBAsset,
 			requestTxHash:       txID,
 			signer:              acc1,
 		},
 		{
-			publicAddress:       bnb,
+			publicAddress:       runeAddr,
 			withdrawBasisPoints: sdk.NewUint(10000),
 			asset:               common.Asset{},
 			requestTxHash:       txID,
 			signer:              acc1,
 		},
 		{
-			publicAddress:       bnb,
+			publicAddress:       runeAddr,
 			withdrawBasisPoints: sdk.NewUint(10000),
 			asset:               common.BNBAsset,
 			requestTxHash:       common.TxID(""),
 			signer:              acc1,
 		},
 		{
-			publicAddress:       bnb,
+			publicAddress:       runeAddr,
 			withdrawBasisPoints: sdk.NewUint(10000),
 			asset:               common.BNBAsset,
 			requestTxHash:       txID,

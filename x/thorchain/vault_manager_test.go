@@ -171,7 +171,7 @@ func (s *ValidatorManagerTestSuite) TestRagnarokChain(c *C) {
 	bnbPool.BalanceAsset = sdk.NewUint(10 * common.One)
 	bnbPool.PoolUnits = sdk.NewUint(1600)
 
-	addr := GetRandomBNBAddress()
+	addr := GetRandomRUNEAddress()
 	stakers := []Staker{
 		Staker{
 			RuneAddress:     addr,
@@ -180,7 +180,7 @@ func (s *ValidatorManagerTestSuite) TestRagnarokChain(c *C) {
 			PendingRune:     sdk.ZeroUint(),
 		},
 		Staker{
-			RuneAddress:     GetRandomBNBAddress(),
+			RuneAddress:     GetRandomRUNEAddress(),
 			LastStakeHeight: 10,
 			Units:           btcPool.PoolUnits.QuoUint64(2),
 			PendingRune:     sdk.ZeroUint(),
