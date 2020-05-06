@@ -18,12 +18,12 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
-	"gitlab.com/thorchain/thornode/common"
 	"gitlab.com/thorchain/thornode/bifrost/blockscanner"
 	btypes "gitlab.com/thorchain/thornode/bifrost/blockscanner/types"
 	"gitlab.com/thorchain/thornode/bifrost/config"
 	"gitlab.com/thorchain/thornode/bifrost/metrics"
 	stypes "gitlab.com/thorchain/thornode/bifrost/thorclient/types"
+	"gitlab.com/thorchain/thornode/common"
 )
 
 const (
@@ -174,7 +174,7 @@ func (e *BlockScanner) getRPCBlock(height int64) ([]string, error) {
 	if err == ethereum.NotFound {
 		return nil, btypes.UnavailableBlock
 	}
-	if err != nil {	
+	if err != nil {
 		e.logger.Error().Err(err).Int64("block", height).Msg("fail to fetch block")
 		return nil, err
 	}

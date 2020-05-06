@@ -130,8 +130,6 @@ func (c *Client) CheckIsTestNet() bool {
 	if c.chainID > 0 {
 		return c.isTestNet
 	}
-	c.chainID = 15
-	c.isTestNet = true
 	chainID, err := c.client.ChainID(context.Background())
 	if err != nil {
 		c.logger.Error().Err(err).Msg("Unable to get chain id")
