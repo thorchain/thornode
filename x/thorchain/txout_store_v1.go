@@ -1,9 +1,11 @@
 package thorchain
 
 import (
+	"errors"
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	tmtypes "github.com/tendermint/tendermint/types"
 
 	"gitlab.com/thorchain/thornode/common"
 	"gitlab.com/thorchain/thornode/constants"
@@ -234,6 +236,10 @@ func (tos *TxOutStorageV1) prepareTxOutItem(ctx sdk.Context, toi *TxOutItem) (bo
 }
 
 func (tos *TxOutStorageV1) addToBlockOut(ctx sdk.Context, toi *TxOutItem) error {
+	if toi.Coin.IsNative() {
+		return tos.nativeTxOut(ctx, toi)
+	}
+
 	hash, err := toi.TxHash()
 	if err != nil {
 		return err
@@ -249,6 +255,62 @@ func (tos *TxOutStorageV1) addToBlockOut(ctx sdk.Context, toi *TxOutItem) error 
 	toi.Memo = ""
 
 	return tos.keeper.AppendTxOut(ctx, tos.height, toi)
+}
+
+func (tos *TxOutStorageV1) nativeTxOut(ctx sdk.Context, toi *TxOutItem) error {
+	supplier := tos.keeper.Supply()
+
+	addr, err := sdk.AccAddressFromBech32(toi.ToAddress.String())
+	if err != nil {
+		return err
+	}
+
+	coin, err := toi.Coin.Native()
+	if err != nil {
+		return err
+	}
+
+	// send funds from asgard module
+	sdkErr := supplier.SendCoinsFromModuleToAccount(ctx, AsgardName, addr, sdk.NewCoins(coin))
+	if sdkErr != nil {
+		return errors.New(sdkErr.Error())
+	}
+
+	hash := tmtypes.Tx(ctx.TxBytes()).Hash()
+	txID, err := common.NewTxID(fmt.Sprintf("%X", hash))
+	if err != nil {
+		ctx.Logger().Error("fail to get tx hash", "err", err)
+		return err
+	}
+	from, err := common.NewAddress(supplier.GetModuleAddress(AsgardName).String())
+	if err != nil {
+		ctx.Logger().Error("fail to get from address", "err", err)
+		return err
+	}
+
+	tx := common.NewTx(txID, from, toi.ToAddress, common.Coins{toi.Coin}, common.Gas{}, toi.Memo)
+
+	m, err := processOneTxIn(ctx, tos.keeper, ObservedTx{Tx: tx}, supplier.GetModuleAddress(AsgardName))
+	if err != nil {
+		ctx.Logger().Error("fail to process txOut", "error", err, "tx", tx.String())
+		return err
+	}
+
+	versionedTxOutStore := NewVersionedTxOutStore()
+	versionedEventManager := NewVersionedEventMgr()
+	versionedVaultMgr := NewVersionedVaultMgr(versionedTxOutStore, versionedEventManager)
+	validatorMgr := NewVersionedValidatorMgr(tos.keeper, versionedTxOutStore, versionedVaultMgr, versionedEventManager)
+	versionedObserverManager := NewVersionedObserverMgr()
+	versionedGasMgr := NewVersionedGasMgr()
+
+	handler := NewInternalHandler(tos.keeper, versionedTxOutStore, validatorMgr, versionedVaultMgr, versionedObserverManager, versionedGasMgr, versionedEventManager)
+	result := handler(ctx, m)
+	if !result.IsOK() {
+		ctx.Logger().Error("TxOut Handler failed:", "error", result.Log)
+		return errors.New(result.Log)
+	}
+
+	return nil
 }
 
 func (tos *TxOutStorageV1) collectYggdrasilPools(ctx sdk.Context, tx ObservedTx, gasAsset common.Asset) (Vaults, error) {
