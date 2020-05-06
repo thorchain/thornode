@@ -66,6 +66,22 @@ func GetRandomBech32ConsensusPubKey() string {
 	return result
 }
 
+// GetRandomRuneAddress will just create a random rune address used for test purpose
+func GetRandomRUNEAddress() common.Address {
+	if common.RuneAsset().Chain.Equals(common.THORChain) {
+		return GetRandomTHORAddress()
+	}
+	return GetRandomBNBAddress()
+}
+
+// GetRandomTHORAddress will just create a random thor address used for test purpose
+func GetRandomTHORAddress() common.Address {
+	name := common.RandStringBytesMask(10)
+	str, _ := common.ConvertAndEncode("thor", crypto.AddressHash([]byte(name)))
+	thor, _ := common.NewAddress(str)
+	return thor
+}
+
 // GetRandomBNBAddress will just create a random bnb address used for test purpose
 func GetRandomBNBAddress() common.Address {
 	name := common.RandStringBytesMask(10)

@@ -54,7 +54,7 @@ func (s *HandlerSwitchSuite) TestGettingNativeTokens(c *C) {
 	tx.Coins = common.Coins{
 		common.NewCoin(common.RuneAsset(), sdk.NewUint(100*common.One)),
 	}
-	destination := common.Address(GetRandomBech32Addr().String())
+	destination := GetRandomTHORAddress()
 
 	versionedTxOutStoreDummy := NewVersionedTxOutStoreDummy()
 	handler := NewSwitchHandler(k, versionedTxOutStoreDummy)
