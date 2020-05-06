@@ -1,7 +1,9 @@
 package types
 
 import (
+	"encoding/base64"
 	"encoding/json"
+	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
@@ -213,6 +215,13 @@ func (e EventPool) Type() string {
 	return PoolEventType
 }
 
+// Event provide an instance of sdk.Event
+func (e EventPool) Event() sdk.Event {
+	return sdk.NewEvent(e.Type(),
+		sdk.NewAttribute("pool", e.Pool.String()),
+		sdk.NewAttribute("pool_status", e.Status.String()))
+}
+
 // PoolAmt pool asset amount
 type PoolAmt struct {
 	Asset  common.Asset `json:"asset"`
@@ -358,11 +367,13 @@ func (e EventSlash) Type() string {
 
 // EventErrata represent a change in pool balance which caused by an errata transaction
 type EventErrata struct {
-	Pools PoolMods `json:"pools"`
+	TxID  common.TxID `json:"tx_id"`
+	Pools PoolMods    `json:"pools"`
 }
 
-func NewEventErrata(pools PoolMods) EventErrata {
+func NewEventErrata(txID common.TxID, pools PoolMods) EventErrata {
 	return EventErrata{
+		TxID:  txID,
 		Pools: pools,
 	}
 }
@@ -370,4 +381,17 @@ func NewEventErrata(pools PoolMods) EventErrata {
 // Type return slash event type
 func (e EventErrata) Type() string {
 	return ErrataEventType
+}
+
+// Event
+func (e EventErrata) Event() (sdk.Event, error) {
+	evt := sdk.NewEvent(e.Type(), sdk.NewAttribute("in_tx_id", e.TxID.String()))
+	for _, item := range e.Pools {
+		buf, err := json.Marshal(item)
+		if nil != err {
+			return sdk.Event{}, fmt.Errorf("fail to marshal pool mod to json buffer: %w", err)
+		}
+		evt.AppendAttributes(sdk.NewAttribute(item.Asset.String(), base64.StdEncoding.EncodeToString(buf)))
+	}
+	return evt, nil
 }

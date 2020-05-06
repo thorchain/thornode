@@ -24,7 +24,7 @@ func (s *EventManagerTestSuite) TestEmitErrataEvent(c *C) {
 	eventMgr := NewEventMgr()
 	c.Assert(eventMgr, NotNil)
 	ctx = ctx.WithBlockHeight(1024)
-	errataEvent := NewEventErrata(PoolMods{
+	errataEvent := NewEventErrata(GetRandomTxHash(), PoolMods{
 		PoolMod{
 			Asset:    common.BNBAsset,
 			RuneAmt:  sdk.ZeroUint(),
