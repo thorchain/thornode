@@ -169,7 +169,7 @@ func newRefundTxHandlerTestHelper(c *C) refundTxHandlerTestHelper {
 		Chain:       common.BNBChain,
 		ToAddress:   tx.Tx.FromAddress,
 		VaultPubKey: yggVault.PubKey,
-		Coin:        common.NewCoin(common.RuneAsset(), sdk.NewUint(2*common.One)),
+		Coin:        common.NewCoin(common.BNBAsset, sdk.NewUint(2*common.One)),
 		Memo:        NewRefundMemo(tx.Tx.ID).String(),
 		InHash:      tx.Tx.ID,
 	}
@@ -362,7 +362,7 @@ func (s *HandlerRefundSuite) TestRefundTxHandlerShouldUpdateTxOut(c *C) {
 			ID:    GetRandomTxHash(),
 			Chain: common.BNBChain,
 			Coins: common.Coins{
-				common.NewCoin(common.RuneAsset(), sdk.NewUint(common.One)),
+				common.NewCoin(common.BNBAsset, sdk.NewUint(common.One)),
 			},
 			Memo:        NewRefundMemo(helper.inboundTx.Tx.ID).String(),
 			FromAddress: fromAddr,
@@ -384,7 +384,7 @@ func (s *HandlerRefundSuite) TestRefundTxNormalCase(c *C) {
 		ID:    GetRandomTxHash(),
 		Chain: common.BNBChain,
 		Coins: common.Coins{
-			common.NewCoin(common.RuneAsset(), sdk.NewUint(common.One)),
+			common.NewCoin(common.BNBAsset, sdk.NewUint(common.One)),
 		},
 		Memo:        NewRefundMemo(helper.inboundTx.Tx.ID).String(),
 		FromAddress: fromAddr,
@@ -452,7 +452,7 @@ func (s *HandlerRefundSuite) TestOutboundTxHandlerSendAdditionalCoinsShouldBeSla
 		ToAddress:   helper.inboundTx.Tx.FromAddress,
 		Gas:         BNBGasFeeSingleton,
 	}, helper.ctx.BlockHeight(), helper.nodeAccount.PubKeySet.Secp256k1)
-	expectedBond := helper.nodeAccount.Bond.Sub(sdk.NewUint(2 * common.One).MulUint64(3).QuoUint64(2))
+	expectedBond := sdk.NewUint(9702970297)
 	// slash one BNB and one rune
 	outMsg := NewMsgRefundTx(tx, helper.inboundTx.Tx.ID, helper.nodeAccount.NodeAddress)
 	c.Assert(handler.Run(helper.ctx, outMsg, constants.SWVersion, helper.constAccessor).Code, Equals, sdk.CodeOK)
@@ -478,8 +478,7 @@ func (s *HandlerRefundSuite) TestOutboundTxHandlerInvalidObservedTxVoterShouldSl
 		Gas:         BNBGasFeeSingleton,
 	}, helper.ctx.BlockHeight(), helper.nodeAccount.PubKeySet.Secp256k1)
 
-	expectedBond := helper.nodeAccount.Bond.Sub(sdk.NewUint(common.One).MulUint64(3).QuoUint64(2))
-	expectedBond = common.SafeSub(expectedBond, sdk.NewUint(common.One).MulUint64(3).QuoUint64(2))
+	expectedBond := sdk.NewUint(9702970297)
 	vaultData, err := helper.keeper.GetVaultData(helper.ctx)
 	c.Assert(err, IsNil)
 	// expected 0.5 slashed RUNE be added to reserve
@@ -487,7 +486,6 @@ func (s *HandlerRefundSuite) TestOutboundTxHandlerInvalidObservedTxVoterShouldSl
 	pool, err := helper.keeper.GetPool(helper.ctx, common.BNBAsset)
 	c.Assert(err, IsNil)
 	poolBNB := common.SafeSub(pool.BalanceAsset, sdk.NewUint(common.One))
-	poolRUNE := pool.BalanceRune.Add(sdk.NewUint(common.One).MulUint64(3).QuoUint64(2))
 
 	// given the outbound tx doesn't have relevant OservedTxVoter in system , thus it should be slashed with 1.5 * the full amount of assets
 	outMsg := NewMsgRefundTx(tx, tx.Tx.ID, helper.nodeAccount.NodeAddress)
@@ -500,6 +498,6 @@ func (s *HandlerRefundSuite) TestOutboundTxHandlerInvalidObservedTxVoterShouldSl
 	c.Assert(vaultData.TotalReserve.Equal(expectedVaultTotalReserve), Equals, true)
 	pool, err = helper.keeper.GetPool(helper.ctx, common.BNBAsset)
 	c.Assert(err, IsNil)
-	c.Assert(pool.BalanceRune.Equal(poolRUNE), Equals, true)
+	c.Assert(pool.BalanceRune.Equal(sdk.NewUint(10047029703)), Equals, true, Commentf("%d/%d", pool.BalanceRune.Uint64(), sdk.NewUint(10047029703).Uint64()))
 	c.Assert(pool.BalanceAsset.Equal(poolBNB), Equals, true)
 }
