@@ -1,7 +1,6 @@
 package bitcoin
 
 import (
-	"fmt"
 	"strings"
 
 	"gitlab.com/thorchain/thornode/common"
@@ -41,9 +40,6 @@ func (b *BlockMeta) RemoveUTXO(key string) {
 	idxToDelete := -1
 	for idx, item := range b.UnspentTransactionOutputs {
 		if strings.EqualFold(item.GetKey(), key) {
-			fmt.Println("===============remove utxo found==============")
-			fmt.Println(key)
-			fmt.Println("===============remove utxo found==============")
 			idxToDelete = idx
 			break
 		}

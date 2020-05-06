@@ -307,7 +307,7 @@ func (c *Client) removeSpentUTXO(txs []UnspentTransactionOutput) error {
 	return nil
 }
 
-// saveUTXO save the newly created UTXO which transfer balance back our own address to storage
+// saveNewUTXO save the newly created UTXO which transfer balance back our own address to storage
 func (c *Client) saveNewUTXO(tx *wire.MsgTx, balance int64, script []byte, blockHeight int64, pubKey common.PubKey) error {
 	txID := tx.TxHash()
 	n := 0
@@ -329,6 +329,23 @@ func (c *Client) saveNewUTXO(tx *wire.MsgTx, balance int64, script []byte, block
 	}
 	blockMeta.AddUTXO(NewUnspentTransactionOutput(txID, uint32(n), amt.ToBTC(), blockHeight, pubKey))
 	return c.blockMetaAccessor.SaveBlockMeta(blockHeight, blockMeta)
+}
+
+// removeUTXO deletes utxo if we failed to sign and we had a balance utxo
+func (c *Client) removeUTXO(txID string) error {
+	blockMetas, err := c.blockMetaAccessor.GetBlockMetas()
+	if err != nil {
+		return fmt.Errorf("fail to get block metas: %w", err)
+	}
+	for _, blockMeta := range blockMetas {
+		for _, utxo := range blockMeta.UnspentTransactionOutputs {
+			if utxo.TxID.String() == txID {
+				blockMeta.RemoveUTXO(utxo.GetKey())
+				return c.blockMetaAccessor.SaveBlockMeta(utxo.BlockHeight, blockMeta)
+			}
+		}
+	}
+	return nil
 }
 
 // BroadcastTx will broadcast the given payload to BTC chain
@@ -353,17 +370,13 @@ func (c *Client) BroadcastTx(txOut stypes.TxOutItem, payload []byte) error {
 
 	txHash, err := c.client.SendRawTransaction(redeemTx, true)
 	if err != nil {
-
 		if rpcErr, ok := err.(*btcjson.RPCError); ok && rpcErr.Code == btcjson.ErrRPCTxAlreadyInChain {
 			// this means the tx had been broadcast to chain, it must be another signer finished quicker then us
 			return nil
 		}
-		// Delete tx utxo
-		key := fmt.Sprintf("%s:0", redeemTx.TxHash().String())
-		blockMeta.RemoveUTXO(key)
-		err2 := c.blockMetaAccessor.SaveBlockMeta(chainBlockHeight, blockMeta)
+		err2 := c.removeUTXO(redeemTx.TxHash().String())
 		if err2 != nil {
-			return fmt.Errorf("fail to save block meta: %w", err2)
+			c.logger.Err(err2).Msg("fail to remove utxo balance on signing fail")
 		}
 		return fmt.Errorf("fail to broadcast transaction to chain: %w", err)
 	}

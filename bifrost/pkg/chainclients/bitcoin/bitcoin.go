@@ -242,7 +242,10 @@ func (c *Client) reConfirmTx() error {
 				Chain: common.BTCChain,
 			})
 			// remove the UTXO from block meta , so signer will not spend it
-			blockMeta.RemoveUTXO(fmt.Sprintf("%s:0", txID))
+			err := c.removeUTXO(txID)
+			if err != nil {
+				c.logger.Err(err).Msgf("fail to remove utxo associated to errata tx: %s", txID)
+			}
 		}
 		if len(errataTxs) == 0 {
 			continue
