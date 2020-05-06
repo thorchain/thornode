@@ -194,7 +194,6 @@ func (h UnstakeHandler) handle(ctx sdk.Context, msg MsgSetUnStake, version semve
 
 	ok, err = txOutStore.TryAddTxOutItem(ctx, toi)
 	if err != nil {
-		fmt.Println("FOO")
 		ctx.Logger().Error("fail to prepare outbound tx", "error", err)
 		return nil, sdk.NewError(DefaultCodespace, CodeFailAddOutboundTx, "fail to prepare outbound tx")
 	}
