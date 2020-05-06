@@ -149,7 +149,7 @@ func (tx Tx) IsValid() error {
 	if err := tx.Coins.IsValid(); err != nil {
 		return err
 	}
-	if len(tx.Gas) == 0 {
+	if !tx.Chain.Equals(THORChain) && len(tx.Gas) == 0 {
 		return errors.New("Must have at least 1 gas coin")
 	}
 	if err := tx.Gas.IsValid(); err != nil {

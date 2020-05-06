@@ -16,12 +16,15 @@ import (
 func GetRandomNodeAccount(status NodeStatus) NodeAccount {
 	v, _ := tmtypes.RandValidator(true, 100)
 	k, _ := sdk.Bech32ifyConsPub(v.PubKey)
-	bondAddr := GetRandomBNBAddress()
 	pubKeys := common.PubKeySet{
 		Secp256k1: GetRandomPubKey(),
 		Ed25519:   GetRandomPubKey(),
 	}
 	addr, _ := pubKeys.Secp256k1.GetThorAddress()
+	bondAddr := GetRandomBNBAddress()
+	if common.RuneAsset().Chain.Equals(common.THORChain) {
+		bondAddr = common.Address(addr.String())
+	}
 	na := NewNodeAccount(addr, status, pubKeys, k, sdk.NewUint(100*common.One), bondAddr, 1)
 	na.Version = constants.SWVersion
 	if na.Status == Active {

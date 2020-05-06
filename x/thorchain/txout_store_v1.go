@@ -290,7 +290,18 @@ func (tos *TxOutStorageV1) nativeTxOut(ctx sdk.Context, toi *TxOutItem) error {
 
 	tx := common.NewTx(txID, from, toi.ToAddress, common.Coins{toi.Coin}, common.Gas{}, toi.Memo)
 
-	m, err := processOneTxIn(ctx, tos.keeper, ObservedTx{Tx: tx}, supplier.GetModuleAddress(AsgardName))
+	active, err := tos.keeper.GetAsgardVaultsByStatus(ctx, ActiveVault)
+	if err != nil {
+		ctx.Logger().Error("fail to get active vaults", "err", err)
+		return err
+	}
+
+	observedTx := ObservedTx{
+		ObservedPubKey: active[0].PubKey,
+		BlockHeight:    ctx.BlockHeight(),
+		Tx:             tx,
+	}
+	m, err := processOneTxIn(ctx, tos.keeper, observedTx, supplier.GetModuleAddress(AsgardName))
 	if err != nil {
 		ctx.Logger().Error("fail to process txOut", "error", err, "tx", tx.String())
 		return err
