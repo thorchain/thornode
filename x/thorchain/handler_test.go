@@ -324,11 +324,6 @@ func (HandlerSuite) TestGetMsgSwapFromMemo(c *C) {
 			sdk.NewUint(100*common.One),
 		),
 	}
-
-	// coin and the ticker is the same, thus no point to swap
-	resultMsg1, err := getMsgSwapFromMemo(swapMemo, txin, GetRandomBech32Addr())
-	c.Assert(resultMsg1, IsNil)
-	c.Assert(err, NotNil)
 }
 
 func (HandlerSuite) TestGetMsgStakeFromMemo(c *C) {

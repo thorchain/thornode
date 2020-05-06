@@ -173,14 +173,14 @@ func (s *HandlerSwapSuite) TestHandle(c *C) {
 	poolTCAN.BalanceRune = sdk.NewUint(2349500000)
 	c.Assert(keeper.SetPool(ctx, poolTCAN), IsNil)
 
-	m, err := ParseMemo("swap:BNB.RUNE-B1A:bnb18jtza8j86hfyuj2f90zec0g5gvjh823e5psn2u:124958592")
+	m, err := ParseMemo("swap:BNB.TCAN-014:bnb18jtza8j86hfyuj2f90zec0g5gvjh823e5psn2u:4958592")
 	txIn := NewObservedTx(
 		common.NewTx(GetRandomTxHash(), signerBNBAddr, GetRandomBNBAddress(),
 			common.Coins{
 				common.NewCoin(tCanAsset, sdk.NewUint(20000000)),
 			},
 			BNBGasFeeSingleton,
-			"swap:BNB.RUNE-B1A:bnb18jtza8j86hfyuj2f90zec0g5gvjh823e5psn2u:124958592",
+			"swap:BNB.TCAN-014:bnb18jtza8j86hfyuj2f90zec0g5gvjh823e5psn2u:4958592",
 		),
 		1,
 		GetRandomPubKey(),
