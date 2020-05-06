@@ -12,10 +12,7 @@ import (
 
 // EventManager define methods need to be support to manage events
 type EventManager interface {
-	BeginBlock(ctx sdk.Context)
-	EndBlock(ctx sdk.Context, keeper Keeper)
 	CompleteEvents(ctx sdk.Context, keeper Keeper, height int64, txID common.TxID, txs common.Txs, eventStatus EventStatus)
-	AddEvent(event Event)
 	EmitPoolEvent(ctx sdk.Context, keeper Keeper, txIn common.TxID, status EventStatus, poolEvt EventPool) error
 	EmitErrataEvent(ctx sdk.Context, keeper Keeper, txIn common.TxID, errataEvent EventErrata) error
 	EmitGasEvent(ctx sdk.Context, keeper Keeper, gasEvent *EventGas) error
@@ -30,20 +27,8 @@ func NewEventMgr() *EventMgr {
 	return &EventMgr{}
 }
 
-// BeginBlock is going to create a brand new BlockEvents
-func (m *EventMgr) BeginBlock(ctx sdk.Context) {
-}
-
-// EndBlock will write the block event to storage
-func (m *EventMgr) EndBlock(ctx sdk.Context, keeper Keeper) {
-}
-
 // CompleteEvents Mark an event in the given block height to the given status
 func (m *EventMgr) CompleteEvents(ctx sdk.Context, keeper Keeper, height int64, txID common.TxID, txs common.Txs, eventStatus EventStatus) {
-}
-
-// AddEvent add an event to block event
-func (m *EventMgr) AddEvent(event Event) {
 }
 
 // EmitPoolEvent is going to save a pool event to storage

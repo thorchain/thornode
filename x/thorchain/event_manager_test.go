@@ -11,21 +11,11 @@ type EventManagerTestSuite struct{}
 
 var _ = Suite(&EventManagerTestSuite{})
 
-func (s *EventManagerTestSuite) TestEventMgr(c *C) {
-	ctx, k := setupKeeperForTest(c)
-	eventMgr := NewEventMgr()
-	c.Assert(eventMgr, NotNil)
-	ctx = ctx.WithBlockHeight(1024)
-	eventMgr.BeginBlock(ctx)
-	eventMgr.EndBlock(ctx, k)
-}
-
 func (s *EventManagerTestSuite) TestEmitPoolEvent(c *C) {
 	ctx, k := setupKeeperForTest(c)
 	eventMgr := NewEventMgr()
 	c.Assert(eventMgr, NotNil)
 	ctx = ctx.WithBlockHeight(1024)
-	eventMgr.BeginBlock(ctx)
 	c.Assert(eventMgr.EmitPoolEvent(ctx, k, common.BlankTxID, EventSuccess, NewEventPool(common.BNBAsset, PoolEnabled)), IsNil)
 }
 
@@ -34,7 +24,6 @@ func (s *EventManagerTestSuite) TestEmitErrataEvent(c *C) {
 	eventMgr := NewEventMgr()
 	c.Assert(eventMgr, NotNil)
 	ctx = ctx.WithBlockHeight(1024)
-	eventMgr.BeginBlock(ctx)
 	errataEvent := NewEventErrata(PoolMods{
 		PoolMod{
 			Asset:    common.BNBAsset,
@@ -52,7 +41,6 @@ func (s *EventManagerTestSuite) TestEmitGasEvent(c *C) {
 	eventMgr := NewEventMgr()
 	c.Assert(eventMgr, NotNil)
 	ctx = ctx.WithBlockHeight(1024)
-	eventMgr.BeginBlock(ctx)
 	gasEvent := NewEventGas()
 	gasEvent.Pools = append(gasEvent.Pools, GasPool{
 		Asset:    common.BNBAsset,

@@ -142,11 +142,7 @@ func (s *HandlerErrataTxSuite) TestHandle(c *C) {
 		},
 	}
 	versionedEventManager := NewVersionedEventMgr()
-	eventMgr, err := versionedEventManager.GetEventManager(ctx, ver)
-	c.Assert(err, IsNil)
-	eventMgr.BeginBlock(ctx)
 	handler := NewErrataTxHandler(keeper, versionedEventManager)
-
 	msg := NewMsgErrataTx(txID, common.BNBChain, na.NodeAddress)
 	result := handler.handle(ctx, msg, ver)
 	c.Assert(result.IsOK(), Equals, true)
