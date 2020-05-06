@@ -30,7 +30,7 @@ func NewAsset(input string) (Asset, error) {
 	parts := strings.Split(input, ".")
 	var sym string
 	if len(parts) == 1 {
-		asset.Chain = BNBChain
+		asset.Chain = THORChain
 		sym = parts[0]
 	} else {
 		asset.Chain, err = NewChain(parts[0])

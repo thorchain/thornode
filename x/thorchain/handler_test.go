@@ -172,7 +172,7 @@ func (HandlerSuite) TestHandleTxInUnstakeMemo(c *C) {
 				common.NewCoin(common.BNBAsset, sdk.NewUint(100*common.One)),
 				common.NewCoin(common.RuneAsset(), sdk.NewUint(100*common.One)),
 			},
-			Memo:        "stake:BNB",
+			Memo:        "stake:BNB.BNB",
 			FromAddress: staker,
 			ToAddress:   addr,
 			Gas:         BNBGasFeeSingleton,
@@ -204,7 +204,7 @@ func (HandlerSuite) TestHandleTxInUnstakeMemo(c *C) {
 			Coins: common.Coins{
 				common.NewCoin(common.RuneAsset(), sdk.NewUint(1*common.One)),
 			},
-			Memo:        "withdraw:BNB",
+			Memo:        "withdraw:BNB.BNB",
 			FromAddress: staker,
 			ToAddress:   addr,
 			Gas:         BNBGasFeeSingleton,
@@ -255,7 +255,7 @@ func (HandlerSuite) TestRefund(c *C) {
 			Coins: common.Coins{
 				common.NewCoin(common.BNBAsset, sdk.NewUint(100*common.One)),
 			},
-			Memo:        "withdraw:BNB",
+			Memo:        "withdraw:BNB.BNB",
 			FromAddress: GetRandomBNBAddress(),
 			ToAddress:   GetRandomBNBAddress(),
 			Gas:         BNBGasFeeSingleton,
@@ -300,7 +300,7 @@ func (HandlerSuite) TestRefund(c *C) {
 }
 
 func (HandlerSuite) TestGetMsgSwapFromMemo(c *C) {
-	m, err := ParseMemo("swap:BNB")
+	m, err := ParseMemo("swap:BNB.BNB")
 	swapMemo, ok := m.(SwapMemo)
 	c.Assert(ok, Equals, true)
 	c.Assert(err, IsNil)
@@ -319,7 +319,7 @@ func (HandlerSuite) TestGetMsgSwapFromMemo(c *C) {
 					sdk.NewUint(100*common.One),
 				),
 			},
-			Memo:        "withdraw:BNB",
+			Memo:        "withdraw:BNB.BNB",
 			FromAddress: GetRandomBNBAddress(),
 			ToAddress:   GetRandomBNBAddress(),
 			Gas:         BNBGasFeeSingleton,
@@ -349,7 +349,7 @@ func (HandlerSuite) TestGetMsgSwapFromMemo(c *C) {
 func (HandlerSuite) TestGetMsgStakeFromMemo(c *C) {
 	w := getHandlerTestWrapper(c, 1, true, false)
 	// Stake BNB, however THORNode send T-CAN as coin , which is incorrect, should result in an error
-	m, err := ParseMemo("stake:BNB")
+	m, err := ParseMemo("stake:BNB.BNB")
 	c.Assert(err, IsNil)
 	stakeMemo, ok := m.(StakeMemo)
 	c.Assert(ok, Equals, true)
@@ -368,7 +368,7 @@ func (HandlerSuite) TestGetMsgStakeFromMemo(c *C) {
 				common.NewCoin(runeAsset,
 					sdk.NewUint(100*common.One)),
 			},
-			Memo:        "withdraw:BNB",
+			Memo:        "withdraw:BNB.BNB",
 			FromAddress: GetRandomBNBAddress(),
 			ToAddress:   GetRandomBNBAddress(),
 			Gas:         BNBGasFeeSingleton,
