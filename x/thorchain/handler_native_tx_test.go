@@ -17,15 +17,21 @@ var _ = Suite(&HandlerNativeTxSuite{})
 func (s *HandlerNativeTxSuite) TestValidate(c *C) {
 	ctx, k := setupKeeperForTest(c)
 
-	addr1 := GetRandomBech32Addr()
-	addr2 := GetRandomBech32Addr()
+	addr := GetRandomBech32Addr()
 
-	msg := MsgNativeTx{
-		FromAddress: addr1,
-		ToAddress:   addr2,
-		Amount:      sdk.NewCoins(sdk.NewCoin("dummy", sdk.NewInt(12))),
+	coins := common.Coins{
+		common.NewCoin(common.RuneNative, sdk.NewUint(200*common.One)),
 	}
-	handler := NewNativeTxHandler(k)
+	msg := NewMsgNativeTx(coins, "STAKE:BNB.BNB", addr)
+
+	versionedTxOutStore := NewVersionedTxOutStoreDummy()
+	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(versionedTxOutStore)
+	versionedGasMgr := NewDummyVersionedGasMgr()
+	versionedObMgr := NewDummyVersionedObserverMgr()
+	versionedEventManagerDummy := NewDummyVersionedEventMgr()
+	versionedValidatorMgr := NewVersionedValidatorDummyMgr()
+
+	handler := NewNativeTxHandler(k, versionedObMgr, versionedTxOutStore, versionedValidatorMgr, versionedVaultMgrDummy, versionedGasMgr, versionedEventManagerDummy)
 	err := handler.validate(ctx, msg, constants.SWVersion)
 	c.Assert(err, IsNil)
 
@@ -44,34 +50,28 @@ func (s *HandlerNativeTxSuite) TestHandle(c *C) {
 	banker := k.CoinKeeper()
 	constAccessor := constants.GetConstantValues(constants.SWVersion)
 
-	addr1 := GetRandomBech32Addr()
-	addr2 := GetRandomBech32Addr()
+	versionedTxOutStore := NewVersionedTxOutStoreDummy()
+	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(versionedTxOutStore)
+	versionedGasMgr := NewDummyVersionedGasMgr()
+	versionedObMgr := NewDummyVersionedObserverMgr()
+	versionedEventManagerDummy := NewDummyVersionedEventMgr()
+	versionedValidatorMgr := NewVersionedValidatorDummyMgr()
 
-	funds, err := common.NewCoin(common.RuneNative, sdk.NewUint(200*common.One)).Native()
-	c.Assert(err, IsNil)
-	_, err = banker.AddCoins(ctx, addr1, sdk.NewCoins(funds))
-	c.Assert(err, IsNil)
+	handler := NewNativeTxHandler(k, versionedObMgr, versionedTxOutStore, versionedValidatorMgr, versionedVaultMgrDummy, versionedGasMgr, versionedEventManagerDummy)
 
-	coin, err := common.NewCoin(common.RuneNative, sdk.NewUint(12*common.One)).Native()
-	c.Assert(err, IsNil)
-	msg := MsgNativeTx{
-		FromAddress: addr1,
-		ToAddress:   addr2,
-		Amount:      sdk.NewCoins(coin),
+	addr := GetRandomBech32Addr()
+
+	coins := common.Coins{
+		common.NewCoin(common.RuneNative, sdk.NewUint(200*common.One)),
 	}
 
-	handler := NewNativeTxHandler(k)
+	funds, err := common.NewCoin(common.RuneNative, sdk.NewUint(300*common.One)).Native()
+	c.Assert(err, IsNil)
+	_, err = banker.AddCoins(ctx, addr, sdk.NewCoins(funds))
+	c.Assert(err, IsNil)
+
+	msg := NewMsgNativeTx(coins, "ADD:BNB.BNB", addr)
+
 	result := handler.handle(ctx, msg, constants.SWVersion, constAccessor)
 	c.Assert(result.IsOK(), Equals, true, Commentf("%+v", result.Log))
-
-	// insufficient funds
-	coin, err = common.NewCoin(common.RuneNative, sdk.NewUint(3000*common.One)).Native()
-	c.Assert(err, IsNil)
-	msg = MsgNativeTx{
-		FromAddress: addr1,
-		ToAddress:   addr2,
-		Amount:      sdk.NewCoins(coin),
-	}
-	result = handler.handle(ctx, msg, constants.SWVersion, constAccessor)
-	c.Assert(result.IsOK(), Equals, false, Commentf("%+v", result.Log))
 }

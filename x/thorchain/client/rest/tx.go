@@ -38,14 +38,6 @@ func newNativeTxHandler(cliCtx context.CLIContext) http.HandlerFunc {
 			return
 		}
 
-		// ensure all assets are native to thorchain
-		for _, coin := range req.Coins {
-			if !coin.IsNative() {
-				rest.WriteErrorResponse(w, http.StatusBadRequest, "must only be THORChain native assets")
-				return
-			}
-		}
-
 		msg := types.NewMsgNativeTx(req.Coins, req.BaseReq.Memo, addr)
 		err = msg.ValidateBasic()
 		if err != nil {
