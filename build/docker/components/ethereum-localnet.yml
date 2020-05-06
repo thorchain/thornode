@@ -7,7 +7,7 @@ services:
     image: ethereum/client-go:stable
     ports:
       - "8545:8545"
-      - "30301:30303"
+      - "30303:30303"
     volumes:
       - "../../scripts:/docker/scripts"
     entrypoint: "/docker/scripts/ethereum-mock.sh"
