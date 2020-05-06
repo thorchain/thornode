@@ -67,7 +67,7 @@ func (a Asset) String() string {
 }
 
 func (a Asset) IsRune() bool {
-	return a.Equals(RuneNative)
+	return a.Equals(RuneNative) || a.Equals(RuneA1FAsset) || a.Equals(RuneB1AAsset)
 }
 
 func (a Asset) IsBNB() bool {
