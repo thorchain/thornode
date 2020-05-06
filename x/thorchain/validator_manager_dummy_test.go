@@ -18,9 +18,11 @@ func NewVersionedValidatorDummyMgr() VersionedValidatorDummyMgr {
 func (VersionedValidatorDummyMgr) BeginBlock(ctx sdk.Context, version semver.Version, constAccessor constants.ConstantValues) error {
 	return nil
 }
+
 func (VersionedValidatorDummyMgr) EndBlock(ctx sdk.Context, version semver.Version, constAccessor constants.ConstantValues) []abci.ValidatorUpdate {
 	return nil
 }
+
 func (VersionedValidatorDummyMgr) RequestYggReturn(ctx sdk.Context, version semver.Version, node NodeAccount) error {
 	return nil
 }
