@@ -302,8 +302,8 @@ func (tos *TxOutStorageV1) nativeTxOut(ctx sdk.Context, toi *TxOutItem) error {
 	validatorMgr := NewVersionedValidatorMgr(tos.keeper, versionedTxOutStore, versionedVaultMgr, versionedEventManager)
 	versionedObserverManager := NewVersionedObserverMgr()
 	versionedGasMgr := NewVersionedGasMgr()
-
 	handler := NewInternalHandler(tos.keeper, versionedTxOutStore, validatorMgr, versionedVaultMgr, versionedObserverManager, versionedGasMgr, versionedEventManager)
+
 	result := handler(ctx, m)
 	if !result.IsOK() {
 		ctx.Logger().Error("TxOut Handler failed:", "error", result.Log)
