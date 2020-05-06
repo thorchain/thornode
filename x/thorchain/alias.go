@@ -107,8 +107,6 @@ var (
 	GetRandomObservedTx            = types.GetRandomObservedTx
 	GetRandomNodeAccount           = types.GetRandomNodeAccount
 	GetRandomBNBAddress            = types.GetRandomBNBAddress
-	GetRandomTHORAddress           = types.GetRandomTHORAddress
-	GetRandomRUNEAddress           = types.GetRandomRUNEAddress
 	GetRandomBTCAddress            = types.GetRandomBTCAddress
 	GetRandomTxHash                = types.GetRandomTxHash
 	GetRandomBech32Addr            = types.GetRandomBech32Addr
