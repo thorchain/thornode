@@ -132,25 +132,12 @@ func (c *Client) CheckIsTestNet() bool {
 	}
 	c.chainID = 15
 	c.isTestNet = true
-	cl, err := ethclient.Dial("http://127.0.0.1:8545")
-	if err != nil {
-		c.logger.Error().Err(err).Msg("Didn't connect to ETH")
-		return false
-	}
-	chainID, err := cl.ChainID(context.Background())
+	chainID, err := c.client.ChainID(context.Background())
 	if err != nil {
 		c.logger.Error().Err(err).Msg("Unable to get chain id")
-		chainID = big.NewInt(15)
+		chainID = big.NewInt(types.Localnet)
 	}
-	/*
-		chainID, err := c.client.ChainID(context.Background())
-		if err != nil {
-			c.logger.Error().Err(err).Msg("Unable to get chain id")
-			chainID = big.NewInt(types.Localnet)
-		}*/
-	if chainID != nil {
-		c.chainID = types.ChainID(chainID.Int64())
-	}
+	c.chainID = types.ChainID(chainID.Int64())
 	c.isTestNet = c.chainID > types.Mainnet
 	vByte = byte(int(vByte) + int(2*c.chainID))
 	return c.isTestNet
