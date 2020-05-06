@@ -139,7 +139,6 @@ func getInternalHandlerMapping(keeper Keeper,
 	m := make(map[string]MsgHandler)
 	m[MsgOutboundTx{}.Type()] = NewOutboundTxHandler(keeper)
 	m[MsgYggdrasil{}.Type()] = NewYggdrasilHandler(keeper, versionedTxOutStore, validatorMgr)
-	m[MsgEndPool{}.Type()] = NewEndPoolHandler(keeper, versionedTxOutStore, versionedEventManager)
 	m[MsgSwap{}.Type()] = NewSwapHandler(keeper, versionedTxOutStore)
 	m[MsgReserveContributor{}.Type()] = NewReserveContributorHandler(keeper)
 	m[MsgBond{}.Type()] = NewBondHandler(keeper)

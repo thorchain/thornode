@@ -82,7 +82,6 @@ var (
 	NewMsgOutboundTx               = types.NewMsgOutboundTx
 	NewMsgMigrate                  = types.NewMsgMigrate
 	NewMsgRagnarok                 = types.NewMsgRagnarok
-	NewMsgEndPool                  = types.NewMsgEndPool
 	NewQueryNodeAccount            = types.NewQueryNodeAccount
 	HasSuperMajority               = types.HasSuperMajority
 	ChooseSignerParty              = types.ChooseSignerParty
@@ -138,7 +137,6 @@ type (
 	MsgSetVersion         = types.MsgSetVersion
 	MsgSetIPAddress       = types.MsgSetIPAddress
 	MsgSetNodeKeys        = types.MsgSetNodeKeys
-	MsgEndPool            = types.MsgEndPool
 	MsgLeave              = types.MsgLeave
 	MsgReserveContributor = types.MsgReserveContributor
 	MsgYggdrasil          = types.MsgYggdrasil
