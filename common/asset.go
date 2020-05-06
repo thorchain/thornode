@@ -11,10 +11,10 @@ var (
 	BNBAsset     = Asset{Chain: BNBChain, Symbol: "BNB", Ticker: "BNB"}
 	BTCAsset     = Asset{Chain: BTCChain, Symbol: "BTC", Ticker: "BTC"}
 	ETHAsset     = Asset{Chain: ETHChain, Symbol: "ETH", Ticker: "ETH"}
+	RuneNative   = Asset{Chain: THORChain, Symbol: "RUNE", Ticker: "RUNE"}
 	RuneA1FAsset = Asset{Chain: BNBChain, Symbol: "RUNE-A1F", Ticker: "RUNE"} // testnet
 	RuneB1AAsset = Asset{Chain: BNBChain, Symbol: "RUNE-B1A", Ticker: "RUNE"} // mainnet
 	EmptyAsset   = Asset{Chain: EmptyChain, Symbol: "", Ticker: ""}
-	RuneNative   = Asset{Chain: THORChain, Symbol: "RUNE", Ticker: "RUNE"}
 )
 
 type Asset struct {
@@ -67,7 +67,7 @@ func (a Asset) String() string {
 }
 
 func (a Asset) IsRune() bool {
-	return a.Equals(RuneA1FAsset) || a.Equals(RuneB1AAsset) || a.Equals(RuneNative)
+	return a.Equals(RuneNative)
 }
 
 func (a Asset) IsBNB() bool {
@@ -89,6 +89,10 @@ func (a *Asset) UnmarshalJSON(data []byte) error {
 }
 
 func RuneAsset() Asset {
+	return RuneNative
+}
+
+func RuneBEP2Asset() Asset {
 	// TODO: when should we return rune native?
 	if strings.EqualFold(os.Getenv("NET"), "testnet") || strings.EqualFold(os.Getenv("NET"), "mocknet") {
 		return RuneA1FAsset

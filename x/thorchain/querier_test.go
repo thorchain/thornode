@@ -186,7 +186,7 @@ func (s *QuerierSuite) TestQueryCompEvents(c *C) {
 		12,
 		common.NewTx(
 			txID,
-			GetRandomBNBAddress(),
+			GetRandomRUNEAddress(),
 			GetRandomBNBAddress(),
 			common.Coins{
 				common.NewCoin(common.BNBAsset, sdk.NewUint(320000000)),

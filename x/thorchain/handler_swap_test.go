@@ -192,7 +192,7 @@ func (s *HandlerSwapSuite) TestHandle(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(items, HasLen, 0)
 	res2 := handler.handle(ctx, msgSwapFromTxIn.(MsgSwap), ver, constAccessor)
-	c.Assert(res2.IsOK(), Equals, true)
+	c.Assert(res2.IsOK(), Equals, true, Commentf("%s", res2.Log))
 	c.Assert(res2.Code, Equals, sdk.CodeOK)
 	c.Assert(keeper.event, NotNil)
 	items, err = versionedTxOutStoreDummy.txoutStore.GetOutboundItems(ctx)

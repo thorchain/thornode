@@ -39,7 +39,7 @@ func (HandlerLeaveSuite) TestLeaveHandler_NotActiveNodeLeave(c *C) {
 	ver := constants.SWVersion
 	constAccessor := constants.GetConstantValues(ver)
 	result := leaveHandler.Run(w.ctx, msgLeave, ver, constAccessor)
-	c.Assert(result.Code, Equals, sdk.CodeOK, Commentf("%+v", result))
+	c.Assert(result.Code, Equals, sdk.CodeOK, Commentf("%s", result.Log))
 	result1 := leaveHandler.Run(w.ctx, msgLeave, semver.Version{}, constAccessor)
 	c.Assert(result1.Code, Equals, CodeBadVersion)
 }

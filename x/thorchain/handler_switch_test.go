@@ -52,7 +52,7 @@ func (s *HandlerSwitchSuite) TestGettingNativeTokens(c *C) {
 	c.Assert(k.SetNodeAccount(ctx, na), IsNil)
 	tx := GetRandomTx()
 	tx.Coins = common.Coins{
-		common.NewCoin(common.RuneAsset(), sdk.NewUint(100*common.One)),
+		common.NewCoin(common.RuneBEP2Asset(), sdk.NewUint(100*common.One)),
 	}
 	destination := GetRandomTHORAddress()
 
