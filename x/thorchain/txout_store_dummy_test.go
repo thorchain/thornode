@@ -69,7 +69,6 @@ func (tos *TxOutStoreDummy) TryAddTxOutItem(ctx sdk.Context, toi *TxOutItem) (bo
 		tos.addToBlockOut(ctx, toi)
 	}
 	return true, nil
-
 }
 
 func (tos *TxOutStoreDummy) UnSafeAddTxOutItem(ctx sdk.Context, toi *TxOutItem) error {
