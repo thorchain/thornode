@@ -230,9 +230,13 @@ func (s *HelperSuite) TestRefundBondHappyPath(c *C) {
 	c.Assert(err, IsNil)
 	items, err := txOut.GetOutboundItems(ctx)
 	c.Assert(err, IsNil)
-	c.Check(items, HasLen, 1)
-	outCoin := items[0].Coin
-	c.Check(outCoin.Amount.Equal(sdk.NewUint(40981137725)), Equals, true)
+	if common.RuneAsset().Chain.Equals(common.THORChain) {
+		c.Assert(items, HasLen, 0)
+	} else {
+		c.Check(items, HasLen, 1)
+		outCoin := items[0].Coin
+		c.Check(outCoin.Amount.Equal(sdk.NewUint(40981137725)), Equals, true)
+	}
 	p, err := keeper.GetPool(ctx, common.BNBAsset)
 	c.Assert(err, IsNil)
 	expectedPoolRune := sdk.NewUint(23789 * common.One).Sub(sdk.NewUint(3946 * common.One)).Add(slashAmt)

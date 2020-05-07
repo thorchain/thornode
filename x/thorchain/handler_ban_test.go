@@ -5,6 +5,7 @@ import (
 
 	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"gitlab.com/thorchain/thornode/common"
 	"gitlab.com/thorchain/thornode/constants"
 	. "gopkg.in/check.v1"
 )
@@ -21,6 +22,13 @@ type TestBanKeeper struct {
 	banner2   NodeAccount
 	vaultData VaultData
 	err       error
+	modules   map[string]int64
+}
+
+func (k *TestBanKeeper) SendFromModuleToModule(_ sdk.Context, from, to string, coin common.Coin) sdk.Error {
+	k.modules[from] -= int64(coin.Amount.Uint64())
+	k.modules[to] += int64(coin.Amount.Uint64())
+	return nil
 }
 
 func (k *TestBanKeeper) ListActiveNodeAccounts(_ sdk.Context) (NodeAccounts, error) {
@@ -120,6 +128,7 @@ func (s *HandlerBanSuite) TestHandle(c *C) {
 		banner1:   banner1,
 		banner2:   banner2,
 		vaultData: NewVaultData(),
+		modules:   make(map[string]int64, 0),
 	}
 
 	handler := NewBanHandler(keeper)
@@ -129,7 +138,11 @@ func (s *HandlerBanSuite) TestHandle(c *C) {
 	result := handler.handle(ctx, msg, constants.SWVersion, constAccessor)
 	c.Assert(result.IsOK(), Equals, true, Commentf("%+v", result.Log))
 	c.Check(int64(keeper.banner1.Bond.Uint64()), Equals, int64(99900000))
-	c.Check(int64(keeper.vaultData.TotalReserve.Uint64()), Equals, int64(100000))
+	if common.RuneAsset().Chain.Equals(common.THORChain) {
+		c.Check(keeper.modules[ReserveName], Equals, int64(100000))
+	} else {
+		c.Check(int64(keeper.vaultData.TotalReserve.Uint64()), Equals, int64(100000))
+	}
 	c.Check(keeper.toBan.ForcedToLeave, Equals, false)
 	c.Check(keeper.ban.Signers, HasLen, 1)
 
@@ -137,7 +150,11 @@ func (s *HandlerBanSuite) TestHandle(c *C) {
 	result = handler.handle(ctx, msg, constants.SWVersion, constAccessor)
 	c.Assert(result.IsOK(), Equals, true, Commentf("%+v", result.Log))
 	c.Check(int64(keeper.banner1.Bond.Uint64()), Equals, int64(99900000))
-	c.Check(int64(keeper.vaultData.TotalReserve.Uint64()), Equals, int64(100000))
+	if common.RuneAsset().Chain.Equals(common.THORChain) {
+		c.Check(keeper.modules[ReserveName], Equals, int64(100000))
+	} else {
+		c.Check(int64(keeper.vaultData.TotalReserve.Uint64()), Equals, int64(100000))
+	}
 	c.Check(keeper.toBan.ForcedToLeave, Equals, false)
 	c.Check(keeper.ban.Signers, HasLen, 1)
 
@@ -146,7 +163,11 @@ func (s *HandlerBanSuite) TestHandle(c *C) {
 	result = handler.handle(ctx, msg, constants.SWVersion, constAccessor)
 	c.Assert(result.IsOK(), Equals, true, Commentf("%+v", result.Log))
 	c.Check(int64(keeper.banner2.Bond.Uint64()), Equals, int64(99900000))
-	c.Check(int64(keeper.vaultData.TotalReserve.Uint64()), Equals, int64(200000))
+	if common.RuneAsset().Chain.Equals(common.THORChain) {
+		c.Check(keeper.modules[ReserveName], Equals, int64(200000))
+	} else {
+		c.Check(int64(keeper.vaultData.TotalReserve.Uint64()), Equals, int64(200000))
+	}
 	c.Check(keeper.toBan.ForcedToLeave, Equals, true)
 	c.Check(keeper.toBan.LeaveHeight, Equals, int64(18))
 	c.Check(keeper.ban.Signers, HasLen, 2)
