@@ -240,10 +240,6 @@ func (tos *TxOutStorageV1) addToBlockOut(ctx sdk.Context, toi *TxOutItem) error 
 		return tos.nativeTxOut(ctx, toi)
 	}
 
-	if toi.Coin.IsNative() {
-		return tos.nativeTxOut(ctx, toi)
-	}
-
 	hash, err := toi.TxHash()
 	if err != nil {
 		return err
