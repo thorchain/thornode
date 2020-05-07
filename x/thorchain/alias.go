@@ -51,6 +51,7 @@ var (
 	NewBanVoter                    = types.NewBanVoter
 	NewErrataTxVoter               = types.NewErrataTxVoter
 	NewObservedTxVoter             = types.NewObservedTxVoter
+	NewMsgNativeTx                 = types.NewMsgNativeTx
 	NewMsgTssPool                  = types.NewMsgTssPool
 	NewMsgTssKeysignFail           = types.NewMsgTssKeysignFail
 	NewMsgObservedTxIn             = types.NewMsgObservedTxIn
@@ -82,7 +83,6 @@ var (
 	NewMsgOutboundTx               = types.NewMsgOutboundTx
 	NewMsgMigrate                  = types.NewMsgMigrate
 	NewMsgRagnarok                 = types.NewMsgRagnarok
-	NewMsgEndPool                  = types.NewMsgEndPool
 	NewQueryNodeAccount            = types.NewQueryNodeAccount
 	HasSuperMajority               = types.HasSuperMajority
 	ChooseSignerParty              = types.ChooseSignerParty
@@ -106,6 +106,8 @@ var (
 	GetRandomTx                    = types.GetRandomTx
 	GetRandomObservedTx            = types.GetRandomObservedTx
 	GetRandomNodeAccount           = types.GetRandomNodeAccount
+	GetRandomTHORAddress           = types.GetRandomTHORAddress
+	GetRandomRUNEAddress           = types.GetRandomRUNEAddress
 	GetRandomBNBAddress            = types.GetRandomBNBAddress
 	GetRandomBTCAddress            = types.GetRandomBTCAddress
 	GetRandomTxHash                = types.GetRandomTxHash
@@ -120,6 +122,7 @@ var (
 
 type (
 	MsgSend               = bank.MsgSend
+	MsgNativeTx           = types.MsgNativeTx
 	MsgSwitch             = types.MsgSwitch
 	MsgBond               = types.MsgBond
 	MsgNoOp               = types.MsgNoOp
@@ -136,7 +139,6 @@ type (
 	MsgSetVersion         = types.MsgSetVersion
 	MsgSetIPAddress       = types.MsgSetIPAddress
 	MsgSetNodeKeys        = types.MsgSetNodeKeys
-	MsgEndPool            = types.MsgEndPool
 	MsgLeave              = types.MsgLeave
 	MsgReserveContributor = types.MsgReserveContributor
 	MsgYggdrasil          = types.MsgYggdrasil

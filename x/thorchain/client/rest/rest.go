@@ -61,6 +61,11 @@ func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router, storeName string) 
 		newErrataTxHandler(cliCtx),
 	).Methods(http.MethodPost)
 
+	r.HandleFunc(
+		fmt.Sprintf("/%s/native/tx", storeName),
+		newNativeTxHandler(cliCtx),
+	).Methods(http.MethodPost)
+
 	r.Use(mux.CORSMethodMiddleware(r))
 	r.Use(customCORSHeader())
 }

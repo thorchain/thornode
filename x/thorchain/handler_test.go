@@ -157,82 +157,67 @@ func (HandlerSuite) TestIsSignedByActiveNodeAccounts(c *C) {
 
 func (HandlerSuite) TestHandleTxInUnstakeMemo(c *C) {
 	w := getHandlerTestWrapper(c, 1, true, false)
+
 	vault := GetRandomVault()
+	vault.Coins = common.Coins{
+		common.NewCoin(common.BNBAsset, sdk.NewUint(100*common.One)),
+		common.NewCoin(common.RuneAsset(), sdk.NewUint(100*common.One)),
+	}
 	w.keeper.SetVault(w.ctx, vault)
-	addr, err := vault.PubKey.GetAddress(common.BNBChain)
-	c.Assert(err, IsNil)
+	vaultAddr, err := vault.PubKey.GetAddress(common.BNBChain)
 
-	staker := GetRandomBNBAddress()
-	// lets do a stake first, otherwise nothing to withdraw
-	txStake := types.NewObservedTx(
-		common.Tx{
-			ID:    GetRandomTxHash(),
-			Chain: common.BNBChain,
-			Coins: common.Coins{
-				common.NewCoin(common.BNBAsset, sdk.NewUint(100*common.One)),
-				common.NewCoin(common.RuneAsset(), sdk.NewUint(100*common.One)),
-			},
-			Memo:        "stake:BNB",
-			FromAddress: staker,
-			ToAddress:   addr,
-			Gas:         BNBGasFeeSingleton,
+	pool := NewPool()
+	pool.Asset = common.BNBAsset
+	pool.BalanceAsset = sdk.NewUint(100 * common.One)
+	pool.BalanceRune = sdk.NewUint(100 * common.One)
+	pool.PoolUnits = sdk.NewUint(100)
+	c.Assert(w.keeper.SetPool(w.ctx, pool), IsNil)
+
+	runeAddr := GetRandomRUNEAddress()
+	staker := Staker{
+		Asset:        common.BNBAsset,
+		RuneAddress:  runeAddr,
+		AssetAddress: GetRandomBNBAddress(),
+		PendingRune:  sdk.ZeroUint(),
+		Units:        sdk.NewUint(100),
+	}
+	w.keeper.SetStaker(w.ctx, staker)
+
+	tx := common.Tx{
+		ID:    GetRandomTxHash(),
+		Chain: common.BNBChain,
+		Coins: common.Coins{
+			common.NewCoin(common.RuneAsset(), sdk.NewUint(1*common.One)),
 		},
-		1024,
-		vault.PubKey,
-	)
+		Memo:        "withdraw:BNB.BNB",
+		FromAddress: staker.RuneAddress,
+		ToAddress:   vaultAddr,
+		Gas:         BNBGasFeeSingleton,
+	}
 
-	msg := types.NewMsgObservedTxIn(
-		ObservedTxs{
-			txStake,
-		},
-		w.activeNodeAccount.NodeAddress,
-	)
-
-	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(w.versionedTxOutStore)
-	versionedGasMgr := NewVersionedGasMgr()
-	versionedObMgr := NewDummyVersionedObserverMgr()
-	versionedEventManagerDummy := NewDummyVersionedEventMgr()
-
-	handler := NewExternalHandler(w.keeper, w.versionedTxOutStore, w.validatorMgr, versionedVaultMgrDummy, versionedObMgr, versionedGasMgr, versionedEventManagerDummy)
-	result := handler(w.ctx, msg)
-	c.Assert(result.Code, Equals, sdk.CodeOK, Commentf("%s\n", result.Log))
-
-	txStake = types.NewObservedTx(
-		common.Tx{
-			ID:    GetRandomTxHash(),
-			Chain: common.BNBChain,
-			Coins: common.Coins{
-				common.NewCoin(common.RuneAsset(), sdk.NewUint(1*common.One)),
-			},
-			Memo:        "withdraw:BNB",
-			FromAddress: staker,
-			ToAddress:   addr,
-			Gas:         BNBGasFeeSingleton,
-		},
-		1024,
-		vault.PubKey,
-	)
-	msg = types.NewMsgObservedTxIn(
-		ObservedTxs{
-			txStake,
-		},
-		w.activeNodeAccount.NodeAddress,
-	)
+	msg := NewMsgSetUnStake(tx, staker.RuneAddress, sdk.NewUint(uint64(MaxUnstakeBasisPoints)), common.BNBAsset, w.activeNodeAccount.NodeAddress)
 	ver := constants.SWVersion
 	constAccessor := constants.GetConstantValues(ver)
 	txOutStore, err := w.versionedTxOutStore.GetTxOutStore(w.keeper, ver)
 	c.Assert(err, IsNil)
 	txOutStore.NewBlock(2, constAccessor)
-	result = handler(w.ctx, msg)
+
+	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(w.versionedTxOutStore)
+	versionedGasMgr := NewVersionedGasMgr()
+	versionedObMgr := NewDummyVersionedObserverMgr()
+	versionedEventManagerDummy := NewDummyVersionedEventMgr()
+	handler := NewInternalHandler(w.keeper, w.versionedTxOutStore, w.validatorMgr, versionedVaultMgrDummy, versionedObMgr, versionedGasMgr, versionedEventManagerDummy)
+
+	result := handler(w.ctx, msg)
 	c.Assert(result.Code, Equals, sdk.CodeOK, Commentf("%s\n", result.Log))
 
-	pool, err := w.keeper.GetPool(w.ctx, common.BNBAsset)
+	pool, err = w.keeper.GetPool(w.ctx, common.BNBAsset)
 	c.Assert(err, IsNil)
 	c.Assert(pool.Empty(), Equals, false)
-	c.Assert(pool.Status, Equals, PoolBootstrap)
-	c.Assert(pool.PoolUnits.Uint64(), Equals, uint64(0))
-	c.Assert(pool.BalanceRune.Uint64(), Equals, uint64(0))
-	c.Assert(pool.BalanceAsset.Uint64(), Equals, uint64(75000)) // leave a little behind for gas
+	c.Check(pool.Status, Equals, PoolBootstrap)
+	c.Check(pool.PoolUnits.Uint64(), Equals, uint64(0), Commentf("%d", pool.PoolUnits.Uint64()))
+	c.Check(pool.BalanceRune.Uint64(), Equals, uint64(0), Commentf("%d", pool.BalanceRune.Uint64()))
+	c.Check(pool.BalanceAsset.Uint64(), Equals, uint64(75000), Commentf("%d", pool.BalanceAsset.Uint64())) // leave a little behind for gas
 }
 
 func (HandlerSuite) TestRefund(c *C) {
@@ -255,7 +240,7 @@ func (HandlerSuite) TestRefund(c *C) {
 			Coins: common.Coins{
 				common.NewCoin(common.BNBAsset, sdk.NewUint(100*common.One)),
 			},
-			Memo:        "withdraw:BNB",
+			Memo:        "withdraw:BNB.BNB",
 			FromAddress: GetRandomBNBAddress(),
 			ToAddress:   GetRandomBNBAddress(),
 			Gas:         BNBGasFeeSingleton,
@@ -300,7 +285,7 @@ func (HandlerSuite) TestRefund(c *C) {
 }
 
 func (HandlerSuite) TestGetMsgSwapFromMemo(c *C) {
-	m, err := ParseMemo("swap:BNB")
+	m, err := ParseMemo("swap:BNB.BNB")
 	swapMemo, ok := m.(SwapMemo)
 	c.Assert(ok, Equals, true)
 	c.Assert(err, IsNil)
@@ -319,7 +304,7 @@ func (HandlerSuite) TestGetMsgSwapFromMemo(c *C) {
 					sdk.NewUint(100*common.One),
 				),
 			},
-			Memo:        "withdraw:BNB",
+			Memo:        "withdraw:BNB.BNB",
 			FromAddress: GetRandomBNBAddress(),
 			ToAddress:   GetRandomBNBAddress(),
 			Gas:         BNBGasFeeSingleton,
@@ -349,7 +334,7 @@ func (HandlerSuite) TestGetMsgSwapFromMemo(c *C) {
 func (HandlerSuite) TestGetMsgStakeFromMemo(c *C) {
 	w := getHandlerTestWrapper(c, 1, true, false)
 	// Stake BNB, however THORNode send T-CAN as coin , which is incorrect, should result in an error
-	m, err := ParseMemo("stake:BNB")
+	m, err := ParseMemo("stake:BNB.BNB")
 	c.Assert(err, IsNil)
 	stakeMemo, ok := m.(StakeMemo)
 	c.Assert(ok, Equals, true)
@@ -368,9 +353,9 @@ func (HandlerSuite) TestGetMsgStakeFromMemo(c *C) {
 				common.NewCoin(runeAsset,
 					sdk.NewUint(100*common.One)),
 			},
-			Memo:        "withdraw:BNB",
-			FromAddress: GetRandomBNBAddress(),
-			ToAddress:   GetRandomBNBAddress(),
+			Memo:        "withdraw:BNB.BNB",
+			FromAddress: GetRandomRUNEAddress(),
+			ToAddress:   GetRandomRUNEAddress(),
 			Gas:         BNBGasFeeSingleton,
 		},
 		1024,

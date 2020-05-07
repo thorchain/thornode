@@ -54,7 +54,7 @@ func (HandlerBondSuite) TestBondHandler_Run(c *C) {
 		GetRandomBNBAddress(),
 		GetRandomBNBAddress(),
 		common.Coins{
-			common.NewCoin(common.RuneA1FAsset, sdk.NewUint(uint64(minimumBondInRune))),
+			common.NewCoin(common.RuneAsset(), sdk.NewUint(uint64(minimumBondInRune))),
 		},
 		common.Gas{},
 		"apply",
@@ -93,7 +93,7 @@ func (HandlerBondSuite) TestBondHandlerFailValidation(c *C) {
 		GetRandomBNBAddress(),
 		GetRandomBNBAddress(),
 		common.Coins{
-			common.NewCoin(common.RuneA1FAsset, sdk.NewUint(uint64(minimumBondInRune))),
+			common.NewCoin(common.RuneAsset(), sdk.NewUint(uint64(minimumBondInRune))),
 		},
 		common.Gas{},
 		"apply",

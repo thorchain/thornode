@@ -123,7 +123,7 @@ func (s TxOutStoreSuite) TestAddOutTxItemWithoutBFT(c *C) {
 	w := getHandlerTestWrapper(c, 1, true, true)
 	vault := GetRandomVault()
 	vault.Coins = common.Coins{
-		common.NewCoin(common.RuneAsset(), sdk.NewUint(100*common.One)),
+		common.NewCoin(common.BNBAsset, sdk.NewUint(100*common.One)),
 	}
 	w.keeper.SetVault(w.ctx, vault)
 
@@ -132,7 +132,7 @@ func (s TxOutStoreSuite) TestAddOutTxItemWithoutBFT(c *C) {
 		Chain:     common.BNBChain,
 		ToAddress: GetRandomBNBAddress(),
 		InHash:    inTxID,
-		Coin:      common.NewCoin(common.RuneAsset(), sdk.NewUint(20*common.One)),
+		Coin:      common.NewCoin(common.BNBAsset, sdk.NewUint(20*common.One)),
 	}
 	version := constants.SWVersion
 	txOutStore, err := w.versionedTxOutStore.GetTxOutStore(w.keeper, version)
