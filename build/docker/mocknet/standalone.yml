@@ -1,6 +1,9 @@
 version: '3'
 
 services:
+  thor-daemon:
+    environment:
+      NATIVE: ${NATIVE:-none}
   bifrost:
     environment:
       BINANCE_HOST: http://binance:26660

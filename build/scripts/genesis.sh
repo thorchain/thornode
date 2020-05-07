@@ -75,7 +75,18 @@ if [ "$SEED" = "$(hostname)" ]; then
         # disable default bank transfer, and opt to use our own custom one
         disable_bank_send
 
-        reserve 22000000000000000
+        # for mocknet, add heimdall balances
+        echo "NET: $NET"
+        if [ "$NET" == "mocknet" ]; then
+            echo "setting up accounts ...."
+            add_account thor1j08ys4ct2hzzc2hcz6h2hgrvlmsjynaw02vym4 50000000000
+            add_account thor1zupk5lmc84r2dh738a9g3zscavannjy3h4s0hw 150000000001
+            add_account thor1qqnde7kqe5sf96j6zf8jpzwr44dh4gkdftjnal 50900000000
+
+            reserve 40000000000000
+        else
+            reserve 22000000000000000
+        fi
 
         cat ~/.thord/config/genesis.json
         thord validate-genesis

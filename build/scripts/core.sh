@@ -47,6 +47,17 @@ reserve () {
     mv /tmp/genesis.json ~/.thord/config/genesis.json
 }
 
+add_account () {
+    jq --arg ADDRESS $1 --arg AMOUNT $2 '.app_state.accounts += [{
+        "address": $ADDRESS,
+        "coins": [{
+            "denom": "rune",
+            "amount": $AMOUNT
+        }]
+    }]' <~/.thord/config/genesis.json >/tmp/genesis.json
+    mv /tmp/genesis.json ~/.thord/config/genesis.json
+}
+
 add_vault () {
     POOL_PUBKEY=$1; shift
 
