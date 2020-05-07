@@ -674,6 +674,10 @@ func (vm *validatorMgrV1) RequestYggReturn(ctx sdk.Context, node NodeAccount) er
 		return err
 	}
 	for _, chain := range chains {
+		if chain.Equals(common.THORChain) {
+			continue
+		}
+
 		toAddr, err := vault.PubKey.GetAddress(chain)
 		if err != nil {
 			return err
