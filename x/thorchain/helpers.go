@@ -224,10 +224,16 @@ func refundBond(ctx sdk.Context, tx common.Tx, nodeAcc NodeAccount, keeper Keepe
 		if err := keeper.UpsertEvent(ctx, e); err != nil {
 			return fmt.Errorf("fail to save bond return event: %w", err)
 		}
+
+		refundAddress := nodeAcc.BondAddress
+		if common.RuneAsset().Chain.Equals(common.THORChain) {
+			refundAddress = common.Address(nodeAcc.NodeAddress.String())
+		}
+
 		// refund bond
 		txOutItem := &TxOutItem{
 			Chain:       common.RuneAsset().Chain,
-			ToAddress:   nodeAcc.BondAddress,
+			ToAddress:   refundAddress,
 			VaultPubKey: vault.PubKey,
 			InHash:      tx.ID,
 			Coin:        common.NewCoin(common.RuneAsset(), nodeAcc.Bond),
@@ -269,7 +275,11 @@ func isSignedByActiveNodeAccounts(ctx sdk.Context, keeper Keeper, signers []sdk.
 	if len(signers) == 0 {
 		return false
 	}
+	supplier := keeper.Supply()
 	for _, signer := range signers {
+		if signer.Equals(supplier.GetModuleAddress(AsgardName)) {
+			continue
+		}
 		nodeAccount, err := keeper.GetNodeAccount(ctx, signer)
 		if err != nil {
 			ctx.Logger().Error("unauthorized account", "address", signer.String(), "error", err)
