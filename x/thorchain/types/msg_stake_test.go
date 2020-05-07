@@ -22,7 +22,7 @@ func (MsgStakeSuite) TestMsgStake(c *C) {
 		runeAddress,
 		GetRandomRUNEAddress(),
 		common.Coins{
-			common.NewCoin(common.BTCAsset, sdk.NewUint(100000000)),
+			common.NewCoin(common.BNBAsset, sdk.NewUint(100000000)),
 		},
 		BNBGasFeeSingleton,
 		"",
