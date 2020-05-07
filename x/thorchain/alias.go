@@ -51,6 +51,7 @@ var (
 	NewBanVoter                    = types.NewBanVoter
 	NewErrataTxVoter               = types.NewErrataTxVoter
 	NewObservedTxVoter             = types.NewObservedTxVoter
+	NewMsgNativeTx                 = types.NewMsgNativeTx
 	NewMsgTssPool                  = types.NewMsgTssPool
 	NewMsgTssKeysignFail           = types.NewMsgTssKeysignFail
 	NewMsgObservedTxIn             = types.NewMsgObservedTxIn
@@ -121,6 +122,7 @@ var (
 
 type (
 	MsgSend               = bank.MsgSend
+	MsgNativeTx           = types.MsgNativeTx
 	MsgSwitch             = types.MsgSwitch
 	MsgBond               = types.MsgBond
 	MsgNoOp               = types.MsgNoOp
