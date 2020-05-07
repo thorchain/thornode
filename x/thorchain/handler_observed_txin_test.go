@@ -227,7 +227,7 @@ func (s *HandlerObservedTxInSuite) TestHandle(c *C) {
 	ver := constants.SWVersion
 
 	tx := GetRandomTx()
-	tx.Memo = "SWAP:BTC.BTC"
+	tx.Memo = "SWAP:BTC.BTC:" + GetRandomBTCAddress().String()
 	obTx := NewObservedTx(tx, 12, GetRandomPubKey())
 	txs := ObservedTxs{obTx}
 	pk := GetRandomPubKey()

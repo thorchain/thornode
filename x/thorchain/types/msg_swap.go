@@ -50,6 +50,9 @@ func (msg MsgSwap) ValidateBasic() sdk.Error {
 	if msg.Destination.IsEmpty() {
 		return sdk.ErrUnknownRequest("Swap Destination cannot be empty")
 	}
+	if !msg.Destination.IsChain(msg.TargetAsset.Chain) {
+		return sdk.ErrUnknownRequest("swap destination and swap target asset must be the same chain")
+	}
 	return nil
 }
 
