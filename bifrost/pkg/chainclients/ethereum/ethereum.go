@@ -164,7 +164,7 @@ func (c *Client) GetAddress(poolPubKey common.PubKey) string {
 }
 
 func (c *Client) GetGasFee(count uint64) common.Gas {
-	return common.GetETHGasFee(big.NewInt(int64(count)))
+	return common.GetETHGasFee(big.NewInt(1), count)
 }
 
 func (c *Client) GetGasPrice() (*big.Int, error) {
@@ -217,7 +217,8 @@ func (c *Client) SignTx(tx stypes.TxOutItem, height int64) ([]byte, error) {
 	encodedData := []byte(hex.EncodeToString([]byte(tx.Memo)))
 	scaledValue := big.NewInt(int64(value))
 	scaledValue = scaledValue.Mul(scaledValue, Gwei)
-	createdTx := etypes.NewTransaction(meta.Nonce, ecommon.HexToAddress(toAddr), scaledValue, ETHTransferGas, gasPrice, encodedData)
+	gasFee := common.GetETHGasFee(big.NewInt(1), uint64(len(tx.Memo)))[0].Amount.Uint64()
+	createdTx := etypes.NewTransaction(meta.Nonce, ecommon.HexToAddress(toAddr), scaledValue, gasFee, gasPrice, encodedData)
 
 	rawTx, err := c.sign(createdTx, fromAddr, tx.VaultPubKey, currentHeight, tx)
 	if err != nil || len(rawTx) == 0 {

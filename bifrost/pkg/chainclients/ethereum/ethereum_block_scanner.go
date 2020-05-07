@@ -30,7 +30,7 @@ const (
 	DefaultObserverLevelDBFolder = `observer_data`
 	GasPriceUpdateInterval       = 100
 	DefaultGasPrice              = 1
-	ETHTransferGas               = uint64(25000)
+	ETHTransferGas               = uint64(21000)
 )
 
 // BlockScanner is to scan the blocks
@@ -228,7 +228,7 @@ func (e *BlockScanner) fromTxToTxIn(encodedTx string) (*stypes.TxInItem, error) 
 		return nil, fmt.Errorf("fail to create asset, ETH is not valid: %w", err)
 	}
 	txInItem.Coins = append(txInItem.Coins, common.NewCoin(asset, sdk.NewUintFromBigInt(tx.Value().Div(tx.Value(), Gwei))))
-	txInItem.Gas = common.GetETHGasFee(e.gasPrice)
+	txInItem.Gas = common.GetETHGasFee(e.gasPrice, uint64(len(txInItem.Memo)))
 
 	return txInItem, nil
 }

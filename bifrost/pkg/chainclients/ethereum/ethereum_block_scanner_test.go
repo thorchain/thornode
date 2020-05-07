@@ -209,7 +209,7 @@ func (s *BlockScannerTestSuite) TestFromTxToTxIn(c *C) {
 		true,
 	)
 	c.Check(
-		txInItem.Gas[0].Amount.Equal(sdk.NewUint(500000)),
+		txInItem.Gas[0].Amount.Equal(sdk.NewUint(21408)),
 		Equals,
 		true,
 	)
