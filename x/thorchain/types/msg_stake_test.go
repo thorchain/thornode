@@ -13,21 +13,21 @@ var _ = Suite(&MsgStakeSuite{})
 func (MsgStakeSuite) TestMsgStake(c *C) {
 	addr := GetRandomBech32Addr()
 	c.Check(addr.Empty(), Equals, false)
-	bnbAddress := GetRandomBNBAddress()
+	runeAddress := GetRandomRUNEAddress()
 	assetAddress := GetRandomBNBAddress()
 	txID := GetRandomTxHash()
 	c.Check(txID.IsEmpty(), Equals, false)
 	tx := common.NewTx(
 		txID,
-		bnbAddress,
-		GetRandomBNBAddress(),
+		runeAddress,
+		GetRandomRUNEAddress(),
 		common.Coins{
 			common.NewCoin(common.BTCAsset, sdk.NewUint(100000000)),
 		},
 		BNBGasFeeSingleton,
 		"",
 	)
-	m := NewMsgSetStakeData(tx, common.BNBAsset, sdk.NewUint(100000000), sdk.NewUint(100000000), bnbAddress, assetAddress, addr)
+	m := NewMsgSetStakeData(tx, common.BNBAsset, sdk.NewUint(100000000), sdk.NewUint(100000000), runeAddress, assetAddress, addr)
 	EnsureMsgBasicCorrect(m, c)
 	c.Check(m.Type(), Equals, "set_stakedata")
 
@@ -44,7 +44,7 @@ func (MsgStakeSuite) TestMsgStake(c *C) {
 			asset:     common.Asset{},
 			r:         sdk.NewUint(100000000),
 			amt:       sdk.NewUint(100000000),
-			runeAddr:  bnbAddress,
+			runeAddr:  runeAddress,
 			assetAddr: assetAddress,
 			txHash:    txID,
 			signer:    addr,
@@ -62,7 +62,7 @@ func (MsgStakeSuite) TestMsgStake(c *C) {
 			asset:     common.BNBAsset,
 			r:         sdk.NewUint(100000000),
 			amt:       sdk.NewUint(100000000),
-			runeAddr:  bnbAddress,
+			runeAddr:  runeAddress,
 			assetAddr: assetAddress,
 			txHash:    common.TxID(""),
 			signer:    addr,
@@ -71,7 +71,7 @@ func (MsgStakeSuite) TestMsgStake(c *C) {
 			asset:     common.BNBAsset,
 			r:         sdk.NewUint(100000000),
 			amt:       sdk.NewUint(100000000),
-			runeAddr:  bnbAddress,
+			runeAddr:  runeAddress,
 			assetAddr: assetAddress,
 			txHash:    txID,
 			signer:    sdk.AccAddress{},

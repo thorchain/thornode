@@ -101,7 +101,6 @@ func (s *MemoSuite) TestParseWithAbbreviated(c *C) {
 	c.Check(memo.IsInternal(), Equals, true)
 
 	mem := fmt.Sprintf("switch:%s", GetRandomBech32Addr())
-	fmt.Println(mem)
 	memo, err = ParseMemo(mem)
 	c.Assert(err, IsNil)
 	c.Check(memo.IsType(TxSwitch), Equals, true)

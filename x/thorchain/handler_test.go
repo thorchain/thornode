@@ -173,11 +173,11 @@ func (HandlerSuite) TestHandleTxInUnstakeMemo(c *C) {
 	pool.PoolUnits = sdk.NewUint(100)
 	c.Assert(w.keeper.SetPool(w.ctx, pool), IsNil)
 
-	bnbAddr := GetRandomBNBAddress()
+	runeAddr := GetRandomRUNEAddress()
 	staker := Staker{
 		Asset:        common.BNBAsset,
-		RuneAddress:  bnbAddr,
-		AssetAddress: bnbAddr,
+		RuneAddress:  runeAddr,
+		AssetAddress: GetRandomBNBAddress(),
 		PendingRune:  sdk.ZeroUint(),
 		Units:        sdk.NewUint(100),
 	}
