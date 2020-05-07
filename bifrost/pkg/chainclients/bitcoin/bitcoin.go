@@ -269,13 +269,16 @@ func (c *Client) reConfirmTx() error {
 func (c *Client) confirmTx(txHash *chainhash.Hash) bool {
 	result, err := c.client.GetTransaction(txHash)
 	if err != nil {
-		if rpcErr, ok := err.(*btcjson.RPCError); ok && rpcErr.Code == btcjson.ErrRPCNoTxInfo {
-			return false
-		}
-		// TODO if other error retry?
 		return false
 	}
-	if result.Confirmations == 0 && result.BlockTime == 0 {
+	fmt.Println("=============confirmtx=====================")
+	fmt.Println(txHash)
+	fmt.Println(result.BlockHash)
+	fmt.Println(result.Confirmations)
+	fmt.Println(result.BlockTime)
+	fmt.Println("=============confirmtx=====================")
+	// means tx not mined yet so valid
+	if result.Confirmations == 0 {
 		return false
 	}
 	// check block confirmations in case the tx itself is not yet invalidated...
@@ -287,6 +290,7 @@ func (c *Client) confirmTx(txHash *chainhash.Hash) bool {
 	if err != nil {
 		return false
 	}
+	// if block confirmations = -1 means it was invalidated after a reorg
 	if block.Confirmations == -1 {
 		return false
 	}
