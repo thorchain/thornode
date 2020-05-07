@@ -2,7 +2,6 @@ package thorchain
 
 import (
 	"fmt"
-	"sync"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
@@ -15,14 +14,12 @@ type TxOutStorageV1 struct {
 	height        int64
 	keeper        Keeper
 	constAccessor constants.ConstantValues
-	rwMutex       *sync.Mutex // ensures we don't append to txout store at the same time and drop txout itmes
 }
 
 // NewTxOutStorage will create a new instance of TxOutStore.
 func NewTxOutStorageV1(keeper Keeper) *TxOutStorageV1 {
 	return &TxOutStorageV1{
-		keeper:  keeper,
-		rwMutex: &sync.Mutex{},
+		keeper: keeper,
 	}
 }
 
@@ -237,9 +234,6 @@ func (tos *TxOutStorageV1) prepareTxOutItem(ctx sdk.Context, toi *TxOutItem) (bo
 }
 
 func (tos *TxOutStorageV1) addToBlockOut(ctx sdk.Context, toi *TxOutItem) error {
-	tos.rwMutex.Lock()
-	defer tos.rwMutex.Unlock()
-
 	hash, err := toi.TxHash()
 	if err != nil {
 		return err
