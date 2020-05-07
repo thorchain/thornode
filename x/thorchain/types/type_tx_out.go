@@ -17,6 +17,7 @@ type TxOutItem struct {
 	MaxGas      common.Gas     `json:"max_gas"`
 	InHash      common.TxID    `json:"in_hash"`
 	OutHash     common.TxID    `json:"out_hash"`
+	ModuleName  string         `json:"-"` // used to pass which cosmos module to remove native funds from
 }
 
 func (toi TxOutItem) Valid() error {

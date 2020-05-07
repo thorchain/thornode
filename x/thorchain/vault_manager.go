@@ -111,6 +111,9 @@ func (vm *VaultMgr) EndBlock(ctx sdk.Context, version semver.Version, constAcces
 			}
 
 			for _, coin := range vault.Coins {
+				if coin.IsNative() {
+					continue
+				}
 
 				// determine which active asgard vault is the best to send
 				// these coins to. We target the vault with the least amount of
