@@ -15,8 +15,10 @@ import (
 	"gitlab.com/thorchain/thornode/constants"
 )
 
-var kaboom = errors.New("Kaboom!!!")
-var kaboomSdk = sdk.NewError(DefaultCodespace, 404, "kaboom!!!")
+var (
+	kaboom    = errors.New("Kaboom!!!")
+	kaboomSdk = sdk.NewError(DefaultCodespace, 404, "kaboom!!!")
+)
 
 type KVStoreDummy struct{}
 
