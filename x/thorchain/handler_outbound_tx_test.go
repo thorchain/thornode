@@ -199,16 +199,16 @@ func newOutboundTxHandlerTestHelper(c *C) outboundTxHandlerTestHelper {
 	version := constants.SWVersion
 	asgardVault := GetRandomVault()
 	c.Assert(k.SetVault(ctx, asgardVault), IsNil)
-	addr, err := asgardVault.PubKey.GetAddress(common.BNBChain)
+	addr, err := asgardVault.PubKey.GetAddress(common.RuneAsset().Chain)
 	yggVault := GetRandomVault()
 	c.Assert(err, IsNil)
 
 	tx := NewObservedTx(common.Tx{
 		ID:          GetRandomTxHash(),
-		Chain:       common.BNBChain,
+		Chain:       common.RuneAsset().Chain,
 		Coins:       common.Coins{common.NewCoin(common.BNBAsset, sdk.NewUint(1*common.One))},
-		Memo:        "SWAP:BNB.RUNE-A1F",
-		FromAddress: GetRandomBNBAddress(),
+		Memo:        "SWAP:" + common.RuneAsset().String(),
+		FromAddress: GetRandomRUNEAddress(),
 		ToAddress:   addr,
 		Gas:         BNBGasFeeSingleton,
 	}, 12, GetRandomPubKey())
