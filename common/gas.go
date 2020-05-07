@@ -12,7 +12,8 @@ type Gas Coins
 var (
 	bnbSingleTxFee = sdk.NewUint(37500)
 	bnbMultiTxFee  = sdk.NewUint(30000)
-	ethTransferFee = sdk.NewUint(500000)
+	ethTransferFee = sdk.NewUint(21000)
+	ethGasPerByte  = sdk.NewUint(68)
 )
 
 // Gas Fees
@@ -126,9 +127,10 @@ func GetBNBGasFeeMulti(count uint64) Gas {
 	}
 }
 
-func GetETHGasFee(gasPrice *big.Int) Gas {
+func GetETHGasFee(gasPrice *big.Int, msgLen uint64) Gas {
+	gasBytes := ethGasPerByte.MulUint64(msgLen)
 	return Gas{
-		{Asset: ETHAsset, Amount: ethTransferFee.Mul(sdk.NewUintFromBigInt(gasPrice))},
+		{Asset: ETHAsset, Amount: ethTransferFee.Add(gasBytes).Mul(sdk.NewUintFromBigInt(gasPrice))},
 	}
 }
 
