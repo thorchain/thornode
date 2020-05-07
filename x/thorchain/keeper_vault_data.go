@@ -131,7 +131,10 @@ func (k KVStore) UpdateVaultData(ctx sdk.Context, constAccessor constants.Consta
 	totalReserve = common.SafeSub(totalReserve, bondReward.Add(totalPoolRewards))
 	if common.RuneAsset().Chain.Equals(common.THORChain) {
 		coin := common.NewCoin(common.RuneNative, bondReward)
-		k.SendFromModuleToModule(ctx, ReserveName, BondName, coin)
+		if err := k.SendFromModuleToModule(ctx, ReserveName, BondName, coin); err != nil {
+			ctx.Logger().Error("fail to transfer funds from reserve to bond", "error", err)
+			return fmt.Errorf("fail to transfer funds from reserve to bond: %w", err)
+		}
 	} else {
 		vaultData.TotalReserve = totalReserve
 	}
@@ -172,7 +175,10 @@ func (k KVStore) UpdateVaultData(ctx sdk.Context, constAccessor constants.Consta
 			poolDeficit := calcPoolDeficit(stakerDeficit, totalLiquidityFees, poolFees)
 			if common.RuneAsset().Chain.Equals(common.THORChain) {
 				coin := common.NewCoin(common.RuneNative, poolDeficit)
-				k.SendFromModuleToModule(ctx, AsgardName, BondName, coin)
+				if err := k.SendFromModuleToModule(ctx, AsgardName, BondName, coin); err != nil {
+					ctx.Logger().Error("fail to transfer funds from asgard to bond", "error", err)
+					return fmt.Errorf("fail to transfer funds from asgard to bond: %w", err)
+				}
 			}
 			pool.BalanceRune = common.SafeSub(pool.BalanceRune, poolDeficit)
 			vaultData.BondRewardRune = vaultData.BondRewardRune.Add(poolDeficit)
@@ -238,7 +244,10 @@ func payPoolRewards(ctx sdk.Context, k Keeper, poolRewards []sdk.Uint, pools Poo
 		}
 		if common.RuneAsset().Chain.Equals(common.THORChain) {
 			coin := common.NewCoin(common.RuneNative, reward)
-			k.SendFromModuleToModule(ctx, ReserveName, AsgardName, coin)
+			if err := k.SendFromModuleToModule(ctx, ReserveName, AsgardName, coin); err != nil {
+				ctx.Logger().Error("fail to transfer funds from reserve to asgard", "error", err)
+				return fmt.Errorf("fail to transfer funds from reserve to asgard: %w", err)
+			}
 		}
 	}
 	return nil

@@ -91,7 +91,10 @@ func (gm *GasMgr) ProcessGas(ctx sdk.Context, keeper Keeper) {
 		if common.RuneAsset().Chain.Equals(common.THORChain) {
 			if runeGas.LT(keeper.GetRuneBalaceOfModule(ctx, ReserveName)) {
 				coin := common.NewCoin(common.RuneNative, runeGas)
-				keeper.SendFromModuleToModule(ctx, ReserveName, AsgardName, coin)
+				if err := keeper.SendFromModuleToModule(ctx, ReserveName, AsgardName, coin); err != nil {
+					ctx.Logger().Error("fail to transfer funds from reserve to asgard", "pool", gas.Asset, "error", err)
+					continue
+				}
 				pool.BalanceRune = pool.BalanceRune.Add(runeGas) // Add to the pool
 			}
 		} else {

@@ -152,7 +152,11 @@ func (h TssHandler) handleV1(ctx sdk.Context, msg MsgTssPool, version semver.Ver
 					na.Bond = common.SafeSub(na.Bond, slashBond)
 					if common.RuneAsset().Chain.Equals(common.THORChain) {
 						coin := common.NewCoin(common.RuneNative, slashBond)
-						h.keeper.SendFromModuleToModule(ctx, BondName, ReserveName, coin)
+						if err := h.keeper.SendFromModuleToModule(ctx, BondName, ReserveName, coin); err != nil {
+							ctx.Logger().Error("fail to transfer funds from bond to reserve", "error", err)
+							return sdk.ErrInternal("fail to transfer funds from bond to reserve").Result()
+
+						}
 					} else {
 						reserveVault.TotalReserve = reserveVault.TotalReserve.Add(slashBond)
 						if err := h.keeper.SetVaultData(ctx, reserveVault); err != nil {

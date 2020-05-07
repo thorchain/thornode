@@ -80,7 +80,10 @@ func (s *Slasher) HandleDoubleSign(ctx sdk.Context, addr crypto.Address, infract
 
 			if common.RuneAsset().Chain.Equals(common.THORChain) {
 				coin := common.NewCoin(common.RuneNative, slashAmount)
-				s.keeper.SendFromModuleToModule(ctx, BondName, ReserveName, coin)
+				if err := s.keeper.SendFromModuleToModule(ctx, BondName, ReserveName, coin); err != nil {
+					ctx.Logger().Error("fail to transfer funds from reserve to asgard", "error", err)
+					return fmt.Errorf("fail to transfer funds from reserve to asgard: %w", err)
+				}
 			} else {
 				vaultData, err := s.keeper.GetVaultData(ctx)
 				if err != nil {
