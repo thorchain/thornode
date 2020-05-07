@@ -297,12 +297,13 @@ func (c *Client) updateBlockMeta(txOut stypes.TxOutItem, blockMeta *BlockMeta, t
 		return fmt.Errorf("fail to get balance pay to address script: %w", err)
 	}
 	for n, out := range tx.TxOut {
-		if bytes.Equal(out.PkScript, balanceScript) {
-			value := btcutil.Amount(out.Value)
-			utxo := NewUnspentTransactionOutput(tx.TxHash(), uint32(n), value.ToBTC(), blockMeta.Height, txOut.VaultPubKey)
-			blockMeta.AddUTXO(utxo)
-			break
+		if !bytes.Equal(out.PkScript, balanceScript) {
+			continue
 		}
+		value := btcutil.Amount(out.Value)
+		utxo := NewUnspentTransactionOutput(tx.TxHash(), uint32(n), value.ToBTC(), blockMeta.Height, txOut.VaultPubKey)
+		blockMeta.AddUTXO(utxo)
+		break
 	}
 
 	// and mark utxo as spent from storage
@@ -329,11 +330,12 @@ func (c *Client) revertBlockMeta(txOut stypes.TxOutItem, blockMeta *BlockMeta, t
 		return fmt.Errorf("fail to get balance script: %w", err)
 	}
 	for n, out := range tx.TxOut {
-		if bytes.Equal(out.PkScript, balanceScript) {
-			key := fmt.Sprintf("%s:%s", tx.TxHash().String(), n)
-			blockMeta.RemoveUTXO(key)
-			break
+		if !bytes.Equal(out.PkScript, balanceScript) {
+			continue
 		}
+		key := fmt.Sprintf("%s:%d", tx.TxHash().String(), n)
+		blockMeta.RemoveUTXO(key)
+		break
 	}
 
 	// and mark utxos as unspent from storage

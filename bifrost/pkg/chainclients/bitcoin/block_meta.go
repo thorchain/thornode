@@ -60,20 +60,22 @@ func (b *BlockMeta) AddUTXO(utxo UnspentTransactionOutput) {
 
 // SpendUTXO mark a utxo as spent
 func (b *BlockMeta) SpendUTXO(key string) {
-	for _, utxo := range b.UnspentTransactionOutputs {
-		if key == utxo.GetKey() {
-			utxo.Spent = true
-			break
+	for idx, utxo := range b.UnspentTransactionOutputs {
+		if key != utxo.GetKey() {
+			continue
 		}
+		b.UnspentTransactionOutputs[idx].Spent = true
+		break
 	}
 }
 
 // UnspendUTXO mark utxo as unspent
 func (b *BlockMeta) UnspendUTXO(key string) {
-	for _, utxo := range b.UnspentTransactionOutputs {
-		if key == utxo.GetKey() {
-			utxo.Spent = false
-			break
+	for idx, utxo := range b.UnspentTransactionOutputs {
+		if key != utxo.GetKey() {
+			continue
 		}
+		b.UnspentTransactionOutputs[idx].Spent = false
+		break
 	}
 }

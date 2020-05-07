@@ -63,4 +63,28 @@ func (b *BlockMetaTestSuite) TestBlockMeta(c *C) {
 	c.Assert(utxos[0].GetKey(), Equals, "31f8699ce9028e9cd37f8a6d58a79e614a96e3fdd0f58be5fc36d2d95484716f:0")
 	c.Assert(utxos[0].Value, Equals, float64(1))
 	c.Assert(utxos[0].BlockHeight, Equals, int64(10))
+
+	// mark as spent
+	utxo = blockMeta.UnspentTransactionOutputs[0]
+	c.Assert(utxo.Spent, Equals, false)
+	blockMeta.SpendUTXO(utxo.GetKey())
+	utxo = blockMeta.UnspentTransactionOutputs[0]
+	c.Assert(utxo.Spent, Equals, true)
+
+	// check getutxos dont return the spent one
+	utxos = blockMeta.GetUTXOs(pkey)
+	c.Assert(err, IsNil)
+	c.Assert(len(utxos), Equals, 0)
+
+	// mark as unspent
+	utxo = blockMeta.UnspentTransactionOutputs[0]
+	c.Assert(utxo.Spent, Equals, true)
+	blockMeta.UnspendUTXO(utxo.GetKey())
+	utxo = blockMeta.UnspentTransactionOutputs[0]
+	c.Assert(utxo.Spent, Equals, false)
+
+	// check getutxos return the unspent one
+	utxos = blockMeta.GetUTXOs(pkey)
+	c.Assert(err, IsNil)
+	c.Assert(len(utxos), Equals, 1)
 }
