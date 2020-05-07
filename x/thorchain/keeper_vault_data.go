@@ -80,12 +80,20 @@ func (k KVStore) getTotalActiveBond(ctx sdk.Context) (sdk.Uint, error) {
 // TODO: there is way too much business logic her for a keeper function. Move
 // to its own file/manager
 func (k KVStore) UpdateVaultData(ctx sdk.Context, constAccessor constants.ConstantValues, gasManager GasManager) error {
-	vault, err := k.GetVaultData(ctx)
+	vaultData, err := k.GetVaultData(ctx)
 	if err != nil {
 		return fmt.Errorf("fail to get existing vault data: %w", err)
 	}
+
+	totalReserve := sdk.ZeroUint()
+	if common.RuneAsset().Chain.Equals(common.THORChain) {
+		totalReserve = k.GetRuneBalaceOfModule(ctx, ReserveName)
+	} else {
+		totalReserve = vaultData.TotalReserve
+	}
+
 	// when total reserve is zero , can't pay reward
-	if vault.TotalReserve.IsZero() {
+	if totalReserve.IsZero() {
 		return nil
 	}
 	currentHeight := uint64(ctx.BlockHeight())
@@ -115,13 +123,19 @@ func (k KVStore) UpdateVaultData(ctx sdk.Context, constAccessor constants.Consta
 	}
 	emissionCurve := constAccessor.GetInt64Value(constants.EmissionCurve)
 	blocksOerYear := constAccessor.GetInt64Value(constants.BlocksPerYear)
-	bondReward, totalPoolRewards, stakerDeficit := calcBlockRewards(totalStaked, totalBonded, vault.TotalReserve, totalLiquidityFees, emissionCurve, blocksOerYear)
+	bondReward, totalPoolRewards, stakerDeficit := calcBlockRewards(totalStaked, totalBonded, totalReserve, totalLiquidityFees, emissionCurve, blocksOerYear)
 
-	// given bondReward and toolPoolRewards are both calculated base on vault.TotalReserve, thus it should always have enough to pay the bond reward
+	// given bondReward and toolPoolRewards are both calculated base on totalReserve, thus it should always have enough to pay the bond reward
 
 	// Move Rune from the Reserve to the Bond and Pool Rewards
-	vault.TotalReserve = common.SafeSub(vault.TotalReserve, bondReward.Add(totalPoolRewards))
-	vault.BondRewardRune = vault.BondRewardRune.Add(bondReward) // Add here for individual Node collection later
+	totalReserve = common.SafeSub(totalReserve, bondReward.Add(totalPoolRewards))
+	if common.RuneAsset().Chain.Equals(common.THORChain) {
+		coin := common.NewCoin(common.RuneNative, bondReward)
+		k.SendFromModuleToModule(ctx, ReserveName, BondName, coin)
+	} else {
+		vaultData.TotalReserve = totalReserve
+	}
+	vaultData.BondRewardRune = vaultData.BondRewardRune.Add(bondReward) // Add here for individual Node collection later
 
 	var evtPools []PoolAmt
 
@@ -156,8 +170,12 @@ func (k KVStore) UpdateVaultData(ctx sdk.Context, constAccessor constants.Consta
 				continue
 			}
 			poolDeficit := calcPoolDeficit(stakerDeficit, totalLiquidityFees, poolFees)
+			if common.RuneAsset().Chain.Equals(common.THORChain) {
+				coin := common.NewCoin(common.RuneNative, poolDeficit)
+				k.SendFromModuleToModule(ctx, AsgardName, BondName, coin)
+			}
 			pool.BalanceRune = common.SafeSub(pool.BalanceRune, poolDeficit)
-			vault.BondRewardRune = vault.BondRewardRune.Add(poolDeficit)
+			vaultData.BondRewardRune = vaultData.BondRewardRune.Add(poolDeficit)
 			if err := k.SetPool(ctx, pool); err != nil {
 				err = fmt.Errorf("fail to set pool: %w", err)
 				ctx.Logger().Error(err.Error())
@@ -190,9 +208,9 @@ func (k KVStore) UpdateVaultData(ctx sdk.Context, constAccessor constants.Consta
 	if err != nil {
 		return fmt.Errorf("fail to get total active node account: %w", err)
 	}
-	vault.TotalBondUnits = vault.TotalBondUnits.Add(sdk.NewUint(uint64(i))) // Add 1 unit for each active Node
+	vaultData.TotalBondUnits = vaultData.TotalBondUnits.Add(sdk.NewUint(uint64(i))) // Add 1 unit for each active Node
 
-	return k.SetVaultData(ctx, vault)
+	return k.SetVaultData(ctx, vaultData)
 }
 
 func getTotalActiveNodeWithBond(ctx sdk.Context, k Keeper) (int64, error) {
@@ -217,6 +235,10 @@ func payPoolRewards(ctx sdk.Context, k Keeper, poolRewards []sdk.Uint, pools Poo
 			err = fmt.Errorf("fail to set pool: %w", err)
 			ctx.Logger().Error(err.Error())
 			return err
+		}
+		if common.RuneAsset().Chain.Equals(common.THORChain) {
+			coin := common.NewCoin(common.RuneNative, reward)
+			k.SendFromModuleToModule(ctx, ReserveName, AsgardName, coin)
 		}
 	}
 	return nil

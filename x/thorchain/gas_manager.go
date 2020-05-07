@@ -86,11 +86,21 @@ func (gm *GasMgr) ProcessGas(ctx sdk.Context, keeper Keeper) {
 			continue
 		}
 		runeGas := pool.AssetValueInRune(gas.Amount) // Convert to Rune (gas will never be RUNE)
+
 		// If Rune owed now exceeds the Total Reserve, return it all
-		if runeGas.LT(vault.TotalReserve) {
-			vault.TotalReserve = common.SafeSub(vault.TotalReserve, runeGas) // Deduct from the Reserve.
-			pool.BalanceRune = pool.BalanceRune.Add(runeGas)                 // Add to the pool
+		if common.RuneAsset().Chain.Equals(common.THORChain) {
+			if runeGas.LT(keeper.GetRuneBalaceOfModule(ctx, ReserveName)) {
+				coin := common.NewCoin(common.RuneNative, runeGas)
+				keeper.SendFromModuleToModule(ctx, ReserveName, AsgardName, coin)
+				pool.BalanceRune = pool.BalanceRune.Add(runeGas) // Add to the pool
+			}
+		} else {
+			if runeGas.LT(vault.TotalReserve) {
+				vault.TotalReserve = common.SafeSub(vault.TotalReserve, runeGas) // Deduct from the Reserve.
+				pool.BalanceRune = pool.BalanceRune.Add(runeGas)                 // Add to the pool
+			}
 		}
+
 		pool.BalanceAsset = common.SafeSub(pool.BalanceAsset, gas.Amount)
 
 		if err := keeper.SetPool(ctx, pool); err != nil {

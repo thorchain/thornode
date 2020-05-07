@@ -82,7 +82,8 @@ func setupKeeperForTest(c *C) (sdk.Context, Keeper) {
 		randomPerm:            {"random"},
 		ModuleName:            {supply.Minter},
 		ReserveName:           {},
-		AsgardName:            {supply.Staking},
+		AsgardName:            {},
+		BondName:              {supply.Staking},
 	}
 	supplyKeeper := supply.NewKeeper(cdc, keySupply, ak, bk, maccPerms)
 	totalSupply := sdk.NewCoins(sdk.NewCoin("bep", sdk.NewInt(1000*common.One)))

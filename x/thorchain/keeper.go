@@ -9,6 +9,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/bank"
 	"github.com/cosmos/cosmos-sdk/x/supply"
 	"github.com/tendermint/tendermint/libs/log"
+	"gitlab.com/thorchain/thornode/common"
 )
 
 type Keeper interface {
@@ -17,6 +18,8 @@ type Keeper interface {
 	CoinKeeper() bank.Keeper
 	Logger(ctx sdk.Context) log.Logger
 	GetKey(ctx sdk.Context, prefix dbPrefix, key string) string
+	GetRuneBalaceOfModule(ctx sdk.Context, moduleName string) sdk.Uint
+	SendFromModuleToModule(ctx sdk.Context, from, to string, coin common.Coin)
 
 	// Keeper Interfaces
 	KeeperPool
@@ -126,4 +129,32 @@ func (k KVStore) Logger(ctx sdk.Context) log.Logger {
 func (k KVStore) GetKey(ctx sdk.Context, prefix dbPrefix, key string) string {
 	version := getVersion(k.GetLowestActiveVersion(ctx), prefix)
 	return fmt.Sprintf("%s%d/%s", prefix, version.Minor, strings.ToUpper(key))
+}
+
+func (k KVStore) GetRuneBalaceOfModule(ctx sdk.Context, moduleName string) sdk.Uint {
+	addr := k.supplyKeeper.GetModuleAddress(moduleName)
+	coins := k.coinKeeper.GetCoins(ctx, addr)
+	amt := coins.AmountOf(common.RuneNative.Symbol.String())
+	return sdk.NewUintFromBigInt(amt.BigInt())
+}
+
+func (k KVStore) SendFromModuleToModule(ctx sdk.Context, from, to string, coin common.Coin) {
+	coins := sdk.NewCoins(
+		sdk.NewCoin(coin.Asset.Symbol.String(), sdk.NewIntFromBigInt(coin.Amount.BigInt())),
+	)
+	k.Supply().SendCoinsFromModuleToModule(ctx, from, to, coins)
+}
+
+func (k KVStore) SendFromAccountModuleToModule(ctx sdk.Context, from sdk.AccAddress, to string, coin common.Coin) {
+	coins := sdk.NewCoins(
+		sdk.NewCoin(coin.Asset.Symbol.String(), sdk.NewIntFromBigInt(coin.Amount.BigInt())),
+	)
+	k.Supply().SendCoinsFromAccountToModule(ctx, from, to, coins)
+}
+
+func (k KVStore) SendFromAccountModuleToAccount(ctx sdk.Context, from string, to sdk.AccAddress, coin common.Coin) {
+	coins := sdk.NewCoins(
+		sdk.NewCoin(coin.Asset.Symbol.String(), sdk.NewIntFromBigInt(coin.Amount.BigInt())),
+	)
+	k.Supply().SendCoinsFromModuleToAccount(ctx, from, to, coins)
 }

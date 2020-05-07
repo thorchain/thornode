@@ -111,15 +111,20 @@ func (h BanHandler) handleV1(ctx sdk.Context, msg MsgBan, constAccessor constant
 		slashAmount := sdk.NewUint(uint64(minBond)).QuoUint64(1000)
 		banner.Bond = common.SafeSub(banner.Bond, slashAmount)
 
-		vaultData, err := h.keeper.GetVaultData(ctx)
-		if err != nil {
-			err = fmt.Errorf("fail to get vault data: %w", err)
-			return sdk.ErrInternal(err.Error()).Result()
-		}
-		vaultData.TotalReserve = vaultData.TotalReserve.Add(slashAmount)
-		if err := h.keeper.SetVaultData(ctx, vaultData); err != nil {
-			err = fmt.Errorf("fail to save vault data: %w", err)
-			return sdk.ErrInternal(err.Error()).Result()
+		if common.RuneAsset().Chain.Equals(common.THORChain) {
+			coin := common.NewCoin(common.RuneNative, slashAmount)
+			h.keeper.SendFromModuleToModule(ctx, BondName, ReserveName, coin)
+		} else {
+			vaultData, err := h.keeper.GetVaultData(ctx)
+			if err != nil {
+				err = fmt.Errorf("fail to get vault data: %w", err)
+				return sdk.ErrInternal(err.Error()).Result()
+			}
+			vaultData.TotalReserve = vaultData.TotalReserve.Add(slashAmount)
+			if err := h.keeper.SetVaultData(ctx, vaultData); err != nil {
+				err = fmt.Errorf("fail to save vault data: %w", err)
+				return sdk.ErrInternal(err.Error()).Result()
+			}
 		}
 
 		if err := h.keeper.SetNodeAccount(ctx, banner); err != nil {

@@ -413,6 +413,11 @@ func (vm *validatorMgrV1) ragnarokBondReward(ctx sdk.Context) error {
 }
 
 func (vm *validatorMgrV1) ragnarokReserve(ctx sdk.Context, nth int64) error {
+	// don't ragnarok the reserve when rune is a native token
+	if common.RuneAsset().Chain.Equals(common.THORChain) {
+		return nil
+	}
+
 	contribs, err := vm.k.GetReservesContributors(ctx)
 	if err != nil {
 		ctx.Logger().Error("can't get reserve contributors", "error", err)
