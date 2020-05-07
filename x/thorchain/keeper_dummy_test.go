@@ -16,6 +16,7 @@ import (
 )
 
 var kaboom = errors.New("Kaboom!!!")
+var kaboomSdk = sdk.NewError(DefaultCodespace, 404, "kaboom!!!")
 
 type KVStoreDummy struct{}
 
@@ -34,16 +35,16 @@ func (k KVStoreDummy) GetRuneBalaceOfModule(ctx sdk.Context, moduleName string) 
 	return sdk.ZeroUint()
 }
 
-func (k KVStoreDummy) SendFromModuleToModule(ctx sdk.Context, from, to string, coin common.Coin) error {
-	return kaboom
+func (k KVStoreDummy) SendFromModuleToModule(ctx sdk.Context, from, to string, coin common.Coin) sdk.Error {
+	return kaboomSdk
 }
 
-func (k KVStoreDummy) SendFromAccountToModule(ctx sdk.Context, from sdk.AccAddress, to string, coin common.Coin) error {
-	return kaboom
+func (k KVStoreDummy) SendFromAccountToModule(ctx sdk.Context, from sdk.AccAddress, to string, coin common.Coin) sdk.Error {
+	return kaboomSdk
 }
 
-func (k KVStoreDummy) SendFromModuleToAccount(ctx sdk.Context, from string, to sdk.AccAddress, coin common.Coin) error {
-	return kaboom
+func (k KVStoreDummy) SendFromModuleToAccount(ctx sdk.Context, from string, to sdk.AccAddress, coin common.Coin) sdk.Error {
+	return kaboomSdk
 }
 
 func (k KVStoreDummy) SetLastSignedHeight(_ sdk.Context, _ int64) { return }

@@ -1,7 +1,6 @@
 package thorchain
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 
@@ -20,9 +19,9 @@ type Keeper interface {
 	Logger(ctx sdk.Context) log.Logger
 	GetKey(ctx sdk.Context, prefix dbPrefix, key string) string
 	GetRuneBalaceOfModule(ctx sdk.Context, moduleName string) sdk.Uint
-	SendFromModuleToModule(ctx sdk.Context, from, to string, coin common.Coin) error
-	SendFromAccountToModule(ctx sdk.Context, from sdk.AccAddress, to string, coin common.Coin) error
-	SendFromModuleToAccount(ctx sdk.Context, from string, to sdk.AccAddress, coin common.Coin) error
+	SendFromModuleToModule(ctx sdk.Context, from, to string, coin common.Coin) sdk.Error
+	SendFromAccountToModule(ctx sdk.Context, from sdk.AccAddress, to string, coin common.Coin) sdk.Error
+	SendFromModuleToAccount(ctx sdk.Context, from string, to sdk.AccAddress, coin common.Coin) sdk.Error
 
 	// Keeper Interfaces
 	KeeperPool
@@ -141,35 +140,23 @@ func (k KVStore) GetRuneBalaceOfModule(ctx sdk.Context, moduleName string) sdk.U
 	return sdk.NewUintFromBigInt(amt.BigInt())
 }
 
-func (k KVStore) SendFromModuleToModule(ctx sdk.Context, from, to string, coin common.Coin) error {
+func (k KVStore) SendFromModuleToModule(ctx sdk.Context, from, to string, coin common.Coin) sdk.Error {
 	coins := sdk.NewCoins(
 		sdk.NewCoin(coin.Asset.Symbol.String(), sdk.NewIntFromBigInt(coin.Amount.BigInt())),
 	)
-	err := k.Supply().SendCoinsFromModuleToModule(ctx, from, to, coins)
-	if err != nil {
-		return errors.New(err.Error())
-	}
-	return nil
+	return k.Supply().SendCoinsFromModuleToModule(ctx, from, to, coins)
 }
 
-func (k KVStore) SendFromAccountToModule(ctx sdk.Context, from sdk.AccAddress, to string, coin common.Coin) error {
+func (k KVStore) SendFromAccountToModule(ctx sdk.Context, from sdk.AccAddress, to string, coin common.Coin) sdk.Error {
 	coins := sdk.NewCoins(
 		sdk.NewCoin(coin.Asset.Symbol.String(), sdk.NewIntFromBigInt(coin.Amount.BigInt())),
 	)
-	err := k.Supply().SendCoinsFromAccountToModule(ctx, from, to, coins)
-	if err != nil {
-		return errors.New(err.Error())
-	}
-	return nil
+	return k.Supply().SendCoinsFromAccountToModule(ctx, from, to, coins)
 }
 
-func (k KVStore) SendFromModuleToAccount(ctx sdk.Context, from string, to sdk.AccAddress, coin common.Coin) error {
+func (k KVStore) SendFromModuleToAccount(ctx sdk.Context, from string, to sdk.AccAddress, coin common.Coin) sdk.Error {
 	coins := sdk.NewCoins(
 		sdk.NewCoin(coin.Asset.Symbol.String(), sdk.NewIntFromBigInt(coin.Amount.BigInt())),
 	)
-	err := k.Supply().SendCoinsFromModuleToAccount(ctx, from, to, coins)
-	if err != nil {
-		return errors.New(err.Error())
-	}
-	return nil
+	return k.Supply().SendCoinsFromModuleToAccount(ctx, from, to, coins)
 }

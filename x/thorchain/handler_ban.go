@@ -115,7 +115,7 @@ func (h BanHandler) handleV1(ctx sdk.Context, msg MsgBan, constAccessor constant
 			coin := common.NewCoin(common.RuneNative, slashAmount)
 			if err := h.keeper.SendFromModuleToModule(ctx, BondName, ReserveName, coin); err != nil {
 				ctx.Logger().Error("fail to transfer funds from bond to reserve", "error", err)
-				sdk.ErrInternal("fail to transfer funds from bond to reserve").Result()
+				return err.Result()
 			}
 		} else {
 			vaultData, err := h.keeper.GetVaultData(ctx)
