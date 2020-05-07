@@ -93,7 +93,9 @@ func (a *Asset) UnmarshalJSON(data []byte) error {
 }
 
 func RuneAsset() Asset {
-	// TODO: when should we return rune native?
+	if strings.EqualFold(os.Getenv("NATIVE"), "true") {
+		return RuneNative
+	}
 	if strings.EqualFold(os.Getenv("NET"), "testnet") || strings.EqualFold(os.Getenv("NET"), "mocknet") {
 		return RuneA1FAsset
 	}
