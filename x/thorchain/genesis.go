@@ -20,14 +20,12 @@ type GenesisState struct {
 	Events           Events                `json:"events"`
 	Vaults           Vaults                `json:"vaults"`
 	Gas              map[string][]sdk.Uint `json:"gas"`
+	Reserve          uint64                `json:"reserve"`
 }
 
 // NewGenesisState create a new instance of GenesisState
-func NewGenesisState(pools []Pool, nodeAccounts NodeAccounts) GenesisState {
-	return GenesisState{
-		Pools:        pools,
-		NodeAccounts: nodeAccounts,
-	}
+func NewGenesisState() GenesisState {
+	return GenesisState{}
 }
 
 // ValidateGenesis validate genesis is valid or not
@@ -151,6 +149,21 @@ func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) []abci.Valid
 	}
 
 	keeper.SetCurrentEventID(ctx, data.CurrentEventID)
+
+	if common.RuneAsset().Chain.Equals(common.THORChain) {
+		// Mint coins into the reserve
+		coin, err := common.NewCoin(common.RuneNative, sdk.NewUint(data.Reserve)).Native()
+		if err != nil {
+			panic(err)
+		}
+		coins := sdk.NewCoins(coin)
+		if err := keeper.Supply().MintCoins(ctx, ModuleName, coins); err != nil {
+			panic(err)
+		}
+		if err := keeper.Supply().SendCoinsFromModuleToModule(ctx, ModuleName, ReserveName, coins); err != nil {
+			panic(err)
+		}
+	}
 
 	return validators
 }

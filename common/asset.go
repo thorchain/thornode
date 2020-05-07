@@ -58,6 +58,10 @@ func (a Asset) Equals(a2 Asset) bool {
 	return a.Chain.Equals(a2.Chain) && a.Symbol.Equals(a2.Symbol) && a.Ticker.Equals(a2.Ticker)
 }
 
+func (a Asset) Native() string {
+	return strings.ToLower(a.Symbol.String())
+}
+
 func (a Asset) IsEmpty() bool {
 	return a.Chain.IsEmpty() || a.Symbol.IsEmpty() || a.Ticker.IsEmpty()
 }
