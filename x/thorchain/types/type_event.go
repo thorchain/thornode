@@ -1,16 +1,15 @@
 package types
 
 import (
-	"encoding/base64"
 	"encoding/json"
-	"fmt"
+	"strconv"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"gitlab.com/thorchain/thornode/common"
 )
 
-// Event bt
+// Events bt
 type Event struct {
 	ID     int64           `json:"id"`
 	Height int64           `json:"height"`
@@ -215,11 +214,13 @@ func (e EventPool) Type() string {
 	return PoolEventType
 }
 
-// Event provide an instance of sdk.Event
-func (e EventPool) Event() sdk.Event {
-	return sdk.NewEvent(e.Type(),
-		sdk.NewAttribute("pool", e.Pool.String()),
-		sdk.NewAttribute("pool_status", e.Status.String()))
+// Events provide an instance of sdk.Events
+func (e EventPool) Events() ([]sdk.Event, error) {
+	return []sdk.Event{
+		sdk.NewEvent(e.Type(),
+			sdk.NewAttribute("pool", e.Pool.String()),
+			sdk.NewAttribute("pool_status", e.Status.String())),
+	}, nil
 }
 
 // PoolAmt pool asset amount
@@ -284,7 +285,7 @@ func (e EventBond) Type() string {
 	return BondEventType
 }
 
-// NewEventBond create a new Bond Event
+// NewEventBond create a new Bond Events
 func NewEventBond(amount sdk.Uint, bondType BondType) EventBond {
 	return EventBond{
 		Amount:   amount,
@@ -329,6 +330,19 @@ func (e *EventGas) UpsertGasPool(pool GasPool) {
 // Type return event type
 func (e *EventGas) Type() string {
 	return GasEventType
+}
+
+func (e *EventGas) Events() ([]sdk.Event, error) {
+	events := make([]sdk.Event, len(e.Pools))
+	for _, item := range e.Pools {
+		evt := sdk.NewEvent(e.Type(),
+			sdk.NewAttribute("asset", item.Asset.String()),
+			sdk.NewAttribute("asset_amt", item.AssetAmt.String()),
+			sdk.NewAttribute("rune_amt", item.RuneAmt.String()),
+			sdk.NewAttribute("transaction_count", strconv.FormatInt(item.Count, 10)))
+		events = append(events, evt)
+	}
+	return events, nil
 }
 
 // EventReserve Reserve event type
@@ -383,15 +397,18 @@ func (e EventErrata) Type() string {
 	return ErrataEventType
 }
 
-// Event
-func (e EventErrata) Event() (sdk.Event, error) {
-	evt := sdk.NewEvent(e.Type(), sdk.NewAttribute("in_tx_id", e.TxID.String()))
+// Events
+func (e EventErrata) Events() ([]sdk.Event, error) {
+	events := make([]sdk.Event, len(e.Pools))
 	for _, item := range e.Pools {
-		buf, err := json.Marshal(item)
-		if nil != err {
-			return sdk.Event{}, fmt.Errorf("fail to marshal pool mod to json buffer: %w", err)
-		}
-		evt.AppendAttributes(sdk.NewAttribute(item.Asset.String(), base64.StdEncoding.EncodeToString(buf)))
+		evt := sdk.NewEvent(e.Type(),
+			sdk.NewAttribute("in_tx_id", e.TxID.String()),
+			sdk.NewAttribute("asset", item.Asset.String()),
+			sdk.NewAttribute("rune_amt", item.RuneAmt.String()),
+			sdk.NewAttribute("rune_add", strconv.FormatBool(item.RuneAdd)),
+			sdk.NewAttribute("asset_amt", item.AssetAmt.String()),
+			sdk.NewAttribute("asset_add", strconv.FormatBool(item.AssetAdd)))
+		events = append(events, evt)
 	}
-	return evt, nil
+	return events, nil
 }

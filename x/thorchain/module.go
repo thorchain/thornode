@@ -179,7 +179,7 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 	}
 	eventMgr, err := am.versionedEventManager.GetEventManager(ctx, version)
 	if err != nil {
-		ctx.Logger().Error(fmt.Sprintf("Event manager that compatible with version :%s is not available", version))
+		ctx.Logger().Error(fmt.Sprintf("Events manager that compatible with version :%s is not available", version))
 		return nil
 	}
 

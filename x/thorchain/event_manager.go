@@ -1,7 +1,6 @@
 package thorchain
 
 import (
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 
@@ -45,19 +44,13 @@ func (m *EventMgr) EmitPoolEvent(ctx sdk.Context, keeper Keeper, txIn common.TxI
 	if err := keeper.UpsertEvent(ctx, evt); err != nil {
 		return fmt.Errorf("fail to save pool status change event: %w", err)
 	}
-	ctx.EventManager().EmitEvent(poolEvt.Event())
-	return nil
-}
-
-func (m *EventMgr) emitStandardEvents(ctx sdk.Context, ty string, inTx common.Tx, evt []byte, status EventStatus) error {
-	inTxBytes, err := json.Marshal(inTx)
+	events, err := poolEvt.Events()
 	if err != nil {
-		return fmt.Errorf("fail to marshal inTx to json: %w", err)
+		return fmt.Errorf("fail to get pool events: %w", err)
 	}
-	ctx.EventManager().EmitEvent(sdk.NewEvent(ty,
-		sdk.NewAttribute("in_tx", base64.StdEncoding.EncodeToString(inTxBytes)),
-		sdk.NewAttribute("payload", base64.StdEncoding.EncodeToString(evt)),
-		sdk.NewAttribute("status", status.String())))
+	for _, e := range events {
+		ctx.EventManager().EmitEvent(e)
+	}
 	return nil
 }
 
@@ -79,11 +72,13 @@ func (m *EventMgr) EmitErrataEvent(ctx sdk.Context, keeper Keeper, txIn common.T
 		ctx.Logger().Error("fail to save errata event", "error", err)
 		return fmt.Errorf("fail to save errata event: %w", err)
 	}
-	e, err := errataEvent.Event()
+	events, err := errataEvent.Events()
 	if err != nil {
 		return fmt.Errorf("fail to emit standard event: %w", err)
 	}
-	ctx.EventManager().EmitEvent(e)
+	for _, e := range events {
+		ctx.EventManager().EmitEvent(e)
+	}
 	return nil
 }
 
@@ -101,5 +96,12 @@ func (m *EventMgr) EmitGasEvent(ctx sdk.Context, keeper Keeper, gasEvent *EventG
 		ctx.Logger().Error("fail to upsert event", "error", err)
 		return fmt.Errorf("fail to save gas event: %w", err)
 	}
-	return m.emitStandardEvents(ctx, gasEvent.Type(), common.Tx{ID: common.BlankTxID}, buf, EventSuccess)
+	events, err := gasEvent.Events()
+	if err != nil {
+		return fmt.Errorf("fail to get events: %w", err)
+	}
+	for _, e := range events {
+		ctx.EventManager().EmitEvent(e)
+	}
+	return nil
 }
