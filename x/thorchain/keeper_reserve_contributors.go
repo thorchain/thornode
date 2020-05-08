@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"gitlab.com/thorchain/thornode/common"
 )
 
 type KeeperReserveContributors interface {
@@ -18,7 +19,15 @@ func (k KVStore) AddFeeToReserve(ctx sdk.Context, fee sdk.Uint) error {
 	if err != nil {
 		return fmt.Errorf("fail to get vault: %w", err)
 	}
-	vault.TotalReserve = vault.TotalReserve.Add(fee)
+	if common.RuneAsset().Chain.Equals(common.THORChain) {
+		coin := common.NewCoin(common.RuneNative, fee)
+		sdkErr := k.SendFromModuleToModule(ctx, AsgardName, ReserveName, coin)
+		if sdkErr != nil {
+			return dbError(ctx, "fail to send fee to reserve", sdkErr)
+		}
+	} else {
+		vault.TotalReserve = vault.TotalReserve.Add(fee)
+	}
 	return k.SetVaultData(ctx, vault)
 }
 
