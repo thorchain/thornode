@@ -89,9 +89,13 @@ func unstake(ctx sdk.Context, version semver.Version, keeper Keeper, msg MsgSetU
 				return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), sdk.NewError(DefaultCodespace, CodeUnstakeFail, err.Error())
 			}
 			originalAsset := withDrawAsset
+			multiplier := uint64(2)
+			if common.RuneAsset().Chain.Equals(common.THORChain) {
+				multiplier = 1
+			}
 			withDrawAsset = common.SafeSub(
 				withDrawAsset,
-				gasInfo[0].MulUint64(uint64(2)),
+				gasInfo[0].MulUint64(multiplier),
 			)
 			gasAsset = originalAsset.Sub(withDrawAsset)
 		} else if pool.Asset.Chain.GetGasAsset().Equals(pool.Asset) {

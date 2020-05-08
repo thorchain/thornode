@@ -118,12 +118,6 @@ func (h NativeTxHandler) handleV1(ctx sdk.Context, msg MsgNativeTx, version semv
 		return sdkErr.Result()
 	}
 
-	// send funds to asgard
-	sdkErr = supplier.SendCoinsFromAccountToModule(ctx, msg.GetSigners()[0], AsgardName, coins)
-	if sdkErr != nil {
-		return sdkErr.Result()
-	}
-
 	hash := tmtypes.Tx(ctx.TxBytes()).Hash()
 	txID, err := common.NewTxID(fmt.Sprintf("%X", hash))
 	if err != nil {
@@ -160,6 +154,17 @@ func (h NativeTxHandler) handleV1(ctx sdk.Context, msg MsgNativeTx, version semv
 			return sdk.ErrInternal(newErr.Error()).Result()
 		}
 		return sdk.ErrInternal(txErr.Error()).Result()
+	}
+
+	memo, _ := ParseMemo(msg.Memo) // ignore err
+	targetModule := AsgardName
+	if memo.IsType(TxBond) {
+		targetModule = BondName
+	}
+	// send funds to target module
+	sdkErr = supplier.SendCoinsFromAccountToModule(ctx, msg.GetSigners()[0], targetModule, coins)
+	if sdkErr != nil {
+		return sdkErr.Result()
 	}
 
 	result := handler(ctx, m)

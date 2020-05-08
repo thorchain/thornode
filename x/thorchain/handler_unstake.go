@@ -156,10 +156,12 @@ func (h UnstakeHandler) handle(ctx sdk.Context, msg MsgSetUnStake, version semve
 		Coin:      common.NewCoin(common.RuneAsset(), runeAmt),
 		Memo:      memo,
 	}
-	if !gasAsset.IsZero() {
-		if msg.Asset.IsBNB() {
-			toi.MaxGas = common.Gas{
-				common.NewCoin(common.RuneAsset().Chain.GetGasAsset(), gasAsset.QuoUint64(2)),
+	if !common.RuneAsset().Chain.Equals(common.THORChain) {
+		if !gasAsset.IsZero() {
+			if msg.Asset.IsBNB() {
+				toi.MaxGas = common.Gas{
+					common.NewCoin(common.RuneAsset().Chain.GetGasAsset(), gasAsset.QuoUint64(2)),
+				}
 			}
 		}
 	}
