@@ -4,6 +4,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	. "gopkg.in/check.v1"
 
+	"gitlab.com/thorchain/thornode/common"
 	"gitlab.com/thorchain/thornode/constants"
 )
 
@@ -105,7 +106,11 @@ func (vts *ValidatorMgrV1TestSuite) TestRagnarokBond(c *C) {
 	c.Check(activeNode.Bond.Equal(sdk.NewUint(90)), Equals, true)
 	items, err := txOutStore.GetOutboundItems(ctx)
 	c.Assert(err, IsNil)
-	c.Check(items, HasLen, 1, Commentf("Len %d", items))
+	if common.RuneAsset().Chain.Equals(common.THORChain) {
+		c.Check(items, HasLen, 0, Commentf("Len %d", items))
+	} else {
+		c.Check(items, HasLen, 1, Commentf("Len %d", items))
+	}
 	txOutStore.ClearOutboundItems(ctx)
 
 	c.Assert(vMgr.ragnarokBond(ctx, 2), IsNil)
@@ -114,7 +119,11 @@ func (vts *ValidatorMgrV1TestSuite) TestRagnarokBond(c *C) {
 	c.Check(activeNode.Bond.Equal(sdk.NewUint(72)), Equals, true)
 	items, err = txOutStore.GetOutboundItems(ctx)
 	c.Assert(err, IsNil)
-	c.Check(items, HasLen, 1, Commentf("Len %d", items))
+	if common.RuneAsset().Chain.Equals(common.THORChain) {
+		c.Check(items, HasLen, 0, Commentf("Len %d", items))
+	} else {
+		c.Check(items, HasLen, 1, Commentf("Len %d", items))
+	}
 }
 
 func (vtx *ValidatorMgrV1TestSuite) TestFindCounToRemove(c *C) {

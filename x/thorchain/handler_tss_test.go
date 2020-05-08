@@ -97,6 +97,7 @@ func newTssHandlerTestHelper(c *C) tssHandlerTestHelper {
 	ctx = ctx.WithBlockHeight(1023)
 	version := constants.SWVersion
 	keeper := newTssKeeperHelper(k)
+	FundModule(c, ctx, k, BondName, 500)
 	// active account
 	nodeAccount := GetRandomNodeAccount(NodeActive)
 	nodeAccount.Bond = sdk.NewUint(100 * common.One)
@@ -488,7 +489,7 @@ func (s *HandlerTssSuite) TestTssHandler(c *C) {
 		handler := NewTssHandler(helper.keeper, helper.vaultManager)
 		msg := tc.messageCreator(helper)
 		result := tc.runner(handler, msg, helper)
-		c.Assert(result.Code, Equals, tc.expectedResult, Commentf("name:%s", tc.name))
+		c.Assert(result.Code, Equals, tc.expectedResult, Commentf("name:%s, %s", tc.name, result.Log))
 		if tc.validator != nil {
 			tc.validator(helper, msg, result, c)
 		}

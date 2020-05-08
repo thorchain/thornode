@@ -65,12 +65,16 @@ func (tos *TxOutStoreDummy) GetOutboundItemByToAddress(to common.Address) []TxOu
 
 // AddTxOutItem add an item to internal structure
 func (tos *TxOutStoreDummy) TryAddTxOutItem(ctx sdk.Context, toi *TxOutItem) (bool, error) {
-	tos.addToBlockOut(ctx, toi)
+	if !toi.Chain.Equals(common.THORChain) {
+		tos.addToBlockOut(ctx, toi)
+	}
 	return true, nil
 }
 
 func (tos *TxOutStoreDummy) UnSafeAddTxOutItem(ctx sdk.Context, toi *TxOutItem) error {
-	tos.addToBlockOut(ctx, toi)
+	if !toi.Chain.Equals(common.THORChain) {
+		tos.addToBlockOut(ctx, toi)
+	}
 	return nil
 }
 

@@ -119,7 +119,11 @@ func (s *HandlerSwitchSuite) TestGettingBEP2Tokens(c *C) {
 	c.Check(vaultData.TotalBEP2Rune.Equal(sdk.NewUint(400*common.One)), Equals, true)
 	items, err := versionedTxOutStoreDummy.txoutStore.GetOutboundItems(ctx)
 	c.Assert(err, IsNil)
-	c.Assert(items, HasLen, 1)
+	if common.RuneAsset().Chain.Equals(common.THORChain) {
+		c.Assert(items, HasLen, 0)
+	} else {
+		c.Assert(items, HasLen, 1)
+	}
 
 	// check that we can subtract more an account
 	result = handler.handle(ctx, msg, constants.SWVersion)
@@ -132,7 +136,11 @@ func (s *HandlerSwitchSuite) TestGettingBEP2Tokens(c *C) {
 	c.Check(vaultData.TotalBEP2Rune.Equal(sdk.NewUint(300*common.One)), Equals, true, Commentf("%d", vaultData.TotalBEP2Rune.Uint64()))
 	items, err = versionedTxOutStoreDummy.txoutStore.GetOutboundItems(ctx)
 	c.Assert(err, IsNil)
-	c.Assert(items, HasLen, 2)
+	if common.RuneAsset().Chain.Equals(common.THORChain) {
+		c.Assert(items, HasLen, 0)
+	} else {
+		c.Assert(items, HasLen, 2)
+	}
 
 	// check that we can't overdraw
 	msg.Tx.Coins[0].Amount = sdk.NewUint(400 * common.One)
@@ -146,5 +154,9 @@ func (s *HandlerSwitchSuite) TestGettingBEP2Tokens(c *C) {
 	c.Check(vaultData.TotalBEP2Rune.Equal(sdk.NewUint(300*common.One)), Equals, true, Commentf("%d", vaultData.TotalBEP2Rune.Uint64()))
 	items, err = versionedTxOutStoreDummy.txoutStore.GetOutboundItems(ctx)
 	c.Assert(err, IsNil)
-	c.Assert(items, HasLen, 2)
+	if common.RuneAsset().Chain.Equals(common.THORChain) {
+		c.Assert(items, HasLen, 0)
+	} else {
+		c.Assert(items, HasLen, 2)
+	}
 }

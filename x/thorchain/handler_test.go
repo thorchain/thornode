@@ -220,7 +220,11 @@ func (HandlerSuite) TestHandleTxInUnstakeMemo(c *C) {
 	c.Check(pool.Status, Equals, PoolBootstrap)
 	c.Check(pool.PoolUnits.Uint64(), Equals, uint64(0), Commentf("%d", pool.PoolUnits.Uint64()))
 	c.Check(pool.BalanceRune.Uint64(), Equals, uint64(0), Commentf("%d", pool.BalanceRune.Uint64()))
-	c.Check(pool.BalanceAsset.Uint64(), Equals, uint64(75000), Commentf("%d", pool.BalanceAsset.Uint64())) // leave a little behind for gas
+	remainGas := uint64(75000)
+	if common.RuneAsset().Chain.Equals(common.THORChain) {
+		remainGas = 37500
+	}
+	c.Check(pool.BalanceAsset.Uint64(), Equals, remainGas, Commentf("%d", pool.BalanceAsset.Uint64())) // leave a little behind for gas
 }
 
 func (HandlerSuite) TestRefund(c *C) {

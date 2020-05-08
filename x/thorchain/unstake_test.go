@@ -310,6 +310,10 @@ func (s UnstakeSuite) TestValidateUnstake(c *C) {
 
 func (UnstakeSuite) TestUnstake(c *C) {
 	ps := &UnstakeTestKeeper{}
+	remainGas := uint64(75000)
+	if common.RuneAsset().Chain.Equals(common.THORChain) {
+		remainGas = 37500
+	}
 	accountAddr := GetRandomNodeAccount(NodeWhiteListed).NodeAddress
 	runeAddress, err := common.NewAddress("bnb1g0xakzh03tpa54khxyvheeu92hwzypkdce77rm")
 	if err != nil {
@@ -447,7 +451,7 @@ func (UnstakeSuite) TestUnstake(c *C) {
 			},
 			ps:            getUnstakeTestKeeper(c),
 			runeAmount:    sdk.NewUint(100 * common.One),
-			assetAmount:   sdk.NewUint(100 * common.One).Sub(sdk.NewUint(75000)),
+			assetAmount:   sdk.NewUint(100 * common.One).Sub(sdk.NewUint(remainGas)),
 			expectedError: nil,
 		},
 		{

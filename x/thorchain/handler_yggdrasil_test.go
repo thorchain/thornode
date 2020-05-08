@@ -392,7 +392,11 @@ func (s *HandlerYggdrasilSuite) TestYggdrasilHandler(c *C) {
 
 				items, err := store.GetOutboundItems(helper.ctx)
 				c.Assert(err, IsNil)
-				c.Assert(items, HasLen, 1)
+				if common.RuneAsset().Chain.Equals(common.THORChain) {
+					c.Assert(items, HasLen, 0)
+				} else {
+					c.Assert(items, HasLen, 1)
+				}
 				yggMsg := msg.(MsgYggdrasil)
 				yggVault, err := helper.keeper.GetVault(helper.ctx, yggMsg.PubKey)
 				c.Assert(err, NotNil)
