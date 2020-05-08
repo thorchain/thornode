@@ -159,25 +159,6 @@ func (e EventUnstake) Type() string {
 	return UnstakeEventType
 }
 
-// EventAdminConfig represent admin config change events
-type EventAdminConfig struct {
-	Key   string
-	Value string
-}
-
-// NewEventAdminConfig create a new admin config event
-func NewEventAdminConfig(key, value string) EventAdminConfig {
-	return EventAdminConfig{
-		Key:   key,
-		Value: value,
-	}
-}
-
-// Type return the type of admin config event
-func (e EventAdminConfig) Type() string {
-	return AdminConfigEventType
-}
-
 // EventAdd represent add operation
 type EventAdd struct {
 	Pool common.Asset `json:"pool"`
@@ -215,8 +196,8 @@ func (e EventPool) Type() string {
 }
 
 // Events provide an instance of sdk.Events
-func (e EventPool) Events() ([]sdk.Event, error) {
-	return []sdk.Event{
+func (e EventPool) Events() (sdk.Events, error) {
+	return sdk.Events{
 		sdk.NewEvent(e.Type(),
 			sdk.NewAttribute("pool", e.Pool.String()),
 			sdk.NewAttribute("pool_status", e.Status.String())),
@@ -332,8 +313,8 @@ func (e *EventGas) Type() string {
 	return GasEventType
 }
 
-func (e *EventGas) Events() ([]sdk.Event, error) {
-	events := make([]sdk.Event, len(e.Pools))
+func (e *EventGas) Events() (sdk.Events, error) {
+	events := make(sdk.Events, 0, len(e.Pools))
 	for _, item := range e.Pools {
 		evt := sdk.NewEvent(e.Type(),
 			sdk.NewAttribute("asset", item.Asset.String()),
@@ -398,8 +379,8 @@ func (e EventErrata) Type() string {
 }
 
 // Events
-func (e EventErrata) Events() ([]sdk.Event, error) {
-	events := make([]sdk.Event, len(e.Pools))
+func (e EventErrata) Events() (sdk.Events, error) {
+	events := make(sdk.Events, 0, len(e.Pools))
 	for _, item := range e.Pools {
 		evt := sdk.NewEvent(e.Type(),
 			sdk.NewAttribute("in_tx_id", e.TxID.String()),

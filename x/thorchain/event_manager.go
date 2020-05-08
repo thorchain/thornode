@@ -48,9 +48,8 @@ func (m *EventMgr) EmitPoolEvent(ctx sdk.Context, keeper Keeper, txIn common.TxI
 	if err != nil {
 		return fmt.Errorf("fail to get pool events: %w", err)
 	}
-	for _, e := range events {
-		ctx.EventManager().EmitEvent(e)
-	}
+	ctx.EventManager().EmitEvents(events)
+
 	return nil
 }
 
@@ -76,9 +75,7 @@ func (m *EventMgr) EmitErrataEvent(ctx sdk.Context, keeper Keeper, txIn common.T
 	if err != nil {
 		return fmt.Errorf("fail to emit standard event: %w", err)
 	}
-	for _, e := range events {
-		ctx.EventManager().EmitEvent(e)
-	}
+	ctx.EventManager().EmitEvents(events)
 	return nil
 }
 
@@ -100,8 +97,7 @@ func (m *EventMgr) EmitGasEvent(ctx sdk.Context, keeper Keeper, gasEvent *EventG
 	if err != nil {
 		return fmt.Errorf("fail to get events: %w", err)
 	}
-	for _, e := range events {
-		ctx.EventManager().EmitEvent(e)
-	}
+	ctx.EventManager().EmitEvents(events)
+
 	return nil
 }
