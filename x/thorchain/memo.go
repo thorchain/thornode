@@ -381,11 +381,11 @@ func ParseMemo(memo string) (Memo, error) {
 		return NewAddMemo(asset), nil
 	case TxStake:
 		var addr common.Address
-		if !asset.Chain.IsBNB() {
+		if !asset.Chain.Equals(common.RuneAsset().Chain) {
 			if len(parts) < 3 {
-				// cannot stake into a non BNB-based pool when THORNode don't have an
+				// cannot stake into a non THOR-based pool when THORNode don't have an
 				// associated address
-				return noMemo, fmt.Errorf("invalid stake. Cannot stake to a non BNB-based pool without providing an associated address")
+				return noMemo, fmt.Errorf("invalid stake. Cannot stake to a non THOR-based pool without providing an associated address")
 			}
 			addr, err = common.NewAddress(parts[2])
 			if err != nil {

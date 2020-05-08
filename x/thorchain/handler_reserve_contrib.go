@@ -44,11 +44,6 @@ func (h ReserveContributorHandler) ValidateV1(ctx sdk.Context, msg MsgReserveCon
 	if err := msg.ValidateBasic(); err != nil {
 		return err
 	}
-
-	if !isSignedByActiveNodeAccounts(ctx, h.keeper, msg.GetSigners()) {
-		return sdk.ErrUnauthorized("not authorized")
-	}
-
 	return nil
 }
 

@@ -272,8 +272,8 @@ func processOneTxIn(ctx sdk.Context, keeper Keeper, tx ObservedTx, signer sdk.Ac
 
 func getMsgNoOpFromMemo(tx ObservedTx, signer sdk.AccAddress) (sdk.Msg, error) {
 	for _, coin := range tx.Tx.Coins {
-		if !coin.Asset.IsBNB() {
-			return nil, errors.New("Only accepts BNB coins")
+		if !coin.Asset.Chain.Equals(common.RuneAsset().Chain) {
+			return nil, fmt.Errorf("Only accepts %s coins", common.RuneAsset().Chain)
 		}
 	}
 	return NewMsgNoOp(tx, signer), nil
@@ -343,6 +343,8 @@ func getMsgStakeFromMemo(ctx sdk.Context, memo StakeMemo, tx ObservedTx, signer 
 
 	runeAddr := tx.Tx.FromAddress
 	assetAddr := memo.GetDestination()
+	fmt.Printf("From Address: %s\n", runeAddr)
+	fmt.Printf("Destination Address: %s\n", assetAddr)
 	// this is to cover multi-chain scenario, for example BTC , staker who would like to stake in BTC pool,  will have to complete
 	// the stake operation by sending in two asymmetric stake tx, one tx on BTC chain with memo stake:BTC:<RUNE address> ,
 	// and another one on Binance chain with stake:BTC , with only RUNE as the coin
@@ -351,12 +353,14 @@ func getMsgStakeFromMemo(ctx sdk.Context, memo StakeMemo, tx ObservedTx, signer 
 		runeAddr = memo.GetDestination()
 		assetAddr = tx.Tx.FromAddress
 	} else {
-		// if it is on BNB chain , while the asset addr is empty, then the asset addr is runeAddr
+		// if it is on THOR chain , while the asset addr is empty, then the asset addr is runeAddr
 		if assetAddr.IsEmpty() {
 			assetAddr = runeAddr
 		}
 	}
 
+	fmt.Printf("RuneAddr: %s\n", runeAddr)
+	fmt.Printf("AssetAddr: %s\n", assetAddr)
 	return NewMsgSetStakeData(
 		tx.Tx,
 		asset,

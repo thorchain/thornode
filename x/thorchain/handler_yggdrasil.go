@@ -58,10 +58,6 @@ func (h YggdrasilHandler) validateV1(ctx sdk.Context, msg MsgYggdrasil) sdk.Erro
 		ctx.Logger().Error(err.Error())
 		return err
 	}
-
-	if !isSignedByActiveNodeAccounts(ctx, h.keeper, msg.GetSigners()) {
-		return sdk.ErrUnauthorized("not signed by an active node account")
-	}
 	return nil
 }
 

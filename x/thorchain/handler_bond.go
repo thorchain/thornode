@@ -33,9 +33,6 @@ func (h BondHandler) validateV1(ctx sdk.Context, version semver.Version, msg Msg
 		return err
 	}
 
-	if !isSignedByActiveNodeAccounts(ctx, h.keeper, msg.GetSigners()) {
-		return sdk.ErrUnauthorized("msg is not signed by an active node account")
-	}
 	minimumBond := constAccessor.GetInt64Value(constants.MinimumBondInRune)
 	minValidatorBond := sdk.NewUint(uint64(minimumBond))
 

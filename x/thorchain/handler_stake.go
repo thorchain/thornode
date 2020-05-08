@@ -33,9 +33,6 @@ func (h StakeHandler) validateV1(ctx sdk.Context, msg MsgSetStakeData, constAcce
 		ctx.Logger().Error(err.ABCILog())
 		return sdk.NewError(DefaultCodespace, CodeStakeFailValidation, err.Error())
 	}
-	if !isSignedByActiveNodeAccounts(ctx, h.keeper, msg.GetSigners()) {
-		return sdk.ErrUnauthorized("msg is not signed by an active node account")
-	}
 
 	ensureStakeNoLargerThanBond := constAccessor.GetBoolValue(constants.StrictBondStakeRatio)
 	// the following  only applicable for chaosnet
@@ -102,7 +99,7 @@ func (h StakeHandler) handle(ctx sdk.Context, msg MsgSetStakeData, version semve
 	}
 
 	if pool.Empty() {
-		ctx.Logger().Info("pool doesn't exist yet, create a new one", "symbol", msg.Asset.String(), "creator", msg.RuneAddress)
+		ctx.Logger().Info("pool doesn't exist yet, creating a new one...", "symbol", msg.Asset.String(), "creator", msg.RuneAddress)
 		pool.Asset = msg.Asset
 		if err := h.keeper.SetPool(ctx, pool); err != nil {
 			return sdk.ErrInternal(fmt.Errorf("fail to save pool to key value store: %w", err).Error())
@@ -124,13 +121,16 @@ func (h StakeHandler) handle(ctx sdk.Context, msg MsgSetStakeData, version semve
 		constAccessor,
 	)
 	if err != nil {
+		ctx.Logger().Error("fail to process stake request", "error", err)
 		return sdk.ErrUnknownRequest(fmt.Errorf("fail to process stake request: %w", err).Error())
 	}
 
 	if err := processStakeEvent(ctx, h.keeper, msg, stakeUnits, EventSuccess); err != nil {
+		ctx.Logger().Error("fail to save stake event", "error", err)
 		return sdk.ErrInternal(fmt.Errorf("fail to save stake event: %w", err).Error())
 	}
 
+	fmt.Println(">>>>>>>>> Successful Stake!")
 	return nil
 }
 

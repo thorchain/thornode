@@ -48,10 +48,6 @@ func (h RefundHandler) validateV1(ctx sdk.Context, version semver.Version, msg M
 	if err := msg.ValidateBasic(); err != nil {
 		return err
 	}
-
-	if !isSignedByActiveNodeAccounts(ctx, h.keeper, msg.GetSigners()) {
-		return sdk.ErrUnauthorized("msg is not signed by an active node account")
-	}
 	return nil
 }
 
