@@ -82,7 +82,8 @@ func setupKeeperForTest(c *C) (sdk.Context, Keeper) {
 		randomPerm:            {"random"},
 		ModuleName:            {supply.Minter},
 		ReserveName:           {},
-		AsgardName:            {supply.Staking},
+		AsgardName:            {},
+		BondName:              {supply.Staking},
 	}
 	supplyKeeper := supply.NewKeeper(cdc, keySupply, ak, bk, maccPerms)
 	totalSupply := sdk.NewCoins(sdk.NewCoin("bep", sdk.NewInt(1000*common.One)))
@@ -207,6 +208,8 @@ func (HandlerSuite) TestHandleTxInUnstakeMemo(c *C) {
 	versionedObMgr := NewDummyVersionedObserverMgr()
 	versionedEventManagerDummy := NewDummyVersionedEventMgr()
 	handler := NewInternalHandler(w.keeper, w.versionedTxOutStore, w.validatorMgr, versionedVaultMgrDummy, versionedObMgr, versionedGasMgr, versionedEventManagerDummy)
+
+	FundModule(c, w.ctx, w.keeper, AsgardName, 500)
 
 	result := handler(w.ctx, msg)
 	c.Assert(result.Code, Equals, sdk.CodeOK, Commentf("%s\n", result.Log))
