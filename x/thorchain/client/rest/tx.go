@@ -16,6 +16,7 @@ import (
 type nativeTx struct {
 	BaseReq rest.BaseReq `json:"base_req"`
 	Coins   common.Coins `json:"coins"`
+	Memo    string       `json:"memo"`
 }
 
 func newNativeTxHandler(cliCtx context.CLIContext) http.HandlerFunc {
@@ -38,7 +39,7 @@ func newNativeTxHandler(cliCtx context.CLIContext) http.HandlerFunc {
 			return
 		}
 
-		msg := types.NewMsgNativeTx(req.Coins, req.BaseReq.Memo, addr)
+		msg := types.NewMsgNativeTx(req.Coins, req.Memo, addr)
 		err = msg.ValidateBasic()
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
