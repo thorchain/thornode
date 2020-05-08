@@ -22,6 +22,7 @@ import (
 	btypes "gitlab.com/thorchain/thornode/bifrost/blockscanner/types"
 	"gitlab.com/thorchain/thornode/bifrost/config"
 	"gitlab.com/thorchain/thornode/bifrost/metrics"
+	"gitlab.com/thorchain/thornode/bifrost/pkg/chainclients/ethereum/types"
 	stypes "gitlab.com/thorchain/thornode/bifrost/thorclient/types"
 	"gitlab.com/thorchain/thornode/common"
 )
@@ -42,18 +43,19 @@ type BlockScanner struct {
 	m          *metrics.Metrics
 	errCounter *prometheus.CounterVec
 	gasPrice   *big.Int
+	signer     etypes.EIP155Signer
 	client     *ethclient.Client
 }
 
 // NewBlockScanner create a new instance of BlockScan
-func NewBlockScanner(cfg config.BlockScannerConfiguration, scanStorage blockscanner.ScannerStorage, isTestNet bool, client *ethclient.Client, m *metrics.Metrics) (*BlockScanner, error) {
+func NewBlockScanner(cfg config.BlockScannerConfiguration, scanStorage blockscanner.ScannerStorage, chainID types.ChainID, client *ethclient.Client, m *metrics.Metrics) (*BlockScanner, error) {
 	if scanStorage == nil {
 		return nil, errors.New("scanStorage is nil")
 	}
 	if m == nil {
 		return nil, errors.New("metrics is nil")
 	}
-
+	eipSigner = etypes.NewEIP155Signer(big.NewInt(int64(chainID)))
 	return &BlockScanner{
 		cfg:        cfg,
 		logger:     log.Logger.With().Str("module", "blockscanner").Str("chain", common.ETHChain.String()).Logger(),
@@ -61,6 +63,7 @@ func NewBlockScanner(cfg config.BlockScannerConfiguration, scanStorage blockscan
 		errCounter: m.GetCounterVec(metrics.BlockScanError(common.ETHChain)),
 		client:     client,
 		gasPrice:   big.NewInt(DefaultGasPrice),
+		signer:     eipSigner,
 		httpClient: &http.Client{
 			Timeout: cfg.HttpRequestTimeout,
 		},
