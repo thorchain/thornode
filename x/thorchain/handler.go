@@ -68,6 +68,7 @@ func NewExternalHandler(keeper Keeper,
 	handlerMap := getHandlerMapping(keeper, versionedTxOutStore, validatorMgr, versionedVaultManager, versionedObserverManager, versionedGasMgr, versionedEventManager)
 
 	return func(ctx sdk.Context, msg sdk.Msg) sdk.Result {
+		ctx = ctx.WithEventManager(sdk.NewEventManager())
 		version := keeper.GetLowestActiveVersion(ctx)
 		constantValues := constants.GetConstantValues(version)
 		if constantValues == nil {
@@ -78,7 +79,11 @@ func NewExternalHandler(keeper Keeper,
 			errMsg := fmt.Sprintf("Unrecognized thorchain Msg type: %v", msg.Type())
 			return sdk.ErrUnknownRequest(errMsg).Result()
 		}
-		return h.Run(ctx, msg, version, constantValues)
+		result := h.Run(ctx, msg, version, constantValues)
+		if len(ctx.EventManager().Events()) > 0 {
+			result.Events = result.Events.AppendEvents(ctx.EventManager().Events())
+		}
+		return result
 	}
 }
 

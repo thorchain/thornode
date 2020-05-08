@@ -2,13 +2,14 @@ package types
 
 import (
 	"encoding/json"
+	"strconv"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"gitlab.com/thorchain/thornode/common"
 )
 
-// Event bt
+// Events bt
 type Event struct {
 	ID     int64           `json:"id"`
 	Height int64           `json:"height"`
@@ -158,25 +159,6 @@ func (e EventUnstake) Type() string {
 	return UnstakeEventType
 }
 
-// EventAdminConfig represent admin config change events
-type EventAdminConfig struct {
-	Key   string
-	Value string
-}
-
-// NewEventAdminConfig create a new admin config event
-func NewEventAdminConfig(key, value string) EventAdminConfig {
-	return EventAdminConfig{
-		Key:   key,
-		Value: value,
-	}
-}
-
-// Type return the type of admin config event
-func (e EventAdminConfig) Type() string {
-	return AdminConfigEventType
-}
-
 // EventAdd represent add operation
 type EventAdd struct {
 	Pool common.Asset `json:"pool"`
@@ -211,6 +193,15 @@ func NewEventPool(pool common.Asset, status PoolStatus) EventPool {
 // Type return pool event type
 func (e EventPool) Type() string {
 	return PoolEventType
+}
+
+// Events provide an instance of sdk.Events
+func (e EventPool) Events() (sdk.Events, error) {
+	return sdk.Events{
+		sdk.NewEvent(e.Type(),
+			sdk.NewAttribute("pool", e.Pool.String()),
+			sdk.NewAttribute("pool_status", e.Status.String())),
+	}, nil
 }
 
 // PoolAmt pool asset amount
@@ -275,7 +266,7 @@ func (e EventBond) Type() string {
 	return BondEventType
 }
 
-// NewEventBond create a new Bond Event
+// NewEventBond create a new Bond Events
 func NewEventBond(amount sdk.Uint, bondType BondType) EventBond {
 	return EventBond{
 		Amount:   amount,
@@ -322,6 +313,19 @@ func (e *EventGas) Type() string {
 	return GasEventType
 }
 
+func (e *EventGas) Events() (sdk.Events, error) {
+	events := make(sdk.Events, 0, len(e.Pools))
+	for _, item := range e.Pools {
+		evt := sdk.NewEvent(e.Type(),
+			sdk.NewAttribute("asset", item.Asset.String()),
+			sdk.NewAttribute("asset_amt", item.AssetAmt.String()),
+			sdk.NewAttribute("rune_amt", item.RuneAmt.String()),
+			sdk.NewAttribute("transaction_count", strconv.FormatInt(item.Count, 10)))
+		events = append(events, evt)
+	}
+	return events, nil
+}
+
 // EventReserve Reserve event type
 type EventReserve struct {
 	ReserveContributor ReserveContributor `json:"reserve_contributor"`
@@ -358,11 +362,13 @@ func (e EventSlash) Type() string {
 
 // EventErrata represent a change in pool balance which caused by an errata transaction
 type EventErrata struct {
-	Pools PoolMods `json:"pools"`
+	TxID  common.TxID `json:"tx_id"`
+	Pools PoolMods    `json:"pools"`
 }
 
-func NewEventErrata(pools PoolMods) EventErrata {
+func NewEventErrata(txID common.TxID, pools PoolMods) EventErrata {
 	return EventErrata{
+		TxID:  txID,
 		Pools: pools,
 	}
 }
@@ -370,4 +376,20 @@ func NewEventErrata(pools PoolMods) EventErrata {
 // Type return slash event type
 func (e EventErrata) Type() string {
 	return ErrataEventType
+}
+
+// Events
+func (e EventErrata) Events() (sdk.Events, error) {
+	events := make(sdk.Events, 0, len(e.Pools))
+	for _, item := range e.Pools {
+		evt := sdk.NewEvent(e.Type(),
+			sdk.NewAttribute("in_tx_id", e.TxID.String()),
+			sdk.NewAttribute("asset", item.Asset.String()),
+			sdk.NewAttribute("rune_amt", item.RuneAmt.String()),
+			sdk.NewAttribute("rune_add", strconv.FormatBool(item.RuneAdd)),
+			sdk.NewAttribute("asset_amt", item.AssetAmt.String()),
+			sdk.NewAttribute("asset_add", strconv.FormatBool(item.AssetAdd)))
+		events = append(events, evt)
+	}
+	return events, nil
 }
