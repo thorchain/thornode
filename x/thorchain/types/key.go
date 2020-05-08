@@ -1,8 +1,11 @@
 package types
 
 const (
-	// module pooldata
-	ModuleName = "thorchain"
+	// module names
+	ModuleName  = "thorchain"
+	ReserveName = "reserve"
+	AsgardName  = "asgard"
+	BondName    = "bond"
 
 	// StoreKey to be used when creating the KVStore
 	StoreKey = ModuleName

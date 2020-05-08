@@ -57,6 +57,7 @@ func (AppModuleBasic) ValidateGenesis(bz json.RawMessage) error {
 func (AppModuleBasic) RegisterRESTRoutes(ctx context.CLIContext, rtr *mux.Router) {
 	rest.RegisterRoutes(ctx, rtr, StoreKey)
 	sdkRest.RegisterTxRoutes(ctx, rtr)
+	sdkRest.RegisterRoutes(ctx, rtr, StoreKey)
 }
 
 // Get the root query command of this module
@@ -181,6 +182,15 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 	if err != nil {
 		ctx.Logger().Error(fmt.Sprintf("Events manager that compatible with version :%s is not available", version))
 		return nil
+	}
+
+	swapQueue, err := NewVersionedSwapQ(am.txOutStore).GetSwapQueue(ctx, am.keeper, version)
+	if err != nil {
+		ctx.Logger().Error("fail to get swap queue", "error", err)
+	} else {
+		if err := swapQueue.EndBlock(ctx, version, constantValues); err != nil {
+			ctx.Logger().Error("fail to process swap queue", "error", err)
+		}
 	}
 
 	slasher, err := NewSlasher(am.keeper, version)

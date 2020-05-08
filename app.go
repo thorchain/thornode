@@ -42,10 +42,14 @@ var (
 		supply.AppModuleBasic{},
 		thorchain.AppModule{},
 	)
+
 	// account permissions
 	maccPerms = map[string][]string{
 		auth.FeeCollectorName: nil,
 		thorchain.ModuleName:  {supply.Minter},
+		thorchain.ReserveName: {},
+		thorchain.BondName:    {supply.Staking},
+		thorchain.AsgardName:  {},
 	}
 )
 
@@ -65,11 +69,11 @@ type thorChainApp struct {
 	keys  map[string]*sdk.KVStoreKey
 	tkeys map[string]*sdk.TransientStoreKey
 	// Keepers
-	accountKeeper auth.AccountKeeper
-	bankKeeper    bank.Keeper
-	supplyKeeper  supply.Keeper
-	paramsKeeper  params.Keeper
-	ssKeeper      thorchain.Keeper
+	accountKeeper   auth.AccountKeeper
+	bankKeeper      bank.Keeper
+	supplyKeeper    supply.Keeper
+	paramsKeeper    params.Keeper
+	thorchainKeeper thorchain.Keeper
 
 	// Module Manager
 	mm *module.Manager
@@ -123,9 +127,8 @@ func NewThorchainApp(logger log.Logger, db dbm.DB, baseAppOptions ...func(*bam.B
 		app.bankKeeper,
 		maccPerms)
 
-	// The thorchainKeeper is the Keeper from the module for this tutorial
-	// It handles interactions with the pooldatastore
-	app.ssKeeper = thorchain.NewKVStore(
+	// thorchain keeper holds thorchain data/kvstore
+	app.thorchainKeeper = thorchain.NewKVStore(
 		app.bankKeeper,
 		app.supplyKeeper,
 		keys[thorchain.StoreKey],
@@ -137,7 +140,7 @@ func NewThorchainApp(logger log.Logger, db dbm.DB, baseAppOptions ...func(*bam.B
 		auth.NewAppModule(app.accountKeeper),
 		bank.NewAppModule(app.bankKeeper, app.accountKeeper),
 		supply.NewAppModule(app.supplyKeeper, app.accountKeeper),
-		thorchain.NewAppModule(app.ssKeeper, app.bankKeeper, app.supplyKeeper),
+		thorchain.NewAppModule(app.thorchainKeeper, app.bankKeeper, app.supplyKeeper),
 	)
 
 	app.mm.SetOrderBeginBlockers(thorchain.ModuleName)

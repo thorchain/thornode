@@ -16,12 +16,15 @@ import (
 func GetRandomNodeAccount(status NodeStatus) NodeAccount {
 	v, _ := tmtypes.RandValidator(true, 100)
 	k, _ := sdk.Bech32ifyConsPub(v.PubKey)
-	bondAddr := GetRandomBNBAddress()
 	pubKeys := common.PubKeySet{
 		Secp256k1: GetRandomPubKey(),
 		Ed25519:   GetRandomPubKey(),
 	}
 	addr, _ := pubKeys.Secp256k1.GetThorAddress()
+	bondAddr := GetRandomBNBAddress()
+	if common.RuneAsset().Chain.Equals(common.THORChain) {
+		bondAddr = common.Address(addr.String())
+	}
 	na := NewNodeAccount(addr, status, pubKeys, k, sdk.NewUint(100*common.One), bondAddr, 1)
 	na.Version = constants.SWVersion
 	if na.Status == Active {
@@ -64,6 +67,22 @@ func GetRandomBech32ConsensusPubKey() string {
 		panic(err)
 	}
 	return result
+}
+
+// GetRandomRuneAddress will just create a random rune address used for test purpose
+func GetRandomRUNEAddress() common.Address {
+	if common.RuneAsset().Chain.Equals(common.THORChain) {
+		return GetRandomTHORAddress()
+	}
+	return GetRandomBNBAddress()
+}
+
+// GetRandomTHORAddress will just create a random thor address used for test purpose
+func GetRandomTHORAddress() common.Address {
+	name := common.RandStringBytesMask(10)
+	str, _ := common.ConvertAndEncode("thor", crypto.AddressHash([]byte(name)))
+	thor, _ := common.NewAddress(str)
+	return thor
 }
 
 // GetRandomBNBAddress will just create a random bnb address used for test purpose

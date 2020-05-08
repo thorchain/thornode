@@ -119,6 +119,18 @@ func (cs Coins) IsEmpty() bool {
 	return true
 }
 
+func (cs Coins) Native() (sdk.Coins, error) {
+	var err error
+	coins := make(sdk.Coins, len(cs))
+	for i, coin := range cs {
+		coins[i], err = coin.Native()
+		if err != nil {
+			return nil, err
+		}
+	}
+	return coins, nil
+}
+
 func (cs Coins) String() string {
 	coins := make([]string, len(cs))
 	for i, c := range cs {

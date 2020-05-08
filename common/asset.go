@@ -30,7 +30,7 @@ func NewAsset(input string) (Asset, error) {
 	parts := strings.Split(input, ".")
 	var sym string
 	if len(parts) == 1 {
-		asset.Chain = BNBChain
+		asset.Chain = THORChain
 		sym = parts[0]
 	} else {
 		asset.Chain, err = NewChain(parts[0])
@@ -56,6 +56,10 @@ func NewAsset(input string) (Asset, error) {
 
 func (a Asset) Equals(a2 Asset) bool {
 	return a.Chain.Equals(a2.Chain) && a.Symbol.Equals(a2.Symbol) && a.Ticker.Equals(a2.Ticker)
+}
+
+func (a Asset) Native() string {
+	return strings.ToLower(a.Symbol.String())
 }
 
 func (a Asset) IsEmpty() bool {

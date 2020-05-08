@@ -173,14 +173,14 @@ func (s *HandlerSwapSuite) TestHandle(c *C) {
 	poolTCAN.BalanceRune = sdk.NewUint(2349500000)
 	c.Assert(keeper.SetPool(ctx, poolTCAN), IsNil)
 
-	m, err := ParseMemo("swap:RUNE-B1A:bnb18jtza8j86hfyuj2f90zec0g5gvjh823e5psn2u:124958592")
+	m, err := ParseMemo("swap:BNB.RUNE-B1A:bnb18jtza8j86hfyuj2f90zec0g5gvjh823e5psn2u:124958592")
 	txIn := NewObservedTx(
 		common.NewTx(GetRandomTxHash(), signerBNBAddr, GetRandomBNBAddress(),
 			common.Coins{
 				common.NewCoin(tCanAsset, sdk.NewUint(20000000)),
 			},
 			BNBGasFeeSingleton,
-			"swap:RUNE-B1A:bnb18jtza8j86hfyuj2f90zec0g5gvjh823e5psn2u:124958592",
+			"swap:BNB.RUNE-B1A:bnb18jtza8j86hfyuj2f90zec0g5gvjh823e5psn2u:124958592",
 		),
 		1,
 		GetRandomPubKey(),
@@ -230,14 +230,14 @@ func (s *HandlerSwapSuite) TestDoubleSwap(c *C) {
 	versionedTxOutStoreDummy.txoutStore.NewBlock(1, constAccessor)
 
 	// double swap - happy path
-	m, err := ParseMemo("swap:BNB:bnb18jtza8j86hfyuj2f90zec0g5gvjh823e5psn2u")
+	m, err := ParseMemo("swap:BNB.BNB:bnb18jtza8j86hfyuj2f90zec0g5gvjh823e5psn2u")
 	txIn := NewObservedTx(
 		common.NewTx(GetRandomTxHash(), signerBNBAddr, GetRandomBNBAddress(),
 			common.Coins{
 				common.NewCoin(tCanAsset, sdk.NewUint(20000000)),
 			},
 			BNBGasFeeSingleton,
-			"swap:BNB:bnb18jtza8j86hfyuj2f90zec0g5gvjh823e5psn2u",
+			"swap:BNB.BNB:bnb18jtza8j86hfyuj2f90zec0g5gvjh823e5psn2u",
 		),
 		1,
 		GetRandomPubKey(),
@@ -250,7 +250,7 @@ func (s *HandlerSwapSuite) TestDoubleSwap(c *C) {
 	c.Assert(items, HasLen, 0)
 
 	res := handler.handle(ctx, msgSwapFromTxIn.(MsgSwap), ver, constAccessor)
-	c.Assert(res.IsOK(), Equals, true)
+	c.Assert(res.IsOK(), Equals, true, Commentf("%s", res.Log))
 	c.Assert(res.Code, Equals, sdk.CodeOK)
 	c.Assert(keeper.event, NotNil)
 	c.Assert(len(keeper.event), Equals, 2)
@@ -261,14 +261,14 @@ func (s *HandlerSwapSuite) TestDoubleSwap(c *C) {
 	keeper.clearEvent()
 	// double swap , RUNE not enough to pay for transaction fee
 
-	m1, err := ParseMemo("swap:BNB:bnb18jtza8j86hfyuj2f90zec0g5gvjh823e5psn2u")
+	m1, err := ParseMemo("swap:BNB.BNB:bnb18jtza8j86hfyuj2f90zec0g5gvjh823e5psn2u")
 	txIn1 := NewObservedTx(
 		common.NewTx(GetRandomTxHash(), signerBNBAddr, GetRandomBNBAddress(),
 			common.Coins{
 				common.NewCoin(tCanAsset, sdk.NewUint(10000000)),
 			},
 			BNBGasFeeSingleton,
-			"swap:BNB:bnb18jtza8j86hfyuj2f90zec0g5gvjh823e5psn2u",
+			"swap:BNB.BNB:bnb18jtza8j86hfyuj2f90zec0g5gvjh823e5psn2u",
 		),
 		1,
 		GetRandomPubKey(),

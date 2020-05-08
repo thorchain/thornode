@@ -12,10 +12,10 @@ type GasSuite struct{}
 var _ = Suite(&GasSuite{})
 
 func (s *GasSuite) TestETHGasFee(c *C) {
-	gas := GetETHGasFee(big.NewInt(20))
+	gas := GetETHGasFee(big.NewInt(20), 4)
 	amt := gas[0].Amount
 	c.Check(
-		amt.Equal(sdk.NewUint(10000000)),
+		amt.Equal(sdk.NewUint(425440)),
 		Equals,
 		true,
 		Commentf("%d", amt.Uint64()),

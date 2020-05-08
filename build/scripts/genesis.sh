@@ -72,6 +72,11 @@ if [ "$SEED" = "$(hostname)" ]; then
         # add gases
         add_gas_config "BNB.BNB" 37500 30000
 
+        # disable default bank transfer, and opt to use our own custom one
+        disable_bank_send
+
+        reserve 22000000000000000
+
         cat ~/.thord/config/genesis.json
         thord validate-genesis
     fi

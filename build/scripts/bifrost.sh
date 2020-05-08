@@ -3,6 +3,7 @@
 CHAIN_ID="${CHAIN_ID:=thorchain}"
 BINANCE_HOST="${BINANCE_HOST:=https://data-seed-pre-0-s3.binance.org}"
 BTC_HOST="${BTC_HOST:=127.0.0.1:18443}"
+ETH_HOST="${ETH_HOST:=http://ethereum-localnet:8545}"
 DB_PATH="${DB_PATH:=/var/data}"
 CHAIN_API="${CHAIN_API:=127.0.0.1:1317}"
 CHAIN_RPC="${CHAIN_RPC:=127.0.0.1:26657}"
@@ -66,6 +67,28 @@ if [ ! -f /etc/bifrost/config.json ]; then
             \"block_height_discover_back_off\": \"5s\",
             \"block_retry_interval\": \"10s\",
             \"chain_id\": \"BTC\",
+            \"http_request_timeout\": \"30s\",
+            \"http_request_read_timeout\": \"30s\",
+            \"http_request_write_timeout\": \"30s\",
+            \"max_http_request_retry\": 10,
+            \"start_block_height\": 0,
+            \"db_path\": \"$OBSERVER_PATH\"
+          }
+        },
+        {
+          \"chain_id\": \"ETH\",
+          \"rpc_host\": \"$ETH_HOST\",
+          \"username\": \"$SIGNER_NAME\",
+          \"password\": \"$SIGNER_PASSWD\",
+          \"http_post_mode\": 1,
+          \"disable_tls\": 1,
+          \"block_scanner\": {
+            \"rpc_host\": \"$ETH_HOST\",
+            \"enforce_block_height\": false,
+            \"block_scan_processors\": 1,
+            \"block_height_discover_back_off\": \"3s\",
+            \"block_retry_interval\": \"10s\",
+            \"chain_id\": \"ETH\",
             \"http_request_timeout\": \"30s\",
             \"http_request_read_timeout\": \"30s\",
             \"http_request_write_timeout\": \"30s\",

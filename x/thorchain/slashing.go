@@ -78,13 +78,21 @@ func (s *Slasher) HandleDoubleSign(ctx sdk.Context, addr crypto.Address, infract
 			slashAmount := sdk.NewUint(uint64(minBond)).MulUint64(5).QuoUint64(100)
 			na.Bond = common.SafeSub(na.Bond, slashAmount)
 
-			vaultData, err := s.keeper.GetVaultData(ctx)
-			if err != nil {
-				return fmt.Errorf("fail to get vault data: %w", err)
-			}
-			vaultData.TotalReserve = vaultData.TotalReserve.Add(slashAmount)
-			if err := s.keeper.SetVaultData(ctx, vaultData); err != nil {
-				return fmt.Errorf("fail to save vault data: %w", err)
+			if common.RuneAsset().Chain.Equals(common.THORChain) {
+				coin := common.NewCoin(common.RuneNative, slashAmount)
+				if err := s.keeper.SendFromModuleToModule(ctx, BondName, ReserveName, coin); err != nil {
+					ctx.Logger().Error("fail to transfer funds from reserve to asgard", "error", err)
+					return fmt.Errorf("fail to transfer funds from reserve to asgard: %w", err)
+				}
+			} else {
+				vaultData, err := s.keeper.GetVaultData(ctx)
+				if err != nil {
+					return fmt.Errorf("fail to get vault data: %w", err)
+				}
+				vaultData.TotalReserve = vaultData.TotalReserve.Add(slashAmount)
+				if err := s.keeper.SetVaultData(ctx, vaultData); err != nil {
+					return fmt.Errorf("fail to save vault data: %w", err)
+				}
 			}
 
 			return s.keeper.SetNodeAccount(ctx, na)

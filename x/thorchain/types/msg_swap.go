@@ -29,7 +29,7 @@ func NewMsgSwap(tx common.Tx, target common.Asset, destination common.Address, t
 func (msg MsgSwap) Route() string { return RouterKey }
 
 // Type should return the action
-func (msg MsgSwap) Type() string { return "set_swap" }
+func (msg MsgSwap) Type() string { return "swap" }
 
 // ValidateBasic runs stateless checks on the message
 func (msg MsgSwap) ValidateBasic() sdk.Error {
@@ -49,6 +49,9 @@ func (msg MsgSwap) ValidateBasic() sdk.Error {
 	}
 	if msg.Destination.IsEmpty() {
 		return sdk.ErrUnknownRequest("Swap Destination cannot be empty")
+	}
+	if !msg.Destination.IsChain(msg.TargetAsset.Chain) {
+		return sdk.ErrUnknownRequest("swap destination and swap target asset must be the same chain")
 	}
 	return nil
 }

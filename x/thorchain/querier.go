@@ -202,6 +202,11 @@ func queryVaultData(ctx sdk.Context, keeper Keeper) ([]byte, sdk.Error) {
 		ctx.Logger().Error("fail to get vault", "error", err)
 		return nil, sdk.ErrInternal("fail to get vault")
 	}
+
+	if common.RuneAsset().Chain.Equals(common.THORChain) {
+		data.TotalReserve = keeper.GetRuneBalaceOfModule(ctx, ReserveName)
+	}
+
 	res, err := codec.MarshalJSONIndent(keeper.Cdc(), data)
 	if err != nil {
 		ctx.Logger().Error("fail to marshal vault data to json", "error", err)
