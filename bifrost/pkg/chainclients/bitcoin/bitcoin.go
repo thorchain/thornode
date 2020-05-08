@@ -267,31 +267,19 @@ func (c *Client) reConfirmTx() error {
 
 // confirmTx check a tx is valid on chain post reorg
 func (c *Client) confirmTx(txHash *chainhash.Hash) bool {
+	// first check if tx is in mempool, just signed it for example
+	// if no error it means its valid mempool tx and move on
+	_, err := c.client.GetMempoolEntry(txHash.String())
+	if err == nil {
+		return true
+	}
+	// then get raw tx and check if it has confirmations or not
+	// if no confirmation and not in mempool then invalid
 	result, err := c.client.GetTransaction(txHash)
 	if err != nil {
 		return false
 	}
-	fmt.Println("=============confirmtx=====================")
-	fmt.Println(txHash)
-	fmt.Println(result.BlockHash)
-	fmt.Println(result.Confirmations)
-	fmt.Println(result.BlockTime)
-	fmt.Println("=============confirmtx=====================")
-	// means tx not mined yet so valid
 	if result.Confirmations == 0 {
-		return false
-	}
-	// check block confirmations in case the tx itself is not yet invalidated...
-	blockHash, err := chainhash.NewHashFromStr(result.BlockHash)
-	if err != nil {
-		return false
-	}
-	block, err := c.client.GetBlockVerbose(blockHash)
-	if err != nil {
-		return false
-	}
-	// if block confirmations = -1 means it was invalidated after a reorg
-	if block.Confirmations == -1 {
 		return false
 	}
 	return true
