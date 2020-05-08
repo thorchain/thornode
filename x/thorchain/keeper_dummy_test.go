@@ -15,7 +15,10 @@ import (
 	"gitlab.com/thorchain/thornode/constants"
 )
 
-var kaboom = errors.New("Kaboom!!!")
+var (
+	kaboom    = errors.New("Kaboom!!!")
+	kaboomSdk = sdk.NewError(DefaultCodespace, 404, "kaboom!!!")
+)
 
 type KVStoreDummy struct{}
 
@@ -29,6 +32,23 @@ func (k KVStoreDummy) Logger(ctx sdk.Context) log.Logger {
 func (k KVStoreDummy) GetKey(_ sdk.Context, prefix dbPrefix, key string) string {
 	return fmt.Sprintf("%s/1/%s", prefix, key)
 }
+
+func (k KVStoreDummy) GetRuneBalaceOfModule(ctx sdk.Context, moduleName string) sdk.Uint {
+	return sdk.ZeroUint()
+}
+
+func (k KVStoreDummy) SendFromModuleToModule(ctx sdk.Context, from, to string, coin common.Coin) sdk.Error {
+	return kaboomSdk
+}
+
+func (k KVStoreDummy) SendFromAccountToModule(ctx sdk.Context, from sdk.AccAddress, to string, coin common.Coin) sdk.Error {
+	return kaboomSdk
+}
+
+func (k KVStoreDummy) SendFromModuleToAccount(ctx sdk.Context, from string, to sdk.AccAddress, coin common.Coin) sdk.Error {
+	return kaboomSdk
+}
+
 func (k KVStoreDummy) SetLastSignedHeight(_ sdk.Context, _ int64) { return }
 func (k KVStoreDummy) GetLastSignedHeight(_ sdk.Context) (int64, error) {
 	return 0, kaboom

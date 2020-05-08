@@ -48,7 +48,8 @@ var (
 		auth.FeeCollectorName: nil,
 		thorchain.ModuleName:  {supply.Minter},
 		thorchain.ReserveName: {},
-		thorchain.AsgardName:  {supply.Staking},
+		thorchain.BondName:    {supply.Staking},
+		thorchain.AsgardName:  {},
 	}
 )
 
