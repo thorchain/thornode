@@ -1,8 +1,6 @@
 package thorchain
 
 import (
-	"encoding/json"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 	. "gopkg.in/check.v1"
@@ -176,13 +174,8 @@ func (s *QuerierSuite) TestQueryCompEvents(c *C) {
 	path := []string{"comp_events_chain", "1", "BNB"}
 
 	txID, err := common.NewTxID("A1C7D97D5DB51FFDBC3FE29FFF6ADAA2DAF112D2CEAADA0902822333A59BD218")
-	stake := NewEventStake(
-		common.BNBAsset,
-		sdk.NewUint(5),
-	)
-	stakeBytes, _ := json.Marshal(stake)
 	evt := NewEvent(
-		stake.Type(),
+		"doesn't matter",
 		12,
 		common.NewTx(
 			txID,
@@ -193,9 +186,9 @@ func (s *QuerierSuite) TestQueryCompEvents(c *C) {
 				common.NewCoin(common.RuneAsset(), sdk.NewUint(420000000)),
 			},
 			BNBGasFeeSingleton,
-			"SWAP:BNB.BNB",
+			"who cares",
 		),
-		stakeBytes,
+		nil,
 		EventSuccess,
 	)
 	c.Assert(keeper.UpsertEvent(ctx, evt), IsNil)
@@ -210,7 +203,7 @@ func (s *QuerierSuite) TestQueryCompEvents(c *C) {
 
 	// add empty tx in out tx and should be returned still
 	// because the in tx chain match
-	evt.OutTxs = common.Txs{common.Tx{ID: common.BlankTxID}}
+	evt.OutTxs = common.Txs{common.Tx{ID: common.BlankTxID, Chain: common.BNBChain}}
 	c.Assert(keeper.UpsertEvent(ctx, evt), IsNil)
 
 	res, err = querier(ctx, path, abci.RequestQuery{})

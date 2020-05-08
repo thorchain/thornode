@@ -442,6 +442,13 @@ type TestDoubleSlashKeeper struct {
 	KVStoreDummy
 	na        NodeAccount
 	vaultData VaultData
+	modules   map[string]int64
+}
+
+func (k *TestDoubleSlashKeeper) SendFromModuleToModule(_ sdk.Context, from, to string, coin common.Coin) sdk.Error {
+	k.modules[from] -= int64(coin.Amount.Uint64())
+	k.modules[to] += int64(coin.Amount.Uint64())
+	return nil
 }
 
 func (k *TestDoubleSlashKeeper) ListActiveNodeAccounts(ctx sdk.Context) (NodeAccounts, error) {
@@ -472,6 +479,7 @@ func (s *SlashingSuite) TestDoubleSign(c *C) {
 	keeper := &TestDoubleSlashKeeper{
 		na:        na,
 		vaultData: NewVaultData(),
+		modules:   make(map[string]int64, 0),
 	}
 	slasher, err := NewSlasher(keeper, constants.SWVersion)
 	c.Assert(err, IsNil)
@@ -482,5 +490,9 @@ func (s *SlashingSuite) TestDoubleSign(c *C) {
 	c.Assert(err, IsNil)
 
 	c.Check(keeper.na.Bond.Equal(sdk.NewUint(9995000000)), Equals, true, Commentf("%d", keeper.na.Bond.Uint64()))
-	c.Check(keeper.vaultData.TotalReserve.Equal(sdk.NewUint(5000000)), Equals, true)
+	if common.RuneAsset().Chain.Equals(common.THORChain) {
+		c.Check(keeper.modules[ReserveName], Equals, int64(5000000))
+	} else {
+		c.Check(keeper.vaultData.TotalReserve.Equal(sdk.NewUint(5000000)), Equals, true)
+	}
 }

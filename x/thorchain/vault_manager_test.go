@@ -217,7 +217,11 @@ func (s *ValidatorManagerTestSuite) TestRagnarokChain(c *C) {
 	c.Assert(err, IsNil)
 
 	// 1 ygg return + 4 unstakes
-	c.Check(items, HasLen, 5, Commentf("Len %d", items))
+	if common.RuneAsset().Chain.Equals(common.THORChain) {
+		c.Check(items, HasLen, 3, Commentf("Len %d", items))
+	} else {
+		c.Check(items, HasLen, 5, Commentf("Len %d", items))
+	}
 	c.Check(items[0].Memo, Equals, NewYggdrasilReturn(ctx.BlockHeight()).String())
 	c.Check(items[0].Chain.Equals(common.BTCChain), Equals, true)
 }

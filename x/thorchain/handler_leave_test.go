@@ -24,7 +24,7 @@ func (HandlerLeaveSuite) TestLeaveHandler_NotActiveNodeLeave(c *C) {
 	ygg := NewVault(w.ctx.BlockHeight(), ActiveVault, YggdrasilVault, acc2.PubKeySet.Secp256k1, common.Chains{common.RuneAsset().Chain})
 	c.Assert(w.keeper.SetVault(w.ctx, ygg), IsNil)
 
-	FundModule(c, w.ctx, w.keeper, AsgardName, 100)
+	FundModule(c, w.ctx, w.keeper, BondName, 100)
 
 	txID := GetRandomTxHash()
 	tx := common.NewTx(
