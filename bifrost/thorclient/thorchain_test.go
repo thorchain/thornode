@@ -47,6 +47,8 @@ func (s *ThorchainSuite) SetUpSuite(c *C) {
 			httpTestHandler(c, rw, "../../test/fixtures/endpoints/keysign/template.json")
 		case strings.HasPrefix(req.RequestURI, "/thorchain/vaults") && strings.HasSuffix(req.RequestURI, "/signers"):
 			httpTestHandler(c, rw, "../../test/fixtures/endpoints/tss/keysign_party.json")
+		case strings.HasPrefix(req.RequestURI, AsgardVault):
+			httpTestHandler(c, rw, "../../test/fixtures/endpoints/vaults/asgard.json")
 		}
 	}))
 	s.cfg.ChainHost = s.server.Listener.Addr().String()
@@ -237,4 +239,10 @@ func (s *ThorchainSuite) TestIsCatchingUp(c *C) {
 	ok, err := s.bridge.IsCatchingUp()
 	c.Assert(err, IsNil)
 	c.Assert(ok, Equals, false)
+}
+
+func (s *ThorchainSuite) TestGetAsgards(c *C) {
+	vaults, err := s.bridge.GetAsgards()
+	c.Assert(err, IsNil)
+	c.Assert(vaults, NotNil)
 }

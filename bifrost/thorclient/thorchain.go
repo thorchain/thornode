@@ -37,9 +37,9 @@ const (
 	LastBlockEndpoint        = "/thorchain/lastblock"
 	NodeAccountEndpoint      = "/thorchain/nodeaccount"
 	ValidatorsEndpoint       = "/thorchain/validators"
-	VaultsEndpoint           = "/thorchain/vaults/pubkeys"
 	SignerMembershipEndpoint = "/thorchain/vaults/%s/signers"
 	StatusEndpoint           = "/status"
+	AsgardVault              = "/thorchain/vaults/asgard"
 )
 
 // ThorchainBridge will be used to send tx to thorchain
@@ -379,4 +379,20 @@ func (b *ThorchainBridge) WaitToCatchUp() error {
 		time.Sleep(5 * time.Second)
 	}
 	return nil
+}
+
+// GetAsgards retrieve all the asgard vaults from thorchain
+func (b *ThorchainBridge) GetAsgards() (stypes.Vaults, error) {
+	buf, s, err := b.getWithPath(AsgardVault)
+	if err != nil {
+		return nil, fmt.Errorf("fail to get asgard vaults: %w", err)
+	}
+	if s != http.StatusOK {
+		return nil, fmt.Errorf("unexpected status code %d", s)
+	}
+	var vaults stypes.Vaults
+	if err := b.cdc.UnmarshalJSON(buf, &vaults); err != nil {
+		return nil, fmt.Errorf("fail to unmarshal asgard vaults from json: %w", err)
+	}
+	return vaults, nil
 }
