@@ -173,7 +173,7 @@ func (h ErrataTxHandler) handleV1(ctx sdk.Context, msg MsgErrataTx, version semv
 		NewPoolMod(pool.Asset, runeAmt, false, assetAmt, false),
 	}
 
-	eventErrata := NewEventErrata(mods)
+	eventErrata := NewEventErrata(msg.TxID, mods)
 	eventMgr, err := h.versionedEventManager.GetEventManager(ctx, version)
 	if err != nil {
 		return errFailGetEventManager.Result()

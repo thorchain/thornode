@@ -40,7 +40,6 @@ func (GasManagerTestSuite) TestGasManager(c *C) {
 	})
 	c.Assert(gasMgr.GetGas(), HasLen, 3)
 	eventMgr := NewEventMgr()
-	eventMgr.BeginBlock(ctx)
 	gasMgr.EndBlock(ctx, k, eventMgr)
 	eventID, err := k.GetCurrentEventID(ctx)
 	c.Assert(err, IsNil)

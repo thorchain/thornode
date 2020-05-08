@@ -15,20 +15,7 @@ func NewDummyEventMgr() *DummyEventMgr {
 	return &DummyEventMgr{}
 }
 
-func (m *DummyEventMgr) BeginBlock(ctx sdk.Context) {
-}
-
-func (m *DummyEventMgr) EndBlock(ctx sdk.Context, keeper Keeper) {
-}
-
-func (m *DummyEventMgr) GetBlockEvents(ctx sdk.Context, keeper Keeper, height int64) (*BlockEvents, error) {
-	return nil, nil
-}
-
 func (m *DummyEventMgr) CompleteEvents(ctx sdk.Context, keeper Keeper, height int64, txID common.TxID, txs common.Txs, eventStatus EventStatus) {
-}
-
-func (m *DummyEventMgr) AddEvent(event Event) {
 }
 
 func (m *DummyEventMgr) EmitPoolEvent(ctx sdk.Context, keeper Keeper, txIn common.TxID, status EventStatus, poolEvt EventPool) error {
