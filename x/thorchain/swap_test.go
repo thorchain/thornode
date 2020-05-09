@@ -280,9 +280,7 @@ func (s *SwapSuite) TestSwap(c *C) {
 			c.Assert(err, IsNil)
 			c.Assert(evts, HasLen, len(item.events))
 			for i := range evts {
-				c.Assert(item.events[i].ID, Equals, evts[i].ID)
-				c.Assert(item.events[i].Height, Equals, evts[i].Height)
-				c.Assert(item.events[i].Type, Equals, evts[i].Type)
+				c.Assert(item.events[i].Type, Equals, evts[i].Type())
 				c.Assert(item.events[i].InTx.Equals(evts[i].InTx), Equals, true, Commentf("%+v\n%+v", item.events[i].InTx, evts[i].InTx))
 				// TODO: test for price target, trade slip, and liquidity fee
 			}

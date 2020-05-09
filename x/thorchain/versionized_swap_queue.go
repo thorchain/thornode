@@ -3,6 +3,7 @@ package thorchain
 import (
 	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	"gitlab.com/thorchain/thornode/constants"
 )
 
@@ -18,14 +19,16 @@ type SwapQueue interface {
 
 // VersionedSwapQ is an implementation of versioned Vault Manager
 type VersionedSwapQ struct {
-	queue               SwapQueue
-	versionedTxOutStore VersionedTxOutStore
+	queue                 SwapQueue
+	versionedTxOutStore   VersionedTxOutStore
+	versionedEventManager VersionedEventManager
 }
 
 // NewVersionedSwapQ create a new instance of VersionedSwapQ
-func NewVersionedSwapQ(versionedTxOutStore VersionedTxOutStore) VersionedSwapQueue {
+func NewVersionedSwapQ(versionedTxOutStore VersionedTxOutStore, versionedEventManager VersionedEventManager) VersionedSwapQueue {
 	return &VersionedSwapQ{
-		versionedTxOutStore: versionedTxOutStore,
+		versionedTxOutStore:   versionedTxOutStore,
+		versionedEventManager: versionedEventManager,
 	}
 }
 
@@ -33,7 +36,7 @@ func NewVersionedSwapQ(versionedTxOutStore VersionedTxOutStore) VersionedSwapQue
 func (v *VersionedSwapQ) GetSwapQueue(ctx sdk.Context, keeper Keeper, version semver.Version) (SwapQueue, error) {
 	if version.GTE(semver.MustParse("0.1.0")) {
 		if v.queue == nil {
-			v.queue = NewSwapQv1(keeper, v.versionedTxOutStore)
+			v.queue = NewSwapQv1(keeper, v.versionedTxOutStore, v.versionedEventManager)
 		}
 		return v.queue, nil
 	}

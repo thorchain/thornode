@@ -25,7 +25,7 @@ func (s *HandlerSwapSuite) TestValidate(c *C) {
 
 	versionedTxOutStoreDummy := NewVersionedTxOutStoreDummy()
 
-	handler := NewSwapHandler(keeper, versionedTxOutStoreDummy)
+	handler := NewSwapHandler(keeper, versionedTxOutStoreDummy, NewVersionedEventMgr())
 
 	ver := constants.SWVersion
 	txID := GetRandomTxHash()
@@ -116,7 +116,7 @@ func (s *HandlerSwapSuite) TestHandle(c *C) {
 
 	versionedTxOutStoreDummy := NewVersionedTxOutStoreDummy()
 
-	handler := NewSwapHandler(keeper, versionedTxOutStoreDummy)
+	handler := NewSwapHandler(keeper, versionedTxOutStoreDummy, NewVersionedEventMgr())
 
 	ver := constants.SWVersion
 	constAccessor := constants.GetConstantValues(ver)
@@ -207,7 +207,7 @@ func (s *HandlerSwapSuite) TestDoubleSwap(c *C) {
 		activeNodeAccount: GetRandomNodeAccount(NodeActive),
 	}
 	versionedTxOutStoreDummy := NewVersionedTxOutStoreDummy()
-	handler := NewSwapHandler(keeper, versionedTxOutStoreDummy)
+	handler := NewSwapHandler(keeper, versionedTxOutStoreDummy, NewVersionedEventMgr())
 	ver := constants.SWVersion
 	constAccessor := constants.GetConstantValues(ver)
 

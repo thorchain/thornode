@@ -38,6 +38,10 @@ func (m *DummyEventMgr) EmitReserveEvent(ctx sdk.Context, keeper Keeper, reserve
 	return nil
 }
 
+func (m *DummyEventMgr) EmitSwapEvent(ctx sdk.Context, keeper Keeper, swap EventSwap) error {
+	return nil
+}
+
 type DummyVersionedEventMgr struct{}
 
 func NewDummyVersionedEventMgr() *DummyVersionedEventMgr {
