@@ -1,7 +1,7 @@
 package thorchain
 
 import (
-	"encoding/json"
+	"fmt"
 
 	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -11,13 +11,15 @@ import (
 
 // ReserveContributorHandler is handler to process MsgReserveContributor
 type ReserveContributorHandler struct {
-	keeper Keeper
+	keeper                Keeper
+	versionedEventManager VersionedEventManager
 }
 
 // NewReserveContributorHandler create a new instance of ReserveContributorHandler
-func NewReserveContributorHandler(keeper Keeper) ReserveContributorHandler {
+func NewReserveContributorHandler(keeper Keeper, versionedEventManager VersionedEventManager) ReserveContributorHandler {
 	return ReserveContributorHandler{
-		keeper: keeper,
+		keeper:                keeper,
+		versionedEventManager: versionedEventManager,
 	}
 }
 
@@ -55,7 +57,7 @@ func (h ReserveContributorHandler) ValidateV1(ctx sdk.Context, msg MsgReserveCon
 func (h ReserveContributorHandler) Handle(ctx sdk.Context, msg MsgReserveContributor, version semver.Version) sdk.Result {
 	ctx.Logger().Info("handleMsgReserveContributor request")
 	if version.GTE(semver.MustParse("0.1.0")) {
-		if err := h.HandleV1(ctx, msg); err != nil {
+		if err := h.HandleV1(ctx, msg, version); err != nil {
 			ctx.Logger().Error("fail to process MsgReserveContributor", "error", err)
 			return sdk.ErrInternal("fail to process reserve contributor").Result()
 		}
@@ -69,7 +71,7 @@ func (h ReserveContributorHandler) Handle(ctx sdk.Context, msg MsgReserveContrib
 }
 
 // HandleV1  process MsgReserveContributor
-func (h ReserveContributorHandler) HandleV1(ctx sdk.Context, msg MsgReserveContributor) error {
+func (h ReserveContributorHandler) HandleV1(ctx sdk.Context, msg MsgReserveContributor, version semver.Version) error {
 	reses, err := h.keeper.GetReservesContributors(ctx)
 	if err != nil {
 		ctx.Logger().Error("fail to get reserve contributors", "error", err)
@@ -93,11 +95,13 @@ func (h ReserveContributorHandler) HandleV1(ctx sdk.Context, msg MsgReserveContr
 		ctx.Logger().Error("fail to save vault data", "error", err)
 		return err
 	}
-	reserveEvent := NewEventReserve(msg.Contributor)
-	buf, err := json.Marshal(reserveEvent)
-	if nil != err {
-		return err
+	eventMgr, err := h.versionedEventManager.GetEventManager(ctx, version)
+	if err != nil {
+		return errFailGetEventManager
 	}
-	e := NewEvent(reserveEvent.Type(), ctx.BlockHeight(), msg.Tx, buf, EventSuccess)
-	return h.keeper.UpsertEvent(ctx, e)
+	reserveEvent := NewEventReserve(msg.Contributor, msg.Tx)
+	if err := eventMgr.EmitReserveEvent(ctx, h.keeper, reserveEvent); err != nil {
+		return fmt.Errorf("fail to emit reserve event: %w", err)
+	}
+	return nil
 }

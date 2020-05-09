@@ -177,7 +177,7 @@ func newRefundTxHandlerTestHelper(c *C) refundTxHandlerTestHelper {
 	c.Assert(err, IsNil)
 	c.Check(result, Equals, true)
 
-	swapEvent := NewEventSwap(common.BNBAsset, sdk.NewUint(common.One), sdk.NewUint(common.One), sdk.NewUint(common.One), sdk.NewUint(common.One))
+	swapEvent := NewEventSwap(common.BNBAsset, sdk.NewUint(common.One), sdk.NewUint(common.One), sdk.NewUint(common.One), sdk.NewUint(common.One), GetRandomTx())
 	buf, err := json.Marshal(swapEvent)
 	c.Assert(err, IsNil)
 	e := NewEvent(swapEvent.Type(), ctx.BlockHeight(), tx.Tx, buf, EventPending)

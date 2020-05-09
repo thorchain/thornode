@@ -319,7 +319,7 @@ func (s *ThorchainSuite) TestRagnarok(c *C) {
 		NewReserveContributor(contrib1, sdk.NewUint(400_000_000*common.One)),
 		NewReserveContributor(contrib2, sdk.NewUint(100_000*common.One)),
 	}
-	resHandler := NewReserveContributorHandler(keeper)
+	resHandler := NewReserveContributorHandler(keeper, NewVersionedEventMgr())
 	for _, res := range reserves {
 		asgard.AddFunds(common.Coins{
 			common.NewCoin(common.RuneAsset(), res.Amount),
@@ -512,7 +512,7 @@ func (s *ThorchainSuite) TestRagnarokNoOneLeave(c *C) {
 		NewReserveContributor(contrib1, sdk.NewUint(400_000_000*common.One)),
 		NewReserveContributor(contrib2, sdk.NewUint(100_000*common.One)),
 	}
-	resHandler := NewReserveContributorHandler(keeper)
+	resHandler := NewReserveContributorHandler(keeper, NewVersionedEventMgr())
 	for _, res := range reserves {
 		asgard.AddFunds(common.Coins{
 			common.NewCoin(common.RuneAsset(), res.Amount),

@@ -12,8 +12,9 @@ import (
 
 // SwapQv1 is going to manage the swaps queue
 type SwapQv1 struct {
-	k                   Keeper
-	versionedTxOutStore VersionedTxOutStore
+	k                     Keeper
+	versionedTxOutStore   VersionedTxOutStore
+	versionedEventManager VersionedEventManager
 }
 
 type swapItem struct {
@@ -24,10 +25,11 @@ type swapItem struct {
 type swapItems []swapItem
 
 // NewSwapQv1 create a new vault manager
-func NewSwapQv1(k Keeper, versionedTxOutStore VersionedTxOutStore) *SwapQv1 {
+func NewSwapQv1(k Keeper, versionedTxOutStore VersionedTxOutStore, versionedEventManager VersionedEventManager) *SwapQv1 {
 	return &SwapQv1{
-		k:                   k,
-		versionedTxOutStore: versionedTxOutStore,
+		k:                     k,
+		versionedTxOutStore:   versionedTxOutStore,
+		versionedEventManager: versionedEventManager,
 	}
 }
 
@@ -49,7 +51,7 @@ func (vm *SwapQv1) FetchQueue(ctx sdk.Context) ([]MsgSwap, error) {
 
 // EndBlock move funds from retiring asgard vaults
 func (vm *SwapQv1) EndBlock(ctx sdk.Context, version semver.Version, constAccessor constants.ConstantValues) error {
-	handler := NewSwapHandler(vm.k, vm.versionedTxOutStore)
+	handler := NewSwapHandler(vm.k, vm.versionedTxOutStore, vm.versionedEventManager)
 
 	txOutStore, err := vm.versionedTxOutStore.GetTxOutStore(vm.k, version)
 	if err != nil {
