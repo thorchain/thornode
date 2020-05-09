@@ -15,6 +15,7 @@ type EventManager interface {
 	EmitPoolEvent(ctx sdk.Context, keeper Keeper, txIn common.TxID, status EventStatus, poolEvt EventPool) error
 	EmitErrataEvent(ctx sdk.Context, keeper Keeper, txIn common.TxID, errataEvent EventErrata) error
 	EmitGasEvent(ctx sdk.Context, keeper Keeper, gasEvent *EventGas) error
+	EmitSwapEvent(ctx sdk.Context, keeper Keeper, swap EventSwap) error
 }
 
 // EventMgr implement EventManager interface
@@ -103,5 +104,18 @@ func (m *EventMgr) EmitGasEvent(ctx sdk.Context, keeper Keeper, gasEvent *EventG
 }
 
 func (m *EventMgr) EmitSwapEvent(ctx sdk.Context, keeper Keeper, swap EventSwap) error {
-
+	buf, err := json.Marshal(swap)
+	if err != nil {
+		return fmt.Errorf("fail to marshal swap event to json: %w", err)
+	}
+	evt := NewEvent(swap.Type(), ctx.BlockHeight(), swap.InTx, buf, EventPending)
+	if !swap.OutTxs.IsEmpty() {
+		evt.Status = EventSuccess
+		evt.OutTxs = common.Txs{swap.OutTxs}
+	}
+	if err := keeper.UpsertEvent(ctx, evt); err != nil {
+		return fmt.Errorf("fail to save swap event: %w", err)
+	}
+	// TODO emit the new events here
+	return nil
 }
