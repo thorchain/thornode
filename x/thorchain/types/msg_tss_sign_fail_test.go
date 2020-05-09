@@ -5,7 +5,7 @@ import (
 	. "gopkg.in/check.v1"
 
 	"gitlab.com/thorchain/thornode/common"
-	tssCommon "gitlab.com/thorchain/tss/go-tss/common"
+	"gitlab.com/thorchain/tss/go-tss/blame"
 )
 
 type MsgTssKeysignFailSuite struct{}
@@ -13,11 +13,11 @@ type MsgTssKeysignFailSuite struct{}
 var _ = Suite(&MsgTssKeysignFailSuite{})
 
 func (s MsgTssKeysignFailSuite) TestMsgTssKeysignFail(c *C) {
-	b := tssCommon.Blame{
+	b := blame.Blame{
 		FailReason: "fail to TSS sign",
-		BlameNodes: []string{
-			GetRandomPubKey().String(),
-			GetRandomPubKey().String(),
+		BlameNodes: []blame.Node{
+			blame.Node{Pubkey: GetRandomPubKey().String()},
+			blame.Node{Pubkey: GetRandomPubKey().String()},
 		},
 	}
 	coins := common.Coins{
@@ -26,7 +26,7 @@ func (s MsgTssKeysignFailSuite) TestMsgTssKeysignFail(c *C) {
 	msg := NewMsgTssKeysignFail(1, b, "hello", coins, GetRandomBech32Addr())
 	c.Check(msg.Type(), Equals, "set_tss_keysign_fail")
 	EnsureMsgBasicCorrect(msg, c)
-	c.Check(NewMsgTssKeysignFail(1, tssCommon.NoBlame, "hello", coins, GetRandomBech32Addr()), NotNil)
+	c.Check(NewMsgTssKeysignFail(1, blame.Blame{}, "hello", coins, GetRandomBech32Addr()), NotNil)
 	c.Check(NewMsgTssKeysignFail(1, b, "", coins, GetRandomBech32Addr()), NotNil)
 	c.Check(NewMsgTssKeysignFail(1, b, "hello", common.Coins{}, GetRandomBech32Addr()), NotNil)
 	c.Check(NewMsgTssKeysignFail(1, b, "hello", common.Coins{

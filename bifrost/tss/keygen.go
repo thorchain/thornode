@@ -7,7 +7,7 @@ import (
 
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-	tssCommon "gitlab.com/thorchain/tss/go-tss/common"
+	"gitlab.com/thorchain/tss/go-tss/blame"
 	"gitlab.com/thorchain/tss/go-tss/keygen"
 	tss "gitlab.com/thorchain/tss/go-tss/tss"
 
@@ -38,10 +38,10 @@ func NewTssKeyGen(keys *thorclient.Keys, server *tss.TssServer) (*KeyGen, error)
 	}, nil
 }
 
-func (kg *KeyGen) GenerateNewKey(pKeys common.PubKeys) (common.PubKeySet, tssCommon.Blame, error) {
+func (kg *KeyGen) GenerateNewKey(pKeys common.PubKeys) (common.PubKeySet, blame.Blame, error) {
 	// No need to do key gen
 	if len(pKeys) == 0 {
-		return common.EmptyPubKeySet, tssCommon.NoBlame, nil
+		return common.EmptyPubKeySet, blame.Blame{}, nil
 	}
 	var keys []string
 	for _, item := range pKeys {
@@ -52,7 +52,7 @@ func (kg *KeyGen) GenerateNewKey(pKeys common.PubKeys) (common.PubKeySet, tssCom
 	}
 	dat, err := kg.server.Keygen(keyGenReq)
 	if err != nil {
-		return common.EmptyPubKeySet, tssCommon.NoBlame, fmt.Errorf("fail to keygen,err:%w", err)
+		return common.EmptyPubKeySet, blame.Blame{}, fmt.Errorf("fail to keygen,err:%w", err)
 	}
 
 	cpk, err := common.NewPubKey(dat.PubKey)

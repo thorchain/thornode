@@ -5,7 +5,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	. "gopkg.in/check.v1"
 
-	tssCommon "gitlab.com/thorchain/tss/go-tss/common"
+	"gitlab.com/thorchain/tss/go-tss/blame"
 
 	"gitlab.com/thorchain/thornode/common"
 	"gitlab.com/thorchain/thornode/constants"
@@ -23,7 +23,7 @@ type tssKeysignFailHandlerTestHelper struct {
 	nodeAccount   NodeAccount
 	vaultManager  VersionedVaultManager
 	members       common.PubKeys
-	blame         tssCommon.Blame
+	blame         blame.Blame
 }
 
 type tssKeysignKeeperHelper struct {
@@ -82,13 +82,13 @@ func newTssKeysignHandlerTestHelper(c *C) tssKeysignFailHandlerTestHelper {
 	versionedEventManagerDummy := NewDummyVersionedEventMgr()
 
 	vaultMgr := NewVersionedVaultMgr(versionedTxOutStore, versionedEventManagerDummy)
-	var members []string
+	var members []blame.Node
 	for i := 0; i < 8; i++ {
 		na := GetRandomNodeAccount(NodeStandby)
-		members = append(members, na.PubKeySet.Secp256k1.String())
+		members = append(members, blame.Node{Pubkey: na.PubKeySet.Secp256k1.String()})
 		_ = keeper.SetNodeAccount(ctx, na)
 	}
-	blame := tssCommon.Blame{
+	blame := blame.Blame{
 		FailReason: "whatever",
 		BlameNodes: members,
 	}
@@ -168,9 +168,9 @@ func (h HandlerTssKeysignSuite) TestTssKeysignFailHandler(c *C) {
 		{
 			name: "empty member pubkeys should return an error",
 			messageCreator: func(helper tssKeysignFailHandlerTestHelper) sdk.Msg {
-				return NewMsgTssKeysignFail(helper.ctx.BlockHeight(), tssCommon.Blame{
+				return NewMsgTssKeysignFail(helper.ctx.BlockHeight(), blame.Blame{
 					FailReason: "",
-					BlameNodes: []string{},
+					BlameNodes: []blame.Node{},
 				}, "hello", common.Coins{common.NewCoin(common.BNBAsset, sdk.NewUint(100))}, helper.nodeAccount.NodeAddress)
 			},
 			runner: func(handler TssKeysignHandler, msg sdk.Msg, helper tssKeysignFailHandlerTestHelper) sdk.Result {
