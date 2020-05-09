@@ -34,6 +34,10 @@ func (m *DummyEventMgr) EmitStakeEvent(ctx sdk.Context, keeper Keeper, inTx comm
 	return nil
 }
 
+func (m *DummyEventMgr) EmitRewardEvent(ctx sdk.Context, keeper Keeper, rewardEvt EventRewards) error {
+	return nil
+}
+
 func (m *DummyEventMgr) EmitReserveEvent(ctx sdk.Context, keeper Keeper, reserveEvent EventReserve) error {
 	return nil
 }

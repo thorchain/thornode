@@ -20,13 +20,14 @@ func (KeeperVaultDataSuite) TestVaultData(c *C) {
 	err := k.SetVaultData(ctx, vd)
 	c.Assert(err, IsNil)
 	gasManager := NewDummyGasManager()
-	c.Assert(k.UpdateVaultData(ctx, constAccessor, gasManager), IsNil)
+
+	c.Assert(k.UpdateVaultData(ctx, constAccessor, gasManager, NewEventMgr()), IsNil)
 
 	// add something in vault
 	vd.TotalReserve = sdk.NewUint(common.One * 100)
 	err = k.SetVaultData(ctx, vd)
 	c.Assert(err, IsNil)
-	c.Assert(k.UpdateVaultData(ctx, constAccessor, gasManager), IsNil)
+	c.Assert(k.UpdateVaultData(ctx, constAccessor, gasManager, NewEventMgr()), IsNil)
 }
 
 func (KeeperVaultDataSuite) TestGetTotalActiveNodeWithBound(c *C) {

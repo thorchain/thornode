@@ -16,6 +16,7 @@ type EventManager interface {
 	EmitErrataEvent(ctx sdk.Context, keeper Keeper, txIn common.TxID, errataEvent EventErrata) error
 	EmitGasEvent(ctx sdk.Context, keeper Keeper, gasEvent *EventGas) error
 	EmitStakeEvent(ctx sdk.Context, keeper Keeper, inTx common.Tx, stakeEvent EventStake) error
+	EmitRewardEvent(ctx sdk.Context, keeper Keeper, rewardEvt EventRewards) error
 	EmitReserveEvent(ctx sdk.Context, keeper Keeper, reserveEvent EventReserve) error
 	EmitSwapEvent(ctx sdk.Context, keeper Keeper, swap EventSwap) error
 }
@@ -125,6 +126,30 @@ func (m *EventMgr) EmitStakeEvent(ctx sdk.Context, keeper Keeper, inTx common.Tx
 		return fmt.Errorf("fail to save stake event: %w", err)
 	}
 	events, err := stakeEvent.Events()
+	if err != nil {
+		return fmt.Errorf("fail to get events: %w", err)
+	}
+	ctx.EventManager().EmitEvents(events)
+	return nil
+}
+
+// EmitRewardEvent save the reward event to keyvalue store and also use event manager
+func (m *EventMgr) EmitRewardEvent(ctx sdk.Context, keeper Keeper, rewardEvt EventRewards) error {
+	evtBytes, err := json.Marshal(rewardEvt)
+	if err != nil {
+		return fmt.Errorf("fail to marshal reward event to json: %w", err)
+	}
+	evt := NewEvent(
+		rewardEvt.Type(),
+		ctx.BlockHeight(),
+		common.Tx{ID: common.BlankTxID},
+		evtBytes,
+		EventSuccess,
+	)
+	if err := keeper.UpsertEvent(ctx, evt); err != nil {
+		return fmt.Errorf("fail to save event: %w", err)
+	}
+	events, err := rewardEvt.Events()
 	if err != nil {
 		return fmt.Errorf("fail to get events: %w", err)
 	}

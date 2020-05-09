@@ -1,7 +1,6 @@
 package thorchain
 
 import (
-	"encoding/json"
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -14,7 +13,7 @@ import (
 type KeeperVaultData interface {
 	GetVaultData(ctx sdk.Context) (VaultData, error)
 	SetVaultData(ctx sdk.Context, data VaultData) error
-	UpdateVaultData(ctx sdk.Context, constAccessor constants.ConstantValues, gasManager GasManager) error
+	UpdateVaultData(ctx sdk.Context, constAccessor constants.ConstantValues, gasManager GasManager, eventMgr EventManager) error
 }
 
 // GetVaultData retrieve vault data from key value store
@@ -79,7 +78,7 @@ func (k KVStore) getTotalActiveBond(ctx sdk.Context) (sdk.Uint, error) {
 // UpdateVaultData Update the vault data to reflect changing in this block
 // TODO: there is way too much business logic her for a keeper function. Move
 // to its own file/manager
-func (k KVStore) UpdateVaultData(ctx sdk.Context, constAccessor constants.ConstantValues, gasManager GasManager) error {
+func (k KVStore) UpdateVaultData(ctx sdk.Context, constAccessor constants.ConstantValues, gasManager GasManager, eventMgr EventManager) error {
 	vaultData, err := k.GetVaultData(ctx)
 	if err != nil {
 		return fmt.Errorf("fail to get existing vault data: %w", err)
@@ -195,21 +194,9 @@ func (k KVStore) UpdateVaultData(ctx sdk.Context, constAccessor constants.Consta
 	}
 
 	rewardEvt := NewEventRewards(bondReward, evtPools)
-	evtBytes, err := json.Marshal(rewardEvt)
-	if err != nil {
-		return fmt.Errorf("fail to marshal reward event to json: %w", err)
+	if err := eventMgr.EmitRewardEvent(ctx, k, rewardEvt); err != nil {
+		return fmt.Errorf("fail to emit reward event: %w", err)
 	}
-	evt := NewEvent(
-		rewardEvt.Type(),
-		ctx.BlockHeight(),
-		common.Tx{ID: common.BlankTxID},
-		evtBytes,
-		EventSuccess,
-	)
-	if err := k.UpsertEvent(ctx, evt); err != nil {
-		return fmt.Errorf("fail to save event: %w", err)
-	}
-
 	i, err := getTotalActiveNodeWithBond(ctx, k)
 	if err != nil {
 		return fmt.Errorf("fail to get total active node account: %w", err)
