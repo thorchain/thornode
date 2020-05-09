@@ -7,7 +7,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/rest"
 	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
-	tssCommon "gitlab.com/thorchain/tss/go-tss/common"
+	"gitlab.com/thorchain/tss/go-tss/blame"
 
 	"gitlab.com/thorchain/thornode/common"
 	"gitlab.com/thorchain/thornode/x/thorchain/types"
@@ -90,7 +90,7 @@ type newTssPool struct {
 	InputPubKeys common.PubKeys   `json:"input_pubkeys"`
 	KeygenType   types.KeygenType `json:"keygen_type"`
 	Height       int64            `json:"height"`
-	Blame        tssCommon.Blame  `json:"blame"`
+	Blame        blame.Blame      `json:"blame"`
 	PoolPubKey   common.PubKey    `json:"pool_pub_key"`
 	Chains       common.Chains    `json:"chains"`
 }
