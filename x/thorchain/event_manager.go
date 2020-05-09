@@ -16,6 +16,7 @@ type EventManager interface {
 	EmitErrataEvent(ctx sdk.Context, keeper Keeper, txIn common.TxID, errataEvent EventErrata) error
 	EmitGasEvent(ctx sdk.Context, keeper Keeper, gasEvent *EventGas) error
 	EmitStakeEvent(ctx sdk.Context, keeper Keeper, inTx common.Tx, stakeEvent EventStake) error
+	EmitReserveEvent(ctx sdk.Context, keeper Keeper, reserveEvent EventReserve) error
 }
 
 // EventMgr implement EventManager interface
@@ -123,6 +124,24 @@ func (m *EventMgr) EmitStakeEvent(ctx sdk.Context, keeper Keeper, inTx common.Tx
 		return fmt.Errorf("fail to save stake event: %w", err)
 	}
 	events, err := stakeEvent.Events()
+	if err != nil {
+		return fmt.Errorf("fail to get events: %w", err)
+	}
+	ctx.EventManager().EmitEvents(events)
+	return nil
+}
+
+// EmitReserveEvent emit reserve event both save it to local key value store , and also event manager
+func (m *EventMgr) EmitReserveEvent(ctx sdk.Context, keeper Keeper, reserveEvent EventReserve) error {
+	buf, err := json.Marshal(reserveEvent)
+	if nil != err {
+		return err
+	}
+	e := NewEvent(reserveEvent.Type(), ctx.BlockHeight(), reserveEvent.InTx, buf, EventSuccess)
+	if err := keeper.UpsertEvent(ctx, e); err != nil {
+		return fmt.Errorf("fail to save reserve event: %w", err)
+	}
+	events, err := reserveEvent.Events()
 	if err != nil {
 		return fmt.Errorf("fail to get events: %w", err)
 	}

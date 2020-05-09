@@ -340,17 +340,30 @@ func (e *EventGas) Events() (sdk.Events, error) {
 // EventReserve Reserve event type
 type EventReserve struct {
 	ReserveContributor ReserveContributor `json:"reserve_contributor"`
+	InTx               common.Tx          `json:"-"`
 }
 
 // NewEventReserve create a new instance of EventReserve
-func NewEventReserve(contributor ReserveContributor) EventReserve {
+func NewEventReserve(contributor ReserveContributor, inTx common.Tx) EventReserve {
 	return EventReserve{
 		ReserveContributor: contributor,
+		InTx:               inTx,
 	}
 }
 
 func (e EventReserve) Type() string {
 	return ReserveEventType
+}
+
+func (e EventReserve) Events() (sdk.Events, error) {
+	evt := sdk.NewEvent(e.Type(),
+		sdk.NewAttribute("contributor_address", e.ReserveContributor.Address.String()),
+		sdk.NewAttribute("amount", e.ReserveContributor.Amount.String()),
+	)
+	evt = evt.AppendAttributes(e.InTx.ToAttributes()...)
+	return sdk.Events{
+		evt,
+	}, nil
 }
 
 // EventSlash represent a change in pool balance which caused by slash a node account
