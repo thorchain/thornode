@@ -41,6 +41,10 @@ func (m *DummyEventMgr) EmitUnstakeEvent(ctx sdk.Context, keeper Keeper, unstake
 	return nil
 }
 
+func (m *DummyEventMgr) EmitSwapEvent(ctx sdk.Context, keeper Keeper, swap EventSwap) error {
+	return nil
+}
+
 type DummyVersionedEventMgr struct{}
 
 func NewDummyVersionedEventMgr() *DummyVersionedEventMgr {
