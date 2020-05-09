@@ -21,11 +21,21 @@ fi
 
 POOL_ADDRESS=$(curl -s $1:1317/thorchain/pool_addresses | jq -r ".current[0].address")
 
-curl -vvv -s -X POST -d "{
+curl -v -s -X POST -d "[{
+  \"from\": \"tbnb1ht7v08hv2lhtmk8y7szl2hjexqryc3hcldlztl\",
+  \"to\": \"$2\",
+  \"coins\":[
+      {\"denom\": \"BNB\", \"amount\": 200000000000000},
+      {\"denom\": \"RUNE-A1F\", \"amount\": 200000000000000}
+  ],
+  \"memo\": \"\"
+}]" $1:26660/broadcast/easy
+
+curl -v -s -X POST -d "[{
   \"from\": \"$2\",
   \"to\": \"$POOL_ADDRESS\",
   \"coins\":[
       {\"denom\": \"RUNE-A1F\", \"amount\": 100000000000000}
   ],
   \"memo\": \"BOND:$3\"
-}" $1:26660/broadcast/easy
+}]" $1:26660/broadcast/easy
