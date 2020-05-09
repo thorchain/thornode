@@ -15,6 +15,7 @@ type EventManager interface {
 	EmitPoolEvent(ctx sdk.Context, keeper Keeper, txIn common.TxID, status EventStatus, poolEvt EventPool) error
 	EmitErrataEvent(ctx sdk.Context, keeper Keeper, txIn common.TxID, errataEvent EventErrata) error
 	EmitGasEvent(ctx sdk.Context, keeper Keeper, gasEvent *EventGas) error
+	EmitStakeEvent(ctx sdk.Context, keeper Keeper, inTx common.Tx, stakeEvent EventStake) error
 }
 
 // EventMgr implement EventManager interface
@@ -99,5 +100,32 @@ func (m *EventMgr) EmitGasEvent(ctx sdk.Context, keeper Keeper, gasEvent *EventG
 	}
 	ctx.EventManager().EmitEvents(events)
 
+	return nil
+}
+
+// EmitStakeEvent add the stake event to block
+func (m *EventMgr) EmitStakeEvent(ctx sdk.Context, keeper Keeper, inTx common.Tx, stakeEvent EventStake) error {
+	stakeBytes, err := json.Marshal(stakeEvent)
+	if err != nil {
+		return fmt.Errorf("fail to marshal stake event to json: %w", err)
+	}
+	evt := NewEvent(
+		stakeEvent.Type(),
+		ctx.BlockHeight(),
+		inTx,
+		stakeBytes,
+		EventSuccess,
+	)
+	// stake event doesn't need to have outbound
+	tx := common.Tx{ID: common.BlankTxID}
+	evt.OutTxs = common.Txs{tx}
+	if err := keeper.UpsertEvent(ctx, evt); err != nil {
+		return fmt.Errorf("fail to save stake event: %w", err)
+	}
+	events, err := stakeEvent.Events()
+	if err != nil {
+		return fmt.Errorf("fail to get events: %w", err)
+	}
+	ctx.EventManager().EmitEvents(events)
 	return nil
 }

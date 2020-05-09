@@ -91,7 +91,7 @@ func (HandlerStakeSuite) TestStakeHandler(c *C) {
 		},
 	}
 	// happy path
-	stakeHandler := NewStakeHandler(k)
+	stakeHandler := NewStakeHandler(k, NewVersionedEventMgr())
 	preStakePool, err := k.GetPool(ctx, common.BNBAsset)
 	c.Assert(err, IsNil)
 	bnbAddr := GetRandomBNBAddress()
@@ -136,7 +136,7 @@ func (HandlerStakeSuite) TestStakeHandler_NoPool_ShouldCreateNewPool(c *C) {
 		},
 	}
 	// happy path
-	stakeHandler := NewStakeHandler(k)
+	stakeHandler := NewStakeHandler(k, NewVersionedEventMgr())
 	preStakePool, err := k.GetPool(ctx, common.BNBAsset)
 	c.Assert(err, IsNil)
 	c.Assert(preStakePool.Empty(), Equals, true)
@@ -236,7 +236,7 @@ func (HandlerStakeSuite) TestStakeHandlerValidation(c *C) {
 	}, map[constants.ConstantName]string{})
 
 	for _, item := range testCases {
-		stakeHandler := NewStakeHandler(k)
+		stakeHandler := NewStakeHandler(k, NewVersionedEventMgr())
 		result := stakeHandler.Run(ctx, item.msg, ver, constAccessor)
 		c.Assert(result.Code, Equals, item.expectedResult, Commentf(item.name))
 	}
@@ -313,7 +313,7 @@ func (HandlerStakeSuite) TestHandlerStakeFailScenario(c *C) {
 			bnbAddr,
 			bnbAddr,
 			activeNodeAccount.NodeAddress)
-		stakeHandler := NewStakeHandler(tc.k)
+		stakeHandler := NewStakeHandler(tc.k, NewVersionedEventMgr())
 		result := stakeHandler.Run(ctx, msgSetStake, ver, constAccessor)
 		c.Assert(result.Code, Equals, tc.expectedResult, Commentf(tc.name))
 	}
