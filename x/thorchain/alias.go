@@ -176,6 +176,7 @@ type (
 	Events                = types.Events
 	EventSwap             = types.EventSwap
 	EventStake            = types.EventStake
+	EventUnstake          = types.EventUnstake
 	EventStatus           = types.EventStatus
 	EventRewards          = types.EventRewards
 	EventErrata           = types.EventErrata

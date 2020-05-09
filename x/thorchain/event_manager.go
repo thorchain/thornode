@@ -17,6 +17,7 @@ type EventManager interface {
 	EmitGasEvent(ctx sdk.Context, keeper Keeper, gasEvent *EventGas) error
 	EmitStakeEvent(ctx sdk.Context, keeper Keeper, inTx common.Tx, stakeEvent EventStake) error
 	EmitReserveEvent(ctx sdk.Context, keeper Keeper, reserveEvent EventReserve) error
+	EmitUnstakeEvent(ctx sdk.Context, keeper Keeper, unstakeEvt EventUnstake) error
 }
 
 // EventMgr implement EventManager interface
@@ -142,6 +143,33 @@ func (m *EventMgr) EmitReserveEvent(ctx sdk.Context, keeper Keeper, reserveEvent
 		return fmt.Errorf("fail to save reserve event: %w", err)
 	}
 	events, err := reserveEvent.Events()
+	if err != nil {
+		return fmt.Errorf("fail to get events: %w", err)
+	}
+	ctx.EventManager().EmitEvents(events)
+	return nil
+}
+
+// EmitUnstakeEvent save unstake event to local key value store , and also add it to event manager
+func (m *EventMgr) EmitUnstakeEvent(ctx sdk.Context, keeper Keeper, unstakeEvt EventUnstake) error {
+	unstakeBytes, err := json.Marshal(unstakeEvt)
+	if err != nil {
+		return fmt.Errorf("fail to marshal unstake event: %w", err)
+	}
+
+	// unstake event is pending , once signer send the fund to customer successfully, then this should be marked as success
+	evt := NewEvent(
+		unstakeEvt.Type(),
+		ctx.BlockHeight(),
+		unstakeEvt.InTx,
+		unstakeBytes,
+		EventPending,
+	)
+
+	if err := keeper.UpsertEvent(ctx, evt); err != nil {
+		return fmt.Errorf("fail to save unstake event: %w", err)
+	}
+	events, err := unstakeEvt.Events()
 	if err != nil {
 		return fmt.Errorf("fail to get events: %w", err)
 	}

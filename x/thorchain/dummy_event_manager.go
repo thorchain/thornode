@@ -37,6 +37,9 @@ func (m *DummyEventMgr) EmitStakeEvent(ctx sdk.Context, keeper Keeper, inTx comm
 func (m *DummyEventMgr) EmitReserveEvent(ctx sdk.Context, keeper Keeper, reserveEvent EventReserve) error {
 	return nil
 }
+func (m *DummyEventMgr) EmitUnstakeEvent(ctx sdk.Context, keeper Keeper, unstakeEvt EventUnstake) error {
+	return nil
+}
 
 type DummyVersionedEventMgr struct{}
 
