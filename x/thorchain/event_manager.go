@@ -137,6 +137,9 @@ func (m *EventMgr) EmitSwapEvent(ctx sdk.Context, keeper Keeper, swap EventSwap)
 		return fmt.Errorf("fail to marshal swap event to json: %w", err)
 	}
 	evt := NewEvent(swap.Type(), ctx.BlockHeight(), swap.InTx, buf, EventPending)
+	// OutTxs is a temporary field that we used, as for now we need to keep backward compatibility so the
+	// events change doesn't break midgard and smoke test, for double swap , we first swap the source asset to RUNE ,
+	// and then from RUNE to target asset, so the first will be marked as success
 	if !swap.OutTxs.IsEmpty() {
 		evt.Status = EventSuccess
 		evt.OutTxs = common.Txs{swap.OutTxs}

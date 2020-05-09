@@ -98,8 +98,10 @@ type EventSwap struct {
 	TradeSlip          sdk.Uint     `json:"trade_slip"`
 	LiquidityFee       sdk.Uint     `json:"liquidity_fee"`
 	LiquidityFeeInRune sdk.Uint     `json:"liquidity_fee_in_rune"`
-	InTx               common.Tx    `json:"-"` // this is the Tx that cause the swap to happen, it is a double swap , then the txid will be blank
-	OutTxs             common.Tx    `json:"-"` // this field will need temporary
+	//  the following two field is trying to make events change backward compatible
+	// very soon we don't need to save this event to key value store anymore , it will be removed then
+	InTx   common.Tx `json:"-"` // this is the Tx that cause the swap to happen, it is a double swap , then the txid will be blank
+	OutTxs common.Tx `json:"-"` // this field will need temporary
 }
 
 // NewEventSwap create a new swap event
