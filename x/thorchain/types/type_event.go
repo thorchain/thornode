@@ -22,19 +22,18 @@ type Event struct {
 }
 
 const (
-	SwapEventType        = `swap`
-	StakeEventType       = `stake`
-	UnstakeEventType     = `unstake`
-	AdminConfigEventType = `admin_config`
-	AddEventType         = `add`
-	PoolEventType        = `pool`
-	RewardEventType      = `rewards`
-	RefundEventType      = `refund`
-	BondEventType        = `bond`
-	GasEventType         = `gas`
-	ReserveEventType     = `reserve`
-	SlashEventType       = `slash`
-	ErrataEventType      = `errata`
+	SwapEventType    = `swap`
+	StakeEventType   = `stake`
+	UnstakeEventType = `unstake`
+	AddEventType     = `add`
+	PoolEventType    = `pool`
+	RewardEventType  = `rewards`
+	RefundEventType  = `refund`
+	BondEventType    = `bond`
+	GasEventType     = `gas`
+	ReserveEventType = `reserve`
+	SlashEventType   = `slash`
+	ErrataEventType  = `errata`
 )
 
 type PoolMod struct {
@@ -121,19 +120,31 @@ func (e EventSwap) Type() string {
 type EventStake struct {
 	Pool       common.Asset `json:"pool"`
 	StakeUnits sdk.Uint     `json:"stake_units"`
+	TxIn       common.Tx    `json:"-"`
 }
 
 // NewEventStake create a new stake event
-func NewEventStake(pool common.Asset, su sdk.Uint) EventStake {
+func NewEventStake(pool common.Asset, su sdk.Uint, txIn common.Tx) EventStake {
 	return EventStake{
 		Pool:       pool,
 		StakeUnits: su,
+		TxIn:       txIn,
 	}
 }
 
 // Type return the event type
 func (e EventStake) Type() string {
 	return StakeEventType
+}
+
+func (e EventStake) Events() (sdk.Events, error) {
+	evt := sdk.NewEvent(e.Type(),
+		sdk.NewAttribute("pool", e.Pool.String()),
+		sdk.NewAttribute("stake_units", e.StakeUnits.String()))
+	evt = evt.AppendAttributes(e.TxIn.ToAttributes()...)
+	return sdk.Events{
+		evt,
+	}, nil
 }
 
 // EventUnstake represent unstake

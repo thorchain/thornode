@@ -18,7 +18,7 @@ func (TxOutTestSuite) TestTxOut(c *C) {
 	c.Check(len(item.TxArray), Equals, 1)
 	c.Check(item.TxArray[0].Coin.Amount.Uint64(), Equals, uint64(194765912))
 	c.Check(item.TxArray[0].Coin.Asset.IsBNB(), Equals, true)
-	c.Check(item.TxArray[0].TxOutItem().Hash(), Equals, "DC247BAAC3376AC7102368AEC6CC6738C7813F6AC7B629DA8327CB9E10C667E1")
+	c.Check(item.TxArray[0].TxOutItem().Hash(), Equals, "53F21B135F9E520DC442BA4EEF1870AB77D40F4EAD77BE72E35CBE06697D46E2")
 
 	input = `{ "height": "1718", "hash": "", "tx_array": [ { "chain": "BNB", "in_hash": "9999A5A08D8FCF942E1AAAA01AB1E521B699BA3A009FA0591C011DC1FFDC5E68", "to": "tbnb1yxfyeda8pnlxlmx0z3cwx74w9xevspwdpzdxpj", "memo": "REFUND:TODO" } ]}`
 	var item2 TxOut

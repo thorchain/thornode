@@ -30,6 +30,10 @@ func (m *DummyEventMgr) EmitGasEvent(ctx sdk.Context, keeper Keeper, gasEvent *E
 	return nil
 }
 
+func (m *DummyEventMgr) EmitStakeEvent(ctx sdk.Context, keeper Keeper, inTx common.Tx, stakeEvent EventStake) error {
+	return nil
+}
+
 type DummyVersionedEventMgr struct{}
 
 func NewDummyVersionedEventMgr() *DummyVersionedEventMgr {
