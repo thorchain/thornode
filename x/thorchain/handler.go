@@ -343,8 +343,6 @@ func getMsgStakeFromMemo(ctx sdk.Context, memo StakeMemo, tx ObservedTx, signer 
 
 	runeAddr := tx.Tx.FromAddress
 	assetAddr := memo.GetDestination()
-	fmt.Printf("From Address: %s\n", runeAddr)
-	fmt.Printf("Destination Address: %s\n", assetAddr)
 	// this is to cover multi-chain scenario, for example BTC , staker who would like to stake in BTC pool,  will have to complete
 	// the stake operation by sending in two asymmetric stake tx, one tx on BTC chain with memo stake:BTC:<RUNE address> ,
 	// and another one on Binance chain with stake:BTC , with only RUNE as the coin
@@ -359,8 +357,6 @@ func getMsgStakeFromMemo(ctx sdk.Context, memo StakeMemo, tx ObservedTx, signer 
 		}
 	}
 
-	fmt.Printf("RuneAddr: %s\n", runeAddr)
-	fmt.Printf("AssetAddr: %s\n", assetAddr)
 	return NewMsgSetStakeData(
 		tx.Tx,
 		asset,

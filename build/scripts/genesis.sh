@@ -79,14 +79,13 @@ if [ "$SEED" = "$(hostname)" ]; then
         echo "NET: $NET"
         if [ "$NET" == "mocknet" ]; then
             echo "setting up accounts ...."
-            add_account thor1j08ys4ct2hzzc2hcz6h2hgrvlmsjynaw02vym4 50000000000
-            add_account thor1zupk5lmc84r2dh738a9g3zscavannjy3h4s0hw 150000000001
-            add_account thor1qqnde7kqe5sf96j6zf8jpzwr44dh4gkdftjnal 50900000000
-
-            reserve 40000000000000
-        else
-            reserve 22000000000000000
+            add_account thor1j08ys4ct2hzzc2hcz6h2hgrvlmsjynaw02vym4 rune 50000000000
+            add_account thor1zupk5lmc84r2dh738a9g3zscavannjy3h4s0hw rune 150000000001
+            add_account thor1qqnde7kqe5sf96j6zf8jpzwr44dh4gkdftjnal rune 50900000000
+            add_account thor1qqnde7kqe5sf96j6zf8jpzwr44dh4gkdftjnal funny 50900000000
         fi
+
+        reserve 22000000000000000
 
         cat ~/.thord/config/genesis.json
         thord validate-genesis

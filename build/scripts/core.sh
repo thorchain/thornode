@@ -48,10 +48,10 @@ reserve () {
 }
 
 add_account () {
-    jq --arg ADDRESS $1 --arg AMOUNT $2 '.app_state.accounts += [{
+    jq --arg ADDRESS $1 --arg ASSET $2 --arg AMOUNT $3 '.app_state.accounts += [{
         "address": $ADDRESS,
         "coins": [{
-            "denom": "rune",
+            "denom": $ASSET,
             "amount": $AMOUNT
         }]
     }]' <~/.thord/config/genesis.json >/tmp/genesis.json

@@ -47,6 +47,23 @@ func (h CommonOutboundTxHandler) handle(ctx sdk.Context, version semver.Version,
 		h.keeper.SetObservedTxVoter(ctx, voter)
 	}
 
+	// complete events
+	if voter.IsDone() {
+		err := completeEvents(ctx, h.keeper, inTxID, voter.OutTxs, status)
+		if err != nil {
+			ctx.Logger().Error("unable to complete events", "error", err)
+			return sdk.ErrInternal(err.Error()).Result()
+		}
+	}
+
+	if tx.Tx.Chain.Equals(common.THORChain) {
+		// is native token, can stop here
+		return sdk.Result{
+			Code:      sdk.CodeOK,
+			Codespace: DefaultCodespace,
+		}
+	}
+
 	// update txOut record with our TxID that sent funds out of the pool
 	txOut, err := h.keeper.GetTxOut(ctx, voter.Height)
 	if err != nil {
@@ -88,15 +105,6 @@ func (h CommonOutboundTxHandler) handle(ctx sdk.Context, version semver.Version,
 	}
 
 	h.keeper.SetLastSignedHeight(ctx, voter.Height)
-
-	// complete events
-	if voter.IsDone() {
-		err := completeEvents(ctx, h.keeper, inTxID, voter.OutTxs, status)
-		if err != nil {
-			ctx.Logger().Error("unable to complete events", "error", err)
-			return sdk.ErrInternal(err.Error()).Result()
-		}
-	}
 
 	return sdk.Result{
 		Code:      sdk.CodeOK,

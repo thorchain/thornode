@@ -130,7 +130,6 @@ func (h StakeHandler) handle(ctx sdk.Context, msg MsgSetStakeData, version semve
 		return sdk.ErrInternal(fmt.Errorf("fail to save stake event: %w", err).Error())
 	}
 
-	fmt.Println(">>>>>>>>> Successful Stake!")
 	return nil
 }
 
