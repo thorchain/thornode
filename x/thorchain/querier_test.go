@@ -176,25 +176,27 @@ func (s *QuerierSuite) TestQueryCompEvents(c *C) {
 	path := []string{"comp_events_chain", "1", "BNB"}
 
 	txID, err := common.NewTxID("A1C7D97D5DB51FFDBC3FE29FFF6ADAA2DAF112D2CEAADA0902822333A59BD218")
+	txIn := common.NewTx(
+		txID,
+		GetRandomBNBAddress(),
+		GetRandomBNBAddress(),
+		common.Coins{
+			common.NewCoin(common.BNBAsset, sdk.NewUint(320000000)),
+			common.NewCoin(common.RuneAsset(), sdk.NewUint(420000000)),
+		},
+		BNBGasFeeSingleton,
+		"SWAP:BNB.BNB",
+	)
 	stake := NewEventStake(
 		common.BNBAsset,
 		sdk.NewUint(5),
+		txIn,
 	)
 	stakeBytes, _ := json.Marshal(stake)
 	evt := NewEvent(
 		stake.Type(),
 		12,
-		common.NewTx(
-			txID,
-			GetRandomBNBAddress(),
-			GetRandomBNBAddress(),
-			common.Coins{
-				common.NewCoin(common.BNBAsset, sdk.NewUint(320000000)),
-				common.NewCoin(common.RuneAsset(), sdk.NewUint(420000000)),
-			},
-			BNBGasFeeSingleton,
-			"SWAP:BNB.BNB",
-		),
+		txIn,
 		stakeBytes,
 		EventSuccess,
 	)

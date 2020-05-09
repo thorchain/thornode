@@ -126,7 +126,6 @@ func (am AppModule) NewQuerierHandler() sdk.Querier {
 
 func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 	ctx.Logger().Debug("Begin Block", "height", req.Header.Height)
-
 	version := am.keeper.GetLowestActiveVersion(ctx)
 	am.keeper.ClearObservingAddresses(ctx)
 	obMgr, err := am.versionedObserverManager.GetObserverManager(ctx, version)
@@ -135,13 +134,6 @@ func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 		return
 	}
 	obMgr.BeginBlock()
-
-	eventMgr, err := am.versionedEventManager.GetEventManager(ctx, version)
-	if err != nil {
-		ctx.Logger().Error(fmt.Sprintf("Event manager that compatible with version :%s is not available", version))
-		return
-	}
-	eventMgr.BeginBlock(ctx)
 
 	gasMgr, err := am.versionedGasManager.GetGasManager(ctx, version)
 	if err != nil {
@@ -188,7 +180,7 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 	}
 	eventMgr, err := am.versionedEventManager.GetEventManager(ctx, version)
 	if err != nil {
-		ctx.Logger().Error(fmt.Sprintf("Event manager that compatible with version :%s is not available", version))
+		ctx.Logger().Error(fmt.Sprintf("Events manager that compatible with version :%s is not available", version))
 		return nil
 	}
 
@@ -270,9 +262,6 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 	}
 	gasMgr.EndBlock(ctx, am.keeper, eventMgr)
 
-	if eventMgr != nil {
-		eventMgr.EndBlock(ctx, am.keeper)
-	}
 	return validators
 }
 
