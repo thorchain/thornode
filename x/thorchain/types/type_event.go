@@ -98,22 +98,39 @@ type EventSwap struct {
 	TradeSlip          sdk.Uint     `json:"trade_slip"`
 	LiquidityFee       sdk.Uint     `json:"liquidity_fee"`
 	LiquidityFeeInRune sdk.Uint     `json:"liquidity_fee_in_rune"`
+	//  the following two field is trying to make events change backward compatible
+	// very soon we don't need to save this event to key value store anymore , it will be removed then
+	InTx   common.Tx `json:"-"` // this is the Tx that cause the swap to happen, it is a double swap , then the txid will be blank
+	OutTxs common.Tx `json:"-"` // this field will need temporary
 }
 
 // NewEventSwap create a new swap event
-func NewEventSwap(pool common.Asset, priceTarget, fee, tradeSlip, liquidityFeeInRune sdk.Uint) EventSwap {
+func NewEventSwap(pool common.Asset, priceTarget, fee, tradeSlip, liquidityFeeInRune sdk.Uint, inTx common.Tx) EventSwap {
 	return EventSwap{
 		Pool:               pool,
 		PriceTarget:        priceTarget,
 		TradeSlip:          tradeSlip,
 		LiquidityFee:       fee,
 		LiquidityFeeInRune: liquidityFeeInRune,
+		InTx:               inTx,
 	}
 }
 
 // Type return a string that represent the type, it should not duplicated with other event
 func (e EventSwap) Type() string {
 	return SwapEventType
+}
+
+func (e EventSwap) Events() (sdk.Events, error) {
+	evt := sdk.NewEvent(e.Type(),
+		sdk.NewAttribute("pool", e.Pool.String()),
+		sdk.NewAttribute("price_target", e.PriceTarget.String()),
+		sdk.NewAttribute("trade_slip", e.TradeSlip.String()),
+		sdk.NewAttribute("liquidity_fee", e.LiquidityFee.String()),
+		sdk.NewAttribute("liquidity_fee_in_rune", e.LiquidityFeeInRune.String()),
+	)
+	evt = evt.AppendAttributes(e.InTx.ToAttributes()...)
+	return sdk.Events{evt}, nil
 }
 
 // EventStake stake event

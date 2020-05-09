@@ -17,6 +17,7 @@ type EventManager interface {
 	EmitGasEvent(ctx sdk.Context, keeper Keeper, gasEvent *EventGas) error
 	EmitStakeEvent(ctx sdk.Context, keeper Keeper, inTx common.Tx, stakeEvent EventStake) error
 	EmitReserveEvent(ctx sdk.Context, keeper Keeper, reserveEvent EventReserve) error
+	EmitSwapEvent(ctx sdk.Context, keeper Keeper, swap EventSwap) error
 }
 
 // EventMgr implement EventManager interface
@@ -124,6 +125,30 @@ func (m *EventMgr) EmitStakeEvent(ctx sdk.Context, keeper Keeper, inTx common.Tx
 		return fmt.Errorf("fail to save stake event: %w", err)
 	}
 	events, err := stakeEvent.Events()
+	if err != nil {
+		return fmt.Errorf("fail to get events: %w", err)
+	}
+	ctx.EventManager().EmitEvents(events)
+	return nil
+}
+
+func (m *EventMgr) EmitSwapEvent(ctx sdk.Context, keeper Keeper, swap EventSwap) error {
+	buf, err := json.Marshal(swap)
+	if err != nil {
+		return fmt.Errorf("fail to marshal swap event to json: %w", err)
+	}
+	evt := NewEvent(swap.Type(), ctx.BlockHeight(), swap.InTx, buf, EventPending)
+	// OutTxs is a temporary field that we used, as for now we need to keep backward compatibility so the
+	// events change doesn't break midgard and smoke test, for double swap , we first swap the source asset to RUNE ,
+	// and then from RUNE to target asset, so the first will be marked as success
+	if !swap.OutTxs.IsEmpty() {
+		evt.Status = EventSuccess
+		evt.OutTxs = common.Txs{swap.OutTxs}
+	}
+	if err := keeper.UpsertEvent(ctx, evt); err != nil {
+		return fmt.Errorf("fail to save swap event: %w", err)
+	}
+	events, err := swap.Events()
 	if err != nil {
 		return fmt.Errorf("fail to get events: %w", err)
 	}

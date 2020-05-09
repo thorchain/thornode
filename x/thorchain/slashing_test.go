@@ -281,29 +281,30 @@ func (s *SlashingSuite) TestNodeSignSlashErrors(c *C) {
 		ver := constants.SWVersion
 		constAccessor := constants.GetConstantValues(ver)
 		na := GetRandomNodeAccount(NodeActive)
-
+		inTx := common.NewTx(
+			GetRandomTxHash(),
+			GetRandomBNBAddress(),
+			GetRandomBNBAddress(),
+			common.Coins{
+				common.NewCoin(common.BNBAsset, sdk.NewUint(320000000)),
+				common.NewCoin(common.RuneAsset(), sdk.NewUint(420000000)),
+			},
+			nil,
+			"SWAP:BNB.BNB",
+		)
 		swapEvt := NewEventSwap(
 			common.BNBAsset,
 			sdk.NewUint(5),
 			sdk.NewUint(5),
 			sdk.NewUint(5),
 			sdk.NewUint(5),
+			inTx,
 		)
 
 		swapBytes, _ := json.Marshal(swapEvt)
 		evt := NewEvent(swapEvt.Type(),
 			3,
-			common.NewTx(
-				GetRandomTxHash(),
-				GetRandomBNBAddress(),
-				GetRandomBNBAddress(),
-				common.Coins{
-					common.NewCoin(common.BNBAsset, sdk.NewUint(320000000)),
-					common.NewCoin(common.RuneAsset(), sdk.NewUint(420000000)),
-				},
-				nil,
-				"SWAP:BNB.BNB",
-			),
+			inTx,
 			swapBytes,
 			EventSuccess,
 		)
@@ -353,29 +354,30 @@ func (s *SlashingSuite) TestNotSigningSlash(c *C) {
 	ver := constants.SWVersion
 	constAccessor := constants.GetConstantValues(ver)
 	na := GetRandomNodeAccount(NodeActive)
-
+	inTx := common.NewTx(
+		GetRandomTxHash(),
+		GetRandomBNBAddress(),
+		GetRandomBNBAddress(),
+		common.Coins{
+			common.NewCoin(common.BNBAsset, sdk.NewUint(320000000)),
+			common.NewCoin(common.RuneAsset(), sdk.NewUint(420000000)),
+		},
+		nil,
+		"SWAP:BNB.BNB",
+	)
 	swapEvt := NewEventSwap(
 		common.BNBAsset,
 		sdk.NewUint(5),
 		sdk.NewUint(5),
 		sdk.NewUint(5),
 		sdk.NewUint(5),
+		inTx,
 	)
 
 	swapBytes, _ := json.Marshal(swapEvt)
 	evt := NewEvent(swapEvt.Type(),
 		3,
-		common.NewTx(
-			GetRandomTxHash(),
-			GetRandomBNBAddress(),
-			GetRandomBNBAddress(),
-			common.Coins{
-				common.NewCoin(common.BNBAsset, sdk.NewUint(320000000)),
-				common.NewCoin(common.RuneAsset(), sdk.NewUint(420000000)),
-			},
-			nil,
-			"SWAP:BNB.BNB",
-		),
+		inTx,
 		swapBytes,
 		EventSuccess,
 	)

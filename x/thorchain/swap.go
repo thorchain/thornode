@@ -1,7 +1,6 @@
 package thorchain
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 
@@ -50,8 +49,8 @@ func swap(ctx sdk.Context,
 	target common.Asset,
 	destination common.Address,
 	tradeTarget sdk.Uint,
-	transactionFee sdk.Uint) (sdk.Uint, []Event, sdk.Error) {
-	var swapEvents []Event
+	transactionFee sdk.Uint) (sdk.Uint, []EventSwap, sdk.Error) {
+	var swapEvents []EventSwap
 
 	if err := validateMessage(tx, target, destination); err != nil {
 		return sdk.ZeroUint(), swapEvents, sdk.NewError(DefaultCodespace, CodeValidationError, err.Error())
@@ -65,7 +64,7 @@ func swap(ctx sdk.Context,
 	isDoubleSwap := !source.IsRune() && !target.IsRune()
 	if isDoubleSwap {
 		var swapErr sdk.Error
-		var swapEvt Event
+		var swapEvt EventSwap
 		var amt sdk.Uint
 		// Here we use a tradeTarget of 0 because the target is for the next swap asset in a double swap
 		amt, sourcePool, swapEvt, swapErr := swapOne(ctx, keeper, tx, common.RuneAsset(), destination, sdk.ZeroUint(), transactionFee)
@@ -75,11 +74,7 @@ func swap(ctx sdk.Context,
 		pools = append(pools, sourcePool)
 		tx.Coins = common.Coins{common.NewCoin(common.RuneAsset(), amt)}
 		tx.Gas = nil
-
-		// pre-populate the out transaction
-		swapEvt.Status = EventSuccess
-		swapEvt.OutTxs = common.Txs{common.NewTx(common.BlankTxID, tx.FromAddress, tx.ToAddress, tx.Coins, tx.Gas, tx.Memo)}
-
+		swapEvt.OutTxs = common.NewTx(common.BlankTxID, tx.FromAddress, tx.ToAddress, tx.Coins, tx.Gas, tx.Memo)
 		swapEvents = append(swapEvents, swapEvt)
 	}
 
@@ -117,7 +112,7 @@ func swapOne(ctx sdk.Context,
 	target common.Asset,
 	destination common.Address,
 	tradeTarget sdk.Uint,
-	transactionFee sdk.Uint) (amt sdk.Uint, poolResult Pool, evt Event, swapErr sdk.Error) {
+	transactionFee sdk.Uint) (amt sdk.Uint, poolResult Pool, evt EventSwap, swapErr sdk.Error) {
 	source := tx.Coins[0].Asset
 	amount := tx.Coins[0].Amount
 
@@ -142,6 +137,7 @@ func swapOne(ctx sdk.Context,
 		sdk.ZeroUint(),
 		sdk.ZeroUint(),
 		sdk.ZeroUint(),
+		tx,
 	)
 
 	// Check if pool exists
@@ -207,13 +203,7 @@ func swapOne(ctx sdk.Context,
 	}
 	ctx.Logger().Debug(fmt.Sprintf("Post-swap: %sRune %sAsset , user get:%s ", pool.BalanceRune, pool.BalanceAsset, emitAssets))
 
-	swapBytes, err := json.Marshal(swapEvt)
-	if err != nil {
-		return sdk.ZeroUint(), pool, evt, sdk.NewError(DefaultCodespace, CodeSwapFailNotEnoughBalance, "err", err.Error())
-	}
-	evt = NewEvent(swapEvt.Type(), ctx.BlockHeight(), tx, swapBytes, EventPending)
-
-	return emitAssets, pool, evt, nil
+	return emitAssets, pool, swapEvt, nil
 }
 
 // calculate the number of assets sent to the address (includes liquidity fee)
