@@ -160,3 +160,14 @@ func (tx Tx) IsValid() error {
 	}
 	return nil
 }
+
+func (tx Tx) ToAttributes() []sdk.Attribute {
+	return []sdk.Attribute{
+		sdk.NewAttribute("id", tx.ID.String()),
+		sdk.NewAttribute("chain", tx.Chain.String()),
+		sdk.NewAttribute("from", tx.FromAddress.String()),
+		sdk.NewAttribute("to", tx.ToAddress.String()),
+		sdk.NewAttribute("coin", tx.Coins.String()),
+		sdk.NewAttribute("memo", tx.Memo),
+	}
+}

@@ -74,7 +74,7 @@ func (c Coin) Native() (sdk.Coin, error) {
 }
 
 func (c Coin) String() string {
-	return fmt.Sprintf("%d%s", c.Amount.Uint64(), c.Asset.String())
+	return fmt.Sprintf("%d %s", c.Amount.Uint64(), c.Asset.String())
 }
 
 func (cs Coins) IsValid() error {

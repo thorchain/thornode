@@ -151,7 +151,7 @@ func getInternalHandlerMapping(keeper Keeper,
 	m[MsgLeave{}.Type()] = NewLeaveHandler(keeper, validatorMgr, versionedTxOutStore)
 	m[MsgAdd{}.Type()] = NewAddHandler(keeper)
 	m[MsgSetUnStake{}.Type()] = NewUnstakeHandler(keeper, versionedTxOutStore, versionedEventManager)
-	m[MsgSetStakeData{}.Type()] = NewStakeHandler(keeper)
+	m[MsgSetStakeData{}.Type()] = NewStakeHandler(keeper, versionedEventManager)
 	m[MsgRefundTx{}.Type()] = NewRefundHandler(keeper)
 	m[MsgMigrate{}.Type()] = NewMigrateHandler(keeper)
 	m[MsgRagnarok{}.Type()] = NewRagnarokHandler(keeper)
