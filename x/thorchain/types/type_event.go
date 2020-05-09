@@ -257,6 +257,16 @@ func (e EventRewards) Type() string {
 	return RewardEventType
 }
 
+func (e EventRewards) Events() (sdk.Events, error) {
+	evt := sdk.NewEvent(e.Type(),
+		sdk.NewAttribute("bond_reward", e.BondReward.String()),
+	)
+	for _, item := range e.PoolRewards {
+		evt = evt.AppendAttributes(sdk.NewAttribute(item.Asset.String(), strconv.FormatInt(item.Amount, 10)))
+	}
+	return sdk.Events{evt}, nil
+}
+
 // NewEventRefund create a new EventRefund
 func NewEventRefund(code sdk.CodeType, reason string) EventRefund {
 	return EventRefund{
