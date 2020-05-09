@@ -1,24 +1,26 @@
 package thorchain
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"gitlab.com/thorchain/thornode/common"
 	"gitlab.com/thorchain/thornode/constants"
 )
 
 // StakeHandler is to handle stake
 type StakeHandler struct {
-	keeper Keeper
+	keeper                Keeper
+	versionedEventManager VersionedEventManager
 }
 
 // NewStakeHandler create a new instance of StakeHandler
-func NewStakeHandler(keeper Keeper) StakeHandler {
-	return StakeHandler{keeper: keeper}
+func NewStakeHandler(keeper Keeper, versionedEventManager VersionedEventManager) StakeHandler {
+	return StakeHandler{
+		keeper:                keeper,
+		versionedEventManager: versionedEventManager,
+	}
 }
 
 func (h StakeHandler) validate(ctx sdk.Context, msg MsgSetStakeData, version semver.Version, constAccessor constants.ConstantValues) sdk.Error {
@@ -127,33 +129,24 @@ func (h StakeHandler) handle(ctx sdk.Context, msg MsgSetStakeData, version semve
 		return sdk.ErrUnknownRequest(fmt.Errorf("fail to process stake request: %w", err).Error())
 	}
 
-	if err := processStakeEvent(ctx, h.keeper, msg, stakeUnits, EventSuccess); err != nil {
+	if err := h.processStakeEvent(ctx, version, msg, stakeUnits); err != nil {
 		return sdk.ErrInternal(fmt.Errorf("fail to save stake event: %w", err).Error())
 	}
 
 	return nil
 }
 
-func processStakeEvent(ctx sdk.Context, keeper Keeper, msg MsgSetStakeData, stakeUnits sdk.Uint, eventStatus EventStatus) error {
-	var stakeEvt EventStake
-	stakeEvt = NewEventStake(
+func (h StakeHandler) processStakeEvent(ctx sdk.Context, version semver.Version, msg MsgSetStakeData, stakeUnits sdk.Uint) error {
+	eventMgr, err := h.versionedEventManager.GetEventManager(ctx, version)
+	if err != nil {
+		return errFailGetEventManager
+	}
+
+	stakeEvt := NewEventStake(
 		msg.Asset,
 		stakeUnits,
-	)
-	stakeBytes, err := json.Marshal(stakeEvt)
-	if err != nil {
-		return fmt.Errorf("fail to marshal stake event to json: %w", err)
-	}
-	evt := NewEvent(
-		stakeEvt.Type(),
-		ctx.BlockHeight(),
-		msg.Tx,
-		stakeBytes,
-		eventStatus,
-	)
-	tx := common.Tx{ID: common.BlankTxID}
-	evt.OutTxs = common.Txs{tx}
-	return keeper.UpsertEvent(ctx, evt)
+		msg.Tx)
+	return eventMgr.EmitStakeEvent(ctx, h.keeper, msg.Tx, stakeEvt)
 }
 
 // getTotalBond
