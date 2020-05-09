@@ -254,14 +254,14 @@ func (h HandlerReserveContributorSuite) TestReserveContributorHandler(c *C) {
 				c.Assert(eventID, Equals, int64(2))
 				e, err := helper.keeper.GetEvent(helper.ctx, 1)
 				c.Assert(err, IsNil)
-				c.Assert(e.Type, Equals, NewEventReserve(helper.reserveContributor).Type())
+				c.Assert(e.Type, Equals, NewEventReserve(helper.reserveContributor, GetRandomTx()).Type())
 			},
 			expectedResult: sdk.CodeOK,
 		},
 	}
 	for _, tc := range testCases {
 		helper := newReserveContributorHandlerHelper(c)
-		handler := NewReserveContributorHandler(helper.keeper)
+		handler := NewReserveContributorHandler(helper.keeper, NewVersionedEventMgr())
 		msg := tc.messageCreator(helper)
 		result := tc.runner(handler, helper, msg)
 		c.Assert(result.Code, Equals, tc.expectedResult, Commentf("name:%s", tc.name))
