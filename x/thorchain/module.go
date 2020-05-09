@@ -239,7 +239,7 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 		return nil
 	}
 	// update vault data to account for block rewards and reward units
-	if err := am.keeper.UpdateVaultData(ctx, constantValues, gasMgr); err != nil {
+	if err := am.keeper.UpdateVaultData(ctx, constantValues, gasMgr, eventMgr); err != nil {
 		ctx.Logger().Error("fail to save vault", "error", err)
 	}
 	vaultMgr, err := am.versionedVaultManager.GetVaultManager(ctx, am.keeper, version)
