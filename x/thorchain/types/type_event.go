@@ -127,6 +127,7 @@ func (e EventSwap) Events() (sdk.Events, error) {
 		sdk.NewAttribute("liquidity_fee", e.LiquidityFee.String()),
 		sdk.NewAttribute("liquidity_fee_in_rune", e.LiquidityFeeInRune.String()),
 	)
+	evt = evt.AppendAttributes(e.InTx.ToAttributes()...)
 	return sdk.Events{evt}, nil
 }
 

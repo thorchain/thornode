@@ -203,7 +203,7 @@ func swapOne(ctx sdk.Context,
 	}
 	ctx.Logger().Debug(fmt.Sprintf("Post-swap: %sRune %sAsset , user get:%s ", pool.BalanceRune, pool.BalanceAsset, emitAssets))
 
-	return emitAssets, pool, evt, nil
+	return emitAssets, pool, swapEvt, nil
 }
 
 // calculate the number of assets sent to the address (includes liquidity fee)

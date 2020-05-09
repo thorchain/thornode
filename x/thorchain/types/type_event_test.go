@@ -20,6 +20,7 @@ func (s EventSuite) TestSwapEvent(c *C) {
 		sdk.NewUint(5),
 		sdk.NewUint(5),
 		sdk.ZeroUint(),
+		GetRandomTx(),
 	)
 	c.Check(evt.Type(), Equals, "swap")
 }
@@ -67,28 +68,30 @@ func (s EventSuite) TestReward(c *C) {
 func (s EventSuite) TestEvent(c *C) {
 	txID, err := common.NewTxID("A1C7D97D5DB51FFDBC3FE29FFF6ADAA2DAF112D2CEAADA0902822333A59BD218")
 	c.Assert(err, IsNil)
+	txIn := common.NewTx(
+		txID,
+		GetRandomBNBAddress(),
+		GetRandomBNBAddress(),
+		common.Coins{
+			common.NewCoin(common.BNBAsset, sdk.NewUint(320000000)),
+			common.NewCoin(common.RuneAsset(), sdk.NewUint(420000000)),
+		},
+		BNBGasFeeSingleton,
+		"SWAP:BNB.BNB",
+	)
 	swap := NewEventSwap(
 		common.BNBAsset,
 		sdk.NewUint(5),
 		sdk.NewUint(5),
 		sdk.NewUint(5),
 		sdk.ZeroUint(),
+		txIn,
 	)
 
 	swapBytes, _ := json.Marshal(swap)
 	evt := NewEvent(swap.Type(),
 		12,
-		common.NewTx(
-			txID,
-			GetRandomBNBAddress(),
-			GetRandomBNBAddress(),
-			common.Coins{
-				common.NewCoin(common.BNBAsset, sdk.NewUint(320000000)),
-				common.NewCoin(common.RuneAsset(), sdk.NewUint(420000000)),
-			},
-			BNBGasFeeSingleton,
-			"SWAP:BNB.BNB",
-		),
+		txIn,
 		swapBytes,
 		Success,
 	)
@@ -97,7 +100,7 @@ func (s EventSuite) TestEvent(c *C) {
 
 	txID, err = common.NewTxID("B1C7D97D5DB51FFDBC3FE29FFF6ADAA2DAF112D2CEAADA0902822333A59BD218")
 	c.Assert(err, IsNil)
-	txIn := common.NewTx(
+	txIn = common.NewTx(
 		txID,
 		GetRandomBNBAddress(),
 		GetRandomBNBAddress(),

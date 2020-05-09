@@ -144,6 +144,10 @@ func (m *EventMgr) EmitSwapEvent(ctx sdk.Context, keeper Keeper, swap EventSwap)
 	if err := keeper.UpsertEvent(ctx, evt); err != nil {
 		return fmt.Errorf("fail to save swap event: %w", err)
 	}
-	// TODO emit the new events here
+	events, err := swap.Events()
+	if err != nil {
+		return fmt.Errorf("fail to get events: %w", err)
+	}
+	ctx.EventManager().EmitEvents(events)
 	return nil
 }
