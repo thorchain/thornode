@@ -1,6 +1,8 @@
 package thorchain
 
 import (
+	"sort"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"gitlab.com/thorchain/thornode/common"
@@ -67,6 +69,11 @@ func (om *ObserverMgr) List() []sdk.AccAddress {
 			result = append(result, addr)
 		}
 	}
+
+	// Sort our list, ensures we avoid a census failure
+	sort.SliceStable(result, func(i, j int) bool {
+		return result[i].String() < result[j].String()
+	})
 
 	return result
 }
