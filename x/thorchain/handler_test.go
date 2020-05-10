@@ -254,8 +254,9 @@ func (HandlerSuite) TestRefund(c *C) {
 	ver := constants.SWVersion
 	constAccessor := constants.GetConstantValues(ver)
 	txOutStore, err := w.versionedTxOutStore.GetTxOutStore(w.keeper, ver)
+	eventMgr := NewEventMgr()
 	c.Assert(err, IsNil)
-	c.Assert(refundTx(w.ctx, txin, txOutStore, w.keeper, constAccessor, sdk.CodeInternal, "refund"), IsNil)
+	c.Assert(refundTx(w.ctx, txin, txOutStore, w.keeper, constAccessor, sdk.CodeInternal, "refund", eventMgr), IsNil)
 	items, err := txOutStore.GetOutboundItems(w.ctx)
 	c.Assert(err, IsNil)
 	c.Assert(items, HasLen, 1)
@@ -267,7 +268,7 @@ func (HandlerSuite) TestRefund(c *C) {
 		common.NewCoin(lokiAsset, sdk.NewUint(100*common.One)),
 	}
 
-	c.Assert(refundTx(w.ctx, txin, txOutStore, w.keeper, constAccessor, sdk.CodeInternal, "refund"), IsNil)
+	c.Assert(refundTx(w.ctx, txin, txOutStore, w.keeper, constAccessor, sdk.CodeInternal, "refund", eventMgr), IsNil)
 	items, err = txOutStore.GetOutboundItems(w.ctx)
 	c.Assert(err, IsNil)
 	c.Assert(items, HasLen, 1)
@@ -278,7 +279,7 @@ func (HandlerSuite) TestRefund(c *C) {
 	c.Assert(pool.BalanceAsset.Equal(sdk.ZeroUint()), Equals, true, Commentf("%d", pool.BalanceAsset.Uint64()))
 
 	// doing it a second time should keep it at zero
-	c.Assert(refundTx(w.ctx, txin, txOutStore, w.keeper, constAccessor, sdk.CodeInternal, "refund"), IsNil)
+	c.Assert(refundTx(w.ctx, txin, txOutStore, w.keeper, constAccessor, sdk.CodeInternal, "refund", eventMgr), IsNil)
 	items, err = txOutStore.GetOutboundItems(w.ctx)
 	c.Assert(err, IsNil)
 	c.Assert(items, HasLen, 1)

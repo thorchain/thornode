@@ -20,7 +20,7 @@ const (
 	EventSuccess     = types.Success
 	EventPending     = types.Pending
 	EventFail        = types.Failed
-	EventRefund      = types.Refund
+	RefundStatus     = types.Refund
 
 	// Admin config keys
 	MaxUnstakeBasisPoints = types.MaxUnstakeBasisPoints
@@ -198,4 +198,5 @@ type (
 	TxMarker              = types.TxMarker
 	TxMarkers             = types.TxMarkers
 	EventPool             = types.EventPool
+	EventRefund           = types.EventRefund
 )

@@ -267,23 +267,38 @@ func (e EventRewards) Events() (sdk.Events, error) {
 	return sdk.Events{evt}, nil
 }
 
-// NewEventRefund create a new EventRefund
-func NewEventRefund(code sdk.CodeType, reason string) EventRefund {
-	return EventRefund{
-		Code:   code,
-		Reason: reason,
-	}
-}
-
 // EventRefund represent a refund activity , and contains the reason why it get refund
 type EventRefund struct {
 	Code   sdk.CodeType `json:"code"`
 	Reason string       `json:"reason"`
+	InTx   common.Tx    `json:"-"`
+	Fee    common.Fee   `json:"-"`
+}
+
+// NewEventRefund create a new EventRefund
+func NewEventRefund(code sdk.CodeType, reason string, inTx common.Tx, fee common.Fee) EventRefund {
+	return EventRefund{
+		Code:   code,
+		Reason: reason,
+		InTx:   inTx,
+		Fee:    fee,
+	}
 }
 
 // Type return reward event type
 func (e EventRefund) Type() string {
 	return RefundEventType
+}
+
+// Events return events
+func (e EventRefund) Events() (sdk.Events, error) {
+	evt := sdk.NewEvent(e.Type(),
+		sdk.NewAttribute("code", strconv.FormatUint(uint64(e.Code), 10)),
+		sdk.NewAttribute("reason", e.Reason),
+		sdk.NewAttribute("fee", e.Fee.Coins.String()),
+	)
+	evt = evt.AppendAttributes(e.InTx.ToAttributes()...)
+	return sdk.Events{evt}, nil
 }
 
 type BondType string
