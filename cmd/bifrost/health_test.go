@@ -8,8 +8,9 @@ import (
 	"testing"
 	"time"
 
-	go_tss "gitlab.com/thorchain/tss/go-tss"
+	"gitlab.com/thorchain/tss/go-tss/blame"
 	"gitlab.com/thorchain/tss/go-tss/common"
+	"gitlab.com/thorchain/tss/go-tss/conversion"
 	"gitlab.com/thorchain/tss/go-tss/keygen"
 	"gitlab.com/thorchain/tss/go-tss/keysign"
 	. "gopkg.in/check.v1"
@@ -34,21 +35,21 @@ func (mts *MockTssServer) Stop() {
 }
 
 func (mts *MockTssServer) GetLocalPeerID() string {
-	return go_tss.GetRandomPeerID().String()
+	return conversion.GetRandomPeerID().String()
 }
 
 func (mts *MockTssServer) Keygen(req keygen.Request) (keygen.Response, error) {
 	if mts.failToKeyGen {
 		return keygen.Response{}, errors.New("you ask for it")
 	}
-	return keygen.NewResponse(go_tss.GetRandomPubKey(), "whatever", common.Success, common.NoBlame), nil
+	return keygen.NewResponse(conversion.GetRandomPubKey(), "whatever", common.Success, blame.Blame{}), nil
 }
 
 func (mts *MockTssServer) KeySign(req keysign.Request) (keysign.Response, error) {
 	if mts.failToKeySign {
 		return keysign.Response{}, errors.New("you ask for it")
 	}
-	return keysign.NewResponse("", "", common.Success, common.NoBlame), nil
+	return keysign.NewResponse("", "", common.Success, blame.Blame{}), nil
 }
 
 func (mts *MockTssServer) GetStatus() common.TssStatus {
