@@ -45,6 +45,7 @@ type Keeper interface {
 	KeeperErrataTx
 	KeeperBanVoter
 	KeeperSwapQueue
+	KeeperMimir
 }
 
 // NOTE: Always end a dbPrefix with a slash ("/"). This is to ensure that there
@@ -84,6 +85,7 @@ const (
 	prefixBanVoter           dbPrefix = "ban/"
 	prefixNodeSlashPoints    dbPrefix = "slash/"
 	prefixSwapQueueItem      dbPrefix = "swapitem/"
+	prefixMimir              dbPrefix = "mimir/"
 )
 
 func dbError(ctx sdk.Context, wrapper string, err error) error {

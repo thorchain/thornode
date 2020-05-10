@@ -53,6 +53,7 @@ var (
 	NewBanVoter                    = types.NewBanVoter
 	NewErrataTxVoter               = types.NewErrataTxVoter
 	NewObservedTxVoter             = types.NewObservedTxVoter
+	NewMsgMimir                    = types.NewMsgMimir
 	NewMsgNativeTx                 = types.NewMsgNativeTx
 	NewMsgTssPool                  = types.NewMsgTssPool
 	NewMsgTssKeysignFail           = types.NewMsgTssKeysignFail
@@ -131,6 +132,7 @@ type (
 	MsgSetUnStake         = types.MsgSetUnStake
 	MsgSetStakeData       = types.MsgSetStakeData
 	MsgOutboundTx         = types.MsgOutboundTx
+	MsgMimir              = types.MsgMimir
 	MsgMigrate            = types.MsgMigrate
 	MsgRagnarok           = types.MsgRagnarok
 	MsgRefundTx           = types.MsgRefundTx

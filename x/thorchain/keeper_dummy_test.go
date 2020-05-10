@@ -258,6 +258,9 @@ func (k KVStoreDummy) RemoveSwapQueueItem(ctx sdk.Context, _ common.TxID)  {}
 func (k KVStoreDummy) GetSwapQueueItem(ctx sdk.Context, txID common.TxID) (MsgSwap, error) {
 	return MsgSwap{}, kaboom
 }
+func (k KVStoreDummy) GetMimir(_ sdk.Context, key string) (int64, error) { return 0, kaboom }
+func (k KVStoreDummy) SetMimir(_ sdk.Context, key string, value int64)   {}
+func (k KVStoreDummy) GetMimirIterator(ctx sdk.Context) sdk.Iterator     { return nil }
 
 // a mock sdk.Iterator implementation for testing purposes
 type DummyIterator struct {
