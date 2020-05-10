@@ -8,7 +8,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	. "gopkg.in/check.v1"
 
-	tssCommon "gitlab.com/thorchain/tss/go-tss/common"
+	"gitlab.com/thorchain/tss/go-tss/blame"
 
 	"gitlab.com/thorchain/thornode/common"
 	"gitlab.com/thorchain/thornode/constants"
@@ -169,7 +169,7 @@ func (s *ThorchainSuite) TestChurn(c *C) {
 
 	// generate a tss keygen handler event
 	newVaultPk := GetRandomPubKey()
-	msg := NewMsgTssPool(keygen.Members, newVaultPk, AsgardKeygen, ctx.BlockHeight(), tssCommon.NoBlame, common.Chains{common.RuneAsset().Chain}, addresses[0])
+	msg := NewMsgTssPool(keygen.Members, newVaultPk, AsgardKeygen, ctx.BlockHeight(), blame.Blame{}, common.Chains{common.RuneAsset().Chain}, addresses[0])
 	tssHandler := NewTssHandler(keeper, versionedVaultMgr)
 
 	voter := NewTssVoter(msg.ID, msg.PubKeys, msg.PoolPubKey)
@@ -319,7 +319,7 @@ func (s *ThorchainSuite) TestRagnarok(c *C) {
 		NewReserveContributor(contrib1, sdk.NewUint(400_000_000*common.One)),
 		NewReserveContributor(contrib2, sdk.NewUint(100_000*common.One)),
 	}
-	resHandler := NewReserveContributorHandler(keeper)
+	resHandler := NewReserveContributorHandler(keeper, NewVersionedEventMgr())
 	for _, res := range reserves {
 		asgard.AddFunds(common.Coins{
 			common.NewCoin(common.RuneAsset(), res.Amount),
@@ -512,7 +512,7 @@ func (s *ThorchainSuite) TestRagnarokNoOneLeave(c *C) {
 		NewReserveContributor(contrib1, sdk.NewUint(400_000_000*common.One)),
 		NewReserveContributor(contrib2, sdk.NewUint(100_000*common.One)),
 	}
-	resHandler := NewReserveContributorHandler(keeper)
+	resHandler := NewReserveContributorHandler(keeper, NewVersionedEventMgr())
 	for _, res := range reserves {
 		asgard.AddFunds(common.Coins{
 			common.NewCoin(common.RuneAsset(), res.Amount),

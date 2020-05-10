@@ -122,10 +122,10 @@ func (h TssHandler) handleV1(ctx sdk.Context, msg MsgTssPool, version semver.Ver
 			// if a node fail to join the keygen, thus hold off the network from churning then it will be slashed accordingly
 			constAccessor := constants.GetConstantValues(version)
 			slashPoints := constAccessor.GetInt64Value(constants.FailKeygenSlashPoints)
-			for _, pubkeyStr := range msg.Blame.BlameNodes {
-				nodePubKey, err := common.NewPubKey(pubkeyStr)
+			for _, node := range msg.Blame.BlameNodes {
+				nodePubKey, err := common.NewPubKey(node.Pubkey)
 				if err != nil {
-					ctx.Logger().Error("fail to parse pubkey", "error", err, "pub key", pubkeyStr)
+					ctx.Logger().Error("fail to parse pubkey", "error", err, "pub key", node.Pubkey)
 					return sdk.ErrInternal("fail to parse pubkey").Result()
 				}
 

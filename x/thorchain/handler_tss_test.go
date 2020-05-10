@@ -5,7 +5,7 @@ import (
 
 	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	tssCommon "gitlab.com/thorchain/tss/go-tss/common"
+	"gitlab.com/thorchain/tss/go-tss/blame"
 	. "gopkg.in/check.v1"
 
 	"gitlab.com/thorchain/thornode/common"
@@ -148,7 +148,7 @@ func (s *HandlerTssSuite) TestTssHandler(c *C) {
 		{
 			name: "bad version should return an error",
 			messageCreator: func(helper tssHandlerTestHelper) sdk.Msg {
-				return NewMsgTssPool(helper.members, GetRandomPubKey(), AsgardKeygen, helper.ctx.BlockHeight(), tssCommon.NoBlame, common.Chains{common.RuneAsset().Chain}, helper.nodeAccount.NodeAddress)
+				return NewMsgTssPool(helper.members, GetRandomPubKey(), AsgardKeygen, helper.ctx.BlockHeight(), blame.Blame{}, common.Chains{common.RuneAsset().Chain}, helper.nodeAccount.NodeAddress)
 			},
 			runner: func(handler TssHandler, msg sdk.Msg, helper tssHandlerTestHelper) sdk.Result {
 				return handler.Run(helper.ctx, msg, semver.MustParse("0.0.1"), helper.constAccessor)
@@ -158,7 +158,7 @@ func (s *HandlerTssSuite) TestTssHandler(c *C) {
 		{
 			name: "Not signed by an active account should return an error",
 			messageCreator: func(helper tssHandlerTestHelper) sdk.Msg {
-				return NewMsgTssPool(helper.members, GetRandomPubKey(), AsgardKeygen, helper.ctx.BlockHeight(), tssCommon.NoBlame, common.Chains{common.RuneAsset().Chain}, GetRandomNodeAccount(NodeActive).NodeAddress)
+				return NewMsgTssPool(helper.members, GetRandomPubKey(), AsgardKeygen, helper.ctx.BlockHeight(), blame.Blame{}, common.Chains{common.RuneAsset().Chain}, GetRandomNodeAccount(NodeActive).NodeAddress)
 			},
 			runner: func(handler TssHandler, msg sdk.Msg, helper tssHandlerTestHelper) sdk.Result {
 				return handler.Run(helper.ctx, msg, constants.SWVersion, helper.constAccessor)
@@ -168,7 +168,7 @@ func (s *HandlerTssSuite) TestTssHandler(c *C) {
 		{
 			name: "empty signer should return an error",
 			messageCreator: func(helper tssHandlerTestHelper) sdk.Msg {
-				return NewMsgTssPool(helper.members, GetRandomPubKey(), AsgardKeygen, helper.ctx.BlockHeight(), tssCommon.NoBlame, common.Chains{common.RuneAsset().Chain}, sdk.AccAddress{})
+				return NewMsgTssPool(helper.members, GetRandomPubKey(), AsgardKeygen, helper.ctx.BlockHeight(), blame.Blame{}, common.Chains{common.RuneAsset().Chain}, sdk.AccAddress{})
 			},
 			runner: func(handler TssHandler, msg sdk.Msg, helper tssHandlerTestHelper) sdk.Result {
 				return handler.Run(helper.ctx, msg, constants.SWVersion, helper.constAccessor)
@@ -178,7 +178,7 @@ func (s *HandlerTssSuite) TestTssHandler(c *C) {
 		{
 			name: "empty id should return an error",
 			messageCreator: func(helper tssHandlerTestHelper) sdk.Msg {
-				tssMsg := NewMsgTssPool(helper.members, GetRandomPubKey(), AsgardKeygen, helper.ctx.BlockHeight(), tssCommon.NoBlame, common.Chains{common.RuneAsset().Chain}, helper.nodeAccount.NodeAddress)
+				tssMsg := NewMsgTssPool(helper.members, GetRandomPubKey(), AsgardKeygen, helper.ctx.BlockHeight(), blame.Blame{}, common.Chains{common.RuneAsset().Chain}, helper.nodeAccount.NodeAddress)
 				tssMsg.ID = ""
 				return tssMsg
 			},
@@ -190,7 +190,7 @@ func (s *HandlerTssSuite) TestTssHandler(c *C) {
 		{
 			name: "empty member pubkeys should return an error",
 			messageCreator: func(helper tssHandlerTestHelper) sdk.Msg {
-				tssMsg := NewMsgTssPool(common.PubKeys{}, GetRandomPubKey(), AsgardKeygen, helper.ctx.BlockHeight(), tssCommon.NoBlame, common.Chains{common.RuneAsset().Chain}, helper.nodeAccount.NodeAddress)
+				tssMsg := NewMsgTssPool(common.PubKeys{}, GetRandomPubKey(), AsgardKeygen, helper.ctx.BlockHeight(), blame.Blame{}, common.Chains{common.RuneAsset().Chain}, helper.nodeAccount.NodeAddress)
 				return tssMsg
 			},
 			runner: func(handler TssHandler, msg sdk.Msg, helper tssHandlerTestHelper) sdk.Result {
@@ -201,7 +201,7 @@ func (s *HandlerTssSuite) TestTssHandler(c *C) {
 		{
 			name: "less than two member pubkeys should return an error",
 			messageCreator: func(helper tssHandlerTestHelper) sdk.Msg {
-				tssMsg := NewMsgTssPool(common.PubKeys{GetRandomPubKey()}, GetRandomPubKey(), AsgardKeygen, helper.ctx.BlockHeight(), tssCommon.NoBlame, common.Chains{common.RuneAsset().Chain}, helper.nodeAccount.NodeAddress)
+				tssMsg := NewMsgTssPool(common.PubKeys{GetRandomPubKey()}, GetRandomPubKey(), AsgardKeygen, helper.ctx.BlockHeight(), blame.Blame{}, common.Chains{common.RuneAsset().Chain}, helper.nodeAccount.NodeAddress)
 				return tssMsg
 			},
 			runner: func(handler TssHandler, msg sdk.Msg, helper tssHandlerTestHelper) sdk.Result {
@@ -212,7 +212,7 @@ func (s *HandlerTssSuite) TestTssHandler(c *C) {
 		{
 			name: "there are empty pubkeys in member pubkey should return an error",
 			messageCreator: func(helper tssHandlerTestHelper) sdk.Msg {
-				tssMsg := NewMsgTssPool(common.PubKeys{GetRandomPubKey(), GetRandomPubKey(), common.EmptyPubKey}, GetRandomPubKey(), AsgardKeygen, helper.ctx.BlockHeight(), tssCommon.NoBlame, common.Chains{common.RuneAsset().Chain}, helper.nodeAccount.NodeAddress)
+				tssMsg := NewMsgTssPool(common.PubKeys{GetRandomPubKey(), GetRandomPubKey(), common.EmptyPubKey}, GetRandomPubKey(), AsgardKeygen, helper.ctx.BlockHeight(), blame.Blame{}, common.Chains{common.RuneAsset().Chain}, helper.nodeAccount.NodeAddress)
 				return tssMsg
 			},
 			runner: func(handler TssHandler, msg sdk.Msg, helper tssHandlerTestHelper) sdk.Result {
@@ -223,7 +223,7 @@ func (s *HandlerTssSuite) TestTssHandler(c *C) {
 		{
 			name: "success while pool pub key is empty should return error",
 			messageCreator: func(helper tssHandlerTestHelper) sdk.Msg {
-				tssMsg := NewMsgTssPool(helper.members, common.EmptyPubKey, AsgardKeygen, helper.ctx.BlockHeight(), tssCommon.NoBlame, common.Chains{common.RuneAsset().Chain}, helper.nodeAccount.NodeAddress)
+				tssMsg := NewMsgTssPool(helper.members, common.EmptyPubKey, AsgardKeygen, helper.ctx.BlockHeight(), blame.Blame{}, common.Chains{common.RuneAsset().Chain}, helper.nodeAccount.NodeAddress)
 				return tssMsg
 			},
 			runner: func(handler TssHandler, msg sdk.Msg, helper tssHandlerTestHelper) sdk.Result {
@@ -234,7 +234,7 @@ func (s *HandlerTssSuite) TestTssHandler(c *C) {
 		{
 			name: "invalid pool pub key should return error",
 			messageCreator: func(helper tssHandlerTestHelper) sdk.Msg {
-				tssMsg := NewMsgTssPool(helper.members, "whatever", AsgardKeygen, helper.ctx.BlockHeight(), tssCommon.NoBlame, common.Chains{common.RuneAsset().Chain}, helper.nodeAccount.NodeAddress)
+				tssMsg := NewMsgTssPool(helper.members, "whatever", AsgardKeygen, helper.ctx.BlockHeight(), blame.Blame{}, common.Chains{common.RuneAsset().Chain}, helper.nodeAccount.NodeAddress)
 				return tssMsg
 			},
 			runner: func(handler TssHandler, msg sdk.Msg, helper tssHandlerTestHelper) sdk.Result {
@@ -245,7 +245,7 @@ func (s *HandlerTssSuite) TestTssHandler(c *C) {
 		{
 			name: "fail to list active node accounts should return an error",
 			messageCreator: func(helper tssHandlerTestHelper) sdk.Msg {
-				tssMsg := NewMsgTssPool(helper.members, GetRandomPubKey(), AsgardKeygen, helper.ctx.BlockHeight(), tssCommon.NoBlame, common.Chains{common.RuneAsset().Chain}, helper.nodeAccount.NodeAddress)
+				tssMsg := NewMsgTssPool(helper.members, GetRandomPubKey(), AsgardKeygen, helper.ctx.BlockHeight(), blame.Blame{}, common.Chains{common.RuneAsset().Chain}, helper.nodeAccount.NodeAddress)
 				return tssMsg
 			},
 			runner: func(handler TssHandler, msg sdk.Msg, helper tssHandlerTestHelper) sdk.Result {
@@ -257,7 +257,7 @@ func (s *HandlerTssSuite) TestTssHandler(c *C) {
 		{
 			name: "fail to get tss voter should return an error",
 			messageCreator: func(helper tssHandlerTestHelper) sdk.Msg {
-				tssMsg := NewMsgTssPool(helper.members, GetRandomPubKey(), AsgardKeygen, helper.ctx.BlockHeight(), tssCommon.NoBlame, common.Chains{common.RuneAsset().Chain}, helper.nodeAccount.NodeAddress)
+				tssMsg := NewMsgTssPool(helper.members, GetRandomPubKey(), AsgardKeygen, helper.ctx.BlockHeight(), blame.Blame{}, common.Chains{common.RuneAsset().Chain}, helper.nodeAccount.NodeAddress)
 				return tssMsg
 			},
 			runner: func(handler TssHandler, msg sdk.Msg, helper tssHandlerTestHelper) sdk.Result {
@@ -269,7 +269,7 @@ func (s *HandlerTssSuite) TestTssHandler(c *C) {
 		{
 			name: "fail to save vault should return an error",
 			messageCreator: func(helper tssHandlerTestHelper) sdk.Msg {
-				tssMsg := NewMsgTssPool(helper.members, GetRandomPubKey(), AsgardKeygen, helper.ctx.BlockHeight(), tssCommon.NoBlame, common.Chains{common.RuneAsset().Chain}, helper.nodeAccount.NodeAddress)
+				tssMsg := NewMsgTssPool(helper.members, GetRandomPubKey(), AsgardKeygen, helper.ctx.BlockHeight(), blame.Blame{}, common.Chains{common.RuneAsset().Chain}, helper.nodeAccount.NodeAddress)
 				return tssMsg
 			},
 			runner: func(handler TssHandler, msg sdk.Msg, helper tssHandlerTestHelper) sdk.Result {
@@ -281,7 +281,7 @@ func (s *HandlerTssSuite) TestTssHandler(c *C) {
 		{
 			name: "not having consensus should not perform any actions",
 			messageCreator: func(helper tssHandlerTestHelper) sdk.Msg {
-				tssMsg := NewMsgTssPool(helper.members, GetRandomPubKey(), AsgardKeygen, helper.ctx.BlockHeight(), tssCommon.NoBlame, common.Chains{common.RuneAsset().Chain}, helper.nodeAccount.NodeAddress)
+				tssMsg := NewMsgTssPool(helper.members, GetRandomPubKey(), AsgardKeygen, helper.ctx.BlockHeight(), blame.Blame{}, common.Chains{common.RuneAsset().Chain}, helper.nodeAccount.NodeAddress)
 				return tssMsg
 			},
 			runner: func(handler TssHandler, msg sdk.Msg, helper tssHandlerTestHelper) sdk.Result {
@@ -296,7 +296,7 @@ func (s *HandlerTssSuite) TestTssHandler(c *C) {
 		{
 			name: "normal success",
 			messageCreator: func(helper tssHandlerTestHelper) sdk.Msg {
-				tssMsg := NewMsgTssPool(helper.members, GetRandomPubKey(), AsgardKeygen, helper.ctx.BlockHeight(), tssCommon.NoBlame, common.Chains{common.RuneAsset().Chain}, helper.nodeAccount.NodeAddress)
+				tssMsg := NewMsgTssPool(helper.members, GetRandomPubKey(), AsgardKeygen, helper.ctx.BlockHeight(), blame.Blame{}, common.Chains{common.RuneAsset().Chain}, helper.nodeAccount.NodeAddress)
 				return tssMsg
 			},
 			runner: func(handler TssHandler, msg sdk.Msg, helper tssHandlerTestHelper) sdk.Result {
@@ -310,10 +310,10 @@ func (s *HandlerTssSuite) TestTssHandler(c *C) {
 				sort.SliceStable(helper.members, func(i, j int) bool {
 					return helper.members[i].String() < helper.members[j].String()
 				})
-				b := tssCommon.Blame{
+				b := blame.Blame{
 					FailReason: "who knows",
-					BlameNodes: []string{
-						"whatever",
+					BlameNodes: []blame.Node{
+						blame.Node{Pubkey: "whatever"},
 					},
 				}
 				return NewMsgTssPool(helper.members, GetRandomPubKey(), AsgardKeygen, helper.ctx.BlockHeight(), b, common.Chains{common.RuneAsset().Chain}, helper.nodeAccount.NodeAddress)
@@ -334,10 +334,10 @@ func (s *HandlerTssSuite) TestTssHandler(c *C) {
 				na, _ := helper.keeper.GetNodeAccount(helper.ctx, thorAddr)
 				na.UpdateStatus(NodeActive, helper.ctx.BlockHeight())
 				_ = helper.keeper.SetNodeAccount(helper.ctx, na)
-				b := tssCommon.Blame{
+				b := blame.Blame{
 					FailReason: "who knows",
-					BlameNodes: []string{
-						helper.members[3].String(),
+					BlameNodes: []blame.Node{
+						blame.Node{Pubkey: helper.members[3].String()},
 					},
 				}
 				return NewMsgTssPool(helper.members, GetRandomPubKey(), AsgardKeygen, helper.ctx.BlockHeight(), b, common.Chains{common.RuneAsset().Chain}, helper.nodeAccount.NodeAddress)
@@ -372,10 +372,10 @@ func (s *HandlerTssSuite) TestTssHandler(c *C) {
 				sort.SliceStable(helper.members, func(i, j int) bool {
 					return helper.members[i].String() < helper.members[j].String()
 				})
-				b := tssCommon.Blame{
+				b := blame.Blame{
 					FailReason: "who knows",
-					BlameNodes: []string{
-						helper.members[3].String(),
+					BlameNodes: []blame.Node{
+						blame.Node{Pubkey: helper.members[3].String()},
 					},
 				}
 				return NewMsgTssPool(helper.members, GetRandomPubKey(), AsgardKeygen, helper.ctx.BlockHeight(), b, common.Chains{common.RuneAsset().Chain}, helper.nodeAccount.NodeAddress)
@@ -393,10 +393,10 @@ func (s *HandlerTssSuite) TestTssHandler(c *C) {
 				sort.SliceStable(helper.members, func(i, j int) bool {
 					return helper.members[i].String() < helper.members[j].String()
 				})
-				b := tssCommon.Blame{
+				b := blame.Blame{
 					FailReason: "who knows",
-					BlameNodes: []string{
-						helper.members[3].String(),
+					BlameNodes: []blame.Node{
+						blame.Node{Pubkey: helper.members[3].String()},
 					},
 				}
 				return NewMsgTssPool(helper.members, GetRandomPubKey(), AsgardKeygen, helper.ctx.BlockHeight(), b, common.Chains{common.RuneAsset().Chain}, helper.nodeAccount.NodeAddress)
@@ -425,10 +425,10 @@ func (s *HandlerTssSuite) TestTssHandler(c *C) {
 				sort.SliceStable(helper.members, func(i, j int) bool {
 					return helper.members[i].String() < helper.members[j].String()
 				})
-				b := tssCommon.Blame{
+				b := blame.Blame{
 					FailReason: "who knows",
-					BlameNodes: []string{
-						helper.members[3].String(),
+					BlameNodes: []blame.Node{
+						blame.Node{Pubkey: helper.members[3].String()},
 					},
 				}
 				return NewMsgTssPool(helper.members, GetRandomPubKey(), AsgardKeygen, helper.ctx.BlockHeight(), b, common.Chains{common.RuneAsset().Chain}, helper.nodeAccount.NodeAddress)
@@ -448,10 +448,10 @@ func (s *HandlerTssSuite) TestTssHandler(c *C) {
 		{
 			name: "fail to keygen and fail to get node account should return an error",
 			messageCreator: func(helper tssHandlerTestHelper) sdk.Msg {
-				b := tssCommon.Blame{
+				b := blame.Blame{
 					FailReason: "who knows",
-					BlameNodes: []string{
-						helper.members[3].String(),
+					BlameNodes: []blame.Node{
+						blame.Node{Pubkey: helper.members[3].String()},
 					},
 				}
 				return NewMsgTssPool(helper.members, GetRandomPubKey(), AsgardKeygen, helper.ctx.BlockHeight(), b, common.Chains{common.RuneAsset().Chain}, helper.nodeAccount.NodeAddress)
@@ -466,10 +466,10 @@ func (s *HandlerTssSuite) TestTssHandler(c *C) {
 		{
 			name: "fail to keygen and fail to set node account should return an error",
 			messageCreator: func(helper tssHandlerTestHelper) sdk.Msg {
-				b := tssCommon.Blame{
+				b := blame.Blame{
 					FailReason: "who knows",
-					BlameNodes: []string{
-						helper.members[3].String(),
+					BlameNodes: []blame.Node{
+						blame.Node{Pubkey: helper.members[3].String()},
 					},
 				}
 				return NewMsgTssPool(helper.members, GetRandomPubKey(), AsgardKeygen, helper.ctx.BlockHeight(), b, common.Chains{common.RuneAsset().Chain}, helper.nodeAccount.NodeAddress)

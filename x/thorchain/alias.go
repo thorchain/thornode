@@ -2,6 +2,7 @@ package thorchain
 
 import (
 	"github.com/cosmos/cosmos-sdk/x/bank"
+
 	"gitlab.com/thorchain/thornode/x/thorchain/types"
 )
 
@@ -175,9 +176,12 @@ type (
 	Events                = types.Events
 	EventSwap             = types.EventSwap
 	EventStake            = types.EventStake
+	EventUnstake          = types.EventUnstake
 	EventStatus           = types.EventStatus
+	EventAdd              = types.EventAdd
 	EventRewards          = types.EventRewards
 	EventErrata           = types.EventErrata
+	EventReserve          = types.EventReserve
 	PoolAmt               = types.PoolAmt
 	PoolMod               = types.PoolMod
 	PoolMods              = types.PoolMods

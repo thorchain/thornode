@@ -98,22 +98,39 @@ type EventSwap struct {
 	TradeSlip          sdk.Uint     `json:"trade_slip"`
 	LiquidityFee       sdk.Uint     `json:"liquidity_fee"`
 	LiquidityFeeInRune sdk.Uint     `json:"liquidity_fee_in_rune"`
+	//  the following two field is trying to make events change backward compatible
+	// very soon we don't need to save this event to key value store anymore , it will be removed then
+	InTx   common.Tx `json:"-"` // this is the Tx that cause the swap to happen, it is a double swap , then the txid will be blank
+	OutTxs common.Tx `json:"-"` // this field will need temporary
 }
 
 // NewEventSwap create a new swap event
-func NewEventSwap(pool common.Asset, priceTarget, fee, tradeSlip, liquidityFeeInRune sdk.Uint) EventSwap {
+func NewEventSwap(pool common.Asset, priceTarget, fee, tradeSlip, liquidityFeeInRune sdk.Uint, inTx common.Tx) EventSwap {
 	return EventSwap{
 		Pool:               pool,
 		PriceTarget:        priceTarget,
 		TradeSlip:          tradeSlip,
 		LiquidityFee:       fee,
 		LiquidityFeeInRune: liquidityFeeInRune,
+		InTx:               inTx,
 	}
 }
 
 // Type return a string that represent the type, it should not duplicated with other event
 func (e EventSwap) Type() string {
 	return SwapEventType
+}
+
+func (e EventSwap) Events() (sdk.Events, error) {
+	evt := sdk.NewEvent(e.Type(),
+		sdk.NewAttribute("pool", e.Pool.String()),
+		sdk.NewAttribute("price_target", e.PriceTarget.String()),
+		sdk.NewAttribute("trade_slip", e.TradeSlip.String()),
+		sdk.NewAttribute("liquidity_fee", e.LiquidityFee.String()),
+		sdk.NewAttribute("liquidity_fee_in_rune", e.LiquidityFeeInRune.String()),
+	)
+	evt = evt.AppendAttributes(e.InTx.ToAttributes()...)
+	return sdk.Events{evt}, nil
 }
 
 // EventStake stake event
@@ -153,15 +170,17 @@ type EventUnstake struct {
 	StakeUnits  sdk.Uint     `json:"stake_units"`
 	BasisPoints int64        `json:"basis_points"` // 1 ==> 10,0000
 	Asymmetry   sdk.Dec      `json:"asymmetry"`    // -1.0 <==> 1.0
+	InTx        common.Tx    `json:"-"`
 }
 
 // NewEventUnstake create a new unstake event
-func NewEventUnstake(pool common.Asset, su sdk.Uint, basisPts int64, asym sdk.Dec) EventUnstake {
+func NewEventUnstake(pool common.Asset, su sdk.Uint, basisPts int64, asym sdk.Dec, inTx common.Tx) EventUnstake {
 	return EventUnstake{
 		Pool:        pool,
 		StakeUnits:  su,
 		BasisPoints: basisPts,
 		Asymmetry:   asym,
+		InTx:        inTx,
 	}
 }
 
@@ -170,21 +189,42 @@ func (e EventUnstake) Type() string {
 	return UnstakeEventType
 }
 
+// Events
+func (e EventUnstake) Events() (sdk.Events, error) {
+	evt := sdk.NewEvent(e.Type(),
+		sdk.NewAttribute("pool", e.Pool.String()),
+		sdk.NewAttribute("stake_units", e.StakeUnits.String()),
+		sdk.NewAttribute("basis_points", strconv.FormatInt(e.BasisPoints, 10)),
+		sdk.NewAttribute("asymmetry", e.Asymmetry.String()))
+	evt = evt.AppendAttributes(e.InTx.ToAttributes()...)
+	return sdk.Events{evt}, nil
+}
+
 // EventAdd represent add operation
 type EventAdd struct {
 	Pool common.Asset `json:"pool"`
+	InTx common.Tx    `json:"-"`
 }
 
 // NewEventAdd create a new add event
-func NewEventAdd(pool common.Asset) EventAdd {
+func NewEventAdd(pool common.Asset, inTx common.Tx) EventAdd {
 	return EventAdd{
 		Pool: pool,
+		InTx: inTx,
 	}
 }
 
 // Type return add event type
 func (e EventAdd) Type() string {
 	return AddEventType
+}
+
+// Events get all events
+func (e EventAdd) Events() (sdk.Events, error) {
+	evt := sdk.NewEvent(e.Type(),
+		sdk.NewAttribute("pool", e.Pool.String()))
+	evt = evt.AppendAttributes(e.InTx.ToAttributes()...)
+	return sdk.Events{evt}, nil
 }
 
 // EventPool represent pool change event
@@ -238,6 +278,16 @@ func NewEventRewards(bondReward sdk.Uint, poolRewards []PoolAmt) EventRewards {
 // Type return reward event type
 func (e EventRewards) Type() string {
 	return RewardEventType
+}
+
+func (e EventRewards) Events() (sdk.Events, error) {
+	evt := sdk.NewEvent(e.Type(),
+		sdk.NewAttribute("bond_reward", e.BondReward.String()),
+	)
+	for _, item := range e.PoolRewards {
+		evt = evt.AppendAttributes(sdk.NewAttribute(item.Asset.String(), strconv.FormatInt(item.Amount, 10)))
+	}
+	return sdk.Events{evt}, nil
 }
 
 // NewEventRefund create a new EventRefund
@@ -340,17 +390,30 @@ func (e *EventGas) Events() (sdk.Events, error) {
 // EventReserve Reserve event type
 type EventReserve struct {
 	ReserveContributor ReserveContributor `json:"reserve_contributor"`
+	InTx               common.Tx          `json:"-"`
 }
 
 // NewEventReserve create a new instance of EventReserve
-func NewEventReserve(contributor ReserveContributor) EventReserve {
+func NewEventReserve(contributor ReserveContributor, inTx common.Tx) EventReserve {
 	return EventReserve{
 		ReserveContributor: contributor,
+		InTx:               inTx,
 	}
 }
 
 func (e EventReserve) Type() string {
 	return ReserveEventType
+}
+
+func (e EventReserve) Events() (sdk.Events, error) {
+	evt := sdk.NewEvent(e.Type(),
+		sdk.NewAttribute("contributor_address", e.ReserveContributor.Address.String()),
+		sdk.NewAttribute("amount", e.ReserveContributor.Amount.String()),
+	)
+	evt = evt.AppendAttributes(e.InTx.ToAttributes()...)
+	return sdk.Events{
+		evt,
+	}, nil
 }
 
 // EventSlash represent a change in pool balance which caused by slash a node account
