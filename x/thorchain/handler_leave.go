@@ -14,17 +14,19 @@ import (
 // if an operator of THORChain node would like to leave and get their bond back , they have to
 // send a Leave request through Binance Chain
 type LeaveHandler struct {
-	keeper              Keeper
-	validatorManager    VersionedValidatorManager
-	versionedTxOutStore VersionedTxOutStore
+	keeper                Keeper
+	validatorManager      VersionedValidatorManager
+	versionedTxOutStore   VersionedTxOutStore
+	versionedEventManager VersionedEventManager
 }
 
 // NewLeaveHandler create a new LeaveHandler
-func NewLeaveHandler(keeper Keeper, validatorManager VersionedValidatorManager, versionedTxOutStore VersionedTxOutStore) LeaveHandler {
+func NewLeaveHandler(keeper Keeper, validatorManager VersionedValidatorManager, versionedTxOutStore VersionedTxOutStore, versionedEventManager VersionedEventManager) LeaveHandler {
 	return LeaveHandler{
-		keeper:              keeper,
-		validatorManager:    validatorManager,
-		versionedTxOutStore: versionedTxOutStore,
+		keeper:                keeper,
+		validatorManager:      validatorManager,
+		versionedTxOutStore:   versionedTxOutStore,
+		versionedEventManager: versionedEventManager,
 	}
 }
 
@@ -96,12 +98,16 @@ func (h LeaveHandler) handle(ctx sdk.Context, msg MsgLeave, version semver.Versi
 			ctx.Logger().Error("fail to get txout store", "error", err)
 			return errBadVersion
 		}
-
+		eventMgr, err := h.versionedEventManager.GetEventManager(ctx, version)
+		if err != nil {
+			ctx.Logger().Error("fail to get event manager", "error", err)
+			return errFailGetEventManager
+		}
 		// NOTE: there is an edge case, where the first node doesn't have a
 		// vault (it was destroyed when we successfully migrated funds from
 		// their address to a new TSS vault
 		if !h.keeper.VaultExists(ctx, nodeAcc.PubKeySet.Secp256k1) {
-			if err := refundBond(ctx, msg.Tx, nodeAcc, h.keeper, txOutStore); err != nil {
+			if err := refundBond(ctx, msg.Tx, nodeAcc, h.keeper, txOutStore, eventMgr); err != nil {
 				return sdk.ErrInternal(fmt.Errorf("fail to refund bond: %w", err).Error())
 			}
 		} else {
@@ -114,7 +120,7 @@ func (h LeaveHandler) handle(ctx sdk.Context, msg MsgLeave, version semver.Versi
 			if vault.IsYggdrasil() {
 				if !vault.HasFunds() {
 					// node is not active , they are free to leave , refund them
-					if err := refundBond(ctx, msg.Tx, nodeAcc, h.keeper, txOutStore); err != nil {
+					if err := refundBond(ctx, msg.Tx, nodeAcc, h.keeper, txOutStore, eventMgr); err != nil {
 						return sdk.ErrInternal(fmt.Errorf("fail to refund bond: %w", err).Error())
 					}
 				} else {

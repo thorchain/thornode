@@ -397,7 +397,7 @@ func (s *HandlerRefundSuite) TestRefundTxNormalCase(c *C) {
 	// event should set to complete
 	ev, err := helper.keeper.GetEvent(helper.ctx, 1)
 	c.Assert(err, IsNil)
-	c.Assert(ev.Status, Equals, EventRefund)
+	c.Assert(ev.Status, Equals, RefundStatus)
 	// txout should had been complete
 
 	txOut, err := helper.keeper.GetTxOut(helper.ctx, helper.ctx.BlockHeight())

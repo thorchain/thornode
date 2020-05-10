@@ -151,12 +151,17 @@ func (h NativeTxHandler) handleV1(ctx sdk.Context, msg MsgNativeTx, version semv
 		return errBadVersion.Result()
 	}
 
+	eventMgr, err := h.versionedEventManager.GetEventManager(ctx, version)
+	if err != nil {
+		ctx.Logger().Error("fail to get event manager", "error", err)
+		return errFailGetEventManager.Result()
+	}
 	// construct msg from memo
 	txIn := ObservedTx{Tx: tx}
 	m, txErr := processOneTxIn(ctx, h.keeper, txIn, msg.Signer)
 	if txErr != nil {
 		ctx.Logger().Error("fail to process native inbound tx", "error", txErr.Error(), "tx hash", tx.ID.String())
-		if newErr := refundTx(ctx, txIn, txOutStore, h.keeper, constAccessor, txErr.Code(), fmt.Sprint(txErr.Data())); nil != newErr {
+		if newErr := refundTx(ctx, txIn, txOutStore, h.keeper, constAccessor, txErr.Code(), fmt.Sprint(txErr.Data()), eventMgr); nil != newErr {
 			return sdk.ErrInternal(newErr.Error()).Result()
 		}
 		return sdk.ErrInternal(txErr.Error()).Result()
@@ -168,7 +173,7 @@ func (h NativeTxHandler) handleV1(ctx sdk.Context, msg MsgNativeTx, version semv
 		if err != nil {
 			ctx.Logger().Error(err.Error())
 		}
-		if err := refundTx(ctx, txIn, txOutStore, h.keeper, constAccessor, result.Code, refundMsg); err != nil {
+		if err := refundTx(ctx, txIn, txOutStore, h.keeper, constAccessor, result.Code, refundMsg, eventMgr); err != nil {
 			return sdk.ErrInternal(err.Error()).Result()
 		}
 	}

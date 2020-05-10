@@ -11,14 +11,9 @@ import (
 	"gitlab.com/thorchain/thornode/constants"
 )
 
-func refundTx(ctx sdk.Context, tx ObservedTx, store TxOutStore, keeper Keeper, constAccessor constants.ConstantValues, refundCode sdk.CodeType, refundReason string) error {
+func refundTx(ctx sdk.Context, tx ObservedTx, store TxOutStore, keeper Keeper, constAccessor constants.ConstantValues, refundCode sdk.CodeType, refundReason string, eventMgr EventManager) error {
 	// If THORNode recognize one of the coins, and therefore able to refund
 	// withholding fees, refund all coins.
-	eventRefund := NewEventRefund(refundCode, refundReason)
-	buf, err := json.Marshal(eventRefund)
-	if err != nil {
-		return fmt.Errorf("fail to marshal refund event: %w", err)
-	}
 	var refundCoins common.Coins
 	for _, coin := range tx.Tx.Coins {
 		pool, err := keeper.GetPool(ctx, coin.Asset)
@@ -46,26 +41,20 @@ func refundTx(ctx sdk.Context, tx ObservedTx, store TxOutStore, keeper Keeper, c
 		}
 		// Zombie coins are just dropped.
 	}
+	eventRefund := NewEventRefund(refundCode, refundReason, tx.Tx, common.NewFee(common.Coins{}, sdk.ZeroUint()))
+	status := EventSuccess
 	if len(refundCoins) > 0 {
 		// create a new TX based on the coins thorchain refund , some of the coins thorchain doesn't refund
 		// coin thorchain doesn't have pool with , likely airdrop
 		newTx := common.NewTx(tx.Tx.ID, tx.Tx.FromAddress, tx.Tx.ToAddress, tx.Tx.Coins, tx.Tx.Gas, tx.Tx.Memo)
-		// save refund event
-		event := NewEvent(eventRefund.Type(), ctx.BlockHeight(), newTx, buf, EventPending)
 		transactionFee := constAccessor.GetInt64Value(constants.TransactionFee)
-		event.Fee = getFee(tx.Tx.Coins, refundCoins, transactionFee)
-		if err := keeper.UpsertEvent(ctx, event); err != nil {
-			return fmt.Errorf("fail to save refund event: %w", err)
-		}
-		return nil
+		fee := getFee(tx.Tx.Coins, refundCoins, transactionFee)
+		eventRefund = NewEventRefund(refundCode, refundReason, newTx, fee)
+		status = EventPending
 	}
-	// event thorchain didn't actually refund anything , still create an event thus front-end ui can keep track of what happened
-	// this event is final doesn't need to be completed
-	event := NewEvent(eventRefund.Type(), ctx.BlockHeight(), tx.Tx, buf, EventRefund)
-	if err := keeper.UpsertEvent(ctx, event); err != nil {
-		return fmt.Errorf("fail to save refund event: %w", err)
+	if err := eventMgr.EmitRefundEvent(ctx, keeper, eventRefund, status); err != nil {
+		return fmt.Errorf("fail to emit refund event: %w", err)
 	}
-
 	return nil
 }
 
@@ -171,7 +160,7 @@ func getTotalYggValueInRune(ctx sdk.Context, keeper Keeper, ygg Vault) (sdk.Uint
 	return yggRune, nil
 }
 
-func refundBond(ctx sdk.Context, tx common.Tx, nodeAcc NodeAccount, keeper Keeper, txOut TxOutStore) error {
+func refundBond(ctx sdk.Context, tx common.Tx, nodeAcc NodeAccount, keeper Keeper, txOut TxOutStore, eventMgr EventManager) error {
 	if nodeAcc.Status == NodeActive {
 		ctx.Logger().Info("node still active , cannot refund bond", "node address", nodeAcc.NodeAddress, "node pub key", nodeAcc.PubKeySet.Secp256k1)
 		return nil
@@ -215,14 +204,9 @@ func refundBond(ctx sdk.Context, tx common.Tx, nodeAcc NodeAccount, keeper Keepe
 			return fmt.Errorf("unable to determine asgard vault to send funds")
 		}
 
-		bondEvent := NewEventBond(nodeAcc.Bond, BondReturned)
-		buf, err := json.Marshal(bondEvent)
-		if err != nil {
-			return fmt.Errorf("fail to marshal bond event: %w", err)
-		}
-		e := NewEvent(bondEvent.Type(), ctx.BlockHeight(), tx, buf, EventPending)
-		if err := keeper.UpsertEvent(ctx, e); err != nil {
-			return fmt.Errorf("fail to save bond return event: %w", err)
+		bondEvent := NewEventBond(nodeAcc.Bond, BondReturned, tx)
+		if err := eventMgr.EmitBondEvent(ctx, keeper, bondEvent); err != nil {
+			return fmt.Errorf("fail to emit bond event: %w", err)
 		}
 
 		refundAddress := nodeAcc.BondAddress
@@ -321,7 +305,7 @@ func updateEventStatus(ctx sdk.Context, keeper Keeper, eventID int64, txs common
 			event.OutTxs = append(event.OutTxs, outTxs[i])
 		}
 	}
-	if eventStatus == EventRefund {
+	if eventStatus == RefundStatus {
 		// we need to check we refunded all the coins that need to be refunded from in tx
 		// before updating status to complete, we use the count of voter actions to check
 		voter, err := keeper.GetObservedTxVoter(ctx, event.InTx.ID)

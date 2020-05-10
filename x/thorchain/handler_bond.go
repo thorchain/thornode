@@ -1,7 +1,6 @@
 package thorchain
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"github.com/blang/semver"
@@ -13,12 +12,16 @@ import (
 
 // BondHandler a handler to process bond
 type BondHandler struct {
-	keeper Keeper
+	keeper                Keeper
+	versionedEventManager VersionedEventManager
 }
 
 // NewBondHandler create new BondHandler
-func NewBondHandler(keeper Keeper) BondHandler {
-	return BondHandler{keeper: keeper}
+func NewBondHandler(keeper Keeper, versionedEventManager VersionedEventManager) BondHandler {
+	return BondHandler{
+		keeper:                keeper,
+		versionedEventManager: versionedEventManager,
+	}
 }
 
 func (h BondHandler) validate(ctx sdk.Context, msg MsgBond, version semver.Version, constAccessor constants.ConstantValues) sdk.Error {
@@ -71,18 +74,16 @@ func (h BondHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version, con
 		ctx.Logger().Error("fail to process msg bond", "error", err)
 		return err.Result()
 	}
-	bondEvent := NewEventBond(msg.Bond, BondPaid)
-	buf, err := json.Marshal(bondEvent)
+	eventMgr, err := h.versionedEventManager.GetEventManager(ctx, version)
 	if err != nil {
-		ctx.Logger().Error("fail to marshal bond event", "error", err)
-		return sdk.ErrInternal("fail to marshal bond event").Result()
+		ctx.Logger().Error("fail to get event manager", "error", err)
+		return errFailGetEventManager.Result()
+	}
+	bondEvent := NewEventBond(msg.Bond, BondPaid, msg.TxIn)
+	if err := eventMgr.EmitBondEvent(ctx, h.keeper, bondEvent); err != nil {
+		return sdk.NewError(DefaultCodespace, CodeFailSaveEvent, "fail to emit bond event").Result()
 	}
 
-	e := NewEvent(bondEvent.Type(), ctx.BlockHeight(), msg.TxIn, buf, EventSuccess)
-	if err := h.keeper.UpsertEvent(ctx, e); err != nil {
-		ctx.Logger().Error("fail to save bond event", "error", err)
-		return sdk.ErrInternal("fail to save bond event").Result()
-	}
 	return sdk.Result{
 		Code:      sdk.CodeOK,
 		Codespace: DefaultCodespace,
