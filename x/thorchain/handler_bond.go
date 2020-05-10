@@ -36,8 +36,11 @@ func (h BondHandler) validateV1(ctx sdk.Context, version semver.Version, msg Msg
 	if !isSignedByActiveNodeAccounts(ctx, h.keeper, msg.GetSigners()) {
 		return sdk.ErrUnauthorized("msg is not signed by an active node account")
 	}
-	minimumBond := constAccessor.GetInt64Value(constants.MinimumBondInRune)
-	minValidatorBond := sdk.NewUint(uint64(minimumBond))
+	minBond, err := h.keeper.GetMimir(ctx, constants.MinimumBondInRune.String())
+	if minBond < 0 || err != nil {
+		minBond = constAccessor.GetInt64Value(constants.MinimumBondInRune)
+	}
+	minValidatorBond := sdk.NewUint(uint64(minBond))
 
 	nodeAccount, err := h.keeper.GetNodeAccount(ctx, msg.NodeAddress)
 	if err != nil {
@@ -47,6 +50,14 @@ func (h BondHandler) validateV1(ctx sdk.Context, version semver.Version, msg Msg
 	bond := msg.Bond.Add(nodeAccount.Bond)
 	if (bond).LT(minValidatorBond) {
 		return sdk.ErrUnknownRequest(fmt.Sprintf("not enough rune to be whitelisted , minimum validator bond (%s) , bond(%s)", minValidatorBond.String(), bond))
+	}
+
+	maxBond, err := h.keeper.GetMimir(ctx, "MaximumBondInRune")
+	if maxBond > 0 {
+		maxValidatorBond := sdk.NewUint(uint64(maxBond))
+		if bond.GT(maxValidatorBond) {
+			return sdk.ErrUnknownRequest(fmt.Sprintf("too much bond, max validator bond (%s), bond(%s)", maxValidatorBond.String(), bond))
+		}
 	}
 
 	return nil

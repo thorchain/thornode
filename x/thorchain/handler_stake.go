@@ -49,7 +49,10 @@ func (h StakeHandler) validateV1(ctx sdk.Context, msg MsgSetStakeData, constAcce
 
 	// total staked RUNE after current stake
 	totalStakeRUNE = totalStakeRUNE.Add(msg.RuneAmount)
-	maximumStakeRune := constAccessor.GetInt64Value(constants.MaximumStakeRune)
+	maximumStakeRune, err := h.keeper.GetMimir(ctx, constants.MaximumStakeRune.String())
+	if maximumStakeRune < 0 || err != nil {
+		maximumStakeRune = constAccessor.GetInt64Value(constants.MaximumStakeRune)
+	}
 	if maximumStakeRune > 0 {
 		if totalStakeRUNE.GT(sdk.NewUint(uint64(maximumStakeRune))) {
 			return sdk.NewError(DefaultCodespace, CodeStakeRUNEOverLimit, "total staked RUNE is more than %d", maximumStakeRune)

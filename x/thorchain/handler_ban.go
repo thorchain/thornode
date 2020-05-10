@@ -107,7 +107,10 @@ func (h BanHandler) handleV1(ctx sdk.Context, msg MsgBan, constAccessor constant
 
 	if !voter.HasSigned(msg.Signer) && voter.BlockHeight == 0 {
 		// take 0.1% of the minimum bond, and put it into the reserve
-		minBond := constAccessor.GetInt64Value(constants.MinimumBondInRune)
+		minBond, err := h.keeper.GetMimir(ctx, constants.MinimumBondInRune.String())
+		if minBond < 0 || err != nil {
+			minBond = constAccessor.GetInt64Value(constants.MinimumBondInRune)
+		}
 		slashAmount := sdk.NewUint(uint64(minBond)).QuoUint64(1000)
 		banner.Bond = common.SafeSub(banner.Bond, slashAmount)
 
