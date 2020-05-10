@@ -204,7 +204,6 @@ func (s *EthereumSuite) TestClient(c *C) {
 	height, err := e2.GetHeight()
 	c.Assert(err, IsNil)
 	c.Check(height, Equals, int64(1))
-	c.Check(e2.CheckIsTestNet(), Equals, true)
 	gasPrice, err := e2.GetGasPrice()
 	c.Assert(err, IsNil)
 	c.Check(gasPrice.Uint64(), Equals, uint64(13))
