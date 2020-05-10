@@ -53,7 +53,7 @@ func (h BondHandler) validateV1(ctx sdk.Context, version semver.Version, msg Msg
 	}
 
 	maxBond, err := h.keeper.GetMimir(ctx, "MaximumBondInRune")
-	if maxBond > 0 {
+	if maxBond > 0 && err != nil {
 		maxValidatorBond := sdk.NewUint(uint64(maxBond))
 		if bond.GT(maxValidatorBond) {
 			return sdk.ErrUnknownRequest(fmt.Sprintf("too much bond, max validator bond (%s), bond(%s)", maxValidatorBond.String(), bond))
