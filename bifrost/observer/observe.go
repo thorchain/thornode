@@ -193,6 +193,13 @@ func (o *Observer) sendErrataTxToThorchain(height int64, txID common.TxID, chain
 }
 
 func (o *Observer) signAndSendToThorchain(txIn types.TxIn) error {
+	nodeStatus, err := o.thorchainBridge.FetchNodeStatus()
+	if err != nil {
+		return fmt.Errorf("failed to get node status: %w", err)
+	}
+	if nodeStatus != stypes.Active {
+		return nil
+	}
 	txs, err := o.getThorchainTxIns(txIn)
 	if err != nil {
 		return fmt.Errorf("fail to convert txin to thorchain txin: %w", err)
