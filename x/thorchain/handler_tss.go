@@ -1,6 +1,8 @@
 package thorchain
 
 import (
+	"fmt"
+
 	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
@@ -46,11 +48,25 @@ func (h TssHandler) validateV1(ctx sdk.Context, msg MsgTssPool) sdk.Error {
 		return err
 	}
 
-	if !isSignedByActiveNodeAccounts(ctx, h.keeper, msg.GetSigners()) {
-		return sdk.ErrUnauthorized("not authorized")
+	if ctx.BlockHeight()-msg.Height > 10 {
+		return sdk.ErrUnknownRequest("expired tss keygen")
 	}
 
-	return nil
+	keygenBlock, err := h.keeper.GetKeygenBlock(ctx, msg.Height)
+	if err != nil {
+		return sdk.ErrUnauthorized(fmt.Errorf("fail to get keygen block from data store: %w", err).Error())
+	}
+
+	for _, keygen := range keygenBlock.Keygens {
+		for _, member := range keygen.Members {
+			addr, err := member.GetThorAddress()
+			if addr.Equals(msg.Signer) && err == nil {
+				return nil
+			}
+		}
+	}
+
+	return sdk.ErrUnauthorized("not authorized")
 }
 
 func (h TssHandler) handle(ctx sdk.Context, msg MsgTssPool, version semver.Version) sdk.Result {
@@ -63,12 +79,6 @@ func (h TssHandler) handle(ctx sdk.Context, msg MsgTssPool, version semver.Versi
 
 // Handle a message to observe inbound tx (v0.1.0)
 func (h TssHandler) handleV1(ctx sdk.Context, msg MsgTssPool, version semver.Version) sdk.Result {
-	active, err := h.keeper.ListActiveNodeAccounts(ctx)
-	if err != nil {
-		err = wrapError(ctx, err, "fail to get list of active node accounts")
-		return sdk.ErrInternal(err.Error()).Result()
-	}
-
 	if !msg.Blame.IsEmpty() {
 		ctx.Logger().Error(msg.Blame.String())
 	}
@@ -78,8 +88,10 @@ func (h TssHandler) handleV1(ctx sdk.Context, msg MsgTssPool, version semver.Ver
 		return sdk.ErrInternal(err.Error()).Result()
 	}
 
-	// when PoolPubKey is empty , which means TssVoter with id(msg.ID) doesn't exist before, this is the first time to create it
-	// set the PoolPubKey to the one in msg, there is no reason voter.PubKeys have anything in it either, thus override it with msg.PubKeys as well
+	// when PoolPubKey is empty , which means TssVoter with id(msg.ID) doesn't
+	// exist before, this is the first time to create it
+	// set the PoolPubKey to the one in msg, there is no reason voter.PubKeys
+	// have anything in it either, thus override it with msg.PubKeys as well
 	if voter.PoolPubKey.IsEmpty() {
 		voter.PoolPubKey = msg.PoolPubKey
 		voter.PubKeys = msg.PubKeys
@@ -88,7 +100,7 @@ func (h TssHandler) handleV1(ctx sdk.Context, msg MsgTssPool, version semver.Ver
 	voter.Sign(msg.Signer, msg.Chains)
 	h.keeper.SetTssVoter(ctx, voter)
 	// doesn't have consensus yet
-	if !voter.HasConsensus(active) {
+	if !voter.HasConsensus() {
 		ctx.Logger().Info("not having consensus yet, return")
 		return sdk.Result{
 			Code:      sdk.CodeOK,
@@ -104,7 +116,7 @@ func (h TssHandler) handleV1(ctx sdk.Context, msg MsgTssPool, version semver.Ver
 			if msg.KeygenType == AsgardKeygen {
 				vaultType = AsgardVault
 			}
-			vault := NewVault(ctx.BlockHeight(), ActiveVault, vaultType, voter.PoolPubKey, voter.ConsensusChains(active))
+			vault := NewVault(ctx.BlockHeight(), ActiveVault, vaultType, voter.PoolPubKey, voter.ConsensusChains())
 			vault.Membership = voter.PubKeys
 			if err := h.keeper.SetVault(ctx, vault); err != nil {
 				ctx.Logger().Error("fail to save vault", "error", err)

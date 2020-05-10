@@ -26,7 +26,8 @@ func (s *TypeTssSuite) TestVoter(c *C) {
 
 	chains := common.Chains{common.BNBChain, common.BTCChain}
 
-	addr := GetRandomBech32Addr()
+	addr, err := pks[0].GetThorAddress()
+	c.Assert(err, IsNil)
 	c.Check(tss.HasSigned(addr), Equals, false)
 	tss.Sign(addr, chains)
 	c.Check(tss.Signers, HasLen, 1)
@@ -35,23 +36,21 @@ func (s *TypeTssSuite) TestVoter(c *C) {
 	c.Check(tss.Signers, HasLen, 1)
 	c.Check(tss.Chains, HasLen, 2)
 
-	c.Check(tss.HasConsensus(nil), Equals, false)
-	nas := NodeAccounts{
-		NodeAccount{NodeAddress: addr, Status: Active},
-	}
-	c.Check(tss.HasConsensus(nas), Equals, true)
+	c.Check(tss.HasConsensus(), Equals, false)
+	addr, err = pks[1].GetThorAddress()
+	c.Assert(err, IsNil)
+	tss.Sign(addr, chains)
+	c.Check(tss.HasConsensus(), Equals, true)
 }
 
 func (s *TypeTssSuite) TestChainConsensus(c *C) {
-	// create 4 fake "active" accounts
-	nas := NodeAccounts{
-		NodeAccount{},
-		NodeAccount{},
-		NodeAccount{},
-		NodeAccount{},
-	}
-
 	voter := TssVoter{
+		PubKeys: common.PubKeys{
+			GetRandomPubKey(),
+			GetRandomPubKey(),
+			GetRandomPubKey(),
+			GetRandomPubKey(),
+		},
 		Chains: common.Chains{
 			common.BNBChain, // 4 BNB chains
 			common.BNBChain,
@@ -66,7 +65,7 @@ func (s *TypeTssSuite) TestChainConsensus(c *C) {
 		},
 	}
 
-	chains := voter.ConsensusChains(nas)
+	chains := voter.ConsensusChains()
 	sort.Slice(chains, func(i, j int) bool {
 		return chains[i].String() < chains[j].String()
 	})

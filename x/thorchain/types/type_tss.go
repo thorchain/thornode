@@ -35,13 +35,18 @@ func (tss TssVoter) HasSigned(signer sdk.AccAddress) bool {
 // Sign this voter with given signer address
 func (tss *TssVoter) Sign(signer sdk.AccAddress, chains common.Chains) {
 	if !tss.HasSigned(signer) {
-		tss.Signers = append(tss.Signers, signer)
-		tss.Chains = append(tss.Chains, chains...)
+		for _, pk := range tss.PubKeys {
+			addr, err := pk.GetThorAddress()
+			if addr.Equals(signer) && err == nil {
+				tss.Signers = append(tss.Signers, signer)
+				tss.Chains = append(tss.Chains, chains...)
+			}
+		}
 	}
 }
 
 // ConsensusChains - get a list o chains that have 2/3rds majority
-func (tss *TssVoter) ConsensusChains(nas NodeAccounts) common.Chains {
+func (tss *TssVoter) ConsensusChains() common.Chains {
 	chainCount := make(map[common.Chain]int, 0)
 	for _, chain := range tss.Chains {
 		if _, ok := chainCount[chain]; !ok {
@@ -52,7 +57,7 @@ func (tss *TssVoter) ConsensusChains(nas NodeAccounts) common.Chains {
 
 	chains := make(common.Chains, 0)
 	for chain, count := range chainCount {
-		if HasSuperMajority(count, len(nas)) {
+		if HasSuperMajority(count, len(tss.PubKeys)) {
 			chains = append(chains, chain)
 		}
 	}
@@ -61,14 +66,8 @@ func (tss *TssVoter) ConsensusChains(nas NodeAccounts) common.Chains {
 }
 
 // Determine if this tss pool has enough signers
-func (tss *TssVoter) HasConsensus(nas NodeAccounts) bool {
-	var count int
-	for _, signer := range tss.Signers {
-		if nas.IsNodeKeys(signer) {
-			count += 1
-		}
-	}
-	if HasSuperMajority(count, len(nas)) {
+func (tss *TssVoter) HasConsensus() bool {
+	if HasSuperMajority(len(tss.Signers), len(tss.PubKeys)) {
 		return true
 	}
 

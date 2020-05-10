@@ -169,23 +169,34 @@ func (s *ThorchainSuite) TestChurn(c *C) {
 
 	// generate a tss keygen handler event
 	newVaultPk := GetRandomPubKey()
-	msg := NewMsgTssPool(keygen.Members, newVaultPk, AsgardKeygen, ctx.BlockHeight(), blame.Blame{}, common.Chains{common.RuneAsset().Chain}, addresses[0])
+	signer, err := keygen.Members[0].GetThorAddress()
+	c.Assert(err, IsNil)
+	msg := NewMsgTssPool(keygen.Members, newVaultPk, AsgardKeygen, ctx.BlockHeight(), blame.Blame{}, common.Chains{common.RuneAsset().Chain}, signer)
 	tssHandler := NewTssHandler(keeper, versionedVaultMgr)
 
 	voter := NewTssVoter(msg.ID, msg.PubKeys, msg.PoolPubKey)
-	voter.Signers = addresses // ensure we have consensus, so handler is properly executed
+	signers := make([]sdk.AccAddress, len(msg.PubKeys)-1)
+	for i, pk := range msg.PubKeys {
+		if i == 0 {
+			continue
+		}
+		var err error
+		signers[i-1], err = pk.GetThorAddress()
+		c.Assert(err, IsNil)
+	}
+	voter.Signers = signers // ensure we have consensus, so handler is properly executed
 	keeper.SetTssVoter(ctx, voter)
 
 	result := tssHandler.Run(ctx, msg, ver, consts)
-	c.Assert(result.IsOK(), Equals, true)
+	c.Assert(result.IsOK(), Equals, true, Commentf("%s", result.Log))
 
 	// check that we've rotated our vaults
 	vault1, err := keeper.GetVault(ctx, vault.PubKey)
 	c.Assert(err, IsNil)
-	c.Assert(vault1.Status == RetiringVault, Equals, true) // first vault should now be retiring
+	c.Assert(vault1.Status, Equals, RetiringVault) // first vault should now be retiring
 	vault2, err := keeper.GetVault(ctx, newVaultPk)
 	c.Assert(err, IsNil)
-	c.Assert(vault2.Status == ActiveVault, Equals, true) // new vault should now be active
+	c.Assert(vault2.Status, Equals, ActiveVault) // new vault should now be active
 	c.Assert(vault2.Membership, HasLen, 4)
 
 	// check our validators get rotated appropriately
