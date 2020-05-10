@@ -37,6 +37,7 @@ const (
 	StrictBondStakeRatio
 	DefaultPoolStatus
 	FailKeygenSlashPoints
+	FailKeySignSlashPoints
 	StakeLockUpBlocks
 )
 
@@ -68,6 +69,7 @@ var nameToString = map[ConstantName]string{
 	StrictBondStakeRatio:            "StrictBondStakeRatio",
 	DefaultPoolStatus:               "DefaultPoolStatus",
 	FailKeygenSlashPoints:           "FailKeygenSlashPoints",
+	FailKeySignSlashPoints:          "FailKeySignSlashPoints",
 	StakeLockUpBlocks:               "StakeLockUpBlocks",
 }
 
