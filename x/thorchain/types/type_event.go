@@ -170,15 +170,17 @@ type EventUnstake struct {
 	StakeUnits  sdk.Uint     `json:"stake_units"`
 	BasisPoints int64        `json:"basis_points"` // 1 ==> 10,0000
 	Asymmetry   sdk.Dec      `json:"asymmetry"`    // -1.0 <==> 1.0
+	InTx        common.Tx    `json:"-"`
 }
 
 // NewEventUnstake create a new unstake event
-func NewEventUnstake(pool common.Asset, su sdk.Uint, basisPts int64, asym sdk.Dec) EventUnstake {
+func NewEventUnstake(pool common.Asset, su sdk.Uint, basisPts int64, asym sdk.Dec, inTx common.Tx) EventUnstake {
 	return EventUnstake{
 		Pool:        pool,
 		StakeUnits:  su,
 		BasisPoints: basisPts,
 		Asymmetry:   asym,
+		InTx:        inTx,
 	}
 }
 
@@ -187,21 +189,42 @@ func (e EventUnstake) Type() string {
 	return UnstakeEventType
 }
 
+// Events
+func (e EventUnstake) Events() (sdk.Events, error) {
+	evt := sdk.NewEvent(e.Type(),
+		sdk.NewAttribute("pool", e.Pool.String()),
+		sdk.NewAttribute("stake_units", e.StakeUnits.String()),
+		sdk.NewAttribute("basis_points", strconv.FormatInt(e.BasisPoints, 10)),
+		sdk.NewAttribute("asymmetry", e.Asymmetry.String()))
+	evt = evt.AppendAttributes(e.InTx.ToAttributes()...)
+	return sdk.Events{evt}, nil
+}
+
 // EventAdd represent add operation
 type EventAdd struct {
 	Pool common.Asset `json:"pool"`
+	InTx common.Tx    `json:"-"`
 }
 
 // NewEventAdd create a new add event
-func NewEventAdd(pool common.Asset) EventAdd {
+func NewEventAdd(pool common.Asset, inTx common.Tx) EventAdd {
 	return EventAdd{
 		Pool: pool,
+		InTx: inTx,
 	}
 }
 
 // Type return add event type
 func (e EventAdd) Type() string {
 	return AddEventType
+}
+
+// Events get all events
+func (e EventAdd) Events() (sdk.Events, error) {
+	evt := sdk.NewEvent(e.Type(),
+		sdk.NewAttribute("pool", e.Pool.String()))
+	evt = evt.AppendAttributes(e.InTx.ToAttributes()...)
+	return sdk.Events{evt}, nil
 }
 
 // EventPool represent pool change event

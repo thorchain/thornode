@@ -247,6 +247,14 @@ func (tos *TxOutStorageV1) addToBlockOut(ctx sdk.Context, toi *TxOutItem) error 
 
 	// add a tx marker
 	mark := NewTxMarker(tos.height, toi.Memo)
+	memo, _ := ParseMemo(toi.Memo)
+	if memo.IsInternal() {
+		// need to add twice because observed inbound and outbound handler will observe
+		err = tos.keeper.AppendTxMarker(ctx, hash, mark)
+		if err != nil {
+			return err
+		}
+	}
 	err = tos.keeper.AppendTxMarker(ctx, hash, mark)
 	if err != nil {
 		return err

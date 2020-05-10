@@ -12,7 +12,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-	tssCommon "gitlab.com/thorchain/tss/go-tss/common"
+	"gitlab.com/thorchain/tss/go-tss/blame"
 	tssp "gitlab.com/thorchain/tss/go-tss/tss"
 
 	"gitlab.com/thorchain/thornode/bifrost/blockscanner"
@@ -262,7 +262,7 @@ func (s *Signer) processKeygen(ch <-chan ttypes.KeygenBlock) {
 	}
 }
 
-func (s *Signer) sendKeygenToThorchain(height int64, poolPk common.PubKey, blame tssCommon.Blame, input common.PubKeys, keygenType ttypes.KeygenType) error {
+func (s *Signer) sendKeygenToThorchain(height int64, poolPk common.PubKey, blame blame.Blame, input common.PubKeys, keygenType ttypes.KeygenType) error {
 	// collect supported chains in the configuration
 	chains := make(common.Chains, 0)
 	for name, chain := range s.chains {

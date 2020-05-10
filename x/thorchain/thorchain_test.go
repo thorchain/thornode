@@ -8,7 +8,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	. "gopkg.in/check.v1"
 
-	tssCommon "gitlab.com/thorchain/tss/go-tss/common"
+	"gitlab.com/thorchain/tss/go-tss/blame"
 
 	"gitlab.com/thorchain/thornode/common"
 	"gitlab.com/thorchain/thornode/constants"
@@ -169,7 +169,7 @@ func (s *ThorchainSuite) TestChurn(c *C) {
 
 	// generate a tss keygen handler event
 	newVaultPk := GetRandomPubKey()
-	msg := NewMsgTssPool(keygen.Members, newVaultPk, AsgardKeygen, ctx.BlockHeight(), tssCommon.NoBlame, common.Chains{common.RuneAsset().Chain}, addresses[0])
+	msg := NewMsgTssPool(keygen.Members, newVaultPk, AsgardKeygen, ctx.BlockHeight(), blame.Blame{}, common.Chains{common.RuneAsset().Chain}, addresses[0])
 	tssHandler := NewTssHandler(keeper, versionedVaultMgr)
 
 	voter := NewTssVoter(msg.ID, msg.PubKeys, msg.PoolPubKey)

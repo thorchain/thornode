@@ -1,7 +1,6 @@
 package thorchain
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"github.com/blang/semver"
@@ -12,12 +11,16 @@ import (
 
 // AddHandler is to handle Add message
 type AddHandler struct {
-	keeper Keeper
+	keeper                Keeper
+	versionedEventManager VersionedEventManager
 }
 
 // NewAddHandler create a new instance of AddHandler
-func NewAddHandler(keeper Keeper) AddHandler {
-	return AddHandler{keeper: keeper}
+func NewAddHandler(keeper Keeper, versionedEventManager VersionedEventManager) AddHandler {
+	return AddHandler{
+		keeper:                keeper,
+		versionedEventManager: versionedEventManager,
+	}
 }
 
 // Run it the main entry point to execute Ack logic
@@ -31,7 +34,7 @@ func (ah AddHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version, _ c
 		ctx.Logger().Error("msg add failed validation", "error", err)
 		return err.Result()
 	}
-	if err := ah.handle(ctx, msg); err != nil {
+	if err := ah.handle(ctx, msg, version); err != nil {
 		ctx.Logger().Error("fail to process msg add", "error", err)
 		return err.Result()
 	}
@@ -60,7 +63,7 @@ func (ah AddHandler) validateV1(ctx sdk.Context, msg MsgAdd) sdk.Error {
 }
 
 // handleMsgAdd
-func (ah AddHandler) handle(ctx sdk.Context, msg MsgAdd) sdk.Error {
+func (ah AddHandler) handle(ctx sdk.Context, msg MsgAdd, version semver.Version) sdk.Error {
 	pool, err := ah.keeper.GetPool(ctx, msg.Asset)
 	if err != nil {
 		return sdk.ErrInternal(fmt.Errorf("fail to get pool for (%s): %w", msg.Asset, err).Error())
@@ -78,24 +81,14 @@ func (ah AddHandler) handle(ctx sdk.Context, msg MsgAdd) sdk.Error {
 	if err := ah.keeper.SetPool(ctx, pool); err != nil {
 		return sdk.ErrInternal(fmt.Errorf("fail to set pool(%s): %w", pool, err).Error())
 	}
-
-	// emit event
-	addEvt := NewEventAdd(
-		pool.Asset,
-	)
-	stakeBytes, err := json.Marshal(addEvt)
+	eventMgr, err := ah.versionedEventManager.GetEventManager(ctx, version)
 	if err != nil {
-		return sdk.ErrInternal(fmt.Errorf("fail to marshal add event to json: %w", err).Error())
+		return errFailGetEventManager
 	}
-	evt := NewEvent(
-		addEvt.Type(),
-		ctx.BlockHeight(),
-		msg.Tx,
-		stakeBytes,
-		EventSuccess,
-	)
-	if err := ah.keeper.UpsertEvent(ctx, evt); err != nil {
-		return sdk.ErrInternal(fmt.Errorf("fail to save event: %w", err).Error())
+	// emit event
+	addEvt := NewEventAdd(pool.Asset, msg.Tx)
+	if err := eventMgr.EmitAddEvent(ctx, ah.keeper, addEvt); err != nil {
+		return sdk.NewError(DefaultCodespace, CodeFailSaveEvent, "fail to save add events")
 	}
 	return nil
 }

@@ -96,8 +96,8 @@ func (h TssKeysignHandler) handleV1(ctx sdk.Context, msg MsgTssKeysignFail, vers
 		constAccessor := constants.GetConstantValues(version)
 		slashPoints := constAccessor.GetInt64Value(constants.FailKeygenSlashPoints)
 		// fail to generate a new tss key let's slash the node account
-		for _, pubkeyStr := range msg.Blame.BlameNodes {
-			nodePubKey, err := common.NewPubKey(pubkeyStr)
+		for _, node := range msg.Blame.BlameNodes {
+			nodePubKey, err := common.NewPubKey(node.Pubkey)
 			if err != nil {
 				ctx.Logger().Error("fail to parse pubkey")
 				return sdk.ErrInternal("fail to parse pubkey").Result()
