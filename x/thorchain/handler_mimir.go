@@ -12,7 +12,7 @@ import (
 
 var ADMIN = sdk.AccAddress("thor15xdcnl58yxytam6rlc5f6t7dxlxj4kdxl3chjj")
 
-// MimirHandler is to handle ip address message
+// MimirHandler is to handle admin messages
 type MimirHandler struct {
 	keeper Keeper
 }
