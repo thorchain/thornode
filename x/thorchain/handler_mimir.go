@@ -78,7 +78,6 @@ func (h MimirHandler) handle(ctx sdk.Context, msg MsgMimir, version semver.Versi
 }
 
 func (h MimirHandler) handleV1(ctx sdk.Context, msg MsgMimir) sdk.Error {
-
 	h.keeper.SetMimir(ctx, msg.Key, msg.Value)
 
 	ctx.EventManager().EmitEvent(
