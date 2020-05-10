@@ -236,8 +236,20 @@ func (h ObservedTxInHandler) handleV1(ctx sdk.Context, version semver.Version, m
 		// active/inactive observing node accounts
 		obMgr.AppendObserver(tx.Tx.Chain, txIn.Signers)
 
+		// check if we've halted trading
+		_, isSwap := m.(MsgSwap)
+		_, isStake := m.(MsgSetStakeData)
+		haltTrading, err := h.keeper.GetMimir(ctx, "HaltTrading")
+		if (isSwap || isStake) && (haltTrading >= 0 && err == nil) {
+			ctx.Logger().Info("trading is halted!!")
+			if newErr := refundTx(ctx, tx, txOutStore, h.keeper, constAccessor, txErr.Code(), fmt.Sprint(txErr.Data())); nil != newErr {
+				return sdk.ErrInternal(newErr.Error()).Result()
+			}
+			continue
+		}
+
 		// if its a swap, send it to our queue for processing later
-		if _, ok := m.(MsgSwap); ok {
+		if isSwap {
 			if err := h.keeper.SetSwapQueueItem(ctx, m.(MsgSwap)); err != nil {
 				return sdk.ErrInternal(err.Error()).Result()
 			}

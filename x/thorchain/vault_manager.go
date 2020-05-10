@@ -73,7 +73,10 @@ func (vm *VaultMgr) EndBlock(ctx sdk.Context, version semver.Version, constAcces
 		return vm.processGenesisSetup(ctx)
 	}
 
-	migrateInterval := constAccessor.GetInt64Value(constants.FundMigrationInterval)
+	migrateInterval, err := vm.k.GetMimir(ctx, constants.FundMigrationInterval.String())
+	if migrateInterval < 0 || err != nil {
+		migrateInterval = constAccessor.GetInt64Value(constants.FundMigrationInterval)
+	}
 
 	retiring, err := vm.k.GetAsgardVaultsByStatus(ctx, RetiringVault)
 	if err != nil {
@@ -278,7 +281,10 @@ func (vm *VaultMgr) manageChains(ctx sdk.Context, constAccessor constants.Consta
 		return fmt.Errorf("unable to determine asgard vault")
 	}
 
-	migrateInterval := constAccessor.GetInt64Value(constants.FundMigrationInterval)
+	migrateInterval, err := vm.k.GetMimir(ctx, constants.FundMigrationInterval.String())
+	if migrateInterval < 0 || err != nil {
+		migrateInterval = constAccessor.GetInt64Value(constants.FundMigrationInterval)
+	}
 	nth := (ctx.BlockHeight()-vault.StatusSince)/migrateInterval + 1
 	if nth > 10 {
 		nth = 10

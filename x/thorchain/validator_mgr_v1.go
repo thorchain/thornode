@@ -57,14 +57,23 @@ func (vm *validatorMgrV1) BeginBlock(ctx sdk.Context, constAccessor constants.Co
 		return err
 	}
 
-	artificialRagnarokBlockHeight := constAccessor.GetInt64Value(constants.ArtificialRagnarokBlockHeight)
+	artificialRagnarokBlockHeight, err := vm.k.GetMimir(ctx, constants.ArtificialRagnarokBlockHeight.String())
+	if artificialRagnarokBlockHeight < 0 || err != nil {
+		artificialRagnarokBlockHeight = constAccessor.GetInt64Value(constants.ArtificialRagnarokBlockHeight)
+	}
 	if minimumNodesForBFT+2 < int64(totalActiveNodes) ||
 		(artificialRagnarokBlockHeight > 0 && ctx.BlockHeight() >= artificialRagnarokBlockHeight) {
-		badValidatorRate := constAccessor.GetInt64Value(constants.BadValidatorRate)
+		badValidatorRate, err := vm.k.GetMimir(ctx, constants.BadValidatorRate.String())
+		if badValidatorRate < 0 || err != nil {
+			badValidatorRate = constAccessor.GetInt64Value(constants.BadValidatorRate)
+		}
 		if err := vm.markBadActor(ctx, badValidatorRate); err != nil {
 			return err
 		}
-		oldValidatorRate := constAccessor.GetInt64Value(constants.OldValidatorRate)
+		oldValidatorRate, err := vm.k.GetMimir(ctx, constants.OldValidatorRate.String())
+		if oldValidatorRate < 0 || err != nil {
+			oldValidatorRate = constAccessor.GetInt64Value(constants.OldValidatorRate)
+		}
 		if err := vm.markOldActor(ctx, oldValidatorRate); err != nil {
 			return err
 		}
@@ -83,8 +92,14 @@ func (vm *validatorMgrV1) BeginBlock(ctx sdk.Context, constAccessor constants.Co
 	}
 
 	// get constants
-	desireValidatorSet := constAccessor.GetInt64Value(constants.DesireValidatorSet)
-	rotatePerBlockHeight := constAccessor.GetInt64Value(constants.RotatePerBlockHeight)
+	desireValidatorSet, err := vm.k.GetMimir(ctx, constants.DesireValidatorSet.String())
+	if desireValidatorSet < 0 || err != nil {
+		desireValidatorSet = constAccessor.GetInt64Value(constants.DesireValidatorSet)
+	}
+	rotatePerBlockHeight, err := vm.k.GetMimir(ctx, constants.RotatePerBlockHeight.String())
+	if rotatePerBlockHeight < 0 || err != nil {
+		rotatePerBlockHeight = constAccessor.GetInt64Value(constants.RotatePerBlockHeight)
+	}
 	rotateRetryBlocks := constAccessor.GetInt64Value(constants.RotateRetryBlocks)
 
 	// calculate if we need to retry a churn because we are overdue for a
@@ -354,7 +369,10 @@ func (vm *validatorMgrV1) processRagnarok(ctx sdk.Context, constAccessor constan
 		return nil
 	}
 
-	migrateInterval := constAccessor.GetInt64Value(constants.FundMigrationInterval)
+	migrateInterval, err := vm.k.GetMimir(ctx, constants.FundMigrationInterval.String())
+	if migrateInterval < 0 || err != nil {
+		migrateInterval = constAccessor.GetInt64Value(constants.FundMigrationInterval)
+	}
 	if (ctx.BlockHeight()-ragnarokHeight)%migrateInterval == 0 {
 		nth := (ctx.BlockHeight() - ragnarokHeight) / migrateInterval
 		err := vm.ragnarokProtocolStage2(ctx, nth, constAccessor)
@@ -751,7 +769,10 @@ func (vm *validatorMgrV1) setupValidatorNodes(ctx sdk.Context, height int64, con
 	sort.Sort(activeCandidateNodes)
 	sort.Sort(readyNodes)
 	activeCandidateNodes = append(activeCandidateNodes, readyNodes...)
-	desireValidatorSet := constAccessor.GetInt64Value(constants.DesireValidatorSet)
+	desireValidatorSet, err := vm.k.GetMimir(ctx, constants.DesireValidatorSet.String())
+	if desireValidatorSet < 0 || err != nil {
+		desireValidatorSet = constAccessor.GetInt64Value(constants.DesireValidatorSet)
+	}
 	for idx, item := range activeCandidateNodes {
 		if int64(idx) < desireValidatorSet {
 			item.UpdateStatus(NodeActive, ctx.BlockHeight())
@@ -964,7 +985,10 @@ func (vm *validatorMgrV1) markReadyActors(ctx sdk.Context, constAccessor constan
 		}
 
 		// ensure we have enough rune
-		minBond := constAccessor.GetInt64Value(constants.MinimumBondInRune)
+		minBond, err := vm.k.GetMimir(ctx, constants.MinimumBondInRune.String())
+		if minBond < 0 || err != nil {
+			minBond = constAccessor.GetInt64Value(constants.MinimumBondInRune)
+		}
 		if na.Bond.LT(sdk.NewUint(uint64(minBond))) {
 			na.UpdateStatus(NodeStandby, ctx.BlockHeight())
 		}

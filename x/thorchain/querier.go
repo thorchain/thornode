@@ -66,6 +66,8 @@ func NewQuerier(keeper Keeper, validatorMgr VersionedValidatorManager) sdk.Queri
 			return queryTSSSigners(ctx, path[1:], req, keeper)
 		case q.QueryConstantValues.Key:
 			return queryConstantValues(ctx, path[1:], req, keeper)
+		case q.QueryMimirValues.Key:
+			return queryMimirValues(ctx, path[1:], req, keeper)
 		case q.QueryBan.Key:
 			return queryBan(ctx, path[1:], req, keeper)
 		default:
@@ -845,6 +847,26 @@ func queryConstantValues(ctx sdk.Context, path []string, req abci.RequestQuery, 
 	if err != nil {
 		ctx.Logger().Error("fail to marshal constant values to json", "error", err)
 		return nil, sdk.ErrInternal("fail to marshal constant values to json")
+	}
+	return res, nil
+}
+
+func queryMimirValues(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
+	values := make(map[string]int64, 0)
+	iter := keeper.GetMimirIterator(ctx)
+	defer iter.Close()
+	for ; iter.Valid(); iter.Next() {
+		var value int64
+		if err := keeper.Cdc().UnmarshalBinaryBare(iter.Value(), &value); err != nil {
+			ctx.Logger().Error("fail to unmarshal mimir attribute", "error", err)
+			return nil, sdk.ErrInternal("fail to unmarshal mimir attribute")
+		}
+		values[string(iter.Key())] = value
+	}
+	res, err := codec.MarshalJSONIndent(keeper.Cdc(), values)
+	if err != nil {
+		ctx.Logger().Error("fail to marshal mimir values to json", "error", err)
+		return nil, sdk.ErrInternal("fail to marshal mimir values to json")
 	}
 	return res, nil
 }
