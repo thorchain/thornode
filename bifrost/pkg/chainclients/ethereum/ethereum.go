@@ -32,7 +32,6 @@ type Client struct {
 	logger          zerolog.Logger
 	cfg             config.ChainConfiguration
 	chainID         types.ChainID
-	isTestNet       bool
 	pk              common.PubKey
 	client          *ethclient.Client
 	kw              *KeySignWrapper
@@ -87,7 +86,7 @@ func NewClient(thorKeys *thorclient.Keys, cfg config.ChainConfiguration, server 
 		kw:              keysignWrapper,
 		thorchainBridge: thorchainBridge,
 	}
-	c.CheckIsTestNet()
+	c.InitChainID()
 
 	var path string // if not set later, will in memory storage
 	if len(c.cfg.BlockScanner.DBPath) > 0 {
@@ -98,7 +97,7 @@ func NewClient(thorKeys *thorclient.Keys, cfg config.ChainConfiguration, server 
 		return c, fmt.Errorf("fail to create blockscanner storage: %w", err)
 	}
 
-	c.ethScanner, err = NewBlockScanner(c.cfg.BlockScanner, storage, c.isTestNet, c.client, m)
+	c.ethScanner, err = NewBlockScanner(c.cfg.BlockScanner, storage, c.chainID, c.client, m)
 	if err != nil {
 		return c, fmt.Errorf("fail to create eth block scanner: %w", err)
 	}
@@ -125,20 +124,15 @@ func (c *Client) GetConfig() config.ChainConfiguration {
 }
 
 // IsTestNet determinate whether we are running on test net by checking the status
-func (c *Client) CheckIsTestNet() bool {
-	// Cached data after first call
-	if c.chainID > 0 {
-		return c.isTestNet
-	}
+func (c *Client) InitChainID() {
 	chainID, err := c.client.ChainID(context.Background())
 	if err != nil {
 		c.logger.Error().Err(err).Msg("Unable to get chain id")
 		chainID = big.NewInt(types.Localnet)
 	}
 	c.chainID = types.ChainID(chainID.Int64())
-	c.isTestNet = c.chainID > types.Mainnet
 	vByte = byte(int(vByte) + int(2*c.chainID))
-	return c.isTestNet
+	eipSigner = etypes.NewEIP155Signer(chainID)
 }
 
 func (c *Client) GetChain() common.Chain {

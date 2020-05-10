@@ -15,6 +15,7 @@ import (
 	"gitlab.com/thorchain/thornode/bifrost/blockscanner"
 	"gitlab.com/thorchain/thornode/bifrost/config"
 	"gitlab.com/thorchain/thornode/bifrost/metrics"
+	"gitlab.com/thorchain/thornode/bifrost/pkg/chainclients/ethereum/types"
 )
 
 func Test(t *testing.T) { TestingT(t) }
@@ -51,19 +52,19 @@ func (s *BlockScannerTestSuite) TestNewBlockScanner(c *C) {
 	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {}))
 	ethClient, err := ethclient.Dial(server.URL)
 	c.Assert(err, IsNil)
-	bs, err := NewBlockScanner(getConfigForTest(""), storage, true, ethClient, s.m)
+	bs, err := NewBlockScanner(getConfigForTest(""), storage, types.Mainnet, ethClient, s.m)
 	c.Assert(err, NotNil)
 	c.Assert(bs, IsNil)
-	bs, err = NewBlockScanner(getConfigForTest("127.0.0.1"), storage, true, ethClient, s.m)
+	bs, err = NewBlockScanner(getConfigForTest("127.0.0.1"), storage, types.Mainnet, ethClient, s.m)
 	c.Assert(err, NotNil)
 	c.Assert(bs, IsNil)
-	bs, err = NewBlockScanner(getConfigForTest("127.0.0.1"), storage, true, nil, s.m)
+	bs, err = NewBlockScanner(getConfigForTest("127.0.0.1"), storage, types.Mainnet, nil, s.m)
 	c.Assert(err, NotNil)
 	c.Assert(bs, IsNil)
-	bs, err = NewBlockScanner(getConfigForTest("127.0.0.1"), storage, true, ethClient, s.m)
+	bs, err = NewBlockScanner(getConfigForTest("127.0.0.1"), storage, types.Mainnet, ethClient, s.m)
 	c.Assert(err, NotNil)
 	c.Assert(bs, IsNil)
-	bs, err = NewBlockScanner(getConfigForTest("127.0.0.1"), storage, true, ethClient, s.m)
+	bs, err = NewBlockScanner(getConfigForTest("127.0.0.1"), storage, types.Mainnet, ethClient, s.m)
 	c.Assert(err, IsNil)
 	c.Assert(bs, NotNil)
 }
@@ -81,6 +82,10 @@ func (s *BlockScannerTestSuite) TestProcessBlock(c *C) {
 		var rpcRequest RPCRequest
 		err = json.Unmarshal(body, &rpcRequest)
 		c.Assert(err, IsNil)
+		if rpcRequest.Method == "eth_chainId" {
+			_, err := rw.Write([]byte(`{"jsonrpc":"2.0","id":1,"result":"0x1"}`))
+			c.Assert(err, IsNil)
+		}
 		if rpcRequest.Method == "eth_gasPrice" {
 			_, err := rw.Write([]byte(`{"jsonrpc":"2.0","id":1,"result":"0x3b9aca00"}`))
 			c.Assert(err, IsNil)
@@ -128,7 +133,7 @@ func (s *BlockScannerTestSuite) TestProcessBlock(c *C) {
 	ethClient, err := ethclient.Dial(server.URL)
 	c.Assert(err, IsNil)
 	c.Assert(ethClient, NotNil)
-	bs, err := NewBlockScanner(getConfigForTest(server.URL), blockscanner.NewMockScannerStorage(), true, ethClient, s.m)
+	bs, err := NewBlockScanner(getConfigForTest(server.URL), blockscanner.NewMockScannerStorage(), types.Mainnet, ethClient, s.m)
 	c.Assert(err, IsNil)
 	c.Assert(bs, NotNil)
 	txIn, err := bs.FetchTxs(int64(1))
@@ -176,7 +181,7 @@ func (s *BlockScannerTestSuite) TestFromTxToTxIn(c *C) {
 	ethClient, err := ethclient.Dial(server.URL)
 	c.Assert(err, IsNil)
 	c.Assert(ethClient, NotNil)
-	bs, err := NewBlockScanner(getConfigForTest(server.URL), blockscanner.NewMockScannerStorage(), true, ethClient, s.m)
+	bs, err := NewBlockScanner(getConfigForTest(server.URL), blockscanner.NewMockScannerStorage(), types.Mainnet, ethClient, s.m)
 	c.Assert(err, IsNil)
 	c.Assert(bs, NotNil)
 	encodedTx := `{
