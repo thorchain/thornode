@@ -20,6 +20,8 @@ type EventManager interface {
 	EmitReserveEvent(ctx sdk.Context, keeper Keeper, reserveEvent EventReserve) error
 	EmitUnstakeEvent(ctx sdk.Context, keeper Keeper, unstakeEvt EventUnstake) error
 	EmitSwapEvent(ctx sdk.Context, keeper Keeper, swap EventSwap) error
+	EmitRefundEvent(ctx sdk.Context, keeper Keeper, refundEvt EventRefund, status EventStatus) error
+	EmitBondEvent(ctx sdk.Context, keeper Keeper, bondEvent EventBond) error
 	EmitAddEvent(ctx sdk.Context, keeper Keeper, addEvt EventAdd) error
 }
 
@@ -194,6 +196,43 @@ func (m *EventMgr) EmitReserveEvent(ctx sdk.Context, keeper Keeper, reserveEvent
 		return fmt.Errorf("fail to save reserve event: %w", err)
 	}
 	events, err := reserveEvent.Events()
+	if err != nil {
+		return fmt.Errorf("fail to get events: %w", err)
+	}
+	ctx.EventManager().EmitEvents(events)
+	return nil
+}
+
+// EmitRefundEvent emit refund event , save it to local key value store and also emit through event manager
+func (m *EventMgr) EmitRefundEvent(ctx sdk.Context, keeper Keeper, refundEvt EventRefund, status EventStatus) error {
+	buf, err := json.Marshal(refundEvt)
+	if err != nil {
+		return fmt.Errorf("fail to marshal refund event: %w", err)
+	}
+	event := NewEvent(refundEvt.Type(), ctx.BlockHeight(), refundEvt.InTx, buf, status)
+	event.Fee = refundEvt.Fee
+	if err := keeper.UpsertEvent(ctx, event); err != nil {
+		return fmt.Errorf("fail to save refund event: %w", err)
+	}
+	events, err := refundEvt.Events()
+	if err != nil {
+		return fmt.Errorf("fail to get events: %w", err)
+	}
+	ctx.EventManager().EmitEvents(events)
+	return nil
+}
+
+func (m *EventMgr) EmitBondEvent(ctx sdk.Context, keeper Keeper, bondEvent EventBond) error {
+	buf, err := json.Marshal(bondEvent)
+	if err != nil {
+		return fmt.Errorf("fail to marshal bond event: %w", err)
+	}
+
+	e := NewEvent(bondEvent.Type(), ctx.BlockHeight(), bondEvent.TxIn, buf, EventSuccess)
+	if err := keeper.UpsertEvent(ctx, e); err != nil {
+		return fmt.Errorf("fail to save bond event: %w", err)
+	}
+	events, err := bondEvent.Events()
 	if err != nil {
 		return fmt.Errorf("fail to get events: %w", err)
 	}

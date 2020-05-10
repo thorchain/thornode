@@ -19,17 +19,19 @@ import (
 // 1. outbound tx from yggdrasil vault
 // 2. inbound tx to asgard vault
 type YggdrasilHandler struct {
-	keeper       Keeper
-	txOutStore   VersionedTxOutStore
-	validatorMgr VersionedValidatorManager
+	keeper                Keeper
+	txOutStore            VersionedTxOutStore
+	validatorMgr          VersionedValidatorManager
+	versionedEventManager VersionedEventManager
 }
 
 // NewYggdrasilHandler create a new Yggdrasil handler
-func NewYggdrasilHandler(keeper Keeper, txOutStore VersionedTxOutStore, validatorMgr VersionedValidatorManager) YggdrasilHandler {
+func NewYggdrasilHandler(keeper Keeper, txOutStore VersionedTxOutStore, validatorMgr VersionedValidatorManager, versionedEventManager VersionedEventManager) YggdrasilHandler {
 	return YggdrasilHandler{
-		keeper:       keeper,
-		txOutStore:   txOutStore,
-		validatorMgr: validatorMgr,
+		keeper:                keeper,
+		txOutStore:            txOutStore,
+		validatorMgr:          validatorMgr,
+		versionedEventManager: versionedEventManager,
 	}
 }
 
@@ -218,7 +220,12 @@ func (h YggdrasilHandler) handleYggdrasilReturn(ctx sdk.Context, msg MsgYggdrasi
 				ctx.Logger().Error("fail to get txout store", "error", err)
 				return errBadVersion.Result()
 			}
-			if err := refundBond(ctx, msg.Tx, na, h.keeper, txOutStore); err != nil {
+			eventMgr, err := h.versionedEventManager.GetEventManager(ctx, version)
+			if err != nil {
+				ctx.Logger().Error("fail to get event manager", "error", err)
+				return errFailGetEventManager.Result()
+			}
+			if err := refundBond(ctx, msg.Tx, na, h.keeper, txOutStore, eventMgr); err != nil {
 				ctx.Logger().Error("fail to refund bond", "error", err)
 				return sdk.ErrInternal(err.Error()).Result()
 			}

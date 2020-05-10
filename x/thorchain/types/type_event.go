@@ -290,23 +290,38 @@ func (e EventRewards) Events() (sdk.Events, error) {
 	return sdk.Events{evt}, nil
 }
 
-// NewEventRefund create a new EventRefund
-func NewEventRefund(code sdk.CodeType, reason string) EventRefund {
-	return EventRefund{
-		Code:   code,
-		Reason: reason,
-	}
-}
-
 // EventRefund represent a refund activity , and contains the reason why it get refund
 type EventRefund struct {
 	Code   sdk.CodeType `json:"code"`
 	Reason string       `json:"reason"`
+	InTx   common.Tx    `json:"-"`
+	Fee    common.Fee   `json:"-"`
+}
+
+// NewEventRefund create a new EventRefund
+func NewEventRefund(code sdk.CodeType, reason string, inTx common.Tx, fee common.Fee) EventRefund {
+	return EventRefund{
+		Code:   code,
+		Reason: reason,
+		InTx:   inTx,
+		Fee:    fee,
+	}
 }
 
 // Type return reward event type
 func (e EventRefund) Type() string {
 	return RefundEventType
+}
+
+// Events return events
+func (e EventRefund) Events() (sdk.Events, error) {
+	evt := sdk.NewEvent(e.Type(),
+		sdk.NewAttribute("code", strconv.FormatUint(uint64(e.Code), 10)),
+		sdk.NewAttribute("reason", e.Reason),
+		sdk.NewAttribute("fee", e.Fee.Coins.String()),
+	)
+	evt = evt.AppendAttributes(e.InTx.ToAttributes()...)
+	return sdk.Events{evt}, nil
 }
 
 type BondType string
@@ -318,8 +333,18 @@ const (
 
 // EventBond bond paid or returned event
 type EventBond struct {
-	Amount   sdk.Uint `json:"amount"`
-	BondType BondType `json:"bond_type"`
+	Amount   sdk.Uint  `json:"amount"`
+	BondType BondType  `json:"bond_type"`
+	TxIn     common.Tx `json:"-"`
+}
+
+// NewEventBond create a new Bond Events
+func NewEventBond(amount sdk.Uint, bondType BondType, txIn common.Tx) EventBond {
+	return EventBond{
+		Amount:   amount,
+		BondType: bondType,
+		TxIn:     txIn,
+	}
 }
 
 // Type return bond event Type
@@ -327,12 +352,13 @@ func (e EventBond) Type() string {
 	return BondEventType
 }
 
-// NewEventBond create a new Bond Events
-func NewEventBond(amount sdk.Uint, bondType BondType) EventBond {
-	return EventBond{
-		Amount:   amount,
-		BondType: bondType,
-	}
+// Events return all the event attributes
+func (e EventBond) Events() (sdk.Events, error) {
+	evt := sdk.NewEvent(e.Type(),
+		sdk.NewAttribute("amount", e.Amount.String()),
+		sdk.NewAttribute("bound_type", string(e.BondType)))
+	evt = evt.AppendAttributes(e.TxIn.ToAttributes()...)
+	return sdk.Events{evt}, nil
 }
 
 type GasType string
