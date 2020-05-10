@@ -1,7 +1,6 @@
 package thorchain
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"github.com/blang/semver"
@@ -119,24 +118,11 @@ func (h UnstakeHandler) handle(ctx sdk.Context, msg MsgSetUnStake, version semve
 		units,
 		int64(msg.UnstakeBasisPoints.Uint64()),
 		sdk.ZeroDec(), // TODO: What is Asymmetry, how to calculate it?
-	)
-	unstakeBytes, err := json.Marshal(unstakeEvt)
-	if err != nil {
-		return nil, sdk.ErrInternal(fmt.Errorf("fail to marshal event: %w", err).Error())
-	}
-
-	// unstake event is pending , once signer send the fund to customer successfully, then this should be marked as success
-	evt := NewEvent(
-		unstakeEvt.Type(),
-		ctx.BlockHeight(),
 		msg.Tx,
-		unstakeBytes,
-		EventPending,
 	)
-
-	if err := h.keeper.UpsertEvent(ctx, evt); err != nil {
-		ctx.Logger().Error("fail to save event", "error", err)
-		return nil, sdk.NewError(DefaultCodespace, CodeFailSaveEvent, "fail to save event")
+	if err := eventManager.EmitUnstakeEvent(ctx, h.keeper, unstakeEvt); err != nil {
+		ctx.Logger().Error("fail to emit unstake event", "error", err)
+		return nil, sdk.NewError(DefaultCodespace, CodeFailSaveEvent, "fail to save unstake event")
 	}
 	txOutStore, err := h.txOutStore.GetTxOutStore(h.keeper, version)
 	if err != nil {

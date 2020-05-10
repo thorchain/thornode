@@ -18,7 +18,9 @@ type EventManager interface {
 	EmitStakeEvent(ctx sdk.Context, keeper Keeper, inTx common.Tx, stakeEvent EventStake) error
 	EmitRewardEvent(ctx sdk.Context, keeper Keeper, rewardEvt EventRewards) error
 	EmitReserveEvent(ctx sdk.Context, keeper Keeper, reserveEvent EventReserve) error
+	EmitUnstakeEvent(ctx sdk.Context, keeper Keeper, unstakeEvt EventUnstake) error
 	EmitSwapEvent(ctx sdk.Context, keeper Keeper, swap EventSwap) error
+	EmitAddEvent(ctx sdk.Context, keeper Keeper, addEvt EventAdd) error
 }
 
 // EventMgr implement EventManager interface
@@ -192,6 +194,57 @@ func (m *EventMgr) EmitReserveEvent(ctx sdk.Context, keeper Keeper, reserveEvent
 		return fmt.Errorf("fail to save reserve event: %w", err)
 	}
 	events, err := reserveEvent.Events()
+	if err != nil {
+		return fmt.Errorf("fail to get events: %w", err)
+	}
+	ctx.EventManager().EmitEvents(events)
+	return nil
+}
+
+// EmitUnstakeEvent save unstake event to local key value store , and also add it to event manager
+func (m *EventMgr) EmitUnstakeEvent(ctx sdk.Context, keeper Keeper, unstakeEvt EventUnstake) error {
+	unstakeBytes, err := json.Marshal(unstakeEvt)
+	if err != nil {
+		return fmt.Errorf("fail to marshal unstake event: %w", err)
+	}
+
+	// unstake event is pending , once signer send the fund to customer successfully, then this should be marked as success
+	evt := NewEvent(
+		unstakeEvt.Type(),
+		ctx.BlockHeight(),
+		unstakeEvt.InTx,
+		unstakeBytes,
+		EventPending,
+	)
+
+	if err := keeper.UpsertEvent(ctx, evt); err != nil {
+		return fmt.Errorf("fail to save unstake event: %w", err)
+	}
+	events, err := unstakeEvt.Events()
+	if err != nil {
+		return fmt.Errorf("fail to get events: %w", err)
+	}
+	ctx.EventManager().EmitEvents(events)
+	return nil
+}
+
+// EmitAddEvent save add event to local key value store , and add it to event manager
+func (m *EventMgr) EmitAddEvent(ctx sdk.Context, keeper Keeper, addEvt EventAdd) error {
+	buf, err := json.Marshal(addEvt)
+	if err != nil {
+		return fmt.Errorf("fail to marshal add event: %w", err)
+	}
+	evt := NewEvent(
+		addEvt.Type(),
+		ctx.BlockHeight(),
+		addEvt.InTx,
+		buf,
+		EventSuccess,
+	)
+	if err := keeper.UpsertEvent(ctx, evt); err != nil {
+		return sdk.ErrInternal(fmt.Errorf("fail to save event: %w", err).Error())
+	}
+	events, err := addEvt.Events()
 	if err != nil {
 		return fmt.Errorf("fail to get events: %w", err)
 	}

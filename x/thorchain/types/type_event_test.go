@@ -40,6 +40,7 @@ func (s EventSuite) TestUnstakeEvent(c *C) {
 		sdk.NewUint(6),
 		5000,
 		sdk.NewDec(0),
+		GetRandomTx(),
 	)
 	c.Check(evt.Type(), Equals, "unstake")
 }

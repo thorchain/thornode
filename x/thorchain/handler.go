@@ -149,7 +149,7 @@ func getInternalHandlerMapping(keeper Keeper,
 	m[MsgReserveContributor{}.Type()] = NewReserveContributorHandler(keeper, versionedEventManager)
 	m[MsgBond{}.Type()] = NewBondHandler(keeper)
 	m[MsgLeave{}.Type()] = NewLeaveHandler(keeper, validatorMgr, versionedTxOutStore)
-	m[MsgAdd{}.Type()] = NewAddHandler(keeper)
+	m[MsgAdd{}.Type()] = NewAddHandler(keeper, versionedEventManager)
 	m[MsgSetUnStake{}.Type()] = NewUnstakeHandler(keeper, versionedTxOutStore, versionedEventManager)
 	m[MsgSetStakeData{}.Type()] = NewStakeHandler(keeper, versionedEventManager)
 	m[MsgRefundTx{}.Type()] = NewRefundHandler(keeper)
