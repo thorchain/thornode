@@ -94,7 +94,7 @@ func (h TssKeysignHandler) handleV1(ctx sdk.Context, msg MsgTssKeysignFail, vers
 		h.keeper.SetTssKeysignFailVoter(ctx, voter)
 
 		constAccessor := constants.GetConstantValues(version)
-		slashPoints := constAccessor.GetInt64Value(constants.FailKeygenSlashPoints)
+		slashPoints := constAccessor.GetInt64Value(constants.FailKeySignSlashPoints)
 		// fail to generate a new tss key let's slash the node account
 		for _, node := range msg.Blame.BlameNodes {
 			nodePubKey, err := common.NewPubKey(node.Pubkey)
@@ -107,7 +107,6 @@ func (h TssKeysignHandler) handleV1(ctx sdk.Context, msg MsgTssKeysignFail, vers
 				ctx.Logger().Error("fail to get node from it's pub key", "error", err, "pub key", nodePubKey.String())
 				return sdk.ErrInternal("fail to get node account").Result()
 			}
-			// 720 blocks per hour
 			if err := h.keeper.IncNodeAccountSlashPoints(ctx, na.NodeAddress, slashPoints); err != nil {
 				ctx.Logger().Error("fail to inc slash points", "error", err)
 			}

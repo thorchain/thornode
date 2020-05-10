@@ -35,9 +35,10 @@ func NewMsgTssKeysignFail(height int64, blame blame.Blame, memo string, coins co
 	}
 }
 
-// getTssKeysignFailID this method will use all the members that caused the tss keysign failure , as well as
-// the block height of the txout item to generate a hash, given that , if the same party keep failing the same
-// txout item , then we will only slash it once.
+// getTssKeysignFailID this method will use all the members that caused the tss
+// keysign failure , as well as the block height of the txout item to generate
+// a hash, given that , if the same party keep failing the same txout item ,
+// then we will only slash it once.
 func getMsgTssKeysignFailID(members []blame.Node, height int64, memo string, coins common.Coins) string {
 	// ensure input pubkeys list is deterministically sorted
 	sort.SliceStable(members, func(i, j int) bool {
@@ -69,9 +70,6 @@ func (msg MsgTssKeysignFail) ValidateBasic() sdk.Error {
 	}
 	if len(msg.ID) == 0 {
 		return sdk.ErrUnknownRequest("ID cannot be blank")
-	}
-	if len(msg.Memo) == 0 {
-		return sdk.ErrUnknownRequest("memo is empty")
 	}
 	if len(msg.Coins) == 0 {
 		return sdk.ErrUnknownRequest("no coins")
