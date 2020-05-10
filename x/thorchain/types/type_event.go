@@ -203,18 +203,28 @@ func (e EventUnstake) Events() (sdk.Events, error) {
 // EventAdd represent add operation
 type EventAdd struct {
 	Pool common.Asset `json:"pool"`
+	InTx common.Tx    `json:"-"`
 }
 
 // NewEventAdd create a new add event
-func NewEventAdd(pool common.Asset) EventAdd {
+func NewEventAdd(pool common.Asset, inTx common.Tx) EventAdd {
 	return EventAdd{
 		Pool: pool,
+		InTx: inTx,
 	}
 }
 
 // Type return add event type
 func (e EventAdd) Type() string {
 	return AddEventType
+}
+
+// Events get all events
+func (e EventAdd) Events() (sdk.Events, error) {
+	evt := sdk.NewEvent(e.Type(),
+		sdk.NewAttribute("pool", e.Pool.String()))
+	evt = evt.AppendAttributes(e.InTx.ToAttributes()...)
+	return sdk.Events{evt}, nil
 }
 
 // EventPool represent pool change event

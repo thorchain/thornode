@@ -46,6 +46,10 @@ func (m *DummyEventMgr) EmitSwapEvent(ctx sdk.Context, keeper Keeper, swap Event
 	return nil
 }
 
+func (m *DummyEventMgr) EmitAddEvent(ctx sdk.Context, keeper Keeper, addEvt EventAdd) error {
+	return nil
+}
+
 type DummyVersionedEventMgr struct{}
 
 func NewDummyVersionedEventMgr() *DummyVersionedEventMgr {

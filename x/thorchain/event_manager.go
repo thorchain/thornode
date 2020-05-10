@@ -19,6 +19,7 @@ type EventManager interface {
 	EmitReserveEvent(ctx sdk.Context, keeper Keeper, reserveEvent EventReserve) error
 	EmitUnstakeEvent(ctx sdk.Context, keeper Keeper, unstakeEvt EventUnstake) error
 	EmitSwapEvent(ctx sdk.Context, keeper Keeper, swap EventSwap) error
+	EmitAddEvent(ctx sdk.Context, keeper Keeper, addEvt EventAdd) error
 }
 
 // EventMgr implement EventManager interface
@@ -195,6 +196,30 @@ func (m *EventMgr) EmitUnstakeEvent(ctx sdk.Context, keeper Keeper, unstakeEvt E
 		return fmt.Errorf("fail to save unstake event: %w", err)
 	}
 	events, err := unstakeEvt.Events()
+	if err != nil {
+		return fmt.Errorf("fail to get events: %w", err)
+	}
+	ctx.EventManager().EmitEvents(events)
+	return nil
+}
+
+// EmitAddEvent save add event to local key value store , and add it to event manager
+func (m *EventMgr) EmitAddEvent(ctx sdk.Context, keeper Keeper, addEvt EventAdd) error {
+	buf, err := json.Marshal(addEvt)
+	if err != nil {
+		return fmt.Errorf("fail to marshal add event: %w", err)
+	}
+	evt := NewEvent(
+		addEvt.Type(),
+		ctx.BlockHeight(),
+		addEvt.InTx,
+		buf,
+		EventSuccess,
+	)
+	if err := keeper.UpsertEvent(ctx, evt); err != nil {
+		return sdk.ErrInternal(fmt.Errorf("fail to save event: %w", err).Error())
+	}
+	events, err := addEvt.Events()
 	if err != nil {
 		return fmt.Errorf("fail to get events: %w", err)
 	}

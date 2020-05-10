@@ -178,6 +178,7 @@ type (
 	EventStake            = types.EventStake
 	EventUnstake          = types.EventUnstake
 	EventStatus           = types.EventStatus
+	EventAdd              = types.EventAdd
 	EventRewards          = types.EventRewards
 	EventErrata           = types.EventErrata
 	EventReserve          = types.EventReserve
