@@ -160,7 +160,7 @@ func getTotalYggValueInRune(ctx sdk.Context, keeper Keeper, ygg Vault) (sdk.Uint
 	return yggRune, nil
 }
 
-func refundBond(ctx sdk.Context, tx common.Tx, nodeAcc NodeAccount, keeper Keeper, txOut TxOutStore) error {
+func refundBond(ctx sdk.Context, tx common.Tx, nodeAcc NodeAccount, keeper Keeper, txOut TxOutStore, eventMgr EventManager) error {
 	if nodeAcc.Status == NodeActive {
 		ctx.Logger().Info("node still active , cannot refund bond", "node address", nodeAcc.NodeAddress, "node pub key", nodeAcc.PubKeySet.Secp256k1)
 		return nil
@@ -204,14 +204,9 @@ func refundBond(ctx sdk.Context, tx common.Tx, nodeAcc NodeAccount, keeper Keepe
 			return fmt.Errorf("unable to determine asgard vault to send funds")
 		}
 
-		bondEvent := NewEventBond(nodeAcc.Bond, BondReturned)
-		buf, err := json.Marshal(bondEvent)
-		if err != nil {
-			return fmt.Errorf("fail to marshal bond event: %w", err)
-		}
-		e := NewEvent(bondEvent.Type(), ctx.BlockHeight(), tx, buf, EventPending)
-		if err := keeper.UpsertEvent(ctx, e); err != nil {
-			return fmt.Errorf("fail to save bond return event: %w", err)
+		bondEvent := NewEventBond(nodeAcc.Bond, BondReturned, tx)
+		if err := eventMgr.EmitBondEvent(ctx, keeper, bondEvent); err != nil {
+			return fmt.Errorf("fail to emit bond event: %w", err)
 		}
 
 		refundAddress := nodeAcc.BondAddress

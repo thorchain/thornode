@@ -20,6 +20,7 @@ type EventManager interface {
 	EmitReserveEvent(ctx sdk.Context, keeper Keeper, reserveEvent EventReserve) error
 	EmitSwapEvent(ctx sdk.Context, keeper Keeper, swap EventSwap) error
 	EmitRefundEvent(ctx sdk.Context, keeper Keeper, refundEvt EventRefund, status EventStatus) error
+	EmitBondEvent(ctx sdk.Context, keeper Keeper, bondEvent EventBond) error
 }
 
 // EventMgr implement EventManager interface
@@ -212,6 +213,24 @@ func (m *EventMgr) EmitRefundEvent(ctx sdk.Context, keeper Keeper, refundEvt Eve
 		return fmt.Errorf("fail to save refund event: %w", err)
 	}
 	events, err := refundEvt.Events()
+	if err != nil {
+		return fmt.Errorf("fail to get events: %w", err)
+	}
+	ctx.EventManager().EmitEvents(events)
+	return nil
+}
+
+func (m *EventMgr) EmitBondEvent(ctx sdk.Context, keeper Keeper, bondEvent EventBond) error {
+	buf, err := json.Marshal(bondEvent)
+	if err != nil {
+		return fmt.Errorf("fail to marshal bond event: %w", err)
+	}
+
+	e := NewEvent(bondEvent.Type(), ctx.BlockHeight(), bondEvent.TxIn, buf, EventSuccess)
+	if err := keeper.UpsertEvent(ctx, e); err != nil {
+		return fmt.Errorf("fail to save bond event: %w", err)
+	}
+	events, err := bondEvent.Events()
 	if err != nil {
 		return fmt.Errorf("fail to get events: %w", err)
 	}

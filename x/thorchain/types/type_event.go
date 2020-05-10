@@ -310,8 +310,18 @@ const (
 
 // EventBond bond paid or returned event
 type EventBond struct {
-	Amount   sdk.Uint `json:"amount"`
-	BondType BondType `json:"bond_type"`
+	Amount   sdk.Uint  `json:"amount"`
+	BondType BondType  `json:"bond_type"`
+	TxIn     common.Tx `json:"-"`
+}
+
+// NewEventBond create a new Bond Events
+func NewEventBond(amount sdk.Uint, bondType BondType, txIn common.Tx) EventBond {
+	return EventBond{
+		Amount:   amount,
+		BondType: bondType,
+		TxIn:     txIn,
+	}
 }
 
 // Type return bond event Type
@@ -319,12 +329,13 @@ func (e EventBond) Type() string {
 	return BondEventType
 }
 
-// NewEventBond create a new Bond Events
-func NewEventBond(amount sdk.Uint, bondType BondType) EventBond {
-	return EventBond{
-		Amount:   amount,
-		BondType: bondType,
-	}
+// Events return all the event attributes
+func (e EventBond) Events() (sdk.Events, error) {
+	evt := sdk.NewEvent(e.Type(),
+		sdk.NewAttribute("amount", e.Amount.String()),
+		sdk.NewAttribute("bound_type", string(e.BondType)))
+	evt = evt.AppendAttributes(e.TxIn.ToAttributes()...)
+	return sdk.Events{evt}, nil
 }
 
 type GasType string

@@ -199,4 +199,5 @@ type (
 	TxMarkers             = types.TxMarkers
 	EventPool             = types.EventPool
 	EventRefund           = types.EventRefund
+	EventBond             = types.EventBond
 )
