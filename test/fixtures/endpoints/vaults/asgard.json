@@ -1,0 +1,19 @@
+[
+  {
+    "block_height": "0",
+    "pub_key": "thorpub1addwnpepqwn78ny4tzcwuzs9dj7a35ja655twr2zupsng9xq7flxyhd0vd4f6p885e3",
+    "coins": null,
+    "type": "asgard",
+    "status": "active",
+    "status_since": "0",
+    "membership": [
+      "thorpub1addwnpepqwn78ny4tzcwuzs9dj7a35ja655twr2zupsng9xq7flxyhd0vd4f6p885e3"
+    ],
+    "chains": [
+      "BNB"
+    ],
+    "inbound_tx_count": "0",
+    "outbound_tx_count": "0",
+    "pending_tx_heights": null
+  }
+]

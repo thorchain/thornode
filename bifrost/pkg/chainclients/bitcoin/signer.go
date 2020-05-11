@@ -76,6 +76,16 @@ func (c *Client) getGasCoin(tx stypes.TxOutItem, vSize int64) common.Coin {
 
 // isYggdrasil - when the pubkey and node pubkey is the same that means it is signing from yggdrasil
 func (c *Client) isYggdrasil(key common.PubKey) bool {
+	asgards, err := c.bridge.GetAsgards()
+	if err != nil {
+		c.logger.Err(err).Msg("fail to get asgard vaults from thorchain")
+		return key.Equals(c.nodePubKey)
+	}
+	for _, item := range asgards {
+		if item.PubKey.Equals(key) {
+			return false
+		}
+	}
 	return key.Equals(c.nodePubKey)
 }
 
