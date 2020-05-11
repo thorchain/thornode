@@ -220,14 +220,6 @@ func (m *EventMgr) EmitRefundEvent(ctx sdk.Context, keeper Keeper, refundEvt Eve
 		return fmt.Errorf("fail to get events: %w", err)
 	}
 	ctx.EventManager().EmitEvents(events)
-	if !event.Fee.Coins.IsEmpty() {
-		eventFee := NewEventFee(refundEvt.InTx.ID, event.Fee)
-		events, err = eventFee.Events()
-		if err != nil {
-			return fmt.Errorf("fail to emit fee events: %w", err)
-		}
-		ctx.EventManager().EmitEvents(events)
-	}
 	return nil
 }
 
