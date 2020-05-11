@@ -215,7 +215,7 @@ func (h YggdrasilHandler) handleYggdrasilReturn(ctx sdk.Context, msg MsgYggdrasi
 		}
 
 		if !vault.HasFunds() {
-			txOutStore, err := h.txOutStore.GetTxOutStore(h.keeper, version)
+			txOutStore, err := h.txOutStore.GetTxOutStore(ctx, h.keeper, version)
 			if err != nil {
 				ctx.Logger().Error("fail to get txout store", "error", err)
 				return errBadVersion.Result()

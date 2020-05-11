@@ -93,7 +93,7 @@ func (h LeaveHandler) handle(ctx sdk.Context, msg MsgLeave, version semver.Versi
 			nodeAcc.LeaveHeight = ctx.BlockHeight()
 		}
 	} else {
-		txOutStore, err := h.versionedTxOutStore.GetTxOutStore(h.keeper, version)
+		txOutStore, err := h.versionedTxOutStore.GetTxOutStore(ctx, h.keeper, version)
 		if err != nil {
 			ctx.Logger().Error("fail to get txout store", "error", err)
 			return errBadVersion

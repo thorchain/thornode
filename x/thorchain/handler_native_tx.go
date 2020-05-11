@@ -145,7 +145,7 @@ func (h NativeTxHandler) handleV1(ctx sdk.Context, msg MsgNativeTx, version semv
 
 	handler := NewInternalHandler(h.keeper, h.versionedTxOutStore, h.validatorMgr, h.versionedVaultManager, h.versionedObserverManager, h.versionedGasMgr, h.versionedEventManager)
 
-	txOutStore, err := h.versionedTxOutStore.GetTxOutStore(h.keeper, version)
+	txOutStore, err := h.versionedTxOutStore.GetTxOutStore(ctx, h.keeper, version)
 	if err != nil {
 		ctx.Logger().Error("fail to get txout store", "error", err)
 		return errBadVersion.Result()

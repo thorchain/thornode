@@ -162,7 +162,7 @@ func newRefundTxHandlerTestHelper(c *C) refundTxHandlerTestHelper {
 
 	c.Assert(keeper.SetPool(ctx, pool), IsNil)
 
-	txOutStorage := NewTxOutStorageV1(keeper)
+	txOutStorage := NewTxOutStorageV1(keeper, NewEventMgr())
 	constAccessor := constants.GetConstantValues(version)
 	txOutStorage.NewBlock(ctx.BlockHeight(), constAccessor)
 	toi := &TxOutItem{

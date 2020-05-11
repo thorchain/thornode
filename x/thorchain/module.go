@@ -85,8 +85,8 @@ type AppModule struct {
 
 // NewAppModule creates a new AppModule Object
 func NewAppModule(k Keeper, bankKeeper bank.Keeper, supplyKeeper supply.Keeper) AppModule {
-	versionedTxOutStore := NewVersionedTxOutStore()
 	versionedEventManager := NewVersionedEventMgr()
+	versionedTxOutStore := NewVersionedTxOutStore(versionedEventManager)
 	versionedVaultMgr := NewVersionedVaultMgr(versionedTxOutStore, versionedEventManager)
 	return AppModule{
 		AppModuleBasic:           AppModuleBasic{},
@@ -156,7 +156,7 @@ func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 	if err := am.validatorMgr.BeginBlock(ctx, version, constantValues); err != nil {
 		ctx.Logger().Error("Fail to begin block on validator", "error", err)
 	}
-	txStore, err := am.txOutStore.GetTxOutStore(am.keeper, version)
+	txStore, err := am.txOutStore.GetTxOutStore(ctx, am.keeper, version)
 	if err != nil {
 		ctx.Logger().Error("fail to get tx out store", "error", err)
 		return
@@ -173,7 +173,7 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 		ctx.Logger().Error(fmt.Sprintf("constants for version(%s) is not available", version))
 		return nil
 	}
-	txStore, err := am.txOutStore.GetTxOutStore(am.keeper, version)
+	txStore, err := am.txOutStore.GetTxOutStore(ctx, am.keeper, version)
 	if err != nil {
 		ctx.Logger().Error("fail to get tx out store", "error", err)
 		return nil

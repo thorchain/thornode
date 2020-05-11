@@ -62,6 +62,10 @@ func (m *DummyEventMgr) EmitBondEvent(ctx sdk.Context, keeper Keeper, bondEvent 
 	return nil
 }
 
+func (m *DummyEventMgr) EmitFeeEvent(ctx sdk.Context, keeper Keeper, feeEvent EventFee) error {
+	return nil
+}
+
 type DummyVersionedEventMgr struct{}
 
 func NewDummyVersionedEventMgr() *DummyVersionedEventMgr {
