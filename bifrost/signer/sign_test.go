@@ -242,7 +242,7 @@ func (s *SignSuite) TestHandleYggReturn_Success_FeeSingleton(c *C) {
 	err := json.Unmarshal([]byte(input), &item)
 	c.Check(err, IsNil)
 
-	newItem, err := sign.handleYggReturn(item)
+	newItem, err := sign.handleYggReturn(12, item)
 	c.Assert(err, IsNil)
 	c.Check(newItem.Coins[0].Amount.Uint64(), Equals, uint64(1000000))
 }
@@ -266,7 +266,7 @@ func (s *SignSuite) TestHandleYggReturn_Success_FeeMulti(c *C) {
 	err := json.Unmarshal([]byte(input), &item)
 	c.Check(err, IsNil)
 
-	newItem, err := sign.handleYggReturn(item)
+	newItem, err := sign.handleYggReturn(22, item)
 	c.Assert(err, IsNil)
 	c.Check(newItem.Coins[0].Amount.Uint64(), Equals, uint64(1000000))
 }
@@ -289,9 +289,9 @@ func (s *SignSuite) TestHandleYggReturn_Success_NotEnough(c *C) {
 	err := json.Unmarshal([]byte(input), &item)
 	c.Check(err, IsNil)
 
-	newItem, err := sign.handleYggReturn(item)
+	newItem, err := sign.handleYggReturn(33, item)
 	c.Assert(err, IsNil)
-	c.Check(newItem.Coins[0].Amount.Uint64(), Equals, uint64(0))
+	c.Check(newItem.Coins, HasLen, 0)
 }
 
 func (s *SignSuite) TestProcess(c *C) {

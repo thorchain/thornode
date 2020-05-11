@@ -310,18 +310,26 @@ func (b *ThorchainBridge) EnsureNodeWhitelistedWithTimeout() error {
 
 // EnsureNodeWhitelisted will call to thorchain to check whether the observer had been whitelist or not
 func (b *ThorchainBridge) EnsureNodeWhitelisted() error {
+	status, err := b.FetchNodeStatus()
+	if err != nil {
+		return fmt.Errorf("failed to get node status: %w", err)
+	}
+	if status == stypes.Disabled || status == stypes.Unknown {
+		return fmt.Errorf("node account status %s , will not be able to forward transaction to thorchain", status)
+	}
+	return nil
+}
+
+func (b *ThorchainBridge) FetchNodeStatus() (stypes.NodeStatus, error) {
 	bepAddr := b.keys.GetSignerInfo().GetAddress().String()
 	if len(bepAddr) == 0 {
-		return errors.New("bep address is empty")
+		return stypes.Unknown, errors.New("bep address is empty")
 	}
 	na, err := b.GetNodeAccount(bepAddr)
 	if err != nil {
-		return fmt.Errorf("failed to get node account: %w", err)
+		return stypes.Unknown, fmt.Errorf("failed to get node status: %w", err)
 	}
-	if na.Status == stypes.Disabled || na.Status == stypes.Unknown {
-		return fmt.Errorf("node account status %s , will not be able to forward transaction to thorchain", na.Status)
-	}
-	return nil
+	return na.Status, nil
 }
 
 // GetKeysignParty call into thorchain to get the node accounts that should be join together to sign the message
