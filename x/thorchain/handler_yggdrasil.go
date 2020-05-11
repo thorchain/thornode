@@ -79,7 +79,7 @@ func (h YggdrasilHandler) handle(ctx sdk.Context, msg MsgYggdrasil, version semv
 
 func (h YggdrasilHandler) slash(ctx sdk.Context, version semver.Version, pk common.PubKey, coins common.Coins) error {
 	var returnErr error
-	slasher, err := NewSlasher(h.keeper, version)
+	slasher, err := NewSlasher(h.keeper, version, h.versionedEventManager)
 	if err != nil {
 		return fmt.Errorf("fail to create new slasher,error:%w", err)
 	}

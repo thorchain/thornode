@@ -54,7 +54,10 @@ build-thornode:
   tags:
     - thorchain
   only:
-    - build
+    - master # build mocknet image
+    - testnet
+    - chaosnet
+    - mainnet
   services:
     - docker:19-dind
   before_script:
@@ -64,24 +67,6 @@ build-thornode:
   script:
     - make docker-gitlab-build
     - make docker-gitlab-push
-
-# Build docker image, nightly
-build-thornode-nightly:
-  stage: build
-  image: docker:stable
-  tags:
-    - thorchain
-  only:
-    - master
-  services:
-    - docker:19-dind
-  before_script:
-    - apk update
-    - apk add python py-pip make git jq curl
-    - make docker-gitlab-login
-  script:
-    - make docker-gitlab-build-nightly
-    - make docker-gitlab-push-nightly
 
 smoke-test:thornode:
   stage: smoke-test

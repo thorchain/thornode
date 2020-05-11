@@ -206,4 +206,5 @@ type (
 	EventRefund           = types.EventRefund
 	EventBond             = types.EventBond
 	EventFee              = types.EventFee
+	EventSlash            = types.EventSlash
 )

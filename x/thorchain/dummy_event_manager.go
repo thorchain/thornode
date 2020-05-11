@@ -66,6 +66,10 @@ func (m *DummyEventMgr) EmitFeeEvent(ctx sdk.Context, keeper Keeper, feeEvent Ev
 	return nil
 }
 
+func (m *DummyEventMgr) EmitSlashEvent(ctx sdk.Context, keeper Keeper, slashEvt EventSlash) error {
+	return nil
+}
+
 type DummyVersionedEventMgr struct{}
 
 func NewDummyVersionedEventMgr() *DummyVersionedEventMgr {

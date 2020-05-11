@@ -35,7 +35,7 @@ func (HandlerMigrateSuite) TestMigrate(c *C) {
 		vault:             GetRandomVault(),
 	}
 
-	handler := NewMigrateHandler(keeper)
+	handler := NewMigrateHandler(keeper, NewVersionedEventMgr())
 
 	addr, err := keeper.vault.PubKey.GetAddress(common.BNBChain)
 	c.Assert(err, IsNil)
@@ -141,7 +141,7 @@ func (HandlerMigrateSuite) TestMigrateHappyPath(c *C) {
 	}
 	addr, err := keeper.retireVault.PubKey.GetAddress(common.BNBChain)
 	c.Assert(err, IsNil)
-	handler := NewMigrateHandler(keeper)
+	handler := NewMigrateHandler(keeper, NewVersionedEventMgr())
 	tx := NewObservedTx(common.Tx{
 		ID:    GetRandomTxHash(),
 		Chain: common.BNBChain,
@@ -184,7 +184,7 @@ func (HandlerMigrateSuite) TestSlash(c *C) {
 	}
 	addr, err := keeper.retireVault.PubKey.GetAddress(common.BNBChain)
 	c.Assert(err, IsNil)
-	handler := NewMigrateHandler(keeper)
+	handler := NewMigrateHandler(keeper, NewVersionedEventMgr())
 	tx := NewObservedTx(common.Tx{
 		ID:    GetRandomTxHash(),
 		Chain: common.BNBChain,
