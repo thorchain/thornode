@@ -18,7 +18,7 @@ func NewVersionedTxOutStoreDummy() *VersionedTxOutStoreDummy {
 	}
 }
 
-func (v *VersionedTxOutStoreDummy) GetTxOutStore(keeper Keeper, version semver.Version) (TxOutStore, error) {
+func (v *VersionedTxOutStoreDummy) GetTxOutStore(ctx sdk.Context, keeper Keeper, version semver.Version) (TxOutStore, error) {
 	return v.txoutStore, nil
 }
 

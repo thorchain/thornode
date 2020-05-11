@@ -51,6 +51,7 @@ func refundTx(ctx sdk.Context, tx ObservedTx, store TxOutStore, keeper Keeper, c
 		fee := getFee(tx.Tx.Coins, refundCoins, transactionFee)
 		eventRefund = NewEventRefund(refundCode, refundReason, newTx, fee)
 		status = EventPending
+
 	}
 	if err := eventMgr.EmitRefundEvent(ctx, keeper, eventRefund, status); err != nil {
 		return fmt.Errorf("fail to emit refund event: %w", err)

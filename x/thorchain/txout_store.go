@@ -8,7 +8,7 @@ import (
 )
 
 type VersionedTxOutStore interface {
-	GetTxOutStore(keeper Keeper, version semver.Version) (TxOutStore, error)
+	GetTxOutStore(ctx sdk.Context, keeper Keeper, version semver.Version) (TxOutStore, error)
 }
 
 type TxOutStore interface {
@@ -21,19 +21,26 @@ type TxOutStore interface {
 }
 
 type VersionedTxOutStorage struct {
-	txOutStorage TxOutStore
+	txOutStorage          TxOutStore
+	versionedEventManager VersionedEventManager
 }
 
 // NewVersionedTxOutStore create a new instance of VersionedTxOutStorage
-func NewVersionedTxOutStore() *VersionedTxOutStorage {
-	return &VersionedTxOutStorage{}
+func NewVersionedTxOutStore(versionedEventManager VersionedEventManager) *VersionedTxOutStorage {
+	return &VersionedTxOutStorage{
+		versionedEventManager: versionedEventManager,
+	}
 }
 
 // GetTxOutStore will return an implementation of the txout store that
-func (s *VersionedTxOutStorage) GetTxOutStore(keeper Keeper, version semver.Version) (TxOutStore, error) {
+func (s *VersionedTxOutStorage) GetTxOutStore(ctx sdk.Context, keeper Keeper, version semver.Version) (TxOutStore, error) {
 	if version.GTE(semver.MustParse("0.1.0")) {
 		if s.txOutStorage == nil {
-			s.txOutStorage = NewTxOutStorageV1(keeper)
+			eventMgr, err := s.versionedEventManager.GetEventManager(ctx, version)
+			if err != nil {
+				return nil, errFailGetEventManager
+			}
+			s.txOutStorage = NewTxOutStorageV1(keeper, eventMgr)
 		}
 		return s.txOutStorage, nil
 	}

@@ -125,11 +125,11 @@ func getHandlerTestWrapper(c *C, height int64, withActiveNode, withActieBNBPool 
 	}
 	ver := constants.SWVersion
 	constAccessor := constants.GetConstantValues(ver)
-	versionedTxOutStore := NewVersionedTxOutStore()
-	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(versionedTxOutStore)
 	versionedEventManagerDummy := NewDummyVersionedEventMgr()
+	versionedTxOutStore := NewVersionedTxOutStore(versionedEventManagerDummy)
+	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(versionedTxOutStore)
 
-	txOutStore, err := versionedTxOutStore.GetTxOutStore(k, ver)
+	txOutStore, err := versionedTxOutStore.GetTxOutStore(ctx, k, ver)
 	c.Assert(err, IsNil)
 
 	txOutStore.NewBlock(height, constAccessor)
@@ -199,7 +199,7 @@ func (HandlerSuite) TestHandleTxInUnstakeMemo(c *C) {
 	msg := NewMsgSetUnStake(tx, staker.RuneAddress, sdk.NewUint(uint64(MaxUnstakeBasisPoints)), common.BNBAsset, w.activeNodeAccount.NodeAddress)
 	ver := constants.SWVersion
 	constAccessor := constants.GetConstantValues(ver)
-	txOutStore, err := w.versionedTxOutStore.GetTxOutStore(w.keeper, ver)
+	txOutStore, err := w.versionedTxOutStore.GetTxOutStore(w.ctx, w.keeper, ver)
 	c.Assert(err, IsNil)
 	txOutStore.NewBlock(2, constAccessor)
 
@@ -253,7 +253,7 @@ func (HandlerSuite) TestRefund(c *C) {
 	)
 	ver := constants.SWVersion
 	constAccessor := constants.GetConstantValues(ver)
-	txOutStore, err := w.versionedTxOutStore.GetTxOutStore(w.keeper, ver)
+	txOutStore, err := w.versionedTxOutStore.GetTxOutStore(w.ctx, w.keeper, ver)
 	eventMgr := NewEventMgr()
 	c.Assert(err, IsNil)
 	c.Assert(refundTx(w.ctx, txin, txOutStore, w.keeper, constAccessor, sdk.CodeInternal, "refund", eventMgr), IsNil)

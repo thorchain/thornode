@@ -23,6 +23,7 @@ type EventManager interface {
 	EmitRefundEvent(ctx sdk.Context, keeper Keeper, refundEvt EventRefund, status EventStatus) error
 	EmitBondEvent(ctx sdk.Context, keeper Keeper, bondEvent EventBond) error
 	EmitAddEvent(ctx sdk.Context, keeper Keeper, addEvt EventAdd) error
+	EmitFeeEvent(ctx sdk.Context, keeper Keeper, feeEvent EventFee) error
 	EmitSlashEvent(ctx sdk.Context, keeper Keeper, slashEvt EventSlash) error
 }
 
@@ -311,6 +312,19 @@ func (m *EventMgr) EmitSlashEvent(ctx sdk.Context, keeper Keeper, slashEvt Event
 	events, err := slashEvt.Events()
 	if err != nil {
 		return fmt.Errorf("fail to get events: %w", err)
+	}
+	ctx.EventManager().EmitEvents(events)
+	return nil
+}
+
+// EmitFeeEvent emit a fee event through event manager
+func (m *EventMgr) EmitFeeEvent(ctx sdk.Context, keeper Keeper, feeEvent EventFee) error {
+	if err := updateEventFee(ctx, keeper, feeEvent.TxID, feeEvent.Fee); err != nil {
+		return fmt.Errorf("fail to update event fee: %w", err)
+	}
+	events, err := feeEvent.Events()
+	if err != nil {
+		return fmt.Errorf("fail to emit fee event: %w", err)
 	}
 	ctx.EventManager().EmitEvents(events)
 	return nil

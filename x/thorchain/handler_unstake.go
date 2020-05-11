@@ -124,7 +124,7 @@ func (h UnstakeHandler) handle(ctx sdk.Context, msg MsgSetUnStake, version semve
 		ctx.Logger().Error("fail to emit unstake event", "error", err)
 		return nil, sdk.NewError(DefaultCodespace, CodeFailSaveEvent, "fail to save unstake event")
 	}
-	txOutStore, err := h.txOutStore.GetTxOutStore(h.keeper, version)
+	txOutStore, err := h.txOutStore.GetTxOutStore(ctx, h.keeper, version)
 	if err != nil {
 		ctx.Logger().Error("fail to get txout store", "error", err)
 		return nil, errBadVersion
