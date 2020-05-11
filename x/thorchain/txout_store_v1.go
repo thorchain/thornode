@@ -16,12 +16,14 @@ type TxOutStorageV1 struct {
 	height        int64
 	keeper        Keeper
 	constAccessor constants.ConstantValues
+	eventMgr      EventManager
 }
 
 // NewTxOutStorage will create a new instance of TxOutStore.
-func NewTxOutStorageV1(keeper Keeper) *TxOutStorageV1 {
+func NewTxOutStorageV1(keeper Keeper, eventMgr EventManager) *TxOutStorageV1 {
 	return &TxOutStorageV1{
-		keeper: keeper,
+		keeper:   keeper,
+		eventMgr: eventMgr,
 	}
 }
 
@@ -156,7 +158,6 @@ func (tos *TxOutStorageV1) prepareTxOutItem(ctx sdk.Context, toi *TxOutItem) (bo
 		}
 
 	}
-
 	// Deduct TransactionFee from TOI and add to Reserve
 	memo, err := ParseMemo(toi.Memo) // ignore err
 	if err == nil && !memo.IsType(TxYggdrasilFund) && !memo.IsType(TxYggdrasilReturn) && !memo.IsType(TxMigrate) && !memo.IsType(TxRagnarok) {
@@ -169,10 +170,10 @@ func (tos *TxOutStorageV1) prepareTxOutItem(ctx sdk.Context, toi *TxOutItem) (bo
 			}
 			toi.Coin.Amount = common.SafeSub(toi.Coin.Amount, runeFee)
 			fee := common.NewFee(common.Coins{common.NewCoin(toi.Coin.Asset, runeFee)}, sdk.ZeroUint())
-			err := updateEventFee(ctx, tos.keeper, toi.InHash, fee)
-			if err != nil {
-				ctx.Logger().Error("Failed to update event fee", "error", err)
+			if err := tos.eventMgr.EmitFeeEvent(ctx, tos.keeper, NewEventFee(toi.InHash, fee)); err != nil {
+				ctx.Logger().Error("Failed to emit fee event", "error", err)
 			}
+
 			if err := tos.keeper.AddFeeToReserve(ctx, runeFee); err != nil {
 				// Add to reserve
 				ctx.Logger().Error("fail to add fee to reserve", "error", err)
@@ -203,9 +204,8 @@ func (tos *TxOutStorageV1) prepareTxOutItem(ctx sdk.Context, toi *TxOutItem) (bo
 			}
 			pool.BalanceRune = common.SafeSub(pool.BalanceRune, runeFee) // Deduct Rune from Pool
 			fee := common.NewFee(common.Coins{common.NewCoin(toi.Coin.Asset, assetFee)}, poolDeduct)
-			err = updateEventFee(ctx, tos.keeper, toi.InHash, fee)
-			if err != nil {
-				ctx.Logger().Error("Failed to update event fee", "error", err)
+			if err := tos.eventMgr.EmitFeeEvent(ctx, tos.keeper, NewEventFee(toi.InHash, fee)); err != nil {
+				ctx.Logger().Error("Failed to emit fee event", "error", err)
 			}
 			if err := tos.keeper.SetPool(ctx, pool); err != nil { // Set Pool
 				return false, fmt.Errorf("fail to save pool: %w", err)
@@ -315,8 +315,8 @@ func (tos *TxOutStorageV1) nativeTxOut(ctx sdk.Context, toi *TxOutItem) error {
 		return err
 	}
 
-	versionedTxOutStore := NewVersionedTxOutStore()
 	versionedEventManager := NewVersionedEventMgr()
+	versionedTxOutStore := NewVersionedTxOutStore(versionedEventManager)
 	versionedVaultMgr := NewVersionedVaultMgr(versionedTxOutStore, versionedEventManager)
 	validatorMgr := NewVersionedValidatorMgr(tos.keeper, versionedTxOutStore, versionedVaultMgr, versionedEventManager)
 	versionedObserverManager := NewVersionedObserverMgr()

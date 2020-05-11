@@ -92,7 +92,7 @@ func (vm *VaultMgr) EndBlock(ctx sdk.Context, version semver.Version, constAcces
 	if len(active) == 0 {
 		return nil
 	}
-	txOutStore, err := vm.versionedTxOutStore.GetTxOutStore(vm.k, version)
+	txOutStore, err := vm.versionedTxOutStore.GetTxOutStore(ctx, vm.k, version)
 	if err != nil {
 		ctx.Logger().Error("fail to get txout store", "error", err)
 		return errBadVersion
@@ -354,7 +354,7 @@ func (vm *VaultMgr) recallChainFunds(ctx sdk.Context, chain common.Chain) error 
 		return fmt.Errorf("fail to list all node accounts: %w", err)
 	}
 
-	txOutStore, err := vm.versionedTxOutStore.GetTxOutStore(vm.k, version)
+	txOutStore, err := vm.versionedTxOutStore.GetTxOutStore(ctx, vm.k, version)
 	if err != nil {
 		ctx.Logger().Error("can't get tx out store", "error", err)
 		return err

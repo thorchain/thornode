@@ -106,8 +106,8 @@ func newTssHandlerTestHelper(c *C) tssHandlerTestHelper {
 	c.Assert(keeper.SetNodeAccount(ctx, nodeAccount), IsNil)
 
 	constAccessor := constants.GetConstantValues(version)
-	versionedTxOutStore := NewVersionedTxOutStore()
 	versionedEventManagerDummy := NewDummyVersionedEventMgr()
+	versionedTxOutStore := NewVersionedTxOutStore(versionedEventManagerDummy)
 
 	vaultMgr := NewVersionedVaultMgr(versionedTxOutStore, versionedEventManagerDummy)
 	var members common.PubKeys

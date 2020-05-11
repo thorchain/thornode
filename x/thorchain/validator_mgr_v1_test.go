@@ -79,7 +79,7 @@ func (vts *ValidatorMgrV1TestSuite) TestRagnarokBond(c *C) {
 	ctx = ctx.WithBlockHeight(1)
 	ver := constants.SWVersion
 	versionedTxOutStoreDummy := NewVersionedTxOutStoreDummy()
-	txOutStore, err := versionedTxOutStoreDummy.GetTxOutStore(k, ver)
+	txOutStore, err := versionedTxOutStoreDummy.GetTxOutStore(ctx, k, ver)
 	c.Assert(err, IsNil)
 
 	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(versionedTxOutStoreDummy)

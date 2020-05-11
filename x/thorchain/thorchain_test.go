@@ -121,7 +121,7 @@ func (s *ThorchainSuite) TestChurn(c *C) {
 	vaultMgr, err := versionedVaultMgr.GetVaultManager(ctx, keeper, ver)
 	c.Assert(err, IsNil)
 	validatorMgr := newValidatorMgrV1(keeper, versionedTxOutStoreDummy, versionedVaultMgr, versionedEventManagerDummy)
-	txOutStore, err := versionedTxOutStoreDummy.GetTxOutStore(keeper, ver)
+	txOutStore, err := versionedTxOutStoreDummy.GetTxOutStore(ctx, keeper, ver)
 	c.Assert(err, IsNil)
 
 	// create starting point, vault and four node active node accounts
@@ -255,7 +255,7 @@ func (s *ThorchainSuite) TestRagnarok(c *C) {
 	versionedEventManagerDummy := NewDummyVersionedEventMgr()
 
 	validatorMgr := newValidatorMgrV1(keeper, versionedTxOutStoreDummy, versionedVaultMgrDummy, versionedEventManagerDummy)
-	txOutStore, err := versionedTxOutStoreDummy.GetTxOutStore(keeper, ver)
+	txOutStore, err := versionedTxOutStoreDummy.GetTxOutStore(ctx, keeper, ver)
 	c.Assert(err, IsNil)
 
 	// create active asgard vault

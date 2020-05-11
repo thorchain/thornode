@@ -81,6 +81,7 @@ var (
 	NewEventSlash                  = types.NewEventSlash
 	NewEventReserve                = types.NewEventReserve
 	NewEventErrata                 = types.NewEventErrata
+	NewEventFee                    = types.NewEventFee
 	NewPoolMod                     = types.NewPoolMod
 	NewMsgRefundTx                 = types.NewMsgRefundTx
 	NewMsgOutboundTx               = types.NewMsgOutboundTx
@@ -204,5 +205,6 @@ type (
 	EventPool             = types.EventPool
 	EventRefund           = types.EventRefund
 	EventBond             = types.EventBond
+	EventFee              = types.EventFee
 	EventSlash            = types.EventSlash
 )

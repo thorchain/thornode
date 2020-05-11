@@ -454,7 +454,7 @@ func (vm *validatorMgrV1) ragnarokReserve(ctx sdk.Context, nth int64) error {
 		return nil
 	}
 
-	txOutStore, err := vm.versionedTxOutStore.GetTxOutStore(vm.k, vm.version)
+	txOutStore, err := vm.versionedTxOutStore.GetTxOutStore(ctx, vm.k, vm.version)
 	if err != nil {
 		ctx.Logger().Error("can't get tx out store", "error", err)
 		return err
@@ -516,7 +516,7 @@ func (vm *validatorMgrV1) ragnarokBond(ctx sdk.Context, nth int64) error {
 		ctx.Logger().Error("can't get nodes", "error", err)
 		return err
 	}
-	txOutStore, err := vm.versionedTxOutStore.GetTxOutStore(vm.k, vm.version)
+	txOutStore, err := vm.versionedTxOutStore.GetTxOutStore(ctx, vm.k, vm.version)
 	if err != nil {
 		ctx.Logger().Error("can't get tx out store", "error", err)
 		return err
@@ -686,7 +686,7 @@ func (vm *validatorMgrV1) RequestYggReturn(ctx sdk.Context, node NodeAccount) er
 	if vault.IsEmpty() {
 		return fmt.Errorf("unable to determine asgard vault")
 	}
-	txOutStore, err := vm.versionedTxOutStore.GetTxOutStore(vm.k, vm.version)
+	txOutStore, err := vm.versionedTxOutStore.GetTxOutStore(ctx, vm.k, vm.version)
 	if err != nil {
 		ctx.Logger().Error("can't get tx out store", "error", err)
 		return err

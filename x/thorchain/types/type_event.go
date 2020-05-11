@@ -34,6 +34,7 @@ const (
 	ReserveEventType = `reserve`
 	SlashEventType   = `slash`
 	ErrataEventType  = `errata`
+	FeeEventType     = `fee`
 )
 
 type PoolMod struct {
@@ -318,7 +319,6 @@ func (e EventRefund) Events() (sdk.Events, error) {
 	evt := sdk.NewEvent(e.Type(),
 		sdk.NewAttribute("code", strconv.FormatUint(uint64(e.Code), 10)),
 		sdk.NewAttribute("reason", e.Reason),
-		sdk.NewAttribute("fee", e.Fee.Coins.String()),
 	)
 	evt = evt.AppendAttributes(e.InTx.ToAttributes()...)
 	return sdk.Events{evt}, nil
@@ -501,4 +501,32 @@ func (e EventErrata) Events() (sdk.Events, error) {
 		events = append(events, evt)
 	}
 	return events, nil
+}
+
+// EventFee represent fee
+type EventFee struct {
+	TxID common.TxID
+	Fee  common.Fee
+}
+
+// NewEventFee create a new EventFee
+func NewEventFee(txID common.TxID, fee common.Fee) EventFee {
+	return EventFee{
+		TxID: txID,
+		Fee:  fee,
+	}
+}
+
+// Type get a string represent the event type
+func (e EventFee) Type() string {
+	return FeeEventType
+}
+
+// Events return events of sdk.Event type
+func (e EventFee) Events() (sdk.Events, error) {
+	evt := sdk.NewEvent(e.Type(),
+		sdk.NewAttribute("tx_id", e.TxID.String()),
+		sdk.NewAttribute("coins", e.Fee.Coins.String()),
+		sdk.NewAttribute("pool_deduct", e.Fee.PoolDeduct.String()))
+	return sdk.Events{evt}, nil
 }

@@ -54,7 +54,7 @@ func (vm *SwapQv1) FetchQueue(ctx sdk.Context) ([]MsgSwap, error) {
 func (vm *SwapQv1) EndBlock(ctx sdk.Context, version semver.Version, constAccessor constants.ConstantValues) error {
 	handler := NewSwapHandler(vm.k, vm.versionedTxOutStore, vm.versionedEventManager)
 
-	txOutStore, err := vm.versionedTxOutStore.GetTxOutStore(vm.k, version)
+	txOutStore, err := vm.versionedTxOutStore.GetTxOutStore(ctx, vm.k, version)
 	if err != nil {
 		ctx.Logger().Error("fail to get txout store", "error", err)
 		return err

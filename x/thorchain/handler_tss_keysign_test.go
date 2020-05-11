@@ -78,8 +78,8 @@ func newTssKeysignHandlerTestHelper(c *C) tssKeysignFailHandlerTestHelper {
 	nodeAccount.Bond = sdk.NewUint(100 * common.One)
 	c.Assert(keeper.SetNodeAccount(ctx, nodeAccount), IsNil)
 	constAccessor := constants.GetConstantValues(version)
-	versionedTxOutStore := NewVersionedTxOutStore()
 	versionedEventManagerDummy := NewDummyVersionedEventMgr()
+	versionedTxOutStore := NewVersionedTxOutStore(versionedEventManagerDummy)
 
 	vaultMgr := NewVersionedVaultMgr(versionedTxOutStore, versionedEventManagerDummy)
 	var members []blame.Node
