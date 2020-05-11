@@ -48,10 +48,6 @@ func (h TssHandler) validateV1(ctx sdk.Context, msg MsgTssPool) sdk.Error {
 		return err
 	}
 
-	if ctx.BlockHeight()-msg.Height > 10 {
-		return sdk.ErrUnknownRequest("expired tss keygen")
-	}
-
 	keygenBlock, err := h.keeper.GetKeygenBlock(ctx, msg.Height)
 	if err != nil {
 		return sdk.ErrUnauthorized(fmt.Errorf("fail to get keygen block from data store: %w", err).Error())
