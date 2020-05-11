@@ -319,7 +319,6 @@ func (e EventRefund) Events() (sdk.Events, error) {
 	evt := sdk.NewEvent(e.Type(),
 		sdk.NewAttribute("code", strconv.FormatUint(uint64(e.Code), 10)),
 		sdk.NewAttribute("reason", e.Reason),
-		sdk.NewAttribute("fee", e.Fee.Coins.String()),
 	)
 	evt = evt.AppendAttributes(e.InTx.ToAttributes()...)
 	return sdk.Events{evt}, nil
