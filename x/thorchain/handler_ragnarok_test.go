@@ -34,7 +34,7 @@ func (HandlerRagnarokSuite) TestRagnarok(c *C) {
 		vault:             GetRandomVault(),
 	}
 
-	handler := NewRagnarokHandler(keeper)
+	handler := NewRagnarokHandler(keeper, NewVersionedEventMgr())
 
 	addr, err := keeper.vault.PubKey.GetAddress(common.BNBChain)
 	c.Assert(err, IsNil)
@@ -140,7 +140,7 @@ func (HandlerRagnarokSuite) TestRagnarokHappyPath(c *C) {
 	}
 	addr, err := keeper.retireVault.PubKey.GetAddress(common.BNBChain)
 	c.Assert(err, IsNil)
-	handler := NewRagnarokHandler(keeper)
+	handler := NewRagnarokHandler(keeper, NewVersionedEventMgr())
 	tx := NewObservedTx(common.Tx{
 		ID:    GetRandomTxHash(),
 		Chain: common.BNBChain,
@@ -184,7 +184,7 @@ func (HandlerRagnarokSuite) TestSlash(c *C) {
 	}
 	addr, err := keeper.retireVault.PubKey.GetAddress(common.BNBChain)
 	c.Assert(err, IsNil)
-	handler := NewRagnarokHandler(keeper)
+	handler := NewRagnarokHandler(keeper, NewVersionedEventMgr())
 	tx := NewObservedTx(common.Tx{
 		ID:    GetRandomTxHash(),
 		Chain: common.BNBChain,

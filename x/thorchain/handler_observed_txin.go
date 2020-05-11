@@ -244,7 +244,7 @@ func (h ObservedTxInHandler) handleV1(ctx sdk.Context, version semver.Version, m
 		haltTrading, err := h.keeper.GetMimir(ctx, "HaltTrading")
 		if (isSwap || isStake) && (haltTrading >= 0 && err == nil) {
 			ctx.Logger().Info("trading is halted!!")
-			if newErr := refundTx(ctx, tx, txOutStore, h.keeper, constAccessor, txErr.Code(), fmt.Sprint(txErr.Data())); nil != newErr {
+			if newErr := refundTx(ctx, tx, txOutStore, h.keeper, constAccessor, txErr.Code(), fmt.Sprint(txErr.Data()), eventMgr); nil != newErr {
 				return sdk.ErrInternal(newErr.Error()).Result()
 			}
 			continue

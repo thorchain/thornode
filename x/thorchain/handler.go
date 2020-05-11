@@ -144,7 +144,7 @@ func getInternalHandlerMapping(keeper Keeper,
 	versionedEventManager VersionedEventManager) map[string]MsgHandler {
 	// New arch handlers
 	m := make(map[string]MsgHandler)
-	m[MsgOutboundTx{}.Type()] = NewOutboundTxHandler(keeper)
+	m[MsgOutboundTx{}.Type()] = NewOutboundTxHandler(keeper, versionedEventManager)
 	m[MsgYggdrasil{}.Type()] = NewYggdrasilHandler(keeper, versionedTxOutStore, validatorMgr, versionedEventManager)
 	m[MsgSwap{}.Type()] = NewSwapHandler(keeper, versionedTxOutStore, versionedEventManager)
 	m[MsgReserveContributor{}.Type()] = NewReserveContributorHandler(keeper, versionedEventManager)
@@ -153,9 +153,9 @@ func getInternalHandlerMapping(keeper Keeper,
 	m[MsgAdd{}.Type()] = NewAddHandler(keeper, versionedEventManager)
 	m[MsgSetUnStake{}.Type()] = NewUnstakeHandler(keeper, versionedTxOutStore, versionedEventManager)
 	m[MsgSetStakeData{}.Type()] = NewStakeHandler(keeper, versionedEventManager)
-	m[MsgRefundTx{}.Type()] = NewRefundHandler(keeper)
-	m[MsgMigrate{}.Type()] = NewMigrateHandler(keeper)
-	m[MsgRagnarok{}.Type()] = NewRagnarokHandler(keeper)
+	m[MsgRefundTx{}.Type()] = NewRefundHandler(keeper, versionedEventManager)
+	m[MsgMigrate{}.Type()] = NewMigrateHandler(keeper, versionedEventManager)
+	m[MsgRagnarok{}.Type()] = NewRagnarokHandler(keeper, versionedEventManager)
 	m[MsgSwitch{}.Type()] = NewSwitchHandler(keeper, versionedTxOutStore)
 	return m
 }

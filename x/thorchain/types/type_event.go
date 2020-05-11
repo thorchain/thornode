@@ -460,6 +460,15 @@ func (e EventSlash) Type() string {
 	return SlashEventType
 }
 
+func (e EventSlash) Events() (sdk.Events, error) {
+	evt := sdk.NewEvent(e.Type(),
+		sdk.NewAttribute("pool", e.Pool.String()))
+	for _, item := range e.SlashAmount {
+		evt.AppendAttributes(sdk.NewAttribute(item.Asset.String(), strconv.FormatInt(item.Amount, 10)))
+	}
+	return sdk.Events{evt}, nil
+}
+
 // EventErrata represent a change in pool balance which caused by an errata transaction
 type EventErrata struct {
 	TxID  common.TxID `json:"tx_id"`

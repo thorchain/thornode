@@ -40,7 +40,7 @@ func (s *HandlerOutboundTxSuite) TestValidate(c *C) {
 		vault:             GetRandomVault(),
 	}
 
-	handler := NewOutboundTxHandler(keeper)
+	handler := NewOutboundTxHandler(keeper, NewVersionedEventMgr())
 
 	addr, err := keeper.vault.PubKey.GetAddress(common.BNBChain)
 	c.Assert(err, IsNil)
@@ -420,7 +420,7 @@ func (s *HandlerOutboundTxSuite) TestOutboundTxHandlerShouldUpdateTxOut(c *C) {
 
 	for _, tc := range testCases {
 		helper := newOutboundTxHandlerTestHelper(c)
-		handler := NewOutboundTxHandler(helper.keeper)
+		handler := NewOutboundTxHandler(helper.keeper, NewVersionedEventMgr())
 		fromAddr, err := helper.yggVault.PubKey.GetAddress(common.BNBChain)
 		c.Assert(err, IsNil)
 		tx := NewObservedTx(common.Tx{
@@ -442,7 +442,7 @@ func (s *HandlerOutboundTxSuite) TestOutboundTxHandlerShouldUpdateTxOut(c *C) {
 
 func (s *HandlerOutboundTxSuite) TestOutboundTxNormalCase(c *C) {
 	helper := newOutboundTxHandlerTestHelper(c)
-	handler := NewOutboundTxHandler(helper.keeper)
+	handler := NewOutboundTxHandler(helper.keeper, NewVersionedEventMgr())
 
 	fromAddr, err := helper.yggVault.PubKey.GetAddress(common.BNBChain)
 	c.Assert(err, IsNil)
@@ -473,7 +473,7 @@ func (s *HandlerOutboundTxSuite) TestOutboundTxNormalCase(c *C) {
 
 func (s *HandlerOutboundTxSuite) TestOuboundTxHandlerSendExtraFundShouldBeSlashed(c *C) {
 	helper := newOutboundTxHandlerTestHelper(c)
-	handler := NewOutboundTxHandler(helper.keeper)
+	handler := NewOutboundTxHandler(helper.keeper, NewVersionedEventMgr())
 	fromAddr, err := helper.asgardVault.PubKey.GetAddress(common.BNBChain)
 	c.Assert(err, IsNil)
 	tx := NewObservedTx(common.Tx{
@@ -503,7 +503,7 @@ func (s *HandlerOutboundTxSuite) TestOuboundTxHandlerSendExtraFundShouldBeSlashe
 
 func (s *HandlerOutboundTxSuite) TestOutboundTxHandlerSendAdditionalCoinsShouldBeSlashed(c *C) {
 	helper := newOutboundTxHandlerTestHelper(c)
-	handler := NewOutboundTxHandler(helper.keeper)
+	handler := NewOutboundTxHandler(helper.keeper, NewVersionedEventMgr())
 	fromAddr, err := helper.asgardVault.PubKey.GetAddress(common.BNBChain)
 	c.Assert(err, IsNil)
 	tx := NewObservedTx(common.Tx{
@@ -528,7 +528,7 @@ func (s *HandlerOutboundTxSuite) TestOutboundTxHandlerSendAdditionalCoinsShouldB
 
 func (s *HandlerOutboundTxSuite) TestOutboundTxHandlerInvalidObservedTxVoterShouldSlash(c *C) {
 	helper := newOutboundTxHandlerTestHelper(c)
-	handler := NewOutboundTxHandler(helper.keeper)
+	handler := NewOutboundTxHandler(helper.keeper, NewVersionedEventMgr())
 	fromAddr, err := helper.asgardVault.PubKey.GetAddress(common.BNBChain)
 	c.Assert(err, IsNil)
 	tx := NewObservedTx(common.Tx{
