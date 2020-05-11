@@ -163,7 +163,7 @@ func (h ObservedTxOutHandler) handleV1(ctx sdk.Context, version semver.Version, 
 				continue
 			}
 			if vault.IsYggdrasil() {
-				slash, err := NewSlasher(h.keeper, version)
+				slash, err := NewSlasher(h.keeper, version, h.versionedEventManager)
 				if err != nil {
 					ctx.Logger().Error("fail to create slasher:%w", err)
 					continue

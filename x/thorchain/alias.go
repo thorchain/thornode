@@ -204,4 +204,5 @@ type (
 	EventPool             = types.EventPool
 	EventRefund           = types.EventRefund
 	EventBond             = types.EventBond
+	EventSlash            = types.EventSlash
 )

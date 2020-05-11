@@ -23,6 +23,7 @@ type EventManager interface {
 	EmitRefundEvent(ctx sdk.Context, keeper Keeper, refundEvt EventRefund, status EventStatus) error
 	EmitBondEvent(ctx sdk.Context, keeper Keeper, bondEvent EventBond) error
 	EmitAddEvent(ctx sdk.Context, keeper Keeper, addEvt EventAdd) error
+	EmitSlashEvent(ctx sdk.Context, keeper Keeper, slashEvt EventSlash) error
 }
 
 // EventMgr implement EventManager interface
@@ -284,6 +285,30 @@ func (m *EventMgr) EmitAddEvent(ctx sdk.Context, keeper Keeper, addEvt EventAdd)
 		return sdk.ErrInternal(fmt.Errorf("fail to save event: %w", err).Error())
 	}
 	events, err := addEvt.Events()
+	if err != nil {
+		return fmt.Errorf("fail to get events: %w", err)
+	}
+	ctx.EventManager().EmitEvents(events)
+	return nil
+}
+
+// EmitSlashEvent
+func (m *EventMgr) EmitSlashEvent(ctx sdk.Context, keeper Keeper, slashEvt EventSlash) error {
+	slashBuf, err := json.Marshal(slashEvt)
+	if err != nil {
+		return fmt.Errorf("fail to marshal slash event to buf: %w", err)
+	}
+	event := NewEvent(
+		slashEvt.Type(),
+		ctx.BlockHeight(),
+		common.Tx{ID: common.BlankTxID},
+		slashBuf,
+		EventSuccess,
+	)
+	if err := keeper.UpsertEvent(ctx, event); err != nil {
+		return fmt.Errorf("fail to save event: %w", err)
+	}
+	events, err := slashEvt.Events()
 	if err != nil {
 		return fmt.Errorf("fail to get events: %w", err)
 	}

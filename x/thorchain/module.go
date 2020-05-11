@@ -147,7 +147,7 @@ func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 		return
 	}
 
-	slasher, err := NewSlasher(am.keeper, version)
+	slasher, err := NewSlasher(am.keeper, version, am.versionedEventManager)
 	if err != nil {
 		ctx.Logger().Error("fail to create slasher", "error", err)
 	}
@@ -193,7 +193,7 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 		}
 	}
 
-	slasher, err := NewSlasher(am.keeper, version)
+	slasher, err := NewSlasher(am.keeper, version, am.versionedEventManager)
 	if err != nil {
 		ctx.Logger().Error("fail to create slasher", "error", err)
 		return nil
