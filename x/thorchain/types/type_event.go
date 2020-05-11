@@ -22,18 +22,19 @@ type Event struct {
 }
 
 const (
-	SwapEventType    = `swap`
-	StakeEventType   = `stake`
-	UnstakeEventType = `unstake`
-	AddEventType     = `add`
-	PoolEventType    = `pool`
-	RewardEventType  = `rewards`
-	RefundEventType  = `refund`
-	BondEventType    = `bond`
-	GasEventType     = `gas`
-	ReserveEventType = `reserve`
-	SlashEventType   = `slash`
-	ErrataEventType  = `errata`
+	SwapEventType     = `swap`
+	StakeEventType    = `stake`
+	UnstakeEventType  = `unstake`
+	AddEventType      = `add`
+	PoolEventType     = `pool`
+	RewardEventType   = `rewards`
+	RefundEventType   = `refund`
+	BondEventType     = `bond`
+	GasEventType      = `gas`
+	ReserveEventType  = `reserve`
+	SlashEventType    = `slash`
+	ErrataEventType   = `errata`
+	OutboundEventType = `outbound`
 )
 
 type PoolMod struct {
@@ -501,4 +502,31 @@ func (e EventErrata) Events() (sdk.Events, error) {
 		events = append(events, evt)
 	}
 	return events, nil
+}
+
+// EventOutbound represent an outbound message from thornode
+type EventOutbound struct {
+	InTxID common.TxID // the inbound tx hash which triggered this outbound , it could be empty, because there are migration etc
+	Tx     common.Tx
+}
+
+// NewOutboundEvent create a new instance of EventOutbound
+func NewOutboundEvent(inTxID common.TxID, tx common.Tx) EventOutbound {
+	return EventOutbound{
+		InTxID: inTxID,
+		Tx:     tx,
+	}
+}
+
+// Type return a string which represent the type of this event
+func (e EventOutbound) Type() string {
+	return OutboundEventType
+}
+
+// Events return sdk events
+func (e EventOutbound) Events() (sdk.Events, error) {
+	evt := sdk.NewEvent(e.Type(),
+		sdk.NewAttribute("in_tx_id", e.InTxID.String()))
+	evt = evt.AppendAttributes(e.Tx.ToAttributes()...)
+	return sdk.Events{evt}, nil
 }

@@ -315,3 +315,7 @@ func (m *EventMgr) EmitSlashEvent(ctx sdk.Context, keeper Keeper, slashEvt Event
 	ctx.EventManager().EmitEvents(events)
 	return nil
 }
+
+func (m *EventMgr) EmitOutboundEvent(ctx sdk.Context, outbound EventOutbound) error {
+	return nil
+}
