@@ -97,13 +97,6 @@ func (h TssHandler) handleV1(ctx sdk.Context, msg MsgTssPool, version semver.Ver
 		voter.PubKeys = msg.PubKeys
 	}
 
-	if voter.HasSigned(msg.Signer) {
-		return sdk.Result{
-			Code:      sdk.CodeOK,
-			Codespace: DefaultCodespace,
-		}
-	}
-
 	voter.Sign(msg.Signer, msg.Chains)
 	h.keeper.SetTssVoter(ctx, voter)
 	// doesn't have consensus yet
