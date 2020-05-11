@@ -2,7 +2,8 @@ package types
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	common "gitlab.com/thorchain/thornode/common"
+
+	"gitlab.com/thorchain/thornode/common"
 )
 
 // MsgErrataTx defines a MsgErrataTx message

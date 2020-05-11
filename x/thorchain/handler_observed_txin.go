@@ -98,6 +98,8 @@ func (h ObservedTxInHandler) preflight(ctx sdk.Context, voter ObservedTxVoter, n
 		ok = true
 		voter.Height = ctx.BlockHeight()
 		voter.ProcessedIn = true
+		// this is the tx that has consensus
+		voter.Tx = voter.GetTx(nas)
 	}
 	h.keeper.SetObservedTxVoter(ctx, voter)
 
