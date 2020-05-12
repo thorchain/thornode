@@ -243,7 +243,7 @@ func (h ObservedTxInHandler) handleV1(ctx sdk.Context, version semver.Version, m
 		_, isStake := m.(MsgSetStakeData)
 		haltTrading, err := h.keeper.GetMimir(ctx, "HaltTrading")
 		if isSwap || isStake {
-			if (haltTrading > ctx.BlockHeight() && err == nil) || h.keeper.RagnarokInProgress(ctx) {
+			if (haltTrading > 0 && haltTrading < ctx.BlockHeight() && err == nil) || h.keeper.RagnarokInProgress(ctx) {
 				ctx.Logger().Info("trading is halted!!")
 				if newErr := refundTx(ctx, tx, txOutStore, h.keeper, constAccessor, sdk.CodeUnauthorized, "trading halted", eventMgr); nil != newErr {
 					return sdk.ErrInternal(newErr.Error()).Result()
