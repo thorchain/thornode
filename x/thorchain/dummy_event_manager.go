@@ -70,6 +70,10 @@ func (m *DummyEventMgr) EmitSlashEvent(ctx sdk.Context, keeper Keeper, slashEvt 
 	return nil
 }
 
+func (m *DummyEventMgr) EmitOutboundEvent(ctx sdk.Context, outbound EventOutbound) error {
+	return nil
+}
+
 type DummyVersionedEventMgr struct{}
 
 func NewDummyVersionedEventMgr() *DummyVersionedEventMgr {
