@@ -88,6 +88,7 @@ func (h ObservedTxOutHandler) preflight(ctx sdk.Context, voter ObservedTxVoter, 
 		ok = true
 		voter.Height = ctx.BlockHeight()
 		voter.ProcessedOut = true
+		voter.Tx = voter.GetTx(nas)
 	}
 	h.keeper.SetObservedTxVoter(ctx, voter)
 
