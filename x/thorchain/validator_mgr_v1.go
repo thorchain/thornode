@@ -400,18 +400,18 @@ func (vm *validatorMgrV1) ragnarokProtocolStage2(ctx sdk.Context, nth int64, con
 
 	// refund bonders
 	if err := vm.ragnarokBond(ctx, nth); err != nil {
-		return err
+		ctx.Logger().Error("fail to ragnarok bond", "error", err)
 	}
 
 	// refund reserve contributors
 	if err := vm.ragnarokReserve(ctx, nth); err != nil {
-		return err
+		ctx.Logger().Error("fail to ragnarok reserve", "error", err)
 	}
 
 	// refund stakers. This is last to ensure there is likely gas for the
 	// returning bond and reserve
 	if err := vm.ragnarokPools(ctx, nth, constAccessor); err != nil {
-		return err
+		ctx.Logger().Error("fail to ragnarok pools", "error", err)
 	}
 
 	return nil
@@ -454,7 +454,7 @@ func (vm *validatorMgrV1) ragnarokReserve(ctx sdk.Context, nth int64) error {
 		return nil
 	}
 
-	txOutStore, err := vm.versionedTxOutStore.GetTxOutStore(vm.k, vm.version)
+	txOutStore, err := vm.versionedTxOutStore.GetTxOutStore(ctx, vm.k, vm.version)
 	if err != nil {
 		ctx.Logger().Error("can't get tx out store", "error", err)
 		return err
@@ -516,7 +516,7 @@ func (vm *validatorMgrV1) ragnarokBond(ctx sdk.Context, nth int64) error {
 		ctx.Logger().Error("can't get nodes", "error", err)
 		return err
 	}
-	txOutStore, err := vm.versionedTxOutStore.GetTxOutStore(vm.k, vm.version)
+	txOutStore, err := vm.versionedTxOutStore.GetTxOutStore(ctx, vm.k, vm.version)
 	if err != nil {
 		ctx.Logger().Error("can't get tx out store", "error", err)
 		return err
@@ -686,7 +686,7 @@ func (vm *validatorMgrV1) RequestYggReturn(ctx sdk.Context, node NodeAccount) er
 	if vault.IsEmpty() {
 		return fmt.Errorf("unable to determine asgard vault")
 	}
-	txOutStore, err := vm.versionedTxOutStore.GetTxOutStore(vm.k, vm.version)
+	txOutStore, err := vm.versionedTxOutStore.GetTxOutStore(ctx, vm.k, vm.version)
 	if err != nil {
 		ctx.Logger().Error("can't get tx out store", "error", err)
 		return err
@@ -1053,6 +1053,10 @@ func (vm *validatorMgrV1) nextVaultNodeAccounts(ctx sdk.Context, targetCount int
 
 	// add ready nodes to become active
 	limit := toRemove + 1 // Max limit of ready nodes to churn in
+	minimumNodesForBFT := constAccessor.GetInt64Value(constants.MinimumNodesForBFT)
+	if len(active)+limit < int(minimumNodesForBFT) {
+		limit = int(minimumNodesForBFT) - len(active)
+	}
 	for i := 1; targetCount >= len(active); i++ {
 		if len(ready) >= i {
 			rotation = true
