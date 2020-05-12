@@ -7,7 +7,7 @@ services:
     image: registry.gitlab.com/thorchain/ethereum-mock
     ports:
       - "8545:8545"
-      - "30303:30303" 
+      - "30303:30303"
     deploy:
       resources:
         limits:

@@ -25,8 +25,6 @@ import (
 	"gitlab.com/thorchain/thornode/common"
 )
 
-var Gwei = big.NewInt(1000000000)
-
 // Client is a structure to sign and broadcast tx to Ethereum chain used by signer mostly
 type Client struct {
 	logger          zerolog.Logger
@@ -177,11 +175,11 @@ func (c *Client) GetNonce(addr string) (uint64, error) {
 func (c *Client) SignTx(tx stypes.TxOutItem, height int64) ([]byte, error) {
 	toAddr := tx.ToAddress.String()
 
-	value := uint64(0)
+	value := big.NewInt(0)
 	for _, coin := range tx.Coins {
-		value += coin.Amount.Uint64()
+		value.Add(value, coin.Amount.BigInt())
 	}
-	if len(toAddr) == 0 || value == 0 {
+	if len(toAddr) == 0 || value.Uint64() == 0 {
 		c.logger.Error().Msg("invalid tx params")
 		return nil, nil
 	}
@@ -209,10 +207,8 @@ func (c *Client) SignTx(tx stypes.TxOutItem, height int64) ([]byte, error) {
 
 	gasPrice := c.ethScanner.GetGasPrice()
 	encodedData := []byte(hex.EncodeToString([]byte(tx.Memo)))
-	scaledValue := big.NewInt(int64(value))
-	scaledValue = scaledValue.Mul(scaledValue, Gwei)
 	gasFee := common.GetETHGasFee(big.NewInt(1), uint64(len(tx.Memo)))[0].Amount.Uint64()
-	createdTx := etypes.NewTransaction(meta.Nonce, ecommon.HexToAddress(toAddr), scaledValue, gasFee, gasPrice, encodedData)
+	createdTx := etypes.NewTransaction(meta.Nonce, ecommon.HexToAddress(toAddr), value, gasFee, gasPrice, encodedData)
 
 	rawTx, err := c.sign(createdTx, fromAddr, tx.VaultPubKey, currentHeight, tx)
 	if err != nil || len(rawTx) == 0 {
