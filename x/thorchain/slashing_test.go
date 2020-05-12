@@ -224,18 +224,11 @@ func (s *SlashingSuite) TestNodeSignSlashErrors(c *C) {
 		shouldError bool
 	}{
 		{
-			name: "fail to get all pending events should return an error",
-			condition: func(keeper *TestSlashingLackKeeper) {
-				keeper.failToGetAllPendingEvents = true
-			},
-			shouldError: true,
-		},
-		{
 			name: "fail to get tx out should return an error",
 			condition: func(keeper *TestSlashingLackKeeper) {
 				keeper.failGetTxOut = true
 			},
-			shouldError: false,
+			shouldError: true,
 		},
 		{
 			name: "fail to get vault should return an error",

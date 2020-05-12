@@ -227,6 +227,7 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 			}
 		}
 	}
+
 	obMgr, err := am.versionedObserverManager.GetObserverManager(ctx, version)
 	if err != nil {
 		ctx.Logger().Error(fmt.Sprintf("observer manager that compatible with version :%s is not available", version))

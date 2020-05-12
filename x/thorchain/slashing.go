@@ -154,36 +154,33 @@ func (s *Slasher) LackSigning(ctx sdk.Context, constAccessor constants.ConstantV
 		return nil
 	}
 	height := ctx.BlockHeight() - signingTransPeriod
-	// NOTE: not checking the event type because all non-swap/unstake/etc
-	// are completed immediately.
 	txs, err := s.keeper.GetTxOut(ctx, height)
 	if err != nil {
 		return fmt.Errorf("fail to get txout from block height(%d): %w", height, err)
 	}
-
 	for _, tx := range txs.TxArray {
 		if tx.OutHash.IsEmpty() {
-			// Slash our node account for not sending funds
+			// Slash node account for not sending funds
 			vault, err := s.keeper.GetVault(ctx, tx.VaultPubKey)
 			if err != nil {
-				ctx.Logger().Error("Unable to get vault", "error", err)
+				ctx.Logger().Error("Unable to get vault", "error", err, "vault pub key", tx.VaultPubKey.String())
 				continue
 			}
 			// slash if its a yggdrasil vault
 			if vault.IsYggdrasil() {
 				na, err := s.keeper.GetNodeAccountByPubKey(ctx, tx.VaultPubKey)
 				if err != nil {
-					ctx.Logger().Error("Unable to get node account", "error", err)
+					ctx.Logger().Error("Unable to get node account", "error", err, "vault pub key", tx.VaultPubKey.String())
 					continue
 				}
 				if err := s.keeper.IncNodeAccountSlashPoints(ctx, na.NodeAddress, signingTransPeriod*2); err != nil {
-					ctx.Logger().Error("fail to inc slash points", "error", err)
+					ctx.Logger().Error("fail to inc slash points", "error", err, "node addr", na.NodeAddress.String())
 				}
 			}
 
 			active, err := s.keeper.GetAsgardVaultsByStatus(ctx, ActiveVault)
 			if err != nil {
-				return fmt.Errorf("fail to get active vaults: %w", err)
+				return fmt.Errorf("fail to get active asgard vaults: %w", err)
 			}
 
 			vault = active.SelectByMinCoin(tx.Coin.Asset)
