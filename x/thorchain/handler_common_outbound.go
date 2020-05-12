@@ -100,6 +100,17 @@ func (h CommonOutboundTxHandler) handle(ctx sdk.Context, version semver.Version,
 			ctx.Logger().Error("unable to complete events", "error", err)
 			return sdk.ErrInternal(err.Error()).Result()
 		}
+		eventMgr, err := h.versionedEventManager.GetEventManager(ctx, version)
+		if err != nil {
+			ctx.Logger().Error("fail to get event manager", "error", err)
+			return errFailGetEventManager.Result()
+		}
+		for _, item := range voter.OutTxs {
+			if err := eventMgr.EmitOutboundEvent(ctx, NewEventOutbound(inTxID, item)); err != nil {
+				ctx.Logger().Error("fail to emit outbound event", "error", err)
+				return sdk.ErrInternal("fail to emit outbound event").Result()
+			}
+		}
 	}
 
 	return sdk.Result{

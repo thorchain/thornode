@@ -14,13 +14,17 @@ const (
 	RouterKey        = types.RouterKey
 	StoreKey         = types.StoreKey
 	DefaultCodespace = types.DefaultCodespace
-	PoolEnabled      = types.Enabled
-	PoolBootstrap    = types.Bootstrap
-	PoolSuspended    = types.Suspended
-	EventSuccess     = types.Success
-	EventPending     = types.Pending
-	EventFail        = types.Failed
-	RefundStatus     = types.Refund
+
+	// pool status
+	PoolEnabled   = types.Enabled
+	PoolBootstrap = types.Bootstrap
+	PoolSuspended = types.Suspended
+
+	// event status
+	EventSuccess = types.Success
+	EventPending = types.Pending
+	EventFail    = types.Failed
+	RefundStatus = types.Refund
 
 	// Admin config keys
 	MaxUnstakeBasisPoints = types.MaxUnstakeBasisPoints
@@ -32,6 +36,7 @@ const (
 	InactiveVault  = types.InactiveVault
 	RetiringVault  = types.RetiringVault
 
+	// Node status
 	NodeActive      = types.Active
 	NodeWhiteListed = types.WhiteListed
 	NodeDisabled    = types.Disabled
@@ -39,6 +44,7 @@ const (
 	NodeStandby     = types.Standby
 	NodeUnknown     = types.Unknown
 
+	// Bond type
 	BondPaid     = types.BondPaid
 	BondReturned = types.BondReturned
 	AsgardKeygen = types.AsgardKeygen
@@ -82,6 +88,7 @@ var (
 	NewEventReserve                = types.NewEventReserve
 	NewEventErrata                 = types.NewEventErrata
 	NewEventFee                    = types.NewEventFee
+	NewEventOutbound               = types.NewEventOutbound
 	NewPoolMod                     = types.NewPoolMod
 	NewMsgRefundTx                 = types.NewMsgRefundTx
 	NewMsgOutboundTx               = types.NewMsgOutboundTx
@@ -207,4 +214,5 @@ type (
 	EventBond             = types.EventBond
 	EventFee              = types.EventFee
 	EventSlash            = types.EventSlash
+	EventOutbound         = types.EventOutbound
 )
