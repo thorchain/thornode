@@ -10,7 +10,7 @@ import (
 	"gitlab.com/thorchain/thornode/constants"
 )
 
-var ADMIN = sdk.AccAddress("thor15xdcnl58yxytam6rlc5f6t7dxlxj4kdxl3chjj")
+var ADMIN = sdk.AccAddress("thor1uxvg7h3n7ldfwz8zjnvxcdyt9t83qgsza63sg3")
 
 // MimirHandler is to handle admin messages
 type MimirHandler struct {
