@@ -209,7 +209,7 @@ func (s *BlockScannerTestSuite) TestFromTxToTxIn(c *C) {
 	c.Check(len(txInItem.Coins), Equals, 1)
 	c.Check(txInItem.Coins[0].Asset.String(), Equals, "ETH.ETH")
 	c.Check(
-		txInItem.Coins[0].Amount.Equal(sdk.NewUint(4290000)),
+		txInItem.Coins[0].Amount.Equal(sdk.NewUint(4290000000000000)),
 		Equals,
 		true,
 	)
