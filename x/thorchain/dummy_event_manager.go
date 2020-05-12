@@ -54,6 +54,26 @@ func (m *DummyEventMgr) EmitAddEvent(ctx sdk.Context, keeper Keeper, addEvt Even
 	return nil
 }
 
+func (m *DummyEventMgr) EmitRefundEvent(ctx sdk.Context, keeper Keeper, refundEvt EventRefund, status EventStatus) error {
+	return nil
+}
+
+func (m *DummyEventMgr) EmitBondEvent(ctx sdk.Context, keeper Keeper, bondEvent EventBond) error {
+	return nil
+}
+
+func (m *DummyEventMgr) EmitFeeEvent(ctx sdk.Context, keeper Keeper, feeEvent EventFee) error {
+	return nil
+}
+
+func (m *DummyEventMgr) EmitSlashEvent(ctx sdk.Context, keeper Keeper, slashEvt EventSlash) error {
+	return nil
+}
+
+func (m *DummyEventMgr) EmitOutboundEvent(ctx sdk.Context, outbound EventOutbound) error {
+	return nil
+}
+
 type DummyVersionedEventMgr struct{}
 
 func NewDummyVersionedEventMgr() *DummyVersionedEventMgr {

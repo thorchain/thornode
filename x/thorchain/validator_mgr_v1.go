@@ -57,14 +57,23 @@ func (vm *validatorMgrV1) BeginBlock(ctx sdk.Context, constAccessor constants.Co
 		return err
 	}
 
-	artificialRagnarokBlockHeight := constAccessor.GetInt64Value(constants.ArtificialRagnarokBlockHeight)
+	artificialRagnarokBlockHeight, err := vm.k.GetMimir(ctx, constants.ArtificialRagnarokBlockHeight.String())
+	if artificialRagnarokBlockHeight < 0 || err != nil {
+		artificialRagnarokBlockHeight = constAccessor.GetInt64Value(constants.ArtificialRagnarokBlockHeight)
+	}
 	if minimumNodesForBFT+2 < int64(totalActiveNodes) ||
 		(artificialRagnarokBlockHeight > 0 && ctx.BlockHeight() >= artificialRagnarokBlockHeight) {
-		badValidatorRate := constAccessor.GetInt64Value(constants.BadValidatorRate)
+		badValidatorRate, err := vm.k.GetMimir(ctx, constants.BadValidatorRate.String())
+		if badValidatorRate < 0 || err != nil {
+			badValidatorRate = constAccessor.GetInt64Value(constants.BadValidatorRate)
+		}
 		if err := vm.markBadActor(ctx, badValidatorRate); err != nil {
 			return err
 		}
-		oldValidatorRate := constAccessor.GetInt64Value(constants.OldValidatorRate)
+		oldValidatorRate, err := vm.k.GetMimir(ctx, constants.OldValidatorRate.String())
+		if oldValidatorRate < 0 || err != nil {
+			oldValidatorRate = constAccessor.GetInt64Value(constants.OldValidatorRate)
+		}
 		if err := vm.markOldActor(ctx, oldValidatorRate); err != nil {
 			return err
 		}
@@ -83,8 +92,14 @@ func (vm *validatorMgrV1) BeginBlock(ctx sdk.Context, constAccessor constants.Co
 	}
 
 	// get constants
-	desireValidatorSet := constAccessor.GetInt64Value(constants.DesireValidatorSet)
-	rotatePerBlockHeight := constAccessor.GetInt64Value(constants.RotatePerBlockHeight)
+	desireValidatorSet, err := vm.k.GetMimir(ctx, constants.DesireValidatorSet.String())
+	if desireValidatorSet < 0 || err != nil {
+		desireValidatorSet = constAccessor.GetInt64Value(constants.DesireValidatorSet)
+	}
+	rotatePerBlockHeight, err := vm.k.GetMimir(ctx, constants.RotatePerBlockHeight.String())
+	if rotatePerBlockHeight < 0 || err != nil {
+		rotatePerBlockHeight = constAccessor.GetInt64Value(constants.RotatePerBlockHeight)
+	}
 	rotateRetryBlocks := constAccessor.GetInt64Value(constants.RotateRetryBlocks)
 
 	// calculate if we need to retry a churn because we are overdue for a
@@ -354,7 +369,10 @@ func (vm *validatorMgrV1) processRagnarok(ctx sdk.Context, constAccessor constan
 		return nil
 	}
 
-	migrateInterval := constAccessor.GetInt64Value(constants.FundMigrationInterval)
+	migrateInterval, err := vm.k.GetMimir(ctx, constants.FundMigrationInterval.String())
+	if migrateInterval < 0 || err != nil {
+		migrateInterval = constAccessor.GetInt64Value(constants.FundMigrationInterval)
+	}
 	if (ctx.BlockHeight()-ragnarokHeight)%migrateInterval == 0 {
 		nth := (ctx.BlockHeight() - ragnarokHeight) / migrateInterval
 		err := vm.ragnarokProtocolStage2(ctx, nth, constAccessor)
@@ -382,18 +400,18 @@ func (vm *validatorMgrV1) ragnarokProtocolStage2(ctx sdk.Context, nth int64, con
 
 	// refund bonders
 	if err := vm.ragnarokBond(ctx, nth); err != nil {
-		return err
+		ctx.Logger().Error("fail to ragnarok bond", "error", err)
 	}
 
 	// refund reserve contributors
 	if err := vm.ragnarokReserve(ctx, nth); err != nil {
-		return err
+		ctx.Logger().Error("fail to ragnarok reserve", "error", err)
 	}
 
 	// refund stakers. This is last to ensure there is likely gas for the
 	// returning bond and reserve
 	if err := vm.ragnarokPools(ctx, nth, constAccessor); err != nil {
-		return err
+		ctx.Logger().Error("fail to ragnarok pools", "error", err)
 	}
 
 	return nil
@@ -436,7 +454,7 @@ func (vm *validatorMgrV1) ragnarokReserve(ctx sdk.Context, nth int64) error {
 		return nil
 	}
 
-	txOutStore, err := vm.versionedTxOutStore.GetTxOutStore(vm.k, vm.version)
+	txOutStore, err := vm.versionedTxOutStore.GetTxOutStore(ctx, vm.k, vm.version)
 	if err != nil {
 		ctx.Logger().Error("can't get tx out store", "error", err)
 		return err
@@ -498,7 +516,7 @@ func (vm *validatorMgrV1) ragnarokBond(ctx sdk.Context, nth int64) error {
 		ctx.Logger().Error("can't get nodes", "error", err)
 		return err
 	}
-	txOutStore, err := vm.versionedTxOutStore.GetTxOutStore(vm.k, vm.version)
+	txOutStore, err := vm.versionedTxOutStore.GetTxOutStore(ctx, vm.k, vm.version)
 	if err != nil {
 		ctx.Logger().Error("can't get tx out store", "error", err)
 		return err
@@ -668,7 +686,7 @@ func (vm *validatorMgrV1) RequestYggReturn(ctx sdk.Context, node NodeAccount) er
 	if vault.IsEmpty() {
 		return fmt.Errorf("unable to determine asgard vault")
 	}
-	txOutStore, err := vm.versionedTxOutStore.GetTxOutStore(vm.k, vm.version)
+	txOutStore, err := vm.versionedTxOutStore.GetTxOutStore(ctx, vm.k, vm.version)
 	if err != nil {
 		ctx.Logger().Error("can't get tx out store", "error", err)
 		return err
@@ -751,7 +769,10 @@ func (vm *validatorMgrV1) setupValidatorNodes(ctx sdk.Context, height int64, con
 	sort.Sort(activeCandidateNodes)
 	sort.Sort(readyNodes)
 	activeCandidateNodes = append(activeCandidateNodes, readyNodes...)
-	desireValidatorSet := constAccessor.GetInt64Value(constants.DesireValidatorSet)
+	desireValidatorSet, err := vm.k.GetMimir(ctx, constants.DesireValidatorSet.String())
+	if desireValidatorSet < 0 || err != nil {
+		desireValidatorSet = constAccessor.GetInt64Value(constants.DesireValidatorSet)
+	}
 	for idx, item := range activeCandidateNodes {
 		if int64(idx) < desireValidatorSet {
 			item.UpdateStatus(NodeActive, ctx.BlockHeight())
@@ -964,7 +985,10 @@ func (vm *validatorMgrV1) markReadyActors(ctx sdk.Context, constAccessor constan
 		}
 
 		// ensure we have enough rune
-		minBond := constAccessor.GetInt64Value(constants.MinimumBondInRune)
+		minBond, err := vm.k.GetMimir(ctx, constants.MinimumBondInRune.String())
+		if minBond < 0 || err != nil {
+			minBond = constAccessor.GetInt64Value(constants.MinimumBondInRune)
+		}
 		if na.Bond.LT(sdk.NewUint(uint64(minBond))) {
 			na.UpdateStatus(NodeStandby, ctx.BlockHeight())
 		}
@@ -1029,6 +1053,10 @@ func (vm *validatorMgrV1) nextVaultNodeAccounts(ctx sdk.Context, targetCount int
 
 	// add ready nodes to become active
 	limit := toRemove + 1 // Max limit of ready nodes to churn in
+	minimumNodesForBFT := constAccessor.GetInt64Value(constants.MinimumNodesForBFT)
+	if len(active)+limit < int(minimumNodesForBFT) {
+		limit = int(minimumNodesForBFT) - len(active)
+	}
 	for i := 1; targetCount >= len(active); i++ {
 		if len(ready) >= i {
 			rotation = true

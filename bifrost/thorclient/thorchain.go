@@ -37,9 +37,9 @@ const (
 	LastBlockEndpoint        = "/thorchain/lastblock"
 	NodeAccountEndpoint      = "/thorchain/nodeaccount"
 	ValidatorsEndpoint       = "/thorchain/validators"
-	VaultsEndpoint           = "/thorchain/vaults/pubkeys"
 	SignerMembershipEndpoint = "/thorchain/vaults/%s/signers"
 	StatusEndpoint           = "/status"
+	AsgardVault              = "/thorchain/vaults/asgard"
 )
 
 // ThorchainBridge will be used to send tx to thorchain
@@ -310,18 +310,26 @@ func (b *ThorchainBridge) EnsureNodeWhitelistedWithTimeout() error {
 
 // EnsureNodeWhitelisted will call to thorchain to check whether the observer had been whitelist or not
 func (b *ThorchainBridge) EnsureNodeWhitelisted() error {
+	status, err := b.FetchNodeStatus()
+	if err != nil {
+		return fmt.Errorf("failed to get node status: %w", err)
+	}
+	if status == stypes.Disabled || status == stypes.Unknown {
+		return fmt.Errorf("node account status %s , will not be able to forward transaction to thorchain", status)
+	}
+	return nil
+}
+
+func (b *ThorchainBridge) FetchNodeStatus() (stypes.NodeStatus, error) {
 	bepAddr := b.keys.GetSignerInfo().GetAddress().String()
 	if len(bepAddr) == 0 {
-		return errors.New("bep address is empty")
+		return stypes.Unknown, errors.New("bep address is empty")
 	}
 	na, err := b.GetNodeAccount(bepAddr)
 	if err != nil {
-		return fmt.Errorf("failed to get node account: %w", err)
+		return stypes.Unknown, fmt.Errorf("failed to get node status: %w", err)
 	}
-	if na.Status == stypes.Disabled || na.Status == stypes.Unknown {
-		return fmt.Errorf("node account status %s , will not be able to forward transaction to thorchain", na.Status)
-	}
-	return nil
+	return na.Status, nil
 }
 
 // GetKeysignParty call into thorchain to get the node accounts that should be join together to sign the message
@@ -379,4 +387,20 @@ func (b *ThorchainBridge) WaitToCatchUp() error {
 		time.Sleep(5 * time.Second)
 	}
 	return nil
+}
+
+// GetAsgards retrieve all the asgard vaults from thorchain
+func (b *ThorchainBridge) GetAsgards() (stypes.Vaults, error) {
+	buf, s, err := b.getWithPath(AsgardVault)
+	if err != nil {
+		return nil, fmt.Errorf("fail to get asgard vaults: %w", err)
+	}
+	if s != http.StatusOK {
+		return nil, fmt.Errorf("unexpected status code %d", s)
+	}
+	var vaults stypes.Vaults
+	if err := b.cdc.UnmarshalJSON(buf, &vaults); err != nil {
+		return nil, fmt.Errorf("fail to unmarshal asgard vaults from json: %w", err)
+	}
+	return vaults, nil
 }

@@ -163,19 +163,20 @@ func (s *HelperSuite) TestRefundBondError(c *C) {
 	na.Bond = sdk.NewUint(100 * common.One)
 	txOut := NewTxStoreDummy()
 	tx := GetRandomTx()
+	eventMgr := NewEventMgr()
 	keeper1 := &TestRefundBondKeeper{}
-	c.Assert(refundBond(ctx, tx, na, keeper1, txOut), IsNil)
+	c.Assert(refundBond(ctx, tx, na, keeper1, txOut, eventMgr), IsNil)
 
 	// fail to get vault should return an error
 	na.UpdateStatus(NodeStandby, ctx.BlockHeight())
 	keeper1.na = na
-	c.Assert(refundBond(ctx, tx, na, keeper1, txOut), NotNil)
+	c.Assert(refundBond(ctx, tx, na, keeper1, txOut, eventMgr), NotNil)
 
 	// if the vault is not a yggdrasil pool , it should return an error
 	ygg := NewVault(ctx.BlockHeight(), ActiveVault, AsgardVault, pk, common.Chains{common.BNBChain})
 	ygg.Coins = common.Coins{}
 	keeper1.ygg = ygg
-	c.Assert(refundBond(ctx, tx, na, keeper1, txOut), NotNil)
+	c.Assert(refundBond(ctx, tx, na, keeper1, txOut, eventMgr), NotNil)
 
 	// fail to get pool should fail
 	ygg = NewVault(ctx.BlockHeight(), ActiveVault, YggdrasilVault, pk, common.Chains{common.BNBChain})
@@ -184,7 +185,7 @@ func (s *HelperSuite) TestRefundBondError(c *C) {
 		common.NewCoin(common.BNBAsset, sdk.NewUint(27*common.One)),
 	}
 	keeper1.ygg = ygg
-	c.Assert(refundBond(ctx, tx, na, keeper1, txOut), NotNil)
+	c.Assert(refundBond(ctx, tx, na, keeper1, txOut, eventMgr), NotNil)
 
 	// when ygg asset in RUNE is more then bond , thorchain should slash the node account with all their bond
 	keeper1.pool = Pool{
@@ -192,7 +193,7 @@ func (s *HelperSuite) TestRefundBondError(c *C) {
 		BalanceRune:  sdk.NewUint(1024 * common.One),
 		BalanceAsset: sdk.NewUint(167 * common.One),
 	}
-	c.Assert(refundBond(ctx, tx, na, keeper1, txOut), IsNil)
+	c.Assert(refundBond(ctx, tx, na, keeper1, txOut, eventMgr), IsNil)
 	// make sure no tx has been generated for refund
 	items, err := txOut.GetOutboundItems(ctx)
 	c.Assert(err, IsNil)
@@ -204,6 +205,7 @@ func (s *HelperSuite) TestRefundBondHappyPath(c *C) {
 	na := GetRandomNodeAccount(NodeActive)
 	na.Bond = sdk.NewUint(12098 * common.One)
 	txOut := NewTxStoreDummy()
+	eventMgr := NewEventMgr()
 	pk := GetRandomPubKey()
 	na.PubKeySet.Secp256k1 = pk
 	ygg := NewVault(ctx.BlockHeight(), ActiveVault, YggdrasilVault, pk, common.Chains{common.BNBChain})
@@ -225,7 +227,7 @@ func (s *HelperSuite) TestRefundBondHappyPath(c *C) {
 	tx := GetRandomTx()
 	yggAssetInRune, err := getTotalYggValueInRune(ctx, keeper, ygg)
 	c.Assert(err, IsNil)
-	err = refundBond(ctx, tx, na, keeper, txOut)
+	err = refundBond(ctx, tx, na, keeper, txOut, eventMgr)
 	slashAmt := yggAssetInRune.MulUint64(3).QuoUint64(2)
 	c.Assert(err, IsNil)
 	items, err := txOut.GetOutboundItems(ctx)

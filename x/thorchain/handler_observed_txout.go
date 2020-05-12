@@ -88,6 +88,7 @@ func (h ObservedTxOutHandler) preflight(ctx sdk.Context, voter ObservedTxVoter, 
 		ok = true
 		voter.Height = ctx.BlockHeight()
 		voter.ProcessedOut = true
+		voter.Tx = voter.GetTx(nas)
 	}
 	h.keeper.SetObservedTxVoter(ctx, voter)
 
@@ -163,7 +164,7 @@ func (h ObservedTxOutHandler) handleV1(ctx sdk.Context, version semver.Version, 
 				continue
 			}
 			if vault.IsYggdrasil() {
-				slash, err := NewSlasher(h.keeper, version)
+				slash, err := NewSlasher(h.keeper, version, h.versionedEventManager)
 				if err != nil {
 					ctx.Logger().Error("fail to create slasher:%w", err)
 					continue

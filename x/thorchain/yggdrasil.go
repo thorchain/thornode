@@ -60,7 +60,10 @@ func Fund(ctx sdk.Context, keeper Keeper, txOutStore TxOutStore, constAccessor c
 	na := nodeAccs[ctx.BlockHeight()%int64(len(nodeAccs))]
 
 	// check that we have enough bond
-	minBond := constAccessor.GetInt64Value(constants.MinimumBondInRune)
+	minBond, err := keeper.GetMimir(ctx, constants.MinimumBondInRune.String())
+	if minBond < 0 || err != nil {
+		minBond = constAccessor.GetInt64Value(constants.MinimumBondInRune)
+	}
 	if na.Bond.LT(sdk.NewUint(uint64(minBond))) {
 		return nil
 	}

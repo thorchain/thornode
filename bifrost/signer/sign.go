@@ -320,7 +320,7 @@ func (s *Signer) signAndBroadcast(item TxOutStoreItem) error {
 	// Check if we're sending all funds back , given we don't have memo in txoutitem anymore, so it rely on the coins field to be empty
 	// In this scenario, we should chose the coins to send ourselves
 	if tx.Coins.IsEmpty() {
-		tx, err = s.handleYggReturn(tx)
+		tx, err = s.handleYggReturn(height, tx)
 		if err != nil {
 			s.logger.Error().Err(err).Msg("failed to handle yggdrasil return")
 			return err
@@ -375,7 +375,7 @@ func (s *Signer) signAndBroadcast(item TxOutStoreItem) error {
 	return nil
 }
 
-func (s *Signer) handleYggReturn(tx types.TxOutItem) (types.TxOutItem, error) {
+func (s *Signer) handleYggReturn(height int64, tx types.TxOutItem) (types.TxOutItem, error) {
 	chain, err := s.getChain(tx.Chain)
 	if err != nil {
 		s.logger.Error().Err(err).Msgf("not supported %s", tx.Chain.String())
@@ -388,7 +388,7 @@ func (s *Signer) handleYggReturn(tx types.TxOutItem) (types.TxOutItem, error) {
 		return tx, errInvalidPool
 	}
 	// it is important to set the memo field to `yggdrasil-` , thus chain client can use it to decide leave some gas coin behind to pay the fees
-	tx.Memo = thorchain.TxYggdrasilReturn.String()
+	tx.Memo = thorchain.NewYggdrasilReturn(height).String()
 	acct, err := chain.GetAccount(tx.VaultPubKey)
 	if err != nil {
 		s.logger.Error().Err(err).Msg("failed to get chain account info")
@@ -397,12 +397,15 @@ func (s *Signer) handleYggReturn(tx types.TxOutItem) (types.TxOutItem, error) {
 	tx.Coins = make(common.Coins, 0)
 	for _, coin := range acct.Coins {
 		asset, err := common.NewAsset(coin.Denom)
+		asset.Chain = tx.Chain
 		if err != nil {
 			s.logger.Error().Err(err).Msg("failed to parse asset")
 			return tx, err
 		}
-		amount := sdk.NewUint(coin.Amount)
-		tx.Coins = append(tx.Coins, common.NewCoin(asset, amount))
+		if coin.Amount > 0 {
+			amount := sdk.NewUint(coin.Amount)
+			tx.Coins = append(tx.Coins, common.NewCoin(asset, amount))
+		}
 	}
 
 	return tx, nil

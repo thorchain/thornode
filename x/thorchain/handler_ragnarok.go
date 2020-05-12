@@ -11,12 +11,14 @@ import (
 )
 
 type RagnarokHandler struct {
-	keeper Keeper
+	keeper                Keeper
+	versionedEventManager VersionedEventManager
 }
 
-func NewRagnarokHandler(keeper Keeper) RagnarokHandler {
+func NewRagnarokHandler(keeper Keeper, versionedEventManager VersionedEventManager) RagnarokHandler {
 	return RagnarokHandler{
-		keeper: keeper,
+		keeper:                keeper,
+		versionedEventManager: versionedEventManager,
 	}
 }
 
@@ -63,7 +65,7 @@ func (h RagnarokHandler) handle(ctx sdk.Context, version semver.Version, msg Msg
 
 func (h RagnarokHandler) slash(ctx sdk.Context, version semver.Version, tx ObservedTx) error {
 	var returnErr error
-	slasher, err := NewSlasher(h.keeper, version)
+	slasher, err := NewSlasher(h.keeper, version, h.versionedEventManager)
 	if err != nil {
 		return fmt.Errorf("fail to create slasher: %w", err)
 	}

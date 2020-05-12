@@ -205,3 +205,16 @@ func (s EventSuite) TestEventGas(c *C) {
 	c.Assert(eg.Pools[1].AssetAmt.Equal(sdk.NewUint(1024)), Equals, true)
 	c.Assert(eg.Pools[1].RuneAmt.Equal(sdk.NewUint(3333)), Equals, true)
 }
+
+func (s EventSuite) TestEventFee(c *C) {
+	event := NewEventFee(GetRandomTxHash(), common.Fee{
+		Coins: common.Coins{
+			common.NewCoin(common.BNBAsset, sdk.NewUint(1024)),
+		},
+		PoolDeduct: sdk.NewUint(1023),
+	})
+	c.Assert(event.Type(), Equals, FeeEventType)
+	evts, err := event.Events()
+	c.Assert(err, IsNil)
+	c.Assert(evts, HasLen, 1)
+}

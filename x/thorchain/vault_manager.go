@@ -73,7 +73,10 @@ func (vm *VaultMgr) EndBlock(ctx sdk.Context, version semver.Version, constAcces
 		return vm.processGenesisSetup(ctx)
 	}
 
-	migrateInterval := constAccessor.GetInt64Value(constants.FundMigrationInterval)
+	migrateInterval, err := vm.k.GetMimir(ctx, constants.FundMigrationInterval.String())
+	if migrateInterval < 0 || err != nil {
+		migrateInterval = constAccessor.GetInt64Value(constants.FundMigrationInterval)
+	}
 
 	retiring, err := vm.k.GetAsgardVaultsByStatus(ctx, RetiringVault)
 	if err != nil {
@@ -89,7 +92,7 @@ func (vm *VaultMgr) EndBlock(ctx sdk.Context, version semver.Version, constAcces
 	if len(active) == 0 {
 		return nil
 	}
-	txOutStore, err := vm.versionedTxOutStore.GetTxOutStore(vm.k, version)
+	txOutStore, err := vm.versionedTxOutStore.GetTxOutStore(ctx, vm.k, version)
 	if err != nil {
 		ctx.Logger().Error("fail to get txout store", "error", err)
 		return errBadVersion
@@ -278,7 +281,10 @@ func (vm *VaultMgr) manageChains(ctx sdk.Context, constAccessor constants.Consta
 		return fmt.Errorf("unable to determine asgard vault")
 	}
 
-	migrateInterval := constAccessor.GetInt64Value(constants.FundMigrationInterval)
+	migrateInterval, err := vm.k.GetMimir(ctx, constants.FundMigrationInterval.String())
+	if migrateInterval < 0 || err != nil {
+		migrateInterval = constAccessor.GetInt64Value(constants.FundMigrationInterval)
+	}
 	nth := (ctx.BlockHeight()-vault.StatusSince)/migrateInterval + 1
 	if nth > 10 {
 		nth = 10
@@ -348,7 +354,7 @@ func (vm *VaultMgr) recallChainFunds(ctx sdk.Context, chain common.Chain) error 
 		return fmt.Errorf("fail to list all node accounts: %w", err)
 	}
 
-	txOutStore, err := vm.versionedTxOutStore.GetTxOutStore(vm.k, version)
+	txOutStore, err := vm.versionedTxOutStore.GetTxOutStore(ctx, vm.k, version)
 	if err != nil {
 		ctx.Logger().Error("can't get tx out store", "error", err)
 		return err

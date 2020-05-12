@@ -14,13 +14,17 @@ const (
 	RouterKey        = types.RouterKey
 	StoreKey         = types.StoreKey
 	DefaultCodespace = types.DefaultCodespace
-	PoolEnabled      = types.Enabled
-	PoolBootstrap    = types.Bootstrap
-	PoolSuspended    = types.Suspended
-	EventSuccess     = types.Success
-	EventPending     = types.Pending
-	EventFail        = types.Failed
-	EventRefund      = types.Refund
+
+	// pool status
+	PoolEnabled   = types.Enabled
+	PoolBootstrap = types.Bootstrap
+	PoolSuspended = types.Suspended
+
+	// event status
+	EventSuccess = types.Success
+	EventPending = types.Pending
+	EventFail    = types.Failed
+	RefundStatus = types.Refund
 
 	// Admin config keys
 	MaxUnstakeBasisPoints = types.MaxUnstakeBasisPoints
@@ -32,6 +36,7 @@ const (
 	InactiveVault  = types.InactiveVault
 	RetiringVault  = types.RetiringVault
 
+	// Node status
 	NodeActive      = types.Active
 	NodeWhiteListed = types.WhiteListed
 	NodeDisabled    = types.Disabled
@@ -39,6 +44,7 @@ const (
 	NodeStandby     = types.Standby
 	NodeUnknown     = types.Unknown
 
+	// Bond type
 	BondPaid     = types.BondPaid
 	BondReturned = types.BondReturned
 	AsgardKeygen = types.AsgardKeygen
@@ -53,6 +59,7 @@ var (
 	NewBanVoter                    = types.NewBanVoter
 	NewErrataTxVoter               = types.NewErrataTxVoter
 	NewObservedTxVoter             = types.NewObservedTxVoter
+	NewMsgMimir                    = types.NewMsgMimir
 	NewMsgNativeTx                 = types.NewMsgNativeTx
 	NewMsgTssPool                  = types.NewMsgTssPool
 	NewMsgTssKeysignFail           = types.NewMsgTssKeysignFail
@@ -80,6 +87,8 @@ var (
 	NewEventSlash                  = types.NewEventSlash
 	NewEventReserve                = types.NewEventReserve
 	NewEventErrata                 = types.NewEventErrata
+	NewEventFee                    = types.NewEventFee
+	NewEventOutbound               = types.NewEventOutbound
 	NewPoolMod                     = types.NewPoolMod
 	NewMsgRefundTx                 = types.NewMsgRefundTx
 	NewMsgOutboundTx               = types.NewMsgOutboundTx
@@ -131,6 +140,7 @@ type (
 	MsgSetUnStake         = types.MsgSetUnStake
 	MsgSetStakeData       = types.MsgSetStakeData
 	MsgOutboundTx         = types.MsgOutboundTx
+	MsgMimir              = types.MsgMimir
 	MsgMigrate            = types.MsgMigrate
 	MsgRagnarok           = types.MsgRagnarok
 	MsgRefundTx           = types.MsgRefundTx
@@ -200,4 +210,9 @@ type (
 	TxMarker              = types.TxMarker
 	TxMarkers             = types.TxMarkers
 	EventPool             = types.EventPool
+	EventRefund           = types.EventRefund
+	EventBond             = types.EventBond
+	EventFee              = types.EventFee
+	EventSlash            = types.EventSlash
+	EventOutbound         = types.EventOutbound
 )

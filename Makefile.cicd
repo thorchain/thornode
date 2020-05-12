@@ -1,9 +1,15 @@
 # Image Hashes
 STATE_CHAIN_IMAGE_HASH=$(shell  grep "Successfully built" ./log/state-chain-build.log | cut -d ' ' -f 3)
+BRANCH=$(shell git rev-parse --abbrev-ref HEAD | sed 's/master/mocknet/g')
+GITREF=$(shell git rev-parse --short HEAD)
 
-# Turn off cache
 ifeq (${NOCACHE}, TRUE)
 CACHE=--no-cache
+endif
+
+# pull branch name from CI, if available
+ifdef CI_COMMIT_BRANCH
+	BRANCH=$(shell echo ${CI_COMMIT_BRANCH} | sed 's/master/mocknet/g')
 endif
 
 .PHONY: config smoke-test
@@ -48,16 +54,10 @@ logger:
 docker-gitlab-login:
 	docker login -u ${CI_REGISTRY_USER} -p ${CI_REGISTRY_PASSWORD} ${CI_REGISTRY}
 
-docker-gitlab-push-nightly:
-	docker push registry.gitlab.com/thorchain/thornode:mocknet
-
-docker-gitlab-build-nightly:
-	docker build -t registry.gitlab.com/thorchain/thornode:mocknet -f build/docker/Dockerfile --build-arg TAG=mocknet .
-
 docker-gitlab-push:
-	docker push registry.gitlab.com/thorchain/thornode:testnet
 	docker push registry.gitlab.com/thorchain/thornode:latest
+	docker push registry.gitlab.com/thorchain/thornode:${BRANCH}
 
 docker-gitlab-build:
-	docker build -t registry.gitlab.com/thorchain/thornode:testnet -f build/docker/Dockerfile --build-arg TAG=testnet .
-	docker build -t registry.gitlab.com/thorchain/thornode:mainnet -t registry.gitlab.com/thorchain/thornode:$$(git rev-parse --short HEAD) -t registry.gitlab.com/thorchain/thornode:latest -f build/docker/Dockerfile --build-arg TAG=mainnet .
+	docker build -t registry.gitlab.com/thorchain/thornode -t registry.gitlab.com/thorchain/thornode:${BRANCH} -t registry.gitlab.com/thorchain/thornode:${GITREF} --build-arg TAG=${BRANCH} .
+# ------------------------------------------------------------------ #

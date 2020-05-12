@@ -324,11 +324,21 @@ func (s *BitcoinSignerSuite) TestGetAllUTXOs(c *C) {
 
 	// include block height 0 ~ 51
 	c.Assert(utxoes, HasLen, 52)
-	c.Assert(s.client.removeSpentUTXO(utxoes), IsNil)
+
+	// mark them as spent
+	for _, utxo := range utxoes {
+		blockMeta, err := s.client.blockMetaAccessor.GetBlockMeta(utxo.BlockHeight)
+		c.Assert(err, IsNil)
+		blockMeta.SpendUTXO(utxo.GetKey())
+		c.Assert(s.client.blockMetaAccessor.SaveBlockMeta(blockMeta.Height, blockMeta), IsNil)
+	}
+
+	// check prune is not returning them when spent
 	c.Assert(s.client.blockMetaAccessor.PruneBlockMeta(150-BlockCacheSize), IsNil)
 	allmetas, err := s.client.blockMetaAccessor.GetBlockMetas()
 	c.Assert(err, IsNil)
 	c.Assert(allmetas, HasLen, 100)
+
 	// make sure block will not be Pruned when there are unspend UTXO in it
 	for i := 150; i < 200; i++ {
 		previousHash := thorchain.GetRandomTxHash().String()

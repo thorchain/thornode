@@ -211,7 +211,7 @@ func (s *ValidatorManagerTestSuite) TestRagnarokChain(c *C) {
 	}
 
 	// ensure we have requested for ygg funds to be returned
-	txOutStore, err := versionedTxOutStoreDummy.GetTxOutStore(keeper, constants.SWVersion)
+	txOutStore, err := versionedTxOutStoreDummy.GetTxOutStore(ctx, keeper, constants.SWVersion)
 	c.Assert(err, IsNil)
 	items, err := txOutStore.GetOutboundItems(ctx)
 	c.Assert(err, IsNil)

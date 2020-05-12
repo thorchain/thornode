@@ -20,7 +20,12 @@ type EventManager interface {
 	EmitReserveEvent(ctx sdk.Context, keeper Keeper, reserveEvent EventReserve) error
 	EmitUnstakeEvent(ctx sdk.Context, keeper Keeper, unstakeEvt EventUnstake) error
 	EmitSwapEvent(ctx sdk.Context, keeper Keeper, swap EventSwap) error
+	EmitRefundEvent(ctx sdk.Context, keeper Keeper, refundEvt EventRefund, status EventStatus) error
+	EmitBondEvent(ctx sdk.Context, keeper Keeper, bondEvent EventBond) error
 	EmitAddEvent(ctx sdk.Context, keeper Keeper, addEvt EventAdd) error
+	EmitFeeEvent(ctx sdk.Context, keeper Keeper, feeEvent EventFee) error
+	EmitSlashEvent(ctx sdk.Context, keeper Keeper, slashEvt EventSlash) error
+	EmitOutboundEvent(ctx sdk.Context, outbound EventOutbound) error
 }
 
 // EventMgr implement EventManager interface
@@ -201,6 +206,43 @@ func (m *EventMgr) EmitReserveEvent(ctx sdk.Context, keeper Keeper, reserveEvent
 	return nil
 }
 
+// EmitRefundEvent emit refund event , save it to local key value store and also emit through event manager
+func (m *EventMgr) EmitRefundEvent(ctx sdk.Context, keeper Keeper, refundEvt EventRefund, status EventStatus) error {
+	buf, err := json.Marshal(refundEvt)
+	if err != nil {
+		return fmt.Errorf("fail to marshal refund event: %w", err)
+	}
+	event := NewEvent(refundEvt.Type(), ctx.BlockHeight(), refundEvt.InTx, buf, status)
+	event.Fee = refundEvt.Fee
+	if err := keeper.UpsertEvent(ctx, event); err != nil {
+		return fmt.Errorf("fail to save refund event: %w", err)
+	}
+	events, err := refundEvt.Events()
+	if err != nil {
+		return fmt.Errorf("fail to get events: %w", err)
+	}
+	ctx.EventManager().EmitEvents(events)
+	return nil
+}
+
+func (m *EventMgr) EmitBondEvent(ctx sdk.Context, keeper Keeper, bondEvent EventBond) error {
+	buf, err := json.Marshal(bondEvent)
+	if err != nil {
+		return fmt.Errorf("fail to marshal bond event: %w", err)
+	}
+
+	e := NewEvent(bondEvent.Type(), ctx.BlockHeight(), bondEvent.TxIn, buf, EventSuccess)
+	if err := keeper.UpsertEvent(ctx, e); err != nil {
+		return fmt.Errorf("fail to save bond event: %w", err)
+	}
+	events, err := bondEvent.Events()
+	if err != nil {
+		return fmt.Errorf("fail to get events: %w", err)
+	}
+	ctx.EventManager().EmitEvents(events)
+	return nil
+}
+
 // EmitUnstakeEvent save unstake event to local key value store , and also add it to event manager
 func (m *EventMgr) EmitUnstakeEvent(ctx sdk.Context, keeper Keeper, unstakeEvt EventUnstake) error {
 	unstakeBytes, err := json.Marshal(unstakeEvt)
@@ -247,6 +289,53 @@ func (m *EventMgr) EmitAddEvent(ctx sdk.Context, keeper Keeper, addEvt EventAdd)
 	events, err := addEvt.Events()
 	if err != nil {
 		return fmt.Errorf("fail to get events: %w", err)
+	}
+	ctx.EventManager().EmitEvents(events)
+	return nil
+}
+
+// EmitSlashEvent
+func (m *EventMgr) EmitSlashEvent(ctx sdk.Context, keeper Keeper, slashEvt EventSlash) error {
+	slashBuf, err := json.Marshal(slashEvt)
+	if err != nil {
+		return fmt.Errorf("fail to marshal slash event to buf: %w", err)
+	}
+	event := NewEvent(
+		slashEvt.Type(),
+		ctx.BlockHeight(),
+		common.Tx{ID: common.BlankTxID},
+		slashBuf,
+		EventSuccess,
+	)
+	if err := keeper.UpsertEvent(ctx, event); err != nil {
+		return fmt.Errorf("fail to save event: %w", err)
+	}
+	events, err := slashEvt.Events()
+	if err != nil {
+		return fmt.Errorf("fail to get events: %w", err)
+	}
+	ctx.EventManager().EmitEvents(events)
+	return nil
+}
+
+// EmitFeeEvent emit a fee event through event manager
+func (m *EventMgr) EmitFeeEvent(ctx sdk.Context, keeper Keeper, feeEvent EventFee) error {
+	if err := updateEventFee(ctx, keeper, feeEvent.TxID, feeEvent.Fee); err != nil {
+		return fmt.Errorf("fail to update event fee: %w", err)
+	}
+	events, err := feeEvent.Events()
+	if err != nil {
+		return fmt.Errorf("fail to emit fee event: %w", err)
+	}
+	ctx.EventManager().EmitEvents(events)
+	return nil
+}
+
+// EmitOutboundEvent emit an outbound event
+func (m *EventMgr) EmitOutboundEvent(ctx sdk.Context, outbound EventOutbound) error {
+	events, err := outbound.Events()
+	if err != nil {
+		return fmt.Errorf("fail to emit outbound event: %w", err)
 	}
 	ctx.EventManager().EmitEvents(events)
 	return nil

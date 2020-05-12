@@ -296,7 +296,7 @@ func (b *Binance) SignTx(tx stypes.TxOutItem, height int64) ([]byte, error) {
 	var gasCoin common.Coins
 
 	// for yggdrasil, need to left some coin to pay for fee, this logic is per chain, given different chain charge fees differently
-	if strings.EqualFold(tx.Memo, thorchain.TxYggdrasilReturn.String()) {
+	if strings.EqualFold(tx.Memo, thorchain.NewYggdrasilReturn(height).String()) {
 		gas := b.getGasFee(uint64(len(tx.Coins)))
 		gasCoin = gas.ToCoins()
 	}
@@ -516,7 +516,14 @@ func (b *Binance) BroadcastTx(tx stypes.TxOutItem, hexTx []byte) error {
 		}
 
 		// check for any failure logs
-		if badCommit.Code > 0 {
+		// Error code 4 is used for bad account sequence number. We expect to
+		// see this often because in TSS, multiple nodes will broadcast the
+		// same sequence number but only one will be successful. We can just
+		// drop and ignore in these scenarios. In 1of1 signing, we can also
+		// drop and ignore. The reason being, thorchain will attempt to again
+		// later.
+		// Error code 5 is insufficient funds, ignore theses
+		if badCommit.Code > 0 && badCommit.Code != int(sdk.CodeUnauthorized) && badCommit.Code != int(sdk.CodeInsufficientFunds) {
 			err := errors.New(badCommit.Log)
 			b.logger.Error().Err(err).Msg("fail to broadcast")
 			return fmt.Errorf("fail to broadcast: %w", err)

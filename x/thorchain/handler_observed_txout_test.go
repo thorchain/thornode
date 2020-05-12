@@ -219,7 +219,7 @@ func (s *HandlerObservedTxOutSuite) TestHandle(c *C) {
 		yggExists: true,
 		ygg:       ygg,
 	}
-	txOutStore, err := versionedTxOutStoreDummy.GetTxOutStore(keeper, ver)
+	txOutStore, err := versionedTxOutStoreDummy.GetTxOutStore(ctx, keeper, ver)
 	keeper.txOutStore = txOutStore
 	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(versionedTxOutStoreDummy)
 	versionedGasMgr := NewVersionedGasMgr()
@@ -281,7 +281,7 @@ func (s *HandlerObservedTxOutSuite) TestGasUpdate(c *C) {
 		yggExists: true,
 		ygg:       ygg,
 	}
-	txOutStore, err := versionedTxOutStoreDummy.GetTxOutStore(keeper, ver)
+	txOutStore, err := versionedTxOutStoreDummy.GetTxOutStore(ctx, keeper, ver)
 	keeper.txOutStore = txOutStore
 	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(versionedTxOutStoreDummy)
 	versionedGasMgr := NewVersionedGasMgr()
@@ -340,7 +340,7 @@ func (s *HandlerObservedTxOutSuite) TestHandleStolenFunds(c *C) {
 		yggExists: true,
 		ygg:       ygg,
 	}
-	txOutStore, err := versionedTxOutStoreDummy.GetTxOutStore(keeper, ver)
+	txOutStore, err := versionedTxOutStoreDummy.GetTxOutStore(ctx, keeper, ver)
 	keeper.txOutStore = txOutStore
 	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(versionedTxOutStoreDummy)
 	versionedGasMgr := NewVersionedGasMgr()

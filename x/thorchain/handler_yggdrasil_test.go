@@ -387,7 +387,7 @@ func (s *HandlerYggdrasilSuite) TestYggdrasilHandler(c *C) {
 				return handler.Run(helper.ctx, msg, constants.SWVersion, helper.constAccessor)
 			},
 			validator: func(helper yggdrasilHandlerTestHelper, msg sdk.Msg, result sdk.Result, c *C) {
-				store, err := helper.txOutStore.GetTxOutStore(helper.keeper, helper.version)
+				store, err := helper.txOutStore.GetTxOutStore(helper.ctx, helper.keeper, helper.version)
 				c.Assert(err, IsNil)
 
 				items, err := store.GetOutboundItems(helper.ctx)
@@ -406,7 +406,7 @@ func (s *HandlerYggdrasilSuite) TestYggdrasilHandler(c *C) {
 	}
 	for _, tc := range testCases {
 		helper := newYggdrasilHandlerTestHelper(c)
-		handler := NewYggdrasilHandler(helper.keeper, helper.txOutStore, helper.validatorMgr)
+		handler := NewYggdrasilHandler(helper.keeper, helper.txOutStore, helper.validatorMgr, NewVersionedEventMgr())
 		msg := tc.messageCreator(helper)
 		result := tc.runner(handler, msg, helper)
 		c.Assert(result.Code, Equals, tc.expectedResult, Commentf("name:%s", tc.name))

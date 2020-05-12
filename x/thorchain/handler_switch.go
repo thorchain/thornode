@@ -106,7 +106,7 @@ func (h SwitchHandler) handleV1(ctx sdk.Context, msg MsgSwitch, version semver.V
 
 		vaultData.TotalBEP2Rune = common.SafeSub(vaultData.TotalBEP2Rune, msg.Tx.Coins[0].Amount)
 
-		txOutStore, err := h.versionedTxOutStore.GetTxOutStore(h.keeper, version)
+		txOutStore, err := h.versionedTxOutStore.GetTxOutStore(ctx, h.keeper, version)
 		if err != nil {
 			ctx.Logger().Error("fail to get txout store", "error", err)
 			return errBadVersion.Result()

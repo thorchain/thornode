@@ -1,6 +1,7 @@
 package thorchain
 
 import (
+	"fmt"
 	"sort"
 
 	"github.com/blang/semver"
@@ -53,12 +54,16 @@ func (vm *SwapQv1) FetchQueue(ctx sdk.Context) ([]MsgSwap, error) {
 func (vm *SwapQv1) EndBlock(ctx sdk.Context, version semver.Version, constAccessor constants.ConstantValues) error {
 	handler := NewSwapHandler(vm.k, vm.versionedTxOutStore, vm.versionedEventManager)
 
-	txOutStore, err := vm.versionedTxOutStore.GetTxOutStore(vm.k, version)
+	txOutStore, err := vm.versionedTxOutStore.GetTxOutStore(ctx, vm.k, version)
 	if err != nil {
 		ctx.Logger().Error("fail to get txout store", "error", err)
 		return err
 	}
-
+	eventMgr, err := vm.versionedEventManager.GetEventManager(ctx, version)
+	if err != nil {
+		ctx.Logger().Error("fail to get event manager", "error", err)
+		return fmt.Errorf("fail to get event manager: %w", err)
+	}
 	msgs, err := vm.FetchQueue(ctx)
 	if err != nil {
 		ctx.Logger().Error("fail to fetch swap queue from store", "error", err)
@@ -83,7 +88,7 @@ func (vm *SwapQv1) EndBlock(ctx sdk.Context, version semver.Version, constAccess
 			if err != nil {
 				ctx.Logger().Error("fail to get refund msg", "err", err.Error())
 			}
-			if newErr := refundTx(ctx, ObservedTx{Tx: pick.msg.Tx}, txOutStore, vm.k, constAccessor, result.Code, refundMsg); nil != newErr {
+			if newErr := refundTx(ctx, ObservedTx{Tx: pick.msg.Tx}, txOutStore, vm.k, constAccessor, result.Code, refundMsg, eventMgr); nil != newErr {
 				ctx.Logger().Error("fail to refund swap", "error", err)
 			}
 		}
