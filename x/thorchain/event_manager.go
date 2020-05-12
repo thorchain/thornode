@@ -25,6 +25,7 @@ type EventManager interface {
 	EmitAddEvent(ctx sdk.Context, keeper Keeper, addEvt EventAdd) error
 	EmitFeeEvent(ctx sdk.Context, keeper Keeper, feeEvent EventFee) error
 	EmitSlashEvent(ctx sdk.Context, keeper Keeper, slashEvt EventSlash) error
+	EmitOutboundEvent(ctx sdk.Context, outbound EventOutbound) error
 }
 
 // EventMgr implement EventManager interface
@@ -325,6 +326,16 @@ func (m *EventMgr) EmitFeeEvent(ctx sdk.Context, keeper Keeper, feeEvent EventFe
 	events, err := feeEvent.Events()
 	if err != nil {
 		return fmt.Errorf("fail to emit fee event: %w", err)
+	}
+	ctx.EventManager().EmitEvents(events)
+	return nil
+}
+
+// EmitOutboundEvent emit an outbound event
+func (m *EventMgr) EmitOutboundEvent(ctx sdk.Context, outbound EventOutbound) error {
+	events, err := outbound.Events()
+	if err != nil {
+		return fmt.Errorf("fail to emit outbound event: %w", err)
 	}
 	ctx.EventManager().EmitEvents(events)
 	return nil
