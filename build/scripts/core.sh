@@ -37,6 +37,12 @@ add_gas_config () {
     done
 }
 
+reserve () {
+    jq --arg RESERVE $1 '.app_state.thorchain.reserve = $RESERVE' <~/.thord/config/genesis.json >/tmp/genesis.json
+    mv /tmp/genesis.json ~/.thord/config/genesis.json
+}
+
+
 disable_bank_send () {
     jq '.app_state.bank.send_enabled = false' <~/.thord/config/genesis.json >/tmp/genesis.json
     mv /tmp/genesis.json ~/.thord/config/genesis.json
