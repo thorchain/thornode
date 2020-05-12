@@ -195,11 +195,30 @@ resource "aws_instance" "thornode" {
   vpc_security_group_ids = ["${aws_security_group.sg_thornode.id}"]
   key_name = "${aws_key_pair.ec2key.key_name}"
 
+  private_ip = "10.1.0.10"
+
   tags = {
     Name        = "thornode-${terraform.workspace}"
     Environment = "${terraform.workspace}"
     ManagedBy   = "Terraform"
   }
+}
+
+resource "aws_ebs_volume" "thornode-volume" {
+  availability_zone = "${aws_instance.thornode.availability_zone}"
+  type              = "gp2"
+  size              = "${var.ebs_size}"
+  tags = {
+    Name        = "thornode-${terraform.workspace}"
+    Environment = "${terraform.workspace}"
+    ManagedBy   = "Terraform"
+  }
+}
+
+resource "aws_volume_attachment" "thornode-volume-attachment" {
+  device_name = "/dev/xvdb"
+  instance_id = "${aws_instance.thornode.id}"
+  volume_id   = "${aws_ebs_volume.thornode-volume.id}"
 }
 
 resource "aws_eip" "thornode" {
@@ -221,12 +240,13 @@ resource "null_resource" "thornode" {
   }
  
   provisioner "file" {
-    source      = "./scripts/ec2-userdata.bash"
-    destination = "/tmp/ec2-userdata.bash"
+    source      = "./scripts"
+    destination = "/opt/scripts"
   }
 
   provisioner "remote-exec" {
     inline = [
+      "sudo hostnamectl set-hostname thornode.thor",
       "sudo bash /tmp/ec2-userdata.bash",
     ]
   }

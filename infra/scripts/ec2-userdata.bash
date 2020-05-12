@@ -2,12 +2,12 @@
 
 set -ex
 
-export THORNODE_ENV=testnet
-export THORNODE_REPO="https://gitlab.com/thorchain/thornode.git"
-export BRANCH=master
-export GIT_PATH=/opt/thornode
-export LOGFILE=/var/log/thornode.log
-export SEED_ENDPOINT=https://${THORNODE_ENV}-seed.thorchain.info
+THORNODE_ENV=${THORNODE_ENV:-testnet}
+THORNODE_REPO=${THORNODE_REPO:-https://gitlab.com/thorchain/thornode.git}
+BRANCH=${BRANCH:-master}
+GIT_PATH=${GIT_PATH:-/opt/thornode}
+LOGFILE=${LOGFILE:-/var/log/thornode.log}
+SEED_ENDPOINT=${SEED_ENDPOINT:-https://${THORNODE_ENV}-seed.thorchain.info}
 
 # install apt repositories
 curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
@@ -15,8 +15,8 @@ sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubun
 
 # install essential packages
 echo "installing essential packages"
-apt-get update -y
-apt-get install -y \
+apt-get update -qy
+apt-get install -qy \
     build-essential \
     jq \
     make \
@@ -31,6 +31,14 @@ apt-get install -y \
     docker-ce
 
 systemctl enable cron # enable cron
+
+# setup ebs volume
+if [ -f /dev/xvdb ]; then
+    mkfs -t ext4 /dev/xvdb
+    mkdir /opt
+    mount /dev/xvdb /opt
+    echo "/dev/xvdb /opt ext4 defaults 0 0" >> /etc/fstab
+fi
 
 # install docker-compose
 echo "installing docker-compose" >> $LOGFILE
@@ -68,7 +76,7 @@ cat <<EOF > /opt/${THORNODE_ENV}/genesis-bootstrap
 cd $GIT_PATH/build/docker
 export TAG=${THORNODE_ENV}
 export BINANCE_HOST="http://testnet-binance.thorchain.info:26657"
-SIGNER_PASSWD=${THORNODE_PASSWD} make run-${THORNODE_ENV}-standalone >> $LOGFILE
+make run-${THORNODE_ENV}-standalone >> $LOGFILE
 EOF
 
 cat <<EOF > /opt/${THORNODE_ENV}/validator-bootstrap
@@ -78,5 +86,5 @@ cd $GIT_PATH/build/docker
 export TAG=${THORNODE_ENV}
 export BINANCE_HOST="http://testnet-binance.thorchain.info:26657"
 export PEER=\$(curl -sL ${THORNODE_ENV}-seed.thorchain.info/node_ip_list.json | jq -r .[] | shuf -n 1)
-SIGNER_PASSWD=${THORNODE_PASSWD} make run-${THORNODE_ENV}-validator >> $LOGFILE
+make run-${THORNODE_ENV}-validator >> $LOGFILE
 EOF

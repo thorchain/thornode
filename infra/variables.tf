@@ -2,6 +2,10 @@ variable "aws_region" {
   description = "The AWS region to create things in."
   default     = "eu-west-1"
 }
+variable "ebs_size" {
+  description = "Size of ebs volumes"
+  default = 50
+}
 variable "cidr_vpc" {
   description = "CIDR block for the VPC"
   default = "10.1.0.0/16"
