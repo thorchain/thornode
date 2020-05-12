@@ -19,6 +19,7 @@ const (
 	PoolEnabled   = types.Enabled
 	PoolBootstrap = types.Bootstrap
 	PoolSuspended = types.Suspended
+
 	// event status
 	EventSuccess = types.Success
 	EventPending = types.Pending
