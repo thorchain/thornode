@@ -149,80 +149,73 @@ func (s *Slasher) LackObserving(ctx sdk.Context, constAccessor constants.Constan
 
 // LackSigning slash account that fail to sign tx
 func (s *Slasher) LackSigning(ctx sdk.Context, constAccessor constants.ConstantValues, txOutStore TxOutStore) error {
-	pendingEvents, err := s.keeper.GetAllPendingEvents(ctx)
-	if err != nil {
-		ctx.Logger().Error("Unable to get all pending events", "error", err)
-		return err
-	}
 	signingTransPeriod := constAccessor.GetInt64Value(constants.SigningTransactionPeriod)
-	for _, evt := range pendingEvents {
-		// NOTE: not checking the event type because all non-swap/unstake/etc
-		// are completed immediately.
-		if ctx.BlockHeight() == evt.Height+signingTransPeriod {
-			txs, err := s.keeper.GetTxOut(ctx, evt.Height)
+	if ctx.BlockHeight() < signingTransPeriod {
+		return nil
+	}
+	height := ctx.BlockHeight() - signingTransPeriod
+	// NOTE: not checking the event type because all non-swap/unstake/etc
+	// are completed immediately.
+	txs, err := s.keeper.GetTxOut(ctx, height)
+	if err != nil {
+		return fmt.Errorf("fail to get txout from block height(%d): %w", height, err)
+	}
+
+	for _, tx := range txs.TxArray {
+		if tx.OutHash.IsEmpty() {
+			// Slash our node account for not sending funds
+			vault, err := s.keeper.GetVault(ctx, tx.VaultPubKey)
 			if err != nil {
-				ctx.Logger().Error("Unable to get tx out list", "error", err)
+				ctx.Logger().Error("Unable to get vault", "error", err)
 				continue
 			}
-
-			for _, tx := range txs.TxArray {
-				if tx.InHash.Equals(evt.InTx.ID) && tx.OutHash.IsEmpty() {
-					// Slash our node account for not sending funds
-					vault, err := s.keeper.GetVault(ctx, tx.VaultPubKey)
-					if err != nil {
-						ctx.Logger().Error("Unable to get vault", "error", err)
-						continue
-					}
-					// slash if its a yggdrasil vault
-					if vault.IsYggdrasil() {
-						na, err := s.keeper.GetNodeAccountByPubKey(ctx, tx.VaultPubKey)
-						if err != nil {
-							ctx.Logger().Error("Unable to get node account", "error", err)
-							continue
-						}
-						if err := s.keeper.IncNodeAccountSlashPoints(ctx, na.NodeAddress, signingTransPeriod*2); err != nil {
-							ctx.Logger().Error("fail to inc slash points", "error", err)
-						}
-					}
-
-					active, err := s.keeper.GetAsgardVaultsByStatus(ctx, ActiveVault)
-					if err != nil {
-						ctx.Logger().Error("fail to get active vaults", "error", err)
-						return err
-					}
-
-					vault = active.SelectByMinCoin(tx.Coin.Asset)
-					if vault.IsEmpty() {
-						return fmt.Errorf("unable to determine asgard vault to send funds")
-					}
-
-					// update original tx action in observed tx
-					voter, err := s.keeper.GetObservedTxVoter(ctx, tx.InHash)
-					if err != nil {
-						return fmt.Errorf("fail to get observed tx voter: %w", err)
-					}
-					for i, action := range voter.Actions {
-						if action.Equals(*tx) {
-							voter.Actions[i].VaultPubKey = vault.PubKey
-						}
-					}
-					s.keeper.SetObservedTxVoter(ctx, voter)
-
-					// Save the tx to as a new tx, select Asgard to send it this time.
-					tx.VaultPubKey = vault.PubKey
-					err = txOutStore.UnSafeAddTxOutItem(ctx, tx)
-					if err != nil {
-						return fmt.Errorf("fail to add outbound tx: %w", err)
-					}
+			// slash if its a yggdrasil vault
+			if vault.IsYggdrasil() {
+				na, err := s.keeper.GetNodeAccountByPubKey(ctx, tx.VaultPubKey)
+				if err != nil {
+					ctx.Logger().Error("Unable to get node account", "error", err)
+					continue
+				}
+				if err := s.keeper.IncNodeAccountSlashPoints(ctx, na.NodeAddress, signingTransPeriod*2); err != nil {
+					ctx.Logger().Error("fail to inc slash points", "error", err)
 				}
 			}
 
-			if err := s.keeper.SetTxOut(ctx, txs); err != nil {
-				ctx.Logger().Error("fail to save tx out", "error", err)
-				return err
+			active, err := s.keeper.GetAsgardVaultsByStatus(ctx, ActiveVault)
+			if err != nil {
+				return fmt.Errorf("fail to get active vaults: %w", err)
+			}
+
+			vault = active.SelectByMinCoin(tx.Coin.Asset)
+			if vault.IsEmpty() {
+				return fmt.Errorf("unable to determine asgard vault to send funds")
+			}
+
+			// update original tx action in observed tx
+			voter, err := s.keeper.GetObservedTxVoter(ctx, tx.InHash)
+			if err != nil {
+				return fmt.Errorf("fail to get observed tx voter: %w", err)
+			}
+			for i, action := range voter.Actions {
+				if action.Equals(*tx) {
+					voter.Actions[i].VaultPubKey = vault.PubKey
+				}
+			}
+			s.keeper.SetObservedTxVoter(ctx, voter)
+
+			// Save the tx to as a new tx, select Asgard to send it this time.
+			tx.VaultPubKey = vault.PubKey
+			err = txOutStore.UnSafeAddTxOutItem(ctx, tx)
+			if err != nil {
+				return fmt.Errorf("fail to add outbound tx: %w", err)
 			}
 		}
 	}
+
+	if err := s.keeper.SetTxOut(ctx, txs); err != nil {
+		return fmt.Errorf("fail to save tx out : %w", err)
+	}
+
 	return nil
 }
 
