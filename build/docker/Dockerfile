@@ -19,7 +19,7 @@ RUN go mod download
 COPY . .
 
 ARG TAG=mainnet
-RUN BUILD_ARGS="-a -installsuffix cgo" make install
+RUN make install
 
 #
 # Main

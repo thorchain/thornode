@@ -55,7 +55,6 @@ docker-gitlab-login:
 	docker login -u ${CI_REGISTRY_USER} -p ${CI_REGISTRY_PASSWORD} ${CI_REGISTRY}
 
 docker-gitlab-push:
-	# docker push registry.gitlab.com/thorchain/thornode:latest
 	docker push registry.gitlab.com/thorchain/thornode:${BRANCH}
 
 docker-gitlab-build:

@@ -3,7 +3,8 @@ include Makefile.cicd
 
 GOBIN?=${GOPATH}/bin
 NOW=$(shell date +'%Y-%m-%d_%T')
-DEFAULT_BUILD_ARGS=-ldflags "-X 'gitlab.com/thorchain/thornode/constants.Version=0.1.0' -X 'gitlab.com/thorchain/thornode/constants.GitCommit=$(shell git rev-parse --short HEAD)' -X gitlab.com/thorchain/thornode/constants.BuildTime=${NOW}" -tags "${TAG}"
+DEFAULT_BUILD_ARGS=-ldflags "-X 'gitlab.com/thorchain/thornode/constants.Version=0.1.0' -X 'gitlab.com/thorchain/thornode/constants.GitCommit=$(shell git rev-parse --short HEAD)' -X gitlab.com/thorchain/thornode/constants.BuildTime=${NOW}" -tags "${TAG} -a -installsuffix cgo"
+
 BINARIES=./cmd/thorcli ./cmd/thord ./cmd/bifrost ./tools/generate
 
 # variables default for healthcheck against full stack in docker
@@ -33,7 +34,8 @@ go.sum: go.mod
 	go mod verify
 
 test-coverage:
-	@go test -v -tags testnet -coverprofile cover.txt ./...
+	@TAG=testnet
+	@go test ${DEFAULT_BUILD_ARGS} -v -coverprofile cover.txt ./...
 
 coverage-report: test-coverage
 	@go tool cover -html=cover.txt
@@ -42,10 +44,12 @@ clear:
 	clear
 
 test:
-	@go test -tags testnet ./...
+	@TAG=testnet
+	@go test ${DEFAULT_BUILD_ARGS} ./...
 
 test-watch: clear
-	@gow -c test -tags testnet -mod=readonly ./...
+	@TAG=tesnet
+	@gow -c test ${DEFAULT_BUILD_ARGS} -mod=readonly ./...
 
 format:
 	@gofumpt -w .
