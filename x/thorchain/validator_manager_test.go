@@ -94,25 +94,9 @@ func (vts *ValidatorManagerTestSuite) TestRagnarokForChaosnet(c *C) {
 	nodeAccounts, err := k.ListNodeAccountsByStatus(ctx, NodeActive)
 	c.Assert(err, IsNil)
 	c.Assert(len(nodeAccounts), Equals, 12)
-	startBlockHeight := int64(1024)
-	for i := 0; i < 8; i++ {
-		ctx = ctx.WithBlockHeight(startBlockHeight)
-		c.Assert(vMgr.BeginBlock(ctx, constAccessor), IsNil)
-		// assume keygen success
-		vault := NewVault(ctx.BlockHeight(), ActiveVault, AsgardVault, GetRandomPubKey(), common.Chains{common.BNBChain})
-		for _, item := range versionedVaultMgrDummy.vaultMgrDummy.nas {
-			vault.Membership = append(vault.Membership, item.PubKeySet.Secp256k1)
-		}
-		c.Assert(k.SetVault(ctx, vault), IsNil)
-		updates := vMgr.EndBlock(ctx, constAccessor)
-		c.Assert(updates, NotNil)
-		c.Assert(updates, HasLen, 1)
-		startBlockHeight += 256
-		c.Assert(k.DeleteVault(ctx, vault.PubKey), IsNil)
-	}
 
 	// trigger ragnarok
-	ctx = ctx.WithBlockHeight(startBlockHeight)
+	ctx = ctx.WithBlockHeight(1024)
 	c.Assert(vMgr.BeginBlock(ctx, constAccessor), IsNil)
 	vault := NewVault(ctx.BlockHeight(), ActiveVault, AsgardVault, GetRandomPubKey(), common.Chains{common.BNBChain})
 	for _, item := range versionedVaultMgrDummy.vaultMgrDummy.nas {
@@ -124,5 +108,5 @@ func (vts *ValidatorManagerTestSuite) TestRagnarokForChaosnet(c *C) {
 	c.Assert(updates, IsNil)
 	ragnarokHeight, err := k.GetRagnarokBlockHeight(ctx)
 	c.Assert(err, IsNil)
-	c.Assert(ragnarokHeight == startBlockHeight, Equals, true, Commentf("%d == %d", ragnarokHeight, startBlockHeight))
+	c.Assert(ragnarokHeight == 1024, Equals, true, Commentf("%d == %d", ragnarokHeight, 1024))
 }

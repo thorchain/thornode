@@ -113,7 +113,7 @@ func (pubKey PubKey) GetAddress(chain Chain) (Address, error) {
 		if err != nil {
 			return NoAddress, err
 		}
-		str := eth.PubkeyToAddress(*pub.ToECDSA()).String()
+		str := strings.ToLower(eth.PubkeyToAddress(*pub.ToECDSA()).String())
 		return NewAddress(str)
 	case BTCChain:
 		pk, err := sdk.GetAccPubKeyBech32(string(pubKey))

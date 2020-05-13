@@ -39,9 +39,9 @@ func (s *PubKeyTestSuite) SetUpSuite(c *C) {
 			priv: "ef235aacf90d9f4aadd8c92e4b2562e1d9eb97f0df9ba3b508258739cb013db2",
 			pub:  "02b4632d08485ff1df2db55b9dafd23347d1c47a457072a1e87be26896549a8737",
 			addrETH: KeyDataAddr{
-				mainnet: "0x3fd2D4cE97B082d4BcE3f9fee2A3D60668D2f473",
-				testnet: "0x3fd2D4cE97B082d4BcE3f9fee2A3D60668D2f473",
-				mocknet: "0x3fd2D4cE97B082d4BcE3f9fee2A3D60668D2f473",
+				mainnet: "0x3fd2d4ce97b082d4bce3f9fee2a3d60668d2f473",
+				testnet: "0x3fd2d4ce97b082d4bce3f9fee2a3d60668d2f473",
+				mocknet: "0x3fd2d4ce97b082d4bce3f9fee2a3d60668d2f473",
 			},
 			addrBNB: KeyDataAddr{
 				mainnet: "bnb1j08ys4ct2hzzc2hcz6h2hgrvlmsjynawtf2n0y",
@@ -58,9 +58,9 @@ func (s *PubKeyTestSuite) SetUpSuite(c *C) {
 			priv: "289c2857d4598e37fb9647507e47a309d6133539bf21a8b9cb6df88fd5232032",
 			pub:  "037db227d7094ce215c3a0f57e1bcc732551fe351f94249471934567e0f5dc1bf7",
 			addrETH: KeyDataAddr{
-				mainnet: "0x970E8128AB834E8EAC17Ab8E3812F010678CF791",
-				testnet: "0x970E8128AB834E8EAC17Ab8E3812F010678CF791",
-				mocknet: "0x970E8128AB834E8EAC17Ab8E3812F010678CF791",
+				mainnet: "0x970e8128ab834e8eac17ab8e3812f010678cf791",
+				testnet: "0x970e8128ab834e8eac17ab8e3812f010678cf791",
+				mocknet: "0x970e8128ab834e8eac17ab8e3812f010678cf791",
 			},
 			addrBNB: KeyDataAddr{
 				mainnet: "bnb1zupk5lmc84r2dh738a9g3zscavannjy3nkkcrl",
@@ -77,9 +77,9 @@ func (s *PubKeyTestSuite) SetUpSuite(c *C) {
 			priv: "e810f1d7d6691b4a7a73476f3543bd87d601f9a53e7faf670eac2c5b517d83bf",
 			pub:  "03f98464e8d3fc8e275e34c6f8dc9b99aa244e37b0d695d0dfb8884712ed6d4d35",
 			addrETH: KeyDataAddr{
-				mainnet: "0xF6dA288748eC4c77642F6c5543717539B3Ae001b",
-				testnet: "0xF6dA288748eC4c77642F6c5543717539B3Ae001b",
-				mocknet: "0xF6dA288748eC4c77642F6c5543717539B3Ae001b",
+				mainnet: "0xf6da288748ec4c77642f6c5543717539b3ae001b",
+				testnet: "0xf6da288748ec4c77642f6c5543717539b3ae001b",
+				mocknet: "0xf6da288748ec4c77642f6c5543717539b3ae001b",
 			},
 			addrBNB: KeyDataAddr{
 				mainnet: "bnb1qqnde7kqe5sf96j6zf8jpzwr44dh4gkddg5yfw",
@@ -96,9 +96,9 @@ func (s *PubKeyTestSuite) SetUpSuite(c *C) {
 			priv: "a96e62ed3955e65be32703f12d87b6b5cf26039ecfa948dc5107a495418e5330",
 			pub:  "02950e1cdfcb133d6024109fd489f734eeb4502418e538c28481f22bce276f248c",
 			addrETH: KeyDataAddr{
-				mainnet: "0xFabB9cC6Ec839b1214bB11c53377A56A6Ed81762",
-				testnet: "0xFabB9cC6Ec839b1214bB11c53377A56A6Ed81762",
-				mocknet: "0xFabB9cC6Ec839b1214bB11c53377A56A6Ed81762",
+				mainnet: "0xfabb9cc6ec839b1214bb11c53377a56a6ed81762",
+				testnet: "0xfabb9cc6ec839b1214bb11c53377a56a6ed81762",
+				mocknet: "0xfabb9cc6ec839b1214bb11c53377a56a6ed81762",
 			},
 			addrBNB: KeyDataAddr{
 				mainnet: "bnb10s4mg25tu6termrk8egltfyme4q7sg3hm84ayj",
@@ -115,9 +115,9 @@ func (s *PubKeyTestSuite) SetUpSuite(c *C) {
 			priv: "9294f4d108465fd293f7fe299e6923ef71a77f2cb1eb6d4394839c64ec25d5c0",
 			pub:  "0238383ee4d60176d27cf46f0863bfc6aea624fe9bfc7f4273cc5136d9eb483e4a",
 			addrETH: KeyDataAddr{
-				mainnet: "0x1f30A82340f08177AbA70e6F48054917c74D7d38",
-				testnet: "0x1f30A82340f08177AbA70e6F48054917c74D7d38",
-				mocknet: "0x1f30A82340f08177AbA70e6F48054917c74D7d38",
+				mainnet: "0x1f30a82340f08177aba70e6f48054917c74d7d38",
+				testnet: "0x1f30a82340f08177aba70e6f48054917c74d7d38",
+				mocknet: "0x1f30a82340f08177aba70e6f48054917c74d7d38",
 			},
 			addrBNB: KeyDataAddr{
 				mainnet: "bnb1jw8h4l3dtz5xxc7uyh5ys70qkezspgfuh4nh0z",

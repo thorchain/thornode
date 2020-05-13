@@ -154,11 +154,8 @@ func (c *Client) getBTCPaymentAmount(tx stypes.TxOutItem) float64 {
 	return amtToPayInBTC
 }
 
-// SignTx is going to generate the outbound transaction, and also sign it
-func (c *Client) SignTx(tx stypes.TxOutItem, thorchainHeight int64) ([]byte, error) {
-	if !tx.Chain.Equals(common.BTCChain) {
-		return nil, errors.New("not BTC chain")
-	}
+// getSourceScript retrieve pay to addr script from tx source
+func (c *Client) getSourceScript(tx stypes.TxOutItem) ([]byte, error) {
 	sourceAddr, err := tx.VaultPubKey.GetAddress(common.BTCChain)
 	if err != nil {
 		return nil, fmt.Errorf("fail to get source address: %w", err)
@@ -168,7 +165,15 @@ func (c *Client) SignTx(tx stypes.TxOutItem, thorchainHeight int64) ([]byte, err
 	if err != nil {
 		return nil, fmt.Errorf("fail to decode source address(%s): %w", sourceAddr.String(), err)
 	}
-	sourceScript, err := txscript.PayToAddrScript(addr)
+	return txscript.PayToAddrScript(addr)
+}
+
+// SignTx is going to generate the outbound transaction, and also sign it
+func (c *Client) SignTx(tx stypes.TxOutItem, thorchainHeight int64) ([]byte, error) {
+	if !tx.Chain.Equals(common.BTCChain) {
+		return nil, errors.New("not BTC chain")
+	}
+	sourceScript, err := c.getSourceScript(tx)
 	if err != nil {
 		return nil, fmt.Errorf("fail to get source pay to address script: %w", err)
 	}
@@ -238,7 +243,9 @@ func (c *Client) SignTx(tx stypes.TxOutItem, thorchainHeight int64) ([]byte, err
 	if balance > 0 {
 		redeemTx.AddTxOut(wire.NewTxOut(balance, sourceScript))
 	}
+	// sort inputs and outputs
 	txsort.InPlaceSort(redeemTx)
+
 	for idx, txIn := range redeemTx.TxIn {
 		sigHashes := txscript.NewTxSigHashes(redeemTx)
 		sig := c.ksWrapper.GetSignable(tx.VaultPubKey)
@@ -257,10 +264,9 @@ func (c *Client) SignTx(tx stypes.TxOutItem, thorchainHeight int64) ([]byte, err
 				if err != nil {
 					c.logger.Error().Err(err).Msg("fail to post keysign failure to thorchain")
 					return nil, err
-				} else {
-					c.logger.Info().Str("tx_id", txID.String()).Msgf("post keysign failure to thorchain")
-					return nil, fmt.Errorf("sent keysign failure to thorchain")
 				}
+				c.logger.Info().Str("tx_id", txID.String()).Msgf("post keysign failure to thorchain")
+				return nil, fmt.Errorf("sent keysign failure to thorchain")
 			}
 			return nil, fmt.Errorf("fail to get witness: %w", err)
 		}
@@ -280,55 +286,106 @@ func (c *Client) SignTx(tx stypes.TxOutItem, thorchainHeight int64) ([]byte, err
 	if err := redeemTx.Serialize(&signedTx); err != nil {
 		return nil, fmt.Errorf("fail to serialize tx to bytes: %w", err)
 	}
-	// only send the balance back to ourselves
-	if balance > 0 {
-		if err := c.saveNewUTXO(redeemTx, balance, sourceScript, chainBlockHeight, tx.VaultPubKey); nil != err {
-			return nil, fmt.Errorf("fail to save the new UTXO to storage: %w", err)
-		}
-	}
-	if err := c.removeSpentUTXO(txes); err != nil {
-		return nil, fmt.Errorf("fail to remove already spent transaction output: %w", err)
-	}
 	return signedTx.Bytes(), nil
 }
 
-func (c *Client) removeSpentUTXO(txs []UnspentTransactionOutput) error {
-	for _, item := range txs {
-		blockMeta, err := c.blockMetaAccessor.GetBlockMeta(item.BlockHeight)
-		if err != nil {
-			return fmt.Errorf("fail to get block meta: %w", err)
+// updateBlockMeta updates block meta with broadcasting tx data
+func (c *Client) updateBlockMeta(txOut stypes.TxOutItem, blockMeta *BlockMeta, tx *wire.MsgTx) error {
+	// add new balance output as spendable utxo
+	balanceScript, err := c.getSourceScript(txOut)
+	if err != nil {
+		return fmt.Errorf("fail to get balance pay to address script: %w", err)
+	}
+	for n, out := range tx.TxOut {
+		if !bytes.Equal(out.PkScript, balanceScript) {
+			continue
 		}
-		key := item.GetKey()
+		value := btcutil.Amount(out.Value)
+		utxo := NewUnspentTransactionOutput(tx.TxHash(), uint32(n), value.ToBTC(), blockMeta.Height, txOut.VaultPubKey)
+		blockMeta.AddUTXO(utxo)
+		break
+	}
+
+	// and mark utxo as spent from storage
+	for _, in := range tx.TxIn {
+		key := in.PreviousOutPoint.String()
+		err := c.spendUTXO(key)
+		if err != nil {
+			return fmt.Errorf("fail to mark spent utxo: %w", err)
+		}
+	}
+
+	err = c.blockMetaAccessor.SaveBlockMeta(blockMeta.Height, blockMeta)
+	if err != nil {
+		return fmt.Errorf("fail to save block meta: %w", err)
+	}
+	return nil
+}
+
+// revertBlockMeta revert block meta on fail broadcasted tx
+func (c *Client) revertBlockMeta(txOut stypes.TxOutItem, blockMeta *BlockMeta, tx *wire.MsgTx) error {
+	// remove new balance output utxo from storage
+	balanceScript, err := c.getSourceScript(txOut)
+	if err != nil {
+		return fmt.Errorf("fail to get balance script: %w", err)
+	}
+	for n, out := range tx.TxOut {
+		if !bytes.Equal(out.PkScript, balanceScript) {
+			continue
+		}
+		key := fmt.Sprintf("%s:%d", tx.TxHash().String(), n)
 		blockMeta.RemoveUTXO(key)
-		if err := c.blockMetaAccessor.SaveBlockMeta(blockMeta.Height, blockMeta); err != nil {
-			return fmt.Errorf("fail to save block meta back to storage: %w", err)
+		break
+	}
+
+	// and mark utxos as unspent from storage
+	for _, in := range tx.TxIn {
+		key := in.PreviousOutPoint.String()
+		err := c.unspendUTXO(key)
+		if err != nil {
+			return fmt.Errorf("fail to mark unspent utxo: %w", err)
+		}
+	}
+
+	err = c.blockMetaAccessor.SaveBlockMeta(blockMeta.Height, blockMeta)
+	if err != nil {
+		return fmt.Errorf("fail to save block meta: %w", err)
+	}
+	return nil
+}
+
+// spendUTXO mark utxo as spent
+func (c *Client) spendUTXO(key string) error {
+	blockMetas, err := c.blockMetaAccessor.GetBlockMetas()
+	if err != nil {
+		return fmt.Errorf("fail to get block metas: %w", err)
+	}
+	for _, blockMeta := range blockMetas {
+		for _, utxo := range blockMeta.UnspentTransactionOutputs {
+			if utxo.GetKey() == key {
+				blockMeta.SpendUTXO(key)
+				return c.blockMetaAccessor.SaveBlockMeta(utxo.BlockHeight, blockMeta)
+			}
 		}
 	}
 	return nil
 }
 
-// saveUTXO save the newly created UTXO which transfer balance back our own address to storage
-func (c *Client) saveNewUTXO(tx *wire.MsgTx, balance int64, script []byte, blockHeight int64, pubKey common.PubKey) error {
-	txID := tx.TxHash()
-	n := 0
-	// find the position of output that we send balance back to ourselves
-	for idx, item := range tx.TxOut {
-		if item.Value == balance && bytes.Equal(script, item.PkScript) {
-			n = idx
-			break
+// unspendUTXO mark utxo as unspent
+func (c *Client) unspendUTXO(key string) error {
+	blockMetas, err := c.blockMetaAccessor.GetBlockMetas()
+	if err != nil {
+		return fmt.Errorf("fail to get block metas: %w", err)
+	}
+	for _, blockMeta := range blockMetas {
+		for _, utxo := range blockMeta.UnspentTransactionOutputs {
+			if utxo.GetKey() == key {
+				blockMeta.UnspendUTXO(key)
+				return c.blockMetaAccessor.SaveBlockMeta(utxo.BlockHeight, blockMeta)
+			}
 		}
 	}
-
-	amt := btcutil.Amount(balance)
-	blockMeta, err := c.blockMetaAccessor.GetBlockMeta(blockHeight)
-	if err != nil {
-		return fmt.Errorf("fail to get block meta: %w", err)
-	}
-	if blockMeta == nil {
-		blockMeta = NewBlockMeta("", blockHeight, "")
-	}
-	blockMeta.AddUTXO(NewUnspentTransactionOutput(txID, uint32(n), amt.ToBTC(), blockHeight, pubKey))
-	return c.blockMetaAccessor.SaveBlockMeta(blockHeight, blockMeta)
+	return nil
 }
 
 // BroadcastTx will broadcast the given payload to BTC chain
@@ -338,15 +395,36 @@ func (c *Client) BroadcastTx(txOut stypes.TxOutItem, payload []byte) error {
 	if err := redeemTx.Deserialize(buf); err != nil {
 		return fmt.Errorf("fail to deserialize payload: %w", err)
 	}
+	// retrieve block meta
+	chainBlockHeight, err := c.getBlockHeight()
+	if err != nil {
+		return fmt.Errorf("fail to get chain block height: %w", err)
+	}
+	blockMeta, err := c.blockMetaAccessor.GetBlockMeta(chainBlockHeight)
+	if err != nil {
+		return fmt.Errorf("fail to get block meta: %w", err)
+	}
+	if blockMeta == nil {
+		blockMeta = NewBlockMeta("", chainBlockHeight, "")
+	}
+	err = c.updateBlockMeta(txOut, blockMeta, redeemTx)
+	if err != nil {
+		return fmt.Errorf("fail to update block meta: %s", err)
+	}
+	// broadcast tx
 	txHash, err := c.client.SendRawTransaction(redeemTx, true)
 	if err != nil {
-
 		if rpcErr, ok := err.(*btcjson.RPCError); ok && rpcErr.Code == btcjson.ErrRPCTxAlreadyInChain {
 			// this means the tx had been broadcast to chain, it must be another signer finished quicker then us
 			return nil
 		}
+		err2 := c.revertBlockMeta(txOut, blockMeta, redeemTx)
+		if err2 != nil {
+			c.logger.Err(err2).Msg("fail to revert block meta")
+		}
 		return fmt.Errorf("fail to broadcast transaction to chain: %w", err)
 	}
+	// save tx id to block meta in case we need to errata later
 	c.logger.Info().Str("hash", txHash.String()).Msg("broadcast to BTC chain successfully")
 	return nil
 }

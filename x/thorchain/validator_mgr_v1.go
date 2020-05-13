@@ -57,12 +57,7 @@ func (vm *validatorMgrV1) BeginBlock(ctx sdk.Context, constAccessor constants.Co
 		return err
 	}
 
-	artificialRagnarokBlockHeight, err := vm.k.GetMimir(ctx, constants.ArtificialRagnarokBlockHeight.String())
-	if artificialRagnarokBlockHeight < 0 || err != nil {
-		artificialRagnarokBlockHeight = constAccessor.GetInt64Value(constants.ArtificialRagnarokBlockHeight)
-	}
-	if minimumNodesForBFT+2 < int64(totalActiveNodes) ||
-		(artificialRagnarokBlockHeight > 0 && ctx.BlockHeight() >= artificialRagnarokBlockHeight) {
+	if minimumNodesForBFT+2 < int64(totalActiveNodes) {
 		badValidatorRate, err := vm.k.GetMimir(ctx, constants.BadValidatorRate.String())
 		if badValidatorRate < 0 || err != nil {
 			badValidatorRate = constAccessor.GetInt64Value(constants.BadValidatorRate)
@@ -163,14 +158,16 @@ func (vm *validatorMgrV1) EndBlock(ctx sdk.Context, constAccessor constants.Cons
 		return nil
 	}
 
-	// no change
-	if len(newNodes) == 0 && len(removedNodes) == 0 {
-		return nil
+	artificialRagnarokBlockHeight, err := vm.k.GetMimir(ctx, constants.ArtificialRagnarokBlockHeight.String())
+	if artificialRagnarokBlockHeight < 0 || err != nil {
+		artificialRagnarokBlockHeight = constAccessor.GetInt64Value(constants.ArtificialRagnarokBlockHeight)
 	}
-
+	if artificialRagnarokBlockHeight > 0 {
+		ctx.Logger().Info("Artificial Ragnarok is planned", "height", artificialRagnarokBlockHeight)
+	}
 	minimumNodesForBFT := constAccessor.GetInt64Value(constants.MinimumNodesForBFT)
 	nodesAfterChange := len(activeNodes) + len(newNodes) - len(removedNodes)
-	if len(activeNodes) >= int(minimumNodesForBFT) && nodesAfterChange < int(minimumNodesForBFT) {
+	if (len(activeNodes) >= int(minimumNodesForBFT) && nodesAfterChange < int(minimumNodesForBFT)) || (artificialRagnarokBlockHeight > 0 && ctx.BlockHeight() >= artificialRagnarokBlockHeight) {
 		// THORNode don't have enough validators for BFT
 
 		// Check we're not migrating funds
@@ -187,6 +184,12 @@ func (vm *validatorMgrV1) EndBlock(ctx sdk.Context, constAccessor constants.Cons
 		// by return
 		return nil
 	}
+
+	// no change
+	if len(newNodes) == 0 && len(removedNodes) == 0 {
+		return nil
+	}
+
 	validators := make([]abci.ValidatorUpdate, 0, len(newNodes)+len(removedNodes))
 	for _, na := range newNodes {
 		ctx.EventManager().EmitEvent(
@@ -938,20 +941,6 @@ func (vm *validatorMgrV1) markReadyActors(ctx sdk.Context, constAccessor constan
 	if err != nil {
 		return err
 	}
-	artificialRagnarokBlockHeight := constAccessor.GetInt64Value(constants.ArtificialRagnarokBlockHeight)
-	if artificialRagnarokBlockHeight > 0 && ctx.BlockHeight() >= artificialRagnarokBlockHeight {
-		// ArtificialRagnarokBlockHeight should only have a positive value on
-		// chaosnet , we could even remove this after chaosnet
-
-		// mark every node to standby, thus no node will be rotated in.
-		for _, na := range append(standby, ready...) {
-			na.UpdateStatus(NodeStandby, ctx.BlockHeight())
-			if err := vm.k.SetNodeAccount(ctx, na); err != nil {
-				return err
-			}
-		}
-		return nil
-	}
 
 	// find min version node has to be, to be "ready" status
 	minVersion := vm.k.GetMinJoinVersion(ctx)
@@ -969,14 +958,13 @@ func (vm *validatorMgrV1) markReadyActors(ctx sdk.Context, constAccessor constan
 			na.UpdateStatus(NodeStandby, ctx.BlockHeight())
 		}
 
-		// Check if they've requested to leave
-		if na.RequestedToLeave {
+		if vm.k.RagnarokInProgress(ctx) {
 			na.UpdateStatus(NodeStandby, ctx.BlockHeight())
 		}
 
-		// ensure banned nodes can't get churned in again
-		if na.ForcedToLeave {
-			na.UpdateStatus(NodeDisabled, ctx.BlockHeight())
+		// Check if they've requested to leave
+		if na.RequestedToLeave {
+			na.UpdateStatus(NodeStandby, ctx.BlockHeight())
 		}
 
 		// Check that the node account has an IP address
@@ -991,6 +979,11 @@ func (vm *validatorMgrV1) markReadyActors(ctx sdk.Context, constAccessor constan
 		}
 		if na.Bond.LT(sdk.NewUint(uint64(minBond))) {
 			na.UpdateStatus(NodeStandby, ctx.BlockHeight())
+		}
+
+		// ensure banned nodes can't get churned in again
+		if na.ForcedToLeave {
+			na.UpdateStatus(NodeDisabled, ctx.BlockHeight())
 		}
 
 		if err := vm.k.SetNodeAccount(ctx, na); err != nil {
@@ -1044,8 +1037,7 @@ func (vm *validatorMgrV1) nextVaultNodeAccounts(ctx sdk.Context, targetCount int
 		return active[i].LeaveHeight < active[j].LeaveHeight
 	})
 
-	artificialRagnarokBlockHeight := constAccessor.GetInt64Value(constants.ArtificialRagnarokBlockHeight)
-	toRemove := findCountToRemove(ctx.BlockHeight(), artificialRagnarokBlockHeight, active)
+	toRemove := findCountToRemove(ctx.BlockHeight(), active)
 	if toRemove > 0 {
 		rotation = true
 		active = active[toRemove:]
@@ -1071,7 +1063,7 @@ func (vm *validatorMgrV1) nextVaultNodeAccounts(ctx sdk.Context, targetCount int
 }
 
 // findCountToRemove - find the number of node accounts to remove
-func findCountToRemove(blockHeight, artificalRagnarok int64, active NodeAccounts) (toRemove int) {
+func findCountToRemove(blockHeight int64, active NodeAccounts) (toRemove int) {
 	// count number of node accounts that are a candidate to leaving
 	var candidateCount int
 	for _, na := range active {
@@ -1086,7 +1078,7 @@ func findCountToRemove(blockHeight, artificalRagnarok int64, active NodeAccounts
 		if maxRemove == 0 {
 			// we can't remove any mathematically, but we always leave room for
 			// node accounts requesting to leave or are being banned
-			if active[0].ForcedToLeave || active[0].RequestedToLeave || (artificalRagnarok > 0 && blockHeight >= artificalRagnarok) {
+			if active[0].ForcedToLeave || active[0].RequestedToLeave {
 				toRemove = 1
 			}
 		} else {

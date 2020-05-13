@@ -231,20 +231,18 @@ func (c *Client) reConfirmTx() error {
 	for _, blockMeta := range blockMetas {
 		var errataTxs []types.ErrataTx
 		for _, utxo := range blockMeta.UnspentTransactionOutputs {
-			result, err := c.client.GetTransaction(&utxo.TxID)
-			if err != nil {
-				if rpcErr, ok := err.(*btcjson.RPCError); ok && rpcErr.Code == btcjson.ErrRPCNoTxInfo {
-					// this means the tx doesn't exist in chain ,thus should errata it
-					errataTxs = append(errataTxs, types.ErrataTx{
-						TxID:  common.TxID(utxo.TxID.String()),
-						Chain: common.BTCChain,
-					})
-					// remove the UTXO from block meta , so signer will not spend it
-					blockMeta.RemoveUTXO(utxo.GetKey())
-					continue
-				}
+			txID := utxo.TxID.String()
+			if c.confirmTx(&utxo.TxID) {
+				c.logger.Info().Msgf("block height: %d, tx: %s still exist", blockMeta.Height, txID)
+				continue
 			}
-			c.logger.Info().Msgf("block height: %d, tx: %s still exist", blockMeta.Height, result.TxID)
+			// this means the tx doesn't exist in chain ,thus should errata it
+			errataTxs = append(errataTxs, types.ErrataTx{
+				TxID:  common.TxID(txID),
+				Chain: common.BTCChain,
+			})
+			// remove the UTXO from block meta , so signer will not spend it
+			blockMeta.RemoveUTXO(utxo.GetKey())
 		}
 		if len(errataTxs) == 0 {
 			continue
@@ -265,6 +263,29 @@ func (c *Client) reConfirmTx() error {
 		}
 	}
 	return nil
+}
+
+// confirmTx check a tx is valid on chain post reorg
+func (c *Client) confirmTx(txHash *chainhash.Hash) bool {
+	// first check if tx is in mempool, just signed it for example
+	// if no error it means its valid mempool tx and move on
+	_, err := c.client.GetMempoolEntry(txHash.String())
+	if err == nil {
+		return true
+	}
+	// then get raw tx and check if it has confirmations or not
+	// if no confirmation and not in mempool then invalid
+	result, err := c.client.GetTransaction(txHash)
+	if err != nil {
+		if rpcErr, ok := err.(*btcjson.RPCError); ok && rpcErr.Code == btcjson.ErrRPCNoTxInfo {
+			return false
+		}
+		return true
+	}
+	if result.Confirmations == 0 {
+		return false
+	}
+	return true
 }
 
 // FetchTxs retrieves txs for a block height

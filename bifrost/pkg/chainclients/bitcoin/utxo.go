@@ -15,6 +15,7 @@ type UnspentTransactionOutput struct {
 	Value       float64        `json:"value"`
 	BlockHeight int64          `json:"block_height"`
 	VaultPubKey common.PubKey  `json:"vault_pub_key"`
+	Spent       bool           `json:"spent"`
 }
 
 // NewUnspentTransactionOutput create a new instance of UnspentTransactionOutput
@@ -25,6 +26,7 @@ func NewUnspentTransactionOutput(txID chainhash.Hash, n uint32, value float64, b
 		Value:       value,
 		BlockHeight: blockHeight,
 		VaultPubKey: vaultPubKey,
+		Spent:       false,
 	}
 }
 

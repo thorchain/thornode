@@ -11,8 +11,7 @@ type BlockMeta struct {
 	PreviousHash              string                     `json:"previous_hash"`
 	Height                    int64                      `json:"height"`
 	BlockHash                 string                     `json:"block_hash"`
-	UnspentTransactionOutputs []UnspentTransactionOutput `json:"txs"`
-	Spent                     bool                       `json:"spent"`
+	UnspentTransactionOutputs []UnspentTransactionOutput `json:"utxos"`
 }
 
 // NewBlockMeta create a new instance of BlockMeta
@@ -24,11 +23,11 @@ func NewBlockMeta(previousHash string, height int64, blockHash string) *BlockMet
 	}
 }
 
-// GetUTXOs that match the given pubkey
+// GetUTXOs that match the given pubkey and are unspent
 func (b *BlockMeta) GetUTXOs(pubKey common.PubKey) []UnspentTransactionOutput {
 	utxos := make([]UnspentTransactionOutput, 0, len(b.UnspentTransactionOutputs))
 	for _, item := range b.UnspentTransactionOutputs {
-		if item.VaultPubKey.Equals(pubKey) {
+		if item.VaultPubKey.Equals(pubKey) && !item.Spent {
 			utxos = append(utxos, item)
 		}
 	}
@@ -57,4 +56,26 @@ func (b *BlockMeta) AddUTXO(utxo UnspentTransactionOutput) {
 		}
 	}
 	b.UnspentTransactionOutputs = append(b.UnspentTransactionOutputs, utxo)
+}
+
+// SpendUTXO mark a utxo as spent
+func (b *BlockMeta) SpendUTXO(key string) {
+	for idx, utxo := range b.UnspentTransactionOutputs {
+		if key != utxo.GetKey() {
+			continue
+		}
+		b.UnspentTransactionOutputs[idx].Spent = true
+		break
+	}
+}
+
+// UnspendUTXO mark utxo as unspent
+func (b *BlockMeta) UnspendUTXO(key string) {
+	for idx, utxo := range b.UnspentTransactionOutputs {
+		if key != utxo.GetKey() {
+			continue
+		}
+		b.UnspentTransactionOutputs[idx].Spent = false
+		break
+	}
 }
