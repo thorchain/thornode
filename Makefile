@@ -42,7 +42,7 @@ go.sum: go.mod
 	go mod verify
 
 test-coverage:
-	@go test ${BUILD_FLAGS} -v -coverprofile cover.txt ./...
+	@go test ${BUILD_FLAGS} -v -coverprofile coverage.out ./...
 
 coverage-report: test-coverage
 	@go tool cover -html=cover.txt
