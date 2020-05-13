@@ -86,10 +86,14 @@ func (tx ObservedTx) HasSigned(signer sdk.AccAddress) bool {
 	return false
 }
 
-func (tx *ObservedTx) Sign(signer sdk.AccAddress) {
-	if !tx.HasSigned(signer) {
-		tx.Signers = append(tx.Signers, signer)
+// Sign add the given node account to signers list
+// if the given signer is already in the list, it will return false, otherwise true
+func (tx *ObservedTx) Sign(signer sdk.AccAddress) bool {
+	if tx.HasSigned(signer) {
+		return false
 	}
+	tx.Signers = append(tx.Signers, signer)
+	return true
 }
 
 func (tx *ObservedTx) SetDone(hash common.TxID, numOuts int) {
@@ -193,25 +197,26 @@ func (tx *ObservedTxVoter) IsDone() bool {
 	return len(tx.Actions) <= len(tx.OutTxs)
 }
 
-func (tx *ObservedTxVoter) Add(observedTx ObservedTx, signer sdk.AccAddress) {
+// Add is trying to add the given observed tx into the voter , if the signer already sign , they will not add twice , it simply return false
+func (tx *ObservedTxVoter) Add(observedTx ObservedTx, signer sdk.AccAddress) bool {
 	// check if this signer has already signed, no take backs allowed
 	for _, transaction := range tx.Txs {
 		for _, siggy := range transaction.Signers {
 			if siggy.Equals(signer) {
-				return
+				return false
 			}
 		}
 	}
 
 	for i := range tx.Txs {
 		if tx.Txs[i].Equals(observedTx) {
-			tx.Txs[i].Sign(signer)
-			return
+			return tx.Txs[i].Sign(signer)
 		}
 	}
 
 	observedTx.Signers = []sdk.AccAddress{signer}
 	tx.Txs = append(tx.Txs, observedTx)
+	return true
 }
 
 func (tx ObservedTxVoter) HasConsensus(nodeAccounts NodeAccounts) bool {

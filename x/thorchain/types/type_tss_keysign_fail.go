@@ -31,10 +31,12 @@ func (tss TssKeysignFailVoter) HasSigned(signer sdk.AccAddress) bool {
 }
 
 // Sign this voter with given signer address
-func (tss *TssKeysignFailVoter) Sign(signer sdk.AccAddress) {
-	if !tss.HasSigned(signer) {
-		tss.Signers = append(tss.Signers, signer)
+func (tss *TssKeysignFailVoter) Sign(signer sdk.AccAddress) bool {
+	if tss.HasSigned(signer) {
+		return false
 	}
+	tss.Signers = append(tss.Signers, signer)
+	return true
 }
 
 // Determine if this tss pool has enough signers

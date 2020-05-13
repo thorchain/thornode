@@ -81,13 +81,27 @@ func (h ObservedTxOutHandler) handle(ctx sdk.Context, msg MsgObservedTxOut, vers
 	}
 }
 
-func (h ObservedTxOutHandler) preflight(ctx sdk.Context, voter ObservedTxVoter, nas NodeAccounts, tx ObservedTx, signer sdk.AccAddress) (ObservedTxVoter, bool) {
-	voter.Add(tx, signer)
+func (h ObservedTxOutHandler) preflight(ctx sdk.Context, voter ObservedTxVoter, nas NodeAccounts, tx ObservedTx, signer sdk.AccAddress, slasher *Slasher) (ObservedTxVoter, bool) {
+	if voter.Add(tx, signer) {
+		slasher.IncSlashPoints(ctx, 1, signer)
+	}
 	ok := false
-	if voter.HasConsensus(nas) && !voter.ProcessedOut {
-		ok = true
-		voter.Height = ctx.BlockHeight()
-		voter.ProcessedOut = true
+	if voter.HasConsensus(nas) {
+		if !voter.ProcessedOut {
+			ok = true
+			voter.Height = ctx.BlockHeight()
+			voter.ProcessedOut = true
+			voter.Tx = voter.GetTx(nas)
+			// tx got consensus now, so decrease the slashing point for all the signers
+			for _, votedTxs := range voter.Txs {
+				slasher.DecSlashPoints(ctx, 1, votedTxs.Signers...)
+			}
+		} else {
+			// event the tx had been processed , given the signer just a bit late , so we still take away their slash points
+			if ctx.BlockHeight() == voter.Height {
+				slasher.DecSlashPoints(ctx, 1, signer)
+			}
+		}
 	}
 	h.keeper.SetObservedTxVoter(ctx, voter)
 
@@ -115,7 +129,11 @@ func (h ObservedTxOutHandler) handleV1(ctx sdk.Context, version semver.Version, 
 		ctx.Logger().Error(fmt.Sprintf("gas manager that compatible with version :%s is not available", version))
 		return sdk.ErrInternal("fail to get gas manager").Result()
 	}
-
+	slasher, err := NewSlasher(h.keeper, version, h.versionedEventManager)
+	if err != nil {
+		ctx.Logger().Error("fail to create slasher", "error", err)
+		return sdk.ErrInternal("fail to create slasher").Result()
+	}
 	handler := NewInternalHandler(h.keeper, h.versionedTxOutStore, h.validatorMgr, h.versionedVaultManager, h.versionedObserverManager, h.versionedGasMgr, h.versionedEventManager)
 
 	for _, tx := range msg.Txs {
@@ -131,7 +149,7 @@ func (h ObservedTxOutHandler) handleV1(ctx sdk.Context, version semver.Version, 
 		}
 
 		// check whether the tx has consensus
-		voter, ok := h.preflight(ctx, voter, activeNodeAccounts, tx, msg.Signer)
+		voter, ok := h.preflight(ctx, voter, activeNodeAccounts, tx, msg.Signer, slasher)
 		if !ok {
 			if voter.Height == ctx.BlockHeight() {
 				// we've already process the transaction, but we should still

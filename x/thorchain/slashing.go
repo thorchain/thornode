@@ -293,3 +293,21 @@ func (s *Slasher) SlashNodeAccount(ctx sdk.Context, observedPubKey common.PubKey
 
 	return s.keeper.SetNodeAccount(ctx, nodeAccount)
 }
+
+// IncSlashPoints will increase the given account's slash points
+func (s *Slasher) IncSlashPoints(ctx sdk.Context, point int64, addresses ...sdk.AccAddress) {
+	for _, addr := range addresses {
+		if err := s.keeper.IncNodeAccountSlashPoints(ctx, addr, point); err != nil {
+			ctx.Logger().Error("fail to increase node account slash point", "error", err, "address", addr.String())
+		}
+	}
+}
+
+// DecSlashPoints will decrease the given account's slash points
+func (s *Slasher) DecSlashPoints(ctx sdk.Context, point int64, addresses ...sdk.AccAddress) {
+	for _, addr := range addresses {
+		if err := s.keeper.DecNodeAccountSlashPoints(ctx, addr, point); err != nil {
+			ctx.Logger().Error("fail to decrease node account slash point", "error", err, "address", addr.String())
+		}
+	}
+}

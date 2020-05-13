@@ -277,6 +277,10 @@ func (k KVStore) GetNodeAccountSlashPoints(ctx sdk.Context, addr sdk.AccAddress)
 // SetNodeAccountSlashPoints - set the slash points associated with the given
 // node address and uint
 func (k KVStore) SetNodeAccountSlashPoints(ctx sdk.Context, addr sdk.AccAddress, pts int64) {
+	// make sure slash point doesn't go to negative
+	if pts < 0 {
+		return
+	}
 	store := ctx.KVStore(k.storeKey)
 	key := k.GetKey(ctx, prefixNodeSlashPoints, addr.String())
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(pts))

@@ -2,6 +2,7 @@ package types
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	"gitlab.com/thorchain/thornode/common"
 )
 
@@ -33,16 +34,19 @@ func (tss TssVoter) HasSigned(signer sdk.AccAddress) bool {
 }
 
 // Sign this voter with given signer address
-func (tss *TssVoter) Sign(signer sdk.AccAddress, chains common.Chains) {
-	if !tss.HasSigned(signer) {
-		for _, pk := range tss.PubKeys {
-			addr, err := pk.GetThorAddress()
-			if addr.Equals(signer) && err == nil {
-				tss.Signers = append(tss.Signers, signer)
-				tss.Chains = append(tss.Chains, chains...)
-			}
+func (tss *TssVoter) Sign(signer sdk.AccAddress, chains common.Chains) bool {
+	if tss.HasSigned(signer) {
+		return false
+	}
+	for _, pk := range tss.PubKeys {
+		addr, err := pk.GetThorAddress()
+		if addr.Equals(signer) && err == nil {
+			tss.Signers = append(tss.Signers, signer)
+			tss.Chains = append(tss.Chains, chains...)
+			return true
 		}
 	}
+	return false
 }
 
 // ConsensusChains - get a list o chains that have 2/3rds majority

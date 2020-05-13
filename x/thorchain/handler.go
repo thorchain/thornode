@@ -96,14 +96,14 @@ func getHandlerMapping(keeper Keeper,
 	versionedEventManager VersionedEventManager) map[string]MsgHandler {
 	// New arch handlers
 	m := make(map[string]MsgHandler)
-	m[MsgTssPool{}.Type()] = NewTssHandler(keeper, versionedVaultManager)
+	m[MsgTssPool{}.Type()] = NewTssHandler(keeper, versionedVaultManager, versionedEventManager)
 	m[MsgSetNodeKeys{}.Type()] = NewSetNodeKeysHandler(keeper)
 	m[MsgSetVersion{}.Type()] = NewVersionHandler(keeper)
 	m[MsgSetIPAddress{}.Type()] = NewIPAddressHandler(keeper)
 	m[MsgNativeTx{}.Type()] = NewNativeTxHandler(keeper, versionedObserverManager, versionedTxOutStore, validatorMgr, versionedVaultManager, versionedGasMgr, versionedEventManager)
 	m[MsgObservedTxIn{}.Type()] = NewObservedTxInHandler(keeper, versionedObserverManager, versionedTxOutStore, validatorMgr, versionedVaultManager, versionedGasMgr, versionedEventManager)
 	m[MsgObservedTxOut{}.Type()] = NewObservedTxOutHandler(keeper, versionedObserverManager, versionedTxOutStore, validatorMgr, versionedVaultManager, versionedGasMgr, versionedEventManager)
-	m[MsgTssKeysignFail{}.Type()] = NewTssKeysignHandler(keeper)
+	m[MsgTssKeysignFail{}.Type()] = NewTssKeysignHandler(keeper, versionedEventManager)
 	m[MsgErrataTx{}.Type()] = NewErrataTxHandler(keeper, versionedEventManager)
 	m[MsgSend{}.Type()] = NewSendHandler(keeper)
 	m[MsgMimir{}.Type()] = NewMimirHandler(keeper)
