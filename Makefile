@@ -3,7 +3,22 @@ include Makefile.cicd
 
 GOBIN?=${GOPATH}/bin
 NOW=$(shell date +'%Y-%m-%d_%T')
-DEFAULT_BUILD_ARGS=-ldflags "-X 'gitlab.com/thorchain/thornode/constants.Version=0.1.0' -X 'gitlab.com/thorchain/thornode/constants.GitCommit=$(shell git rev-parse --short HEAD)' -X gitlab.com/thorchain/thornode/constants.BuildTime=${NOW}" -tags "${TAG} -a -installsuffix cgo"
+COMMIT:=$(shell git log -1 --format='%H')
+VERSION:=$(shell cat version)
+TAG?=testnet
+
+ldflags = -X gitlab.com/thorchain/thornode/constants.Version=$(VERSION) \
+		  -X gitlab.com/thorchain/thornode/constants.GitCommit=$(COMMIT) \
+		  -X gitlab.com/thorchain/thornode/constants.GitCommit=$(COMMIT) \
+		  -X gitlab.com/thorchain/thornode/constants.BuildTime=${NOW} \
+		  -X github.com/cosmos/cosmos-sdk/version.Name=THORChain \
+	      -X github.com/cosmos/cosmos-sdk/version.ServerName=thord \
+		  -X github.com/cosmos/cosmos-sdk/version.ClientName=thorcli \
+	      -X github.com/cosmos/cosmos-sdk/version.Version=$(VERSION) \
+	      -X github.com/cosmos/cosmos-sdk/version.Commit=$(COMMIT) \
+		  -X github.com/cosmos/cosmos-sdk/version.BuildTags=$(TAG)
+
+BUILD_FLAGS := -ldflags '$(ldflags)' -tags ${TAG} -a
 
 BINARIES=./cmd/thorcli ./cmd/thord ./cmd/bifrost ./tools/generate
 
@@ -14,16 +29,10 @@ MIDGARD_API?=localhost:8080
 all: lint install
 
 build:
-	go build ${DEFAULT_BUILD_ARGS} ${BUILD_ARGS} ${BINARIES}
+	go build ${BUILD_FLAGS} ${BINARIES}
 
 install: go.sum
-	go install ${DEFAULT_BUILD_ARGS} ${BUILD_ARGS} ${BINARIES}
-
-install-testnet:
-	TAG=testnet make install
-
-install-mocknet:
-	TAG=mocknet make install
+	go install ${BUILD_FLAGS} ${BINARIES}
 
 tools:
 	go install ./tools/generate
@@ -34,8 +43,7 @@ go.sum: go.mod
 	go mod verify
 
 test-coverage:
-	@TAG=testnet
-	@go test ${DEFAULT_BUILD_ARGS} -v -coverprofile cover.txt ./...
+	@go test ${BUILD_FLAGS} -v -coverprofile cover.txt ./...
 
 coverage-report: test-coverage
 	@go tool cover -html=cover.txt
@@ -44,12 +52,10 @@ clear:
 	clear
 
 test:
-	@TAG=testnet
-	@go test ${DEFAULT_BUILD_ARGS} ./...
+	@go test ${BUILD_FLAGS} ./...
 
 test-watch: clear
-	@TAG=tesnet
-	@gow -c test ${DEFAULT_BUILD_ARGS} -mod=readonly ./...
+	@gow -c test ${BUILD_FLAGS} -mod=readonly ./...
 
 format:
 	@gofumpt -w .
