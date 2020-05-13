@@ -90,9 +90,11 @@ func (h ObservedTxInHandler) handle(ctx sdk.Context, msg MsgObservedTxIn, versio
 	}
 }
 
-func (h ObservedTxInHandler) preflight(ctx sdk.Context, voter ObservedTxVoter, nas NodeAccounts, tx ObservedTx, signer sdk.AccAddress, slasher *Slasher) (ObservedTxVoter, bool) {
+func (h ObservedTxInHandler) preflight(ctx sdk.Context, voter ObservedTxVoter, nas NodeAccounts, tx ObservedTx, signer sdk.AccAddress, slasher *Slasher, version semver.Version) (ObservedTxVoter, bool) {
+	constAccessor := constants.GetConstantValues(version)
+	observeSlashPoints := constAccessor.GetInt64Value(constants.ObserveSlashPoints)
 	if voter.Add(tx, signer) {
-		slasher.IncSlashPoints(ctx, 1, signer)
+		slasher.IncSlashPoints(ctx, observeSlashPoints, signer)
 	}
 	ok := false
 	if voter.HasConsensus(nas) {
@@ -105,12 +107,12 @@ func (h ObservedTxInHandler) preflight(ctx sdk.Context, voter ObservedTxVoter, n
 
 			// tx got consensus now, so decrease the slashing point for all the signers
 			for _, votedTxs := range voter.Txs {
-				slasher.DecSlashPoints(ctx, 1, votedTxs.Signers...)
+				slasher.DecSlashPoints(ctx, observeSlashPoints, votedTxs.Signers...)
 			}
 		} else {
 			// event the tx had been processed , given the signer just a bit late , so we still take away their slash points
 			if ctx.BlockHeight() == voter.Height {
-				slasher.DecSlashPoints(ctx, 1, signer)
+				slasher.DecSlashPoints(ctx, observeSlashPoints, signer)
 			}
 		}
 	}
@@ -162,7 +164,7 @@ func (h ObservedTxInHandler) handleV1(ctx sdk.Context, version semver.Version, m
 			return sdk.ErrInternal(err.Error()).Result()
 		}
 
-		voter, ok := h.preflight(ctx, voter, activeNodeAccounts, tx, msg.Signer, slasher)
+		voter, ok := h.preflight(ctx, voter, activeNodeAccounts, tx, msg.Signer, slasher, version)
 		if !ok {
 			if voter.Height == ctx.BlockHeight() {
 				// we've already process the transaction, but we should still

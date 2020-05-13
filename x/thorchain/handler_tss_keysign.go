@@ -84,8 +84,10 @@ func (h TssKeysignHandler) handleV1(ctx sdk.Context, msg MsgTssKeysignFail, vers
 		ctx.Logger().Error("fail to create slasher", "error", err)
 		return sdk.ErrInternal("fail to create slasher").Result()
 	}
+	constAccessor := constants.GetConstantValues(version)
+	observeSlashPoints := constAccessor.GetInt64Value(constants.ObserveSlashPoints)
 	if voter.Sign(msg.Signer) {
-		slasher.IncSlashPoints(ctx, 1, msg.Signer)
+		slasher.IncSlashPoints(ctx, observeSlashPoints, msg.Signer)
 	}
 	h.keeper.SetTssKeysignFailVoter(ctx, voter)
 	// doesn't have consensus yet
@@ -119,14 +121,14 @@ func (h TssKeysignHandler) handleV1(ctx sdk.Context, msg MsgTssKeysignFail, vers
 				ctx.Logger().Error("fail to inc slash points", "error", err)
 			}
 		}
-		slasher.DecSlashPoints(ctx, 1, voter.Signers...)
+		slasher.DecSlashPoints(ctx, observeSlashPoints, voter.Signers...)
 		return sdk.Result{
 			Code:      sdk.CodeOK,
 			Codespace: DefaultCodespace,
 		}
 	}
 	if voter.Height == ctx.BlockHeight() {
-		slasher.DecSlashPoints(ctx, 1, msg.Signer)
+		slasher.DecSlashPoints(ctx, observeSlashPoints, msg.Signer)
 	}
 
 	return sdk.Result{

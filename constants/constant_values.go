@@ -39,6 +39,7 @@ const (
 	FailKeygenSlashPoints
 	FailKeySignSlashPoints
 	StakeLockUpBlocks
+	ObserveSlashPoints
 )
 
 var nameToString = map[ConstantName]string{
@@ -71,6 +72,7 @@ var nameToString = map[ConstantName]string{
 	FailKeygenSlashPoints:           "FailKeygenSlashPoints",
 	FailKeySignSlashPoints:          "FailKeySignSlashPoints",
 	StakeLockUpBlocks:               "StakeLockUpBlocks",
+	ObserveSlashPoints:              "ObserveSlashPoints",
 }
 
 // String implement fmt.stringer

@@ -53,6 +53,7 @@ func NewConstantValue010() *ConstantValue010 {
 			FailKeygenSlashPoints:           720,                 // slash for 720 blocks , which equals 1 hour
 			FailKeySignSlashPoints:          2,                   // slash for 2 blocks
 			StakeLockUpBlocks:               17280,               // the number of blocks staker can unstake after their stake
+			ObserveSlashPoints:              1,
 		},
 		boolValues: map[ConstantName]bool{
 			StrictBondStakeRatio: true,

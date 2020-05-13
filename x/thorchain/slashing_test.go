@@ -435,8 +435,9 @@ func (s *SlashingSuite) TestNewSlasher(c *C) {
 
 type TestDoubleSlashKeeper struct {
 	KVStoreDummy
-	na        NodeAccount
-	vaultData VaultData
+	na          NodeAccount
+	vaultData   VaultData
+	slashPoints map[string]int64
 }
 
 func (k *TestDoubleSlashKeeper) ListActiveNodeAccounts(ctx sdk.Context) (NodeAccounts, error) {
@@ -454,6 +455,16 @@ func (k *TestDoubleSlashKeeper) GetVaultData(ctx sdk.Context) (VaultData, error)
 
 func (k *TestDoubleSlashKeeper) SetVaultData(ctx sdk.Context, data VaultData) error {
 	k.vaultData = data
+	return nil
+}
+
+func (k *TestDoubleSlashKeeper) IncNodeAccountSlashPoints(ctx sdk.Context, addr sdk.AccAddress, pts int64) error {
+	k.slashPoints[addr.String()] += pts
+	return nil
+}
+
+func (k *TestDoubleSlashKeeper) DecNodeAccountSlashPoints(ctx sdk.Context, addr sdk.AccAddress, pts int64) error {
+	k.slashPoints[addr.String()] -= pts
 	return nil
 }
 
@@ -478,4 +489,23 @@ func (s *SlashingSuite) TestDoubleSign(c *C) {
 
 	c.Check(keeper.na.Bond.Equal(sdk.NewUint(9995000000)), Equals, true, Commentf("%d", keeper.na.Bond.Uint64()))
 	c.Check(keeper.vaultData.TotalReserve.Equal(sdk.NewUint(5000000)), Equals, true)
+}
+
+func (s *SlashingSuite) TestIncreaseDecreaseSlashPoints(c *C) {
+	ctx, _ := setupKeeperForTest(c)
+
+	na := GetRandomNodeAccount(NodeActive)
+	na.Bond = sdk.NewUint(100 * common.One)
+
+	keeper := &TestDoubleSlashKeeper{
+		na:          na,
+		vaultData:   NewVaultData(),
+		slashPoints: make(map[string]int64),
+	}
+	slasher, err := NewSlasher(keeper, constants.SWVersion, NewVersionedEventMgr())
+	c.Assert(err, IsNil)
+	addr := GetRandomBech32Addr()
+	slasher.IncSlashPoints(ctx, 1, addr)
+	slasher.DecSlashPoints(ctx, 1, addr)
+	c.Assert(keeper.slashPoints[addr.String()], Equals, int64(0))
 }

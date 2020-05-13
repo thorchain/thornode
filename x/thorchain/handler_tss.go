@@ -99,8 +99,10 @@ func (h TssHandler) handleV1(ctx sdk.Context, msg MsgTssPool, version semver.Ver
 		ctx.Logger().Error("fail to create slasher", "error", err)
 		return sdk.ErrInternal("fail to create slasher").Result()
 	}
+	constAccessor := constants.GetConstantValues(version)
+	observeSlashPoints := constAccessor.GetInt64Value(constants.ObserveSlashPoints)
 	if voter.Sign(msg.Signer, msg.Chains) {
-		slasher.IncSlashPoints(ctx, 1, msg.Signer)
+		slasher.IncSlashPoints(ctx, observeSlashPoints, msg.Signer)
 	}
 	h.keeper.SetTssVoter(ctx, voter)
 	// doesn't have consensus yet
@@ -115,7 +117,7 @@ func (h TssHandler) handleV1(ctx sdk.Context, msg MsgTssPool, version semver.Ver
 	if voter.BlockHeight == 0 {
 		voter.BlockHeight = ctx.BlockHeight()
 		h.keeper.SetTssVoter(ctx, voter)
-		slasher.DecSlashPoints(ctx, 1, voter.Signers...)
+		slasher.DecSlashPoints(ctx, observeSlashPoints, voter.Signers...)
 		if msg.IsSuccess() {
 			vaultType := YggdrasilVault
 			if msg.KeygenType == AsgardKeygen {
@@ -196,7 +198,7 @@ func (h TssHandler) handleV1(ctx sdk.Context, msg MsgTssPool, version semver.Ver
 	}
 
 	if voter.BlockHeight == ctx.BlockHeight() {
-		slasher.DecSlashPoints(ctx, 1, msg.Signer)
+		slasher.DecSlashPoints(ctx, observeSlashPoints, msg.Signer)
 	}
 
 	return sdk.Result{
