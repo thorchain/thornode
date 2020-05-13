@@ -38,6 +38,8 @@ COPY --from=build /go/bin/thord /usr/bin/
 COPY --from=build /go/bin/thorcli /usr/bin/
 COPY --from=build /go/bin/bifrost /usr/bin/
 
+COPY build/scripts /scripts
+
 # Add users.
 RUN adduser -Ds /bin/sh www-data -G www-data
 
