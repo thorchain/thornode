@@ -172,7 +172,7 @@ func (s *ThorchainSuite) TestChurn(c *C) {
 	signer, err := keygen.Members[0].GetThorAddress()
 	c.Assert(err, IsNil)
 	msg := NewMsgTssPool(keygen.Members, newVaultPk, AsgardKeygen, ctx.BlockHeight(), blame.Blame{}, common.Chains{common.RuneAsset().Chain}, signer)
-	tssHandler := NewTssHandler(keeper, versionedVaultMgr)
+	tssHandler := NewTssHandler(keeper, versionedVaultMgr, NewVersionedEventMgr())
 
 	voter := NewTssVoter(msg.ID, msg.PubKeys, msg.PoolPubKey)
 	signers := make([]sdk.AccAddress, len(msg.PubKeys)-1)

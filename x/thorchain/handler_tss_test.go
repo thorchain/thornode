@@ -577,7 +577,7 @@ func (s *HandlerTssSuite) TestTssHandler(c *C) {
 	for _, tc := range testCases {
 		c.Log(tc.name)
 		helper := newTssHandlerTestHelper(c)
-		handler := NewTssHandler(helper.keeper, helper.vaultManager)
+		handler := NewTssHandler(helper.keeper, helper.vaultManager, NewVersionedEventMgr())
 		msg := tc.messageCreator(helper)
 		result := tc.runner(handler, msg, helper)
 		c.Assert(result.Code, Equals, tc.expectedResult, Commentf("name:%s, %s", tc.name, result.Log))

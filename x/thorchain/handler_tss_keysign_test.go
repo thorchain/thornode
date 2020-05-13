@@ -262,7 +262,7 @@ func (h HandlerTssKeysignSuite) TestTssKeysignFailHandler(c *C) {
 	}
 	for _, tc := range testCases {
 		helper := newTssKeysignHandlerTestHelper(c)
-		handler := NewTssKeysignHandler(helper.keeper)
+		handler := NewTssKeysignHandler(helper.keeper, NewVersionedEventMgr())
 		msg := tc.messageCreator(helper)
 		result := tc.runner(handler, msg, helper)
 		c.Assert(result.Code, Equals, tc.expectedResult, Commentf("name:%s", tc.name))
