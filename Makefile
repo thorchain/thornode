@@ -9,7 +9,6 @@ TAG?=testnet
 
 ldflags = -X gitlab.com/thorchain/thornode/constants.Version=$(VERSION) \
 		  -X gitlab.com/thorchain/thornode/constants.GitCommit=$(COMMIT) \
-		  -X gitlab.com/thorchain/thornode/constants.GitCommit=$(COMMIT) \
 		  -X gitlab.com/thorchain/thornode/constants.BuildTime=${NOW} \
 		  -X github.com/cosmos/cosmos-sdk/version.Name=THORChain \
 	      -X github.com/cosmos/cosmos-sdk/version.ServerName=thord \
