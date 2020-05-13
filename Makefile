@@ -1,7 +1,10 @@
 include Makefile.cicd
-.PHONY: test tools export healthcheck
+.PHONY: build test tools export healthcheck
 
 GOBIN?=${GOPATH}/bin
+NOW=$(shell date +'%Y-%m-%d_%T')
+DEFAULT_BUILD_ARGS=-ldflags "-X 'gitlab.com/thorchain/thornode/constants.Version=0.1.0' -X 'gitlab.com/thorchain/thornode/constants.GitCommit=$(shell git rev-parse --short HEAD)' -X gitlab.com/thorchain/thornode/constants.BuildTime=${NOW}" -tags "${TAG}"
+BINARIES=./cmd/thorcli ./cmd/thord ./cmd/bifrost ./tools/generate
 
 # variables default for healthcheck against full stack in docker
 CHAIN_API?=localhost:1317
@@ -9,10 +12,11 @@ MIDGARD_API?=localhost:8080
 
 all: lint install
 
+build:
+	go build ${DEFAULT_BUILD_ARGS} ${BUILD_ARGS} ${BINARIES}
+
 install: go.sum
-	go install -tags "${TAG}" ./cmd/thorcli
-	go install -tags "${TAG}" ./cmd/thord
-	go install ./cmd/bifrost
+	go install ${DEFAULT_BUILD_ARGS} ${BUILD_ARGS} ${BINARIES}
 
 install-testnet:
 	TAG=testnet make install
@@ -56,9 +60,6 @@ lint: lint-pre
 
 lint-verbose: lint-pre
 	@golangci-lint run -v
-
-build:
-	@go build -tags "${TAG}" ./...
 
 start-daemon:
 	thord start --log_level "main:info,state:debug,*:error"

@@ -55,9 +55,9 @@ docker-gitlab-login:
 	docker login -u ${CI_REGISTRY_USER} -p ${CI_REGISTRY_PASSWORD} ${CI_REGISTRY}
 
 docker-gitlab-push:
-	docker push registry.gitlab.com/thorchain/thornode:latest
+	# docker push registry.gitlab.com/thorchain/thornode:latest
 	docker push registry.gitlab.com/thorchain/thornode:${BRANCH}
 
 docker-gitlab-build:
-	docker build -t registry.gitlab.com/thorchain/thornode -t registry.gitlab.com/thorchain/thornode:${BRANCH} -t registry.gitlab.com/thorchain/thornode:${GITREF} --build-arg TAG=${BRANCH} .
+	docker build -f build/docker/Dockerfile $(shell bash build/docker/semver_tags.bash registry.gitlab.com/thorchain/thornode ${BRANCH} $(shell cat version)) -t registry.gitlab.com/thorchain/thornode:${GITREF} --build-arg TAG=${BRANCH} .
 # ------------------------------------------------------------------ #

@@ -19,10 +19,7 @@ RUN go mod download
 COPY . .
 
 ARG TAG=mainnet
-RUN go build -a -tags $TAG -installsuffix cgo -o $GOBIN/generate ./tools/generate
-RUN go build -a -tags $TAG -installsuffix cgo -o $GOBIN/thord ./cmd/thord
-RUN go build -a -tags $TAG -installsuffix cgo -o $GOBIN/thorcli ./cmd/thorcli
-RUN go build -a -tags $TAG -installsuffix cgo -o $GOBIN/bifrost ./cmd/bifrost
+RUN BUILD_ARGS="-a -installsuffix cgo" make install
 
 #
 # Main

@@ -11,7 +11,9 @@ import (
 )
 
 type ver struct {
-	Version string `json:"version"`
+	Version   string `json:"version"`
+	GitCommit string `json:"git_commit"`
+	BuildTime string `json:"build_time"`
 }
 
 func (v ver) String() string {
@@ -36,12 +38,17 @@ func GetQueryCmd(storeKey string, cdc *codec.Codec) *cobra.Command {
 func GetCmdGetVersion(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:   "version",
-		Short: "Gets the thorchain version",
+		Short: "Gets the thorchain version and build information",
 		Args:  cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
+			cliCtx.OutputFormat = "json"
 
-			out := ver{constants.SWVersion.String()}
+			out := ver{
+				Version:   constants.SWVersion.String(),
+				GitCommit: constants.GitCommit,
+				BuildTime: constants.BuildTime,
+			}
 			return cliCtx.PrintOutput(out)
 		},
 	}

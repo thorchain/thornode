@@ -11,13 +11,16 @@ import (
 )
 
 var (
+	GitCommit       string // sha1 revision used to build the program
+	BuildTime       string // when the executable was built
+	Version         string // software version
 	int64Overrides  = map[ConstantName]int64{}
 	boolOverrides   = map[ConstantName]bool{}
 	stringOverrides = map[ConstantName]string{}
 )
 
 // The version of this software
-var SWVersion, _ = semver.Make("0.2.0")
+var SWVersion, _ = semver.Make(Version)
 
 // ConstantValue010 implement ConstantValues interface for version 0.1.0
 type ConstantValue010 struct {
