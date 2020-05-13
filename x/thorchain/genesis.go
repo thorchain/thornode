@@ -165,6 +165,10 @@ func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) []abci.Valid
 		}
 	}
 
+	addr, err := sdk.AccAddressFromBech32(ADMIN)
+	if err != nil {
+		panic(err)
+	}
 	// give mimir gas
 	coinsToMint, err := sdk.ParseCoins("1000thor")
 	if err != nil {
@@ -175,7 +179,7 @@ func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) []abci.Valid
 	if err != nil {
 		panic(err)
 	}
-	if err := keeper.Supply().SendCoinsFromModuleToAccount(ctx, ModuleName, ADMIN, coinsToMint); err != nil {
+	if err := keeper.Supply().SendCoinsFromModuleToAccount(ctx, ModuleName, addr, coinsToMint); err != nil {
 		panic(err)
 	}
 
