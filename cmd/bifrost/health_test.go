@@ -62,8 +62,7 @@ func (mts *MockTssServer) GetStatus() common.TssStatus {
 	}
 }
 
-type HealthServerTestSuite struct {
-}
+type HealthServerTestSuite struct{}
 
 var _ = Suite(&HealthServerTestSuite{})
 

@@ -1,3 +1,4 @@
+//go:build chaosnet
 // +build chaosnet
 
 package thorchain

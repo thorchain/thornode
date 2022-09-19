@@ -1,3 +1,4 @@
+//go:build chaosnet
 // +build chaosnet
 
 // For internal testing and mockneting

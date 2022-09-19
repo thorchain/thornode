@@ -29,8 +29,7 @@ type EventManager interface {
 }
 
 // EventMgr implement EventManager interface
-type EventMgr struct {
-}
+type EventMgr struct{}
 
 // NewEventMgr create a new instance of EventMgr
 func NewEventMgr() *EventMgr {

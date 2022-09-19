@@ -1,3 +1,4 @@
+//go:build testnet
 // +build testnet
 
 // For Public TestNet

@@ -16,8 +16,8 @@ func (s MsgTssKeysignFailSuite) TestMsgTssKeysignFail(c *C) {
 	b := blame.Blame{
 		FailReason: "fail to TSS sign",
 		BlameNodes: []blame.Node{
-			blame.Node{Pubkey: GetRandomPubKey().String()},
-			blame.Node{Pubkey: GetRandomPubKey().String()},
+			{Pubkey: GetRandomPubKey().String()},
+			{Pubkey: GetRandomPubKey().String()},
 		},
 	}
 	coins := common.Coins{

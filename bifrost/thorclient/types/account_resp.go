@@ -1,6 +1,6 @@
 package types
 
-/// AccountResp the response from thorclient
+// / AccountResp the response from thorclient
 type AccountResp struct {
 	Height string `json:"height"`
 	Result struct {

@@ -37,7 +37,7 @@ func (mrks TxMarkers) Pop() (TxMarker, TxMarkers) {
 		return TxMarker{}, nil
 	}
 	pop := mrks[0]
-	markers := mrks[1:len(mrks)]
+	markers := mrks[1:]
 
 	return pop, markers
 }

@@ -328,7 +328,7 @@ func (s *HandlerTssSuite) TestTssHandler(c *C) {
 				b := blame.Blame{
 					FailReason: "who knows",
 					BlameNodes: []blame.Node{
-						blame.Node{Pubkey: "whatever"},
+						{Pubkey: "whatever"},
 					},
 				}
 				tssMsg := NewMsgTssPool(helper.members, GetRandomPubKey(), AsgardKeygen, helper.ctx.BlockHeight(), b, common.Chains{common.RuneAsset().Chain}, helper.signer)
@@ -363,7 +363,7 @@ func (s *HandlerTssSuite) TestTssHandler(c *C) {
 				b := blame.Blame{
 					FailReason: "who knows",
 					BlameNodes: []blame.Node{
-						blame.Node{Pubkey: helper.members[3].String()},
+						{Pubkey: helper.members[3].String()},
 					},
 				}
 				tssMsg := NewMsgTssPool(helper.members, GetRandomPubKey(), AsgardKeygen, helper.ctx.BlockHeight(), b, common.Chains{common.RuneAsset().Chain}, helper.signer)
@@ -412,7 +412,7 @@ func (s *HandlerTssSuite) TestTssHandler(c *C) {
 				b := blame.Blame{
 					FailReason: "who knows",
 					BlameNodes: []blame.Node{
-						blame.Node{Pubkey: helper.members[3].String()},
+						{Pubkey: helper.members[3].String()},
 					},
 				}
 				tssMsg := NewMsgTssPool(helper.members, GetRandomPubKey(), AsgardKeygen, helper.ctx.BlockHeight(), b, common.Chains{common.RuneAsset().Chain}, helper.signer)
@@ -444,7 +444,7 @@ func (s *HandlerTssSuite) TestTssHandler(c *C) {
 				b := blame.Blame{
 					FailReason: "who knows",
 					BlameNodes: []blame.Node{
-						blame.Node{Pubkey: helper.members[3].String()},
+						{Pubkey: helper.members[3].String()},
 					},
 				}
 				tssMsg := NewMsgTssPool(helper.members, GetRandomPubKey(), AsgardKeygen, helper.ctx.BlockHeight(), b, common.Chains{common.RuneAsset().Chain}, helper.signer)
@@ -487,7 +487,7 @@ func (s *HandlerTssSuite) TestTssHandler(c *C) {
 				b := blame.Blame{
 					FailReason: "who knows",
 					BlameNodes: []blame.Node{
-						blame.Node{Pubkey: helper.members[3].String()},
+						{Pubkey: helper.members[3].String()},
 					},
 				}
 				tssMsg := NewMsgTssPool(helper.members, GetRandomPubKey(), AsgardKeygen, helper.ctx.BlockHeight(), b, common.Chains{common.RuneAsset().Chain}, helper.signer)
@@ -521,7 +521,7 @@ func (s *HandlerTssSuite) TestTssHandler(c *C) {
 				b := blame.Blame{
 					FailReason: "who knows",
 					BlameNodes: []blame.Node{
-						blame.Node{Pubkey: helper.members[3].String()},
+						{Pubkey: helper.members[3].String()},
 					},
 				}
 				tssMsg := NewMsgTssPool(helper.members, GetRandomPubKey(), AsgardKeygen, helper.ctx.BlockHeight(), b, common.Chains{common.RuneAsset().Chain}, helper.signer)
@@ -550,7 +550,7 @@ func (s *HandlerTssSuite) TestTssHandler(c *C) {
 				b := blame.Blame{
 					FailReason: "who knows",
 					BlameNodes: []blame.Node{
-						blame.Node{Pubkey: helper.members[3].String()},
+						{Pubkey: helper.members[3].String()},
 					},
 				}
 				tssMsg := NewMsgTssPool(helper.members, GetRandomPubKey(), AsgardKeygen, helper.ctx.BlockHeight(), b, common.Chains{common.RuneAsset().Chain}, helper.signer)

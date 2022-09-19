@@ -54,7 +54,8 @@ func NewSigner(cfg config.SignerConfiguration,
 	tssServer *tssp.TssServer,
 	tssCfg config.TSSConfiguration,
 	chains map[common.Chain]chainclients.ChainClient,
-	m *metrics.Metrics) (*Signer, error) {
+	m *metrics.Metrics,
+) (*Signer, error) {
 	storage, err := NewSignerStore(cfg.SignerDbPath, thorchainBridge.GetConfig().SignerPasswd)
 	if err != nil {
 		return nil, fmt.Errorf("fail to create thorchain scan storage: %w", err)

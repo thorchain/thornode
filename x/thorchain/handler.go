@@ -64,7 +64,8 @@ func NewExternalHandler(keeper Keeper,
 	versionedVaultManager VersionedVaultManager,
 	versionedObserverManager VersionedObserverManager,
 	versionedGasMgr VersionedGasManager,
-	versionedEventManager VersionedEventManager) sdk.Handler {
+	versionedEventManager VersionedEventManager,
+) sdk.Handler {
 	handlerMap := getHandlerMapping(keeper, versionedTxOutStore, validatorMgr, versionedVaultManager, versionedObserverManager, versionedGasMgr, versionedEventManager)
 
 	return func(ctx sdk.Context, msg sdk.Msg) sdk.Result {
@@ -93,7 +94,8 @@ func getHandlerMapping(keeper Keeper,
 	versionedVaultManager VersionedVaultManager,
 	versionedObserverManager VersionedObserverManager,
 	versionedGasMgr VersionedGasManager,
-	versionedEventManager VersionedEventManager) map[string]MsgHandler {
+	versionedEventManager VersionedEventManager,
+) map[string]MsgHandler {
 	// New arch handlers
 	m := make(map[string]MsgHandler)
 	m[MsgTssPool{}.Type()] = NewTssHandler(keeper, versionedVaultManager)
@@ -117,7 +119,8 @@ func NewInternalHandler(keeper Keeper,
 	versionedVaultManager VersionedVaultManager,
 	versionedObserverManager VersionedObserverManager,
 	versionedGasMgr VersionedGasManager,
-	versionedEventManager VersionedEventManager) sdk.Handler {
+	versionedEventManager VersionedEventManager,
+) sdk.Handler {
 	handlerMap := getInternalHandlerMapping(keeper, versionedTxOutStore, validatorMgr, versionedVaultManager, versionedObserverManager, versionedGasMgr, versionedEventManager)
 
 	return func(ctx sdk.Context, msg sdk.Msg) sdk.Result {
@@ -141,7 +144,8 @@ func getInternalHandlerMapping(keeper Keeper,
 	versionedVaultManager VersionedVaultManager,
 	versionedObserverManager VersionedObserverManager,
 	versionedGasMgr VersionedGasManager,
-	versionedEventManager VersionedEventManager) map[string]MsgHandler {
+	versionedEventManager VersionedEventManager,
+) map[string]MsgHandler {
 	// New arch handlers
 	m := make(map[string]MsgHandler)
 	m[MsgOutboundTx{}.Type()] = NewOutboundTxHandler(keeper, versionedEventManager)

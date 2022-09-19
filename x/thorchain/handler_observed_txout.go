@@ -26,7 +26,8 @@ func NewObservedTxOutHandler(keeper Keeper,
 	validatorMgr VersionedValidatorManager,
 	versionedVaultManager VersionedVaultManager,
 	versionedGasMgr VersionedGasManager,
-	versionedEventManager VersionedEventManager) ObservedTxOutHandler {
+	versionedEventManager VersionedEventManager,
+) ObservedTxOutHandler {
 	return ObservedTxOutHandler{
 		keeper:                   keeper,
 		versionedTxOutStore:      txOutStore,
