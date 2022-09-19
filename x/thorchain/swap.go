@@ -49,7 +49,8 @@ func swap(ctx sdk.Context,
 	target common.Asset,
 	destination common.Address,
 	tradeTarget sdk.Uint,
-	transactionFee sdk.Uint) (sdk.Uint, []EventSwap, sdk.Error) {
+	transactionFee sdk.Uint,
+) (sdk.Uint, []EventSwap, sdk.Error) {
 	var swapEvents []EventSwap
 
 	if err := validateMessage(tx, target, destination); err != nil {
@@ -112,7 +113,8 @@ func swapOne(ctx sdk.Context,
 	target common.Asset,
 	destination common.Address,
 	tradeTarget sdk.Uint,
-	transactionFee sdk.Uint) (amt sdk.Uint, poolResult Pool, evt EventSwap, swapErr sdk.Error) {
+	transactionFee sdk.Uint,
+) (amt sdk.Uint, poolResult Pool, evt EventSwap, swapErr sdk.Error) {
 	source := tx.Coins[0].Asset
 	amount := tx.Coins[0].Amount
 

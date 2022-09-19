@@ -8,8 +8,7 @@ import (
 	"gitlab.com/thorchain/thornode/constants"
 )
 
-type VersionedValidatorDummyMgr struct {
-}
+type VersionedValidatorDummyMgr struct{}
 
 func NewVersionedValidatorDummyMgr() VersionedValidatorDummyMgr {
 	return VersionedValidatorDummyMgr{}
@@ -28,8 +27,7 @@ func (VersionedValidatorDummyMgr) RequestYggReturn(ctx sdk.Context, version semv
 }
 
 // ValidatorDummyMgr is to manage a list of validators , and rotate them
-type ValidatorDummyMgr struct {
-}
+type ValidatorDummyMgr struct{}
 
 // NewValidatorDummyMgr create a new instance of ValidatorDummyMgr
 func NewValidatorDummyMgr() *ValidatorDummyMgr {

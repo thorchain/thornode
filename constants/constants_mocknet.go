@@ -1,3 +1,4 @@
+//go:build mocknet
 // +build mocknet
 
 // For internal testing and mockneting

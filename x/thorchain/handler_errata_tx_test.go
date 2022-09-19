@@ -127,13 +127,13 @@ func (s *HandlerErrataTxSuite) TestHandle(c *C) {
 			BalanceAsset: sdk.NewUint(100 * common.One),
 		},
 		stakers: []Staker{
-			Staker{
+			{
 				RuneAddress:     addr,
 				LastStakeHeight: 5,
 				Units:           totalUnits.QuoUint64(2),
 				PendingRune:     sdk.ZeroUint(),
 			},
-			Staker{
+			{
 				RuneAddress:     GetRandomBNBAddress(),
 				LastStakeHeight: 10,
 				Units:           totalUnits.QuoUint64(2),

@@ -7,8 +7,7 @@ import (
 	"gitlab.com/thorchain/thornode/common"
 )
 
-type DummyGasManager struct {
-}
+type DummyGasManager struct{}
 
 func NewDummyGasManager() *DummyGasManager {
 	return &DummyGasManager{}
@@ -20,8 +19,7 @@ func (m *DummyGasManager) AddGasAsset(gas common.Gas)                           
 func (m *DummyGasManager) GetGas() common.Gas                                                 { return nil }
 func (m *DummyGasManager) ProcessGas(ctx sdk.Context, keeper Keeper)                          {}
 
-type DummyVersionedGasMgr struct {
-}
+type DummyVersionedGasMgr struct{}
 
 func NewDummyVersionedGasMgr() *DummyVersionedGasMgr {
 	return &DummyVersionedGasMgr{}

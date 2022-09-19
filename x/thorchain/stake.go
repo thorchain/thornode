@@ -37,7 +37,8 @@ func stake(ctx sdk.Context, keeper Keeper,
 	asset common.Asset,
 	stakeRuneAmount, stakeAssetAmount sdk.Uint,
 	runeAddr, assetAddr common.Address,
-	requestTxHash common.TxID, constAccessor constants.ConstantValues) (sdk.Uint, sdk.Error) {
+	requestTxHash common.TxID, constAccessor constants.ConstantValues,
+) (sdk.Uint, sdk.Error) {
 	ctx.Logger().Info(fmt.Sprintf("%s staking %s %s", asset, stakeRuneAmount, stakeAssetAmount))
 	if err := validateStakeMessage(ctx, keeper, asset, requestTxHash, runeAddr, assetAddr); err != nil {
 		ctx.Logger().Error("stake message fail validation", "error", err)

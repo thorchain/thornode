@@ -7,8 +7,7 @@ import (
 	"gitlab.com/thorchain/thornode/common"
 )
 
-type DummyObserverManager struct {
-}
+type DummyObserverManager struct{}
 
 func NewDummyObserverManager() *DummyObserverManager {
 	return &DummyObserverManager{}
@@ -19,8 +18,7 @@ func (m *DummyObserverManager) EndBlock(ctx sdk.Context, keeper Keeper)         
 func (m *DummyObserverManager) AppendObserver(chain common.Chain, addrs []sdk.AccAddress) {}
 func (m *DummyObserverManager) List() []sdk.AccAddress                                    { return nil }
 
-type DummyVersionedObserverMgr struct {
-}
+type DummyVersionedObserverMgr struct{}
 
 func NewDummyVersionedObserverMgr() *DummyVersionedObserverMgr {
 	return &DummyVersionedObserverMgr{}

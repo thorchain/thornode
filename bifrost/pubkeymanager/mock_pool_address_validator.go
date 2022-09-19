@@ -16,8 +16,7 @@ var (
 	validpb  = "thorpub1addwnpepqfgfxharps79pqv8fv9ndqh90smw8c3slrtrssn58ryc5g3p9sx856x07yn"
 )
 
-type MockPoolAddressValidator struct {
-}
+type MockPoolAddressValidator struct{}
 
 func NewMockPoolAddressValidator() *MockPoolAddressValidator {
 	return &MockPoolAddressValidator{}

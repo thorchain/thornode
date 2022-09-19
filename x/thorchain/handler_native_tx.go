@@ -28,7 +28,8 @@ func NewNativeTxHandler(keeper Keeper,
 	validatorMgr VersionedValidatorManager,
 	versionedVaultManager VersionedVaultManager,
 	versionedGasMgr VersionedGasManager,
-	versionedEventManager VersionedEventManager) NativeTxHandler {
+	versionedEventManager VersionedEventManager,
+) NativeTxHandler {
 	return NativeTxHandler{
 		keeper:                   keeper,
 		versionedTxOutStore:      versionedTxOutStore,
